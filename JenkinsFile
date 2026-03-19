@@ -3,7 +3,10 @@ pipeline {
   options { timestamps() }
 
   stages {
-    stage('hi') { steps { echo 'hola' } }
-
+    stage('Test Jenkinsfile') {
+      steps {
+        echo 'Jenkins está funcionando correctamente'
+      }
+    }
   }
 }
