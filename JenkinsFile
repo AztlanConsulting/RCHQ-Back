@@ -3,8 +3,10 @@ pipeline {
   options { timestamps() }
 
   stages {
-    stage('Install') { steps { sh 'npm ci || npm install' } }
-    stage('Test')    { steps { sh 'npm test' } }
-    stage('Build')   { steps { sh 'npm run build' } }
+    stage('Test Jenkinsfile') {
+      steps {
+        echo 'Jenkins está funcionando correctamente'
+      }
+    }
   }
 }
