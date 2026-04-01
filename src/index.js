@@ -1,8 +1,8 @@
-import errorHandler from "./middleware/ErrorHandler";
-
 const express = require("express");
 const app = express();
-export const jwtSecret = process.env.JWT_SECRET_KEY || "default_secret_key";
+const jwtSecret = process.env.JWT_SECRET_KEY || "default_secret_key";
+
+const errorHandler = require("./middleware/ErrorHandler");
 
 // Loads the variables in the enviorment file
 require("dotenv").config();

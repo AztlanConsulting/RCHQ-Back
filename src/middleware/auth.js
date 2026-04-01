@@ -1,9 +1,9 @@
-import jwt from 'jsonwebtoken';
-import {JWT_SECRET} from '../config.js';
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET;
 
-export const verifyToken = (req, res, next) => {
+const verifyToken = (req, res, next) => {
   let token;
-  let authHeader = req.headers.Authorization || req.headers.authorization;
+  const authHeader = req.headers.authorization || req.headers.Authorization;
 
   if(authHeader && authHeader.startsWith('Bearer')) {
     token = authHeader.split(' ')[1];
@@ -24,4 +24,4 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
-export default {verifyToken};
+module.exports = verifyToken;
