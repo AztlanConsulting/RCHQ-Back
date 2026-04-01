@@ -1,0 +1,9 @@
+const user ={
+    id: 1,
+    username: "john_doe",
+    password: "hashed_password"
+}
+
+
+
+export default user;

@@ -1,8 +1,13 @@
 const express = require('express');
-const router = express.Router();
-
+const verifyToken = require('../middleware/auth');
+const { requireRole } = require('../middleware/rbac');
 const userController = require('../controller/user.controller');
 
-router.get('/', userController.userFunction);
+const router = express.Router();
+
+
+router.post('/login', userController.loginFunction);
+
+router.get('/profile', verifyToken,requireRole('user'),userController.getProfile);
 
 module.exports = router;
