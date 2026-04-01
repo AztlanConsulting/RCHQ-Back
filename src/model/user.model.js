@@ -4,6 +4,10 @@ const user = {
   password: "123",
   role: "user",
   privileges: ["read_profile"],
+  tempSecret: {
+    base32: "JBSWY3DPEHPK3PXP",
+  },
+  secret: null,
 };
 
 

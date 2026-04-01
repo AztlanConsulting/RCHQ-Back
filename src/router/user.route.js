@@ -12,6 +12,8 @@ router.post('/2fa', userController.twoFactorAuth);
 
 router.post('/verify-2fa', userController.verifyTwoFactorAuth);
 
+router.post('validate-2fa', userController.validateTwoFactorAuth);
+
 router.get('/profile', verifyToken,requireRole("admin","user"),userController.getProfile);
 
 module.exports = router;

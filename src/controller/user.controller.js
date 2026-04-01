@@ -86,3 +86,33 @@ exports.verifyTwoFactorAuth = (req, res) => {
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 }
+
+exports.validateTwoFactorAuth = (req, res) => {
+    if(!req.body){
+        return res.status(400).json({ message: 'Bad Request' });
+    }
+    
+    const {token, userId} = req.body;
+
+    try{
+        const user = User; //get user from database using userId
+
+        //get user's temp secret from database using userId
+        const { base32:secret } = user.secret;
+        let tokenValidate = speakeasy.totp.verify({
+            secret: secret,
+            encoding: 'base32',
+            token: token,
+            window: 1 // allow a window of 1 time step before and after to account for clock drift
+        });
+        
+        if(tokenValidate){
+            res.json({validated: true, message: '2FA verification successful'});
+        }else{
+            res.status(401).json({validated: false, message: 'Invalid 2FA token'});
+        }
+    }catch(error){
+        console.error("Error in 2FA setup:", error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
