@@ -8,7 +8,9 @@ const router = express.Router();
 
 router.post('/login' ,userController.loginFunction);
 
-router.post('/2FA', userController.twoFactorAuth);
+router.post('/2fa', userController.twoFactorAuth);
+
+router.post('/verify-2fa', userController.verifyTwoFactorAuth);
 
 router.get('/profile', verifyToken,requireRole("admin","user"),userController.getProfile);
 

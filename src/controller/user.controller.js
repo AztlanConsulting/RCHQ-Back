@@ -43,6 +43,7 @@ exports.twoFactorAuth = (req, res) => {
     try{
         const {id} = req.body;
         const tempSecret = speakeasy.generateSecret();
+        // Store tempSecret in database associated with the userId for later verification
         res.json({
             id: id,
             secret: tempSecret.base32,
@@ -53,6 +54,35 @@ exports.twoFactorAuth = (req, res) => {
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 
+}
 
+exports.verifyTwoFactorAuth = (req, res) => {
+    if(!req.body){
+        return res.status(400).json({ message: 'Bad Request' });
+    }
+    
+    const {token, userId} = req.body;
 
+    try{
+        const user = User; //get user from database using userId
+
+        //get user's temp secret from database using userId
+        const { base32:secret } = user.tempSecret;
+        let verified = speakeasy.totp.verify({
+            secret: secret,
+            encoding: 'base32',
+            token: token
+        });
+        
+        if(verified){
+            // save secret as permanent for the user in database and delete temp secret
+            user.secret = user.tempSecret;
+            res.json({verified: true, message: '2FA verification successful'});
+        }else{
+            res.status(401).json({verified: false, message: 'Invalid 2FA token'});
+        }
+    }catch(error){
+        console.error("Error in 2FA setup:", error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
 }
