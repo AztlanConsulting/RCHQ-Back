@@ -1,4 +1,5 @@
 const User = require('../model/user.model');
+const speakeasy = require('speakeasy');
 const { generateToken } = require('../utils/jwt');
 const { canAccess } = require('../middleware/abac');
 const { adminPolicy } = require('../policies/user.policies');
@@ -33,3 +34,25 @@ exports.getProfile = (req, res) => {
         privileges: req.user.privileges || User.privileges
     });
 };
+
+exports.twoFactorAuth = (req, res) => {
+    if(!req.body){
+        return res.status(400).json({ message: 'Bad Request' });
+    }
+
+    try{
+        const {id} = req.body;
+        const tempSecret = speakeasy.generateSecret();
+        res.json({
+            id: id,
+            secret: tempSecret.base32,
+            otpauth_url: tempSecret.otpauth_url
+        });
+    }catch(error){
+        console.error("Error in 2FA setup:", error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+
+
+
+}

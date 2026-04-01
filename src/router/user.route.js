@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post('/login' ,userController.loginFunction);
 
+router.post('/2FA', userController.twoFactorAuth);
+
 router.get('/profile', verifyToken,requireRole("admin","user"),userController.getProfile);
 
 module.exports = router;
