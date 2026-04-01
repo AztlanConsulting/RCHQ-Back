@@ -1,4 +1,4 @@
-export const adminPolicy = (user,resource) => {
+const adminPolicy = (user, resource) => {
     if (user.role === 'admin') return true;
 
     if (user.role === "coordinator") {
@@ -6,4 +6,8 @@ export const adminPolicy = (user,resource) => {
     }
 
     return false;
+};
+
+module.exports = {
+  adminPolicy,
 };

@@ -1,5 +1,8 @@
 const User = require('../model/user.model');
 const { generateToken } = require('../utils/jwt');
+const { canAccess } = require('../middleware/abac');
+const { adminPolicy } = require('../policies/user.policies');
+
 
 exports.loginFunction = (req, res) => {
     const { username, password } = req.body;
@@ -16,9 +19,17 @@ exports.loginFunction = (req, res) => {
 }
 
 exports.getProfile = (req, res) => {
+    const resource = {
+        coordinators: User.coordinators || [],
+    };
+
+    if (!canAccess(req.user, adminPolicy, resource)) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
     res.status(200).json({
         username: req.user.name || User.username,
         role: req.user.role || User.role,
         privileges: req.user.privileges || User.privileges
     });
-}
+};
