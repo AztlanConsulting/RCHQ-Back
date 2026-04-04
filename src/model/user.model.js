@@ -1,6 +1,7 @@
 const user = {
   id: 1,
-  username: "manuel",
+  // username: "manuel",
+  email: "manuel@gmail.com",
   password: "123",
   role: "user",
   privileges: ["read_profile"],
