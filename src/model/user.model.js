@@ -2,7 +2,7 @@ const user = {
   id: 1,
   username: "manuel",
   password: "123",
-  role: "user",
+  role: "admin",
   privileges: ["read_profile"],
   tempSecret: {
     base32: "JBSWY3DPEHPK3PXP",

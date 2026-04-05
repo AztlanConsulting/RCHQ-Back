@@ -24,6 +24,9 @@ exports.getProfile = (req, res) => {
         coordinators: User.coordinators || [],
     };
 
+    // Check if the user has access to the profile resource based on the admin policy
+    // this one can be omitted if we use the authorize middleware in the route, 
+    // but it's here for demonstration purposes
     if (!canAccess(req.user, adminPolicy, resource)) {
         return res.status(403).json({ message: 'Forbidden' });
     }
