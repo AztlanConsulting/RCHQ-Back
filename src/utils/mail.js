@@ -1,3 +1,4 @@
+/**
 const formData = require("form-data");
 const Mailgun = require("mailgun.js");
 const mailgun = new Mailgun(formData);
@@ -17,3 +18,4 @@ exports.send = async (destinatary, subject, message) => {
     .then((msg) => console.log(msg)) // logs response data
     .catch((err) => console.error(err)); // logs any error
 };
+ */
