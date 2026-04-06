@@ -16,6 +16,7 @@
     "jsonwebtoken": "^9.0.3",
     "mailgun.js": "^12.7.1",
     "nodemon": "^3.1.14",
+    "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0"
   }
 }

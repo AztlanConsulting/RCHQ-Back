@@ -1,5 +1,4 @@
 const express = require("express");
-const speakeasy = require("speakeasy");
 const app = express();
 
 const errorHandler = require("./middleware/ErrorHandler");

@@ -1,5 +1,6 @@
 const User = require('../model/user.model');
 const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 const { generateToken } = require('../utils/jwt');
 const { canAccess } = require('../middleware/abac');
 const { adminPolicy } = require('../policies/user.policies');
@@ -38,7 +39,7 @@ exports.getProfile = (req, res) => {
     });
 };
 
-exports.twoFactorAuth = (req, res) => {
+exports.twoFactorAuth = async (req, res) => {
     if(!req.body){
         return res.status(400).json({ message: 'Bad Request' });
     }
@@ -47,10 +48,14 @@ exports.twoFactorAuth = (req, res) => {
         const {id} = req.body;
         const tempSecret = speakeasy.generateSecret();
         // Store tempSecret in database associated with the userId for later verification
+
+        const qrlImage = await QRCode.toDataURL(tempSecret.otpauth_url);
+      
         res.json({
             id: id,
             secret: tempSecret.base32,
-            otpauth_url: tempSecret.otpauth_url
+            otpauth_url: tempSecret.otpauth_url,
+            qrlImage: qrlImage
         });
     }catch(error){
         console.error("Error in 2FA setup:", error);
