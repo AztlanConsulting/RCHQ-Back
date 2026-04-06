@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const cors = require('cors');
 
 const errorHandler = require("./middleware/ErrorHandler");
 
@@ -9,6 +10,11 @@ require("dotenv").config();
 const port = Number(process.env.RUNNING_PORT || 3000);
 
 app.use(express.json());
+
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 
 //const xd = require("./utils/mail");
 
