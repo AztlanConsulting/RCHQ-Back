@@ -11,7 +11,6 @@ const user = {
   secret: null,
 };
 
-
 const adminUser = {
   _id: "admin1",
   role: "admin",

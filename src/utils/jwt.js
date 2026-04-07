@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const { role } = require('../model/user.model');
+const jwt = require("jsonwebtoken");
+const { role } = require("../model/user.model");
 const jwtSecret = process.env.JWT_SECRET;
-const expiresIn = '1h';
+const expiresIn = "1h";
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -13,7 +13,7 @@ const generateToken = (user) => {
       privileges: user.privileges,
     },
     jwtSecret,
-    {expiresIn: expiresIn}
+    { expiresIn: expiresIn },
   );
 };
 
@@ -26,9 +26,9 @@ const decodeToken = (token) => {
   } catch {
     return null;
   }
-}
+};
 
 module.exports = {
   generateToken,
-  decodeToken
+  decodeToken,
 };
