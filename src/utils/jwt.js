@@ -17,6 +17,18 @@ const generateToken = (user) => {
   );
 };
 
+const decodeToken = (token) => {
+  if (!token || !jwtSecret) {
+    return null;
+  }
+  try {
+    return jwt.verify(token, jwtSecret);
+  } catch {
+    return null;
+  }
+}
+
 module.exports = {
   generateToken,
+  decodeToken
 };
