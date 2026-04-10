@@ -5,18 +5,36 @@ const { generateToken } = require("../utils/jwt");
 const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
 
-exports.loginFunction = (req, res) => {
+exports.loginFunction = async (req, res) => {
   const { email, password } = req.body;
+
   console.log("Login attempt:", email, password);
 
-  const user = User;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password required" });
+  }
 
-  if (user && email === user.email && password === user.password) {
-    res
-      .status(200)
-      .json({ message: "Login successful", token: generateToken(user) });
-  } else {
-    res.status(401).json({ message: "Invalid credentials" });
+  try {
+    const row = await User.findActiveEmployeeByEmail(email);
+    if (!row || row.pwd !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = {
+      id: row.employeeid,
+      email: row.email,
+      name: row.name,
+      role: row.role,
+      privileges: ["read_profile"],
+    };
+
+    res.status(200).json({
+      message: "Login successful",
+      token: generateToken(user),
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
