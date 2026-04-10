@@ -55,8 +55,8 @@ else Campos completos
         employee.controller -> ReactView : Respuesta: Usuario ya existente + employeeid
         activate ReactView
 
-        ReactView -> navegador : Mostrar alerta "Usuario ya existe"
-        ReactView -> navegador : Redirigir a /employee/{employeeid}
+        ReactView -> employee.routes : alert("Usuario ya existe")
+        ReactView -> employee.routes : response.redirect("/employee/{employeeid}")
         deactivate ReactView
         
     else Usuario no existe
@@ -76,11 +76,11 @@ else Campos completos
         employee -->> employee.controller : Promesa
         deactivate employee
         
-        employee.controller -> ReactView : Respuesta: Usuario creado con éxito + employeeid
+        employee.controller -> ReactView : alert("Usuario creado con éxito")
         deactivate employee.controller
         activate ReactView
         
-        ReactView -> navegador : Redirigir a /employee/{employeeid}
+        ReactView -> employee.routes : response.redirect("/employee/{employeeid}")
         deactivate ReactView
 
     end
