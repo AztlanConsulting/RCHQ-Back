@@ -5,6 +5,7 @@ boundary employee.routes
 boundary "React (EmployeeForm.jsx)" as ReactView
 control employee.controller
 entity employee
+entity logs
 database PostgreSQL
 
 autonumber
@@ -74,6 +75,18 @@ else Campos completos
 
         employee -->> employee.controller : Promesa
         deactivate employee
+
+        create logs
+        employee.controller -> logs : create({ logid, employeeid, date, ip })
+        activate logs
+
+        logs -> PostgreSQL : INSERT INTO logs(\nlogid,\nemployeeid,\ndate,\nip)\nVALUES (?, ?, ?, ?)
+        activate PostgreSQL
+        PostgreSQL -->> logs : Insert OK
+        deactivate PostgreSQL
+
+        logs -->> employee.controller : Promesa
+        deactivate logs
         
         employee.controller -> ReactView : alert("Usuario creado con éxito")
         deactivate employee.controller

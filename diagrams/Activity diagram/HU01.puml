@@ -36,6 +36,7 @@ if (¿El usuario ya existe?) then (SI)
     stop
 else (NO)
     :Registra nuevo empleado;
+    :Registrar acción en logs;
     :Confirma registro;
     stop
 endif
