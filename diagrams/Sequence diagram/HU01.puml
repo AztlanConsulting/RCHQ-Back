@@ -52,10 +52,9 @@ else Campos completos
     deactivate PostgreSQL
 
     alt Usuario ya existe
-        employee.controller -> ReactView : Respuesta: Usuario ya existente + employeeid
+        employee.controller -> ReactView : alert("Usuario ya existente")
         activate ReactView
 
-        ReactView -> employee.routes : alert("Usuario ya existe")
         ReactView -> employee.routes : response.redirect("/employee/{employeeid}")
         deactivate ReactView
         
