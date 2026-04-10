@@ -33,24 +33,24 @@ CREATE TABLE public.house (
 	CONSTRAINT house_pk PRIMARY KEY (houseid)
 );
 
-CREATE TABLE public."Role" (
+CREATE TABLE public.role (
 	roleid uuid NOT NULL,
 	"Name" varchar NOT NULL,
 	CONSTRAINT role_pk PRIMARY KEY (roleid)
 );
 
-CREATE TABLE public.roleprivilage (
-	roleid uuid NOT NULL,
-	privilegeid uuid NOT NULL,
-	CONSTRAINT roleprivilage_role_fk FOREIGN KEY (roleid) REFERENCES public."Role"(roleid),
-	CONSTRAINT roleprivilage_privilege_fk FOREIGN KEY (privilegeid) REFERENCES public.privilage(privilegeid)
-);
-
-CREATE TABLE public.privilage (
+CREATE TABLE public.privilege (
 	privilegeid uuid NOT NULL,
 	"NAME" varchar NOT NULL,
 	"Description" varchar NOT NULL,
 	CONSTRAINT privilege_pk PRIMARY KEY (privilegeid)
+);
+
+CREATE TABLE public.roleprivilege (
+	roleid uuid NOT NULL,
+	privilegeid uuid NOT NULL,
+	CONSTRAINT roleprivilege_role_fk FOREIGN KEY (roleid) REFERENCES public.role(roleid),
+	CONSTRAINT roleprivilege_privilege_fk FOREIGN KEY (privilegeid) REFERENCES public.privilege(privilegeid)
 );
 
 CREATE TABLE public.employee (
@@ -70,7 +70,7 @@ CREATE TABLE public.employee (
 	startdate date NOT NULL,
 	CONSTRAINT employee_pk PRIMARY KEY (employeeid),
 	CONSTRAINT employee_house_fk FOREIGN KEY (houseid) REFERENCES public.house(houseid),
-	CONSTRAINT employee_role_fk FOREIGN KEY (roleid) REFERENCES public."role"(roleid)
+	CONSTRAINT employee_role_fk FOREIGN KEY (roleid) REFERENCES public.role(roleid)
 );
 
 CREATE TABLE public.donation (

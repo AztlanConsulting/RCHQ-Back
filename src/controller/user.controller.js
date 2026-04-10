@@ -1,126 +1,143 @@
-const User = require('../model/user.model');
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
-const { generateToken } = require('../utils/jwt');
-const { canAccess } = require('../middleware/abac');
-const { adminPolicy } = require('../policies/user.policies');
+const User = require("../model/user.model");
+const speakeasy = require("speakeasy");
+const QRCode = require("qrcode");
+const { generateToken } = require("../utils/jwt");
+const { canAccess } = require("../middleware/abac");
+const { adminPolicy } = require("../policies/user.policies");
 
+exports.loginFunction = async (req, res) => {
+  const { email, password } = req.body;
 
-exports.loginFunction = (req, res) => {
-    const { username, password } = req.body;
-    console.log("Login attempt:", username, password);
+  console.log("Login attempt:", email, password);
 
-    const user = User;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password required" });
+  }
 
-    if (user && username === user.username && password === user.password) {
-        res.status(200).json({ message: 'Login successful' , token: generateToken(user)});
-    } else {
-        res.status(401).json({ message: 'Invalid credentials' });
+  try {
+    const row = await User.findActiveEmployeeByEmail(email);
+    if (!row || row.pwd !== password) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
-    
-}
 
-exports.getProfile = (req, res) => {
-    const resource = {
-        coordinators: User.coordinators || [],
+    const user = {
+      id: row.employeeid,
+      email: row.email,
+      name: row.name,
+      role: row.role,
+      privileges: ["read_profile"],
     };
 
-    // Check if the user has access to the profile resource based on the admin policy
-    // this one can be omitted if we use the authorize middleware in the route, 
-    // but it's here for demonstration purposes
-    if (!canAccess(req.user, adminPolicy, resource)) {
-        return res.status(403).json({ message: 'Forbidden' });
-    }
-
     res.status(200).json({
-        username: req.user.name || User.username,
-        role: req.user.role || User.role,
-        privileges: req.user.privileges || User.privileges
+      message: "Login successful",
+      token: generateToken(user),
     });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+exports.getProfile = (req, res) => {
+  const resource = {
+    coordinators: User.coordinators || [],
+  };
+
+  // Check if the user has access to the profile resource based on the admin policy
+  // this one can be omitted if we use the authorize middleware in the route,
+  // but it's here for demonstration purposes
+  if (!canAccess(req.user, adminPolicy, resource)) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  res.status(200).json({
+    username: req.user.name || User.username,
+    role: req.user.role || User.role,
+    privileges: req.user.privileges || User.privileges,
+  });
 };
 
 exports.twoFactorAuth = async (req, res) => {
-    if(!req.body){
-        return res.status(400).json({ message: 'Bad Request' });
-    }
+  if (!req.body) {
+    return res.status(400).json({ message: "Bad Request" });
+  }
 
-    try{
-        const {id} = req.body;
-        const tempSecret = speakeasy.generateSecret();
-        // Store tempSecret in database associated with the userId for later verification
+  try {
+    const { id } = req.body;
+    const tempSecret = speakeasy.generateSecret();
+    // Store tempSecret in database associated with the userId for later verification
 
-        const qrlImage = await QRCode.toDataURL(tempSecret.otpauth_url);
-      
-        res.json({
-            id: id,
-            secret: tempSecret.base32,
-            otpauth_url: tempSecret.otpauth_url,
-            qrlImage: qrlImage
-        });
-    }catch(error){
-        console.error("Error in 2FA setup:", error);
-        return res.status(500).json({ message: 'Internal Server Error' });
-    }
+    const qrlImage = await QRCode.toDataURL(tempSecret.otpauth_url);
 
-}
+    res.json({
+      id: id,
+      secret: tempSecret.base32,
+      otpauth_url: tempSecret.otpauth_url,
+      qrlImage: qrlImage,
+    });
+  } catch (error) {
+    console.error("Error in 2FA setup:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 exports.verifyTwoFactorAuth = (req, res) => {
-    if(!req.body){
-        return res.status(400).json({ message: 'Bad Request' });
-    }
-    
-    const {token, userId} = req.body;
+  if (!req.body) {
+    return res.status(400).json({ message: "Bad Request" });
+  }
 
-    try{
-        const user = User; //get user from database using userId
+  const { token, userId } = req.body;
 
-        //get user's temp secret from database using userId
-        const { base32:secret } = user.tempSecret;
-        let verified = speakeasy.totp.verify({
-            secret: secret,
-            encoding: 'base32',
-            token: token
-        });
-        
-        if(verified){
-            // save secret as permanent for the user in database and delete temp secret
-            user.secret = user.tempSecret;
-            res.json({verified: true, message: '2FA verification successful'});
-        }else{
-            res.status(401).json({verified: false, message: 'Invalid 2FA token'});
-        }
-    }catch(error){
-        console.error("Error in 2FA setup:", error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+  try {
+    const user = User; //get user from database using userId
+
+    //get user's temp secret from database using userId
+    const { base32: secret } = user.tempSecret;
+    let verified = speakeasy.totp.verify({
+      secret: secret,
+      encoding: "base32",
+      token: token,
+    });
+
+    if (verified) {
+      // save secret as permanent for the user in database and delete temp secret
+      user.secret = user.tempSecret;
+      res.json({ verified: true, message: "2FA verification successful" });
+    } else {
+      res.status(401).json({ verified: false, message: "Invalid 2FA token" });
     }
-}
+  } catch (error) {
+    console.error("Error in 2FA setup:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 exports.validateTwoFactorAuth = (req, res) => {
-    if(!req.body){
-        return res.status(400).json({ message: 'Bad Request' });
-    }
-    
-    const {token, userId} = req.body;
+  if (!req.body) {
+    return res.status(400).json({ message: "Bad Request" });
+  }
 
-    try{
-        const user = User; //get user from database using userId
+  const { token, userId } = req.body;
 
-        //get user's temp secret from database using userId
-        const { base32:secret } = user.secret;
-        let tokenValidate = speakeasy.totp.verify({
-            secret: secret,
-            encoding: 'base32',
-            token: token,
-            window: 1 // allow a window of 1 time step before and after to account for clock drift
-        });
-        
-        if(tokenValidate){
-            res.json({validated: true, message: '2FA verification successful'});
-        }else{
-            res.status(401).json({validated: false, message: 'Invalid 2FA token'});
-        }
-    }catch(error){
-        console.error("Error in 2FA setup:", error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+  try {
+    const user = User; //get user from database using userId
+
+    //get user's temp secret from database using userId
+    const { base32: secret } = user.secret;
+    let tokenValidate = speakeasy.totp.verify({
+      secret: secret,
+      encoding: "base32",
+      token: token,
+      window: 1, // allow a window of 1 time step before and after to account for clock drift
+    });
+
+    if (tokenValidate) {
+      res.json({ validated: true, message: "2FA verification successful" });
+    } else {
+      res.status(401).json({ validated: false, message: "Invalid 2FA token" });
     }
-}
+  } catch (error) {
+    console.error("Error in 2FA setup:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
