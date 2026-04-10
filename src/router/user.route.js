@@ -14,7 +14,7 @@ router.post("/2fa", userController.twoFactorAuth);
 
 router.post("/verify-2fa", userController.verifyTwoFactorAuth);
 
-router.post("validate-2fa", userController.validateTwoFactorAuth);
+router.post("/validate-2fa", userController.validateTwoFactorAuth);
 
 // Protected route example with ABAC and RBAC
 router.get(
