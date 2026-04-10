@@ -1,0 +1,89 @@
+@startuml HU01 - Administrador registra empleado
+
+actor navegador
+boundary employee.routes
+boundary "React (EmployeeForm.jsx)" as ReactView
+control employee.controller
+entity employee
+database PostgreSQL
+
+autonumber
+
+navegador -> employee.routes : GET /employee/add
+activate employee.routes
+
+employee.routes -> employee.controller: getAdd(request, response)
+deactivate employee.routes
+activate employee.controller
+
+employee.controller -> ReactView: response.send(App React)
+deactivate employee.controller
+activate ReactView
+
+ReactView -> navegador : Mostrar formulario para agregar empleado
+activate navegador
+
+navegador -> ReactView : Ingresa datos obligatorios\n(houseid, roleid, name, surname, email)
+
+alt Ingresar datos opcionales
+    navegador -> ReactView : Ingresa datos opcionales\n(curp, rfc, nss, bank_account, birthdate, picture)
+else No
+    ReactView -> ReactView : Continúa sin opcionales
+end
+
+ReactView -> ReactView : Validar campos obligatorios
+
+alt Campos incompletos
+    ReactView -> navegador : Mostrar error "Campos obligatorios faltantes"
+    deactivate ReactView
+else Campos completos
+
+    navegador -> employee.routes : POST /employee
+    deactivate navegador
+    activate employee.routes
+
+    employee.routes -> employee.controller : postAdd(request, response)
+    deactivate employee.routes
+    activate employee.controller
+
+    employee.controller -> PostgreSQL : SELECT * FROM employee WHERE email = ?
+    activate PostgreSQL
+    PostgreSQL -->> employee.controller : Resultado
+    deactivate PostgreSQL
+
+    alt Usuario ya existe
+        employee.controller -> ReactView : Respuesta: Usuario ya existente + employeeid
+        activate ReactView
+
+        ReactView -> navegador : Mostrar alerta "Usuario ya existe"
+        ReactView -> navegador : Redirigir a /employee/{employeeid}
+        deactivate ReactView
+        
+    else Usuario no existe
+        
+        create employee
+        employee.controller -> employee : create({\n employeeid,\n houseid,\n roleid,\n name,\n surname,\n isactive,\n email,\n password,\n hasfirstlogin,\n totpsecret,\n curp,\n rfc,\n nss,\n bank_account,\n birthdate,\n picture,\n startdate\n})
+        activate employee
+
+        employee.controller ->> employee : create()
+        
+        employee ->> PostgreSQL : INSERT INTO employee(\nemployeeid,\nhouseid,\nroleid,\nname,\nsurname,\nisactive,\nemail,\npassword,\nhasfirstlogin,\ntotpsecret,\ncurp,\nrfc,\nnss,\nbank_account,\nbirthdate,\npicture,\nstartdate)\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+        activate PostgreSQL
+        PostgreSQL -->> employee : Insert OK
+        deactivate PostgreSQL
+
+        employee -->> employee.controller : Promesa
+        deactivate employee
+        
+        employee.controller -> ReactView : Respuesta: Usuario creado con éxito + employeeid
+        deactivate employee.controller
+        activate ReactView
+        
+        ReactView -> navegador : Redirigir a /employee/{employeeid}
+        deactivate ReactView
+
+    end
+end
+
+@enduml
