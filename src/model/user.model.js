@@ -1,55 +1,163 @@
 const pool = require("../db");
 
-const user = {
-  id: 1,
-  // username: "manuel",
-  email: "manuel@gmail.com",
-  password: "123",
-  role: "admin",
-  privileges: ["read_profile"],
-  tempSecret: {
-    base32: "JBSWY3DPEHPK3PXP",
-  },
-  secret: null,
-};
+// const user = {
+//   id: 1,
+//   // username: "manuel",
+//   email: "manuel@gmail.com",
+//   password: "123",
+//   role: "admin",
+//   privileges: ["read_profile"],
+//   tempSecret: {
+//     base32: "JBSWY3DPEHPK3PXP",
+//   },
+//   secret: null,
+// };
 
-const adminUser = {
-  _id: "admin1",
-  role: "admin",
-  password: "123",
-};
+// const adminUser = {
+//   _id: "admin1",
+//   role: "admin",
+//   password: "123",
+// };
 
-const coordinatorAllowed = {
-  _id: "coord1",
-  role: "coordinator",
-  password: "123",
-};
+// const coordinatorAllowed = {
+//   _id: "coord1",
+//   role: "coordinator",
+//   password: "123",
+// };
 
-const coordinatorDenied = {
-  _id: "coord2",
-  role: "coordinator",
-  password: "123",
-};
+// const coordinatorDenied = {
+//   _id: "coord2",
+//   role: "coordinator",
+//   password: "123",
+// };
 
-const resource = {
-  coordinators: ["coord1", "coord3"],
-};
+// const resource = {
+//   coordinators: ["coord1", "coord3"],
+// };
 
 /**
  * @param {string} email
  * @returns {Promise<{ employeeid: string, email: string, pwd: string, name: string, role: string } | undefined>}
  */
-async function findActiveEmployeeByEmail(email) {
+async function findEmployeeByEmail(email) {
   const { rows } = await pool.query(
-    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, r."Name" AS role
-     FROM public.employee e
-     INNER JOIN public.role r ON r.roleid = e.roleid
-     WHERE LOWER(TRIM(e.email)) = LOWER(TRIM($1)) AND e.isactive = true`,
+    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, r."Name" AS role, e.isactive, e.hasfirstlogin, e.totpsecret, e.roleid, e.failedloginattempts, e.blockeduntil, e.temptotpsecret
+    FROM public.employee e
+    INNER JOIN public.role r ON r.roleid = e.roleid
+    WHERE LOWER(TRIM(e.email)) = LOWER(TRIM($1))`,
     [email],
   );
   return rows[0];
 }
 
-module.exports = Object.assign(user, {
-  findActiveEmployeeByEmail,
-});
+async function getEmployeeById(employeeid) {
+  const { rows } = await pool.query(
+    `SELECT e.employeeid, e.email, e."Name" AS name, e.roleid, r."Name" AS role, e.isactive, e.hasfirstlogin, e.totpsecret, e.temptotpsecret, e.failedloginattempts, e.blockeduntil 
+    FROM public.employee e
+    INNER JOIN public.role r ON r.roleid = e.roleid
+    WHERE e.employeeid = $1`,
+    [employeeid],
+  );
+  return rows[0];
+}
+
+async function updatePassword(employeeid, newPassword) {
+  await pool.query(
+    `UPDATE public.employee SET "Password" = $1 WHERE employeeid = $2`,
+    [newPassword, employeeid],
+  );
+}
+
+async function setFirstLogin(employeeid, hasFirstLogin) {
+  await pool.query(
+    `UPDATE public.employee SET hasfirstlogin = $1 WHERE employeeid = $2`,
+    [hasFirstLogin, employeeid],
+  );
+}
+
+async function incrementFailedAttempts(employeeid) {
+  const {rows} = await pool.query(
+    `UPDATE public.employee SET failedloginattempts = COALESCE(failedloginattempts, 0) + 1 WHERE employeeid = $1
+    RETURNING failedloginattempts`,
+    [employeeid],
+  );
+  return rows[0]?.failedloginattempts ?? 0;
+}
+
+async function resetFailedAttempts(employeeid) {
+  await pool.query(
+    `UPDATE public.employee SET failedloginattempts = 0 WHERE employeeid = $1`,
+    [employeeid],
+  );
+}
+
+async function setBlockedUntil(employeeid, blockedUntil) {
+  const { rows } = await pool.query(
+    `UPDATE public.employee SET blockeduntil = $1 WHERE employeeid = $2
+    RETURNING employeeid, blockeduntil`,
+    [blockedUntil, employeeid],
+  );
+  return rows[0];
+}
+
+async function clearBlockedUntil(employeeid) {
+  const { rows } = await pool.query(
+    `UPDATE public.employee SET blockeduntil = NULL WHERE employeeid = $1
+    RETURNING employeeid, blockeduntil`,
+    [employeeid],
+  );
+  return rows[0];
+}
+
+async function clearLoginSecurityState(employeeid) {
+  await pool.query(
+    `UPDATE public.employee SET failedloginattempts = 0, blockeduntil = NULL WHERE employeeid = $1`,
+    [employeeid],
+  );
+}
+
+// temporal porque solo funciona cuando employee existe
+async function createLog(employeeid, description) {
+  await pool.query(
+    `INSERT INTO public.logs (logid, employeeid, moment, description)
+    VALUES (gen_random_uuid(), $1, NOW(), $2)`,
+    [employeeid, description],
+  );
+}
+
+async function saveTempTotpSecret(employeeid, secret) {
+  await pool.query(
+    `UPDATE public.employee SET temptotpsecret = $1 WHERE employeeid = $2`,
+    [secret, employeeid],
+  );
+}
+
+async function clearTempTotpSecret(employeeid) {
+  await pool.query(
+    `UPDATE public.employee SET temptotpsecret = NULL WHERE employeeid = $1`,
+    [employeeid],
+  );
+}
+
+async function activateTempTotpSecret(employeeid) {
+  await pool.query(
+    `UPDATE public.employee SET totpsecret = temptotpsecret, temptotpsecret = NULL WHERE employeeid = $1`,
+    [employeeid],
+  );
+}
+
+module.exports = {
+  findEmployeeByEmail,
+  updatePassword,
+  setFirstLogin,
+  incrementFailedAttempts,
+  resetFailedAttempts,
+  setBlockedUntil,
+  clearLoginSecurityState,
+  getEmployeeById,
+  saveTempTotpSecret,
+  createLog,
+  clearTempTotpSecret,
+  activateTempTotpSecret,
+  clearBlockedUntil,
+};
