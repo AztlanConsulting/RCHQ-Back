@@ -4,37 +4,125 @@ const QRCode = require("qrcode");
 const { generateToken } = require("../utils/jwt");
 const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
+const {verifyPassword} = require("../utils/password");
 
 exports.loginFunction = async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("Login attempt:", email, password);
-
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password required" });
+    return res.status(400).json({ success: false, message: "Email and password required" });
   }
 
   try {
-    const row = await User.findActiveEmployeeByEmail(email);
-    if (!row || row.pwd !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
+    const employee = await User.findEmployeeByEmail(email);
+
+    // Empleado no existe
+    if (!employee) {
+      return res.status(401).json({success: false, message: "Invalid credentials",});
     }
 
-    const user = {
-      id: row.employeeid,
-      email: row.email,
-      name: row.name,
-      role: row.role,
+    // Empleado inactivo
+    if (!employee.isactive) {
+      await User.createLog(
+        employee.employeeid, "Intento de acceso denegado: usuario inactivo",
+      );
+
+      return res.status(403).json({
+        success:false, message: "Access not allowed",
+      });
+    }
+
+    // Cuenta bloqueada temporalmente
+    if (employee.blockeduntil && new Date(employee.blockeduntil) > new Date()) {
+      return res.status(423).json({
+        success: false, message: "Account temporarily blocked", nextStep: "WAIT_BLOCK", blockedUntil: employee.blockeduntil,
+      });
+    }
+
+    // Limpiar bloqueo cuando expire
+    if (employee.blockeduntil && new Date(employee.blockeduntil) <= new Date()) {
+      await User.clearBlockedUntil(employee.employeeid);
+    }
+
+    // Contraseña incorrecta
+    const passwordMatches = await verifyPassword(password, employee.pwd);
+
+    if (!passwordMatches) {
+      const attempts = await User.incrementFailedAttempts(employee.employeeid);
+
+      await User.createLog(employee.employeeid, "Intento fallido de autenticación",);
+
+      if (attempts >=3) {
+        const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
+        await User.setBlockedUntil(employee.employeeid, blockedUntil);
+
+        await User.createLog(employee.employeeid, "Cuenta bloqueada temporalmente por múltiples intentos fallidos",);
+
+        return res.status(423).json({
+          success: false, message: "Account temporarily blocked", nextStep: "WAIT_BLOCK", blockedUntil,
+        });
+      }
+
+      return res.status(401).json({success: false, message: "Invalid credentials"});
+    }
+
+    // Limpiar intentos y bloqueo si la contraseña es correcta
+    await User.clearLoginSecurityState(employee.employeeid);
+
+    const userPayload = {
+      id: employee.employeeid,
+      email: employee.email,
+      name: employee.name,
+      role: employee.role,
       privileges: ["read_profile"],
     };
 
-    res.status(200).json({
-      message: "Login successful",
-      token: generateToken(user),
+    // Primer login
+    if (employee.hasfirstlogin) {
+      await User.createLog(employee.employeeid, "Primer inicio de sesión exitoso",);
+
+      return res.status(200).json({
+        success: true, message: "First login, password change required", nextStep: "CHANGE_PASSWORD",
+        data: {
+          employeeId: employee.employeeid,
+          email: employee.email,
+          name: employee.name,
+          role: employee.role,
+        },
+      });
+    }
+
+    // Usuario ya tiene 2fa activado
+    if (employee.totpsecret) {
+      return res.status(200).json({
+        success:true, message: "2FA required", nextStep: "VALIDATE_2FA",
+        data: {
+          employeeId: employee.employeeid,
+          email: employee.email,
+        },
+      });
+    }
+
+    // Login completo sin 2fa
+    const token = generateToken(userPayload);
+
+    await User.createLog(employee.employeeid, "Inicio de sesión exitoso");
+
+    return res.status(200).json({
+      success: true, message: "Login successful", nextStep: "LOGIN_COMPLETE", token, remind2FA: true,
+      data: {
+        employeeId: employee.employeeid,
+        email: employee.email,
+        name: employee.name,
+        role: employee.role,
+      },
     });
+
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false, message: "Internal Server Error"
+    });
   }
 };
 
