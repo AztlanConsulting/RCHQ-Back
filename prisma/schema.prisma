@@ -8,9 +8,26 @@ datasource db {
 }
 
 model documents {
-  documentid        String              @id(map: "documents_pk") @db.Uuid
-  Name              String              @db.VarChar
-  employeedocuments employeedocuments[] @ignore
+  documentid                          String              @id(map: "documents_pk") @db.Uuid
+  cv                                  String?             @db.VarChar
+  birth_certificate                   String?             @db.VarChar
+  tax_status_certificate              String?             @db.VarChar
+  address_certificate                 String?             @db.VarChar
+  nss                                 String?             @db.VarChar
+  profesional_id                      String?             @db.VarChar
+  education_certificate               String?             @db.VarChar
+  medical_certificate                 String?             @db.VarChar
+  state_criminal_record_certificate   String?             @db.VarChar
+  federal_criminal_record_certificate String?             @db.VarChar
+  first_recommendation_letter         String?             @db.VarChar
+  second_recommendation_letter        String?             @db.VarChar
+  driver_license                      String?             @db.VarChar
+  signed_regulation                   String?             @db.VarChar
+  signed_contract                     String?             @db.VarChar
+  signed_confidential_letter          String?             @db.VarChar
+  signed_ethics_letter                String?             @db.VarChar
+  induction_manual                    String?             @db.VarChar
+  employeedocuments                   employeedocuments[] @ignore
 }
 
 model donation {
@@ -44,15 +61,17 @@ model employee {
   roleid                      String                        @db.Uuid
   Name                        String                        @db.VarChar
   surname                     String                        @db.VarChar
-  isactive                    Boolean
+  isactive                    Boolean?
   email                       String                        @db.VarChar
   Password                    String                        @db.VarChar
   hasfirstlogin               Boolean
   totpsecret                  String?                       @db.VarChar
-  curp                        String                        @db.VarChar
-  birthdate                   DateTime                      @db.Date
-  picture                     String                        @db.VarChar
+  curp                        String?                       @db.VarChar
+  birthdate                   DateTime?                     @db.Date
+  picture                     String?                       @db.VarChar
   startdate                   DateTime                      @db.Date
+  nss                         String?                       @db.VarChar(11)
+  bank_account                String?                       @db.VarChar(18)
   house                       house                         @relation(fields: [houseid], references: [houseid], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                        role                          @relation(fields: [roleid], references: [roleid], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employeeaddress             employeeaddress[]
@@ -210,6 +229,7 @@ model logs {
   employeeid  String   @db.Uuid
   moment      DateTime @db.Timestamp(6)
   description String   @db.VarChar
+  ip_address  String   @db.VarChar(15)
   employee    employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "logs_employee_fk")
 }
 
@@ -232,13 +252,6 @@ model personalevent {
   eventtype             eventtype               @relation(fields: [eventtypeid], references: [eventtypeid], onDelete: NoAction, onUpdate: NoAction, map: "personalevent_eventtype_fk")
 }
 
-model privilege {
-  privilegeid   String          @id(map: "privilege_pk") @db.Uuid
-  NAME          String          @db.VarChar
-  Description   String          @db.VarChar
-  roleprivilege roleprivilege[] @ignore
-}
-
 model psychologicalevaluation {
   psychologicalevaluationid String   @id(map: "psychologicalevaluation_pk") @db.Uuid
   employeeid                String   @db.Uuid
@@ -247,20 +260,9 @@ model psychologicalevaluation {
 }
 
 model role {
-  roleid        String          @id(map: "role_pk") @db.Uuid
-  Name          String          @db.VarChar
-  employee      employee[]
-  roleprivilege roleprivilege[] @ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model roleprivilege {
-  roleid      String    @db.Uuid
-  privilegeid String    @db.Uuid
-  privilege   privilege @relation(fields: [privilegeid], references: [privilegeid], onDelete: NoAction, onUpdate: NoAction, map: "roleprivilege_privilege_fk")
-  role        role      @relation(fields: [roleid], references: [roleid], onDelete: NoAction, onUpdate: NoAction, map: "roleprivilege_role_fk")
-
-  @@ignore
+  roleid   String     @id(map: "role_pk") @db.Uuid
+  Name     String     @db.VarChar
+  employee employee[]
 }
 
 model vacationsrequest {
