@@ -4,7 +4,7 @@ const QRCode = require("qrcode");
 const { generateToken } = require("../utils/jwt");
 const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
-const {verifyPassword} = require("../utils/password");
+const {verifyPassword, hashPassword} = require("../utils/password");
 
 exports.loginFunction = async (req, res) => {
   const { email, password } = req.body || {};
@@ -124,6 +124,81 @@ exports.loginFunction = async (req, res) => {
     return res.status(500).json({
       success: false, message: "Internal Server Error"
     });
+  }
+};
+
+exports.changePasswordFirstLogin = async (req, res) => {
+  const {employeeId, newPassword, confirmPassword} = req.body || {};
+  const ipAddress = req.ip;
+
+  if (!employeeId || !newPassword || !confirmPassword) {
+    return res.status(400).json({success: false, message: "employeeId, newPassword and confirmPassword are required",});
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({success: false, message: "Passwords do not match"});
+  }
+
+  // Cuando 2fa está implementado, OWASP recomienda un mínimo de 8 chars
+  if (newPassword.length < 8 || newPassword.length > 70) {
+    return res.status(400).json({success: false, message: "Password must be between 8 and 70 characters long"});
+  }
+
+  try {
+    const employee = await User.getEmployeeById(employeeId);
+
+    if (!employee) {
+      return res.status(404).json({success: false, message: "Employee not found"});
+    }
+
+    if (!employee.isactive) {
+      await User.createLog(employee.employeeid, "Intento de cambio de contraseña en primer acceso para usuario inactivo", ipAddress,);
+
+      return res.status(403).json({success: false, message: "Access not allowed",});
+      }
+    
+    if (!employee.hasfirstlogin) {
+      return res.status(409).json({success: false, message: "First login password change is no longer required",});
+    }
+
+    const isSamePassword = await verifyPassword(newPassword, employee.pwd);
+
+    if (isSamePassword) {
+      return res.status(400).json({ success: false, message: "New password must be different from current password" });
+    }
+    
+    const hashedPassword = await hashPassword(newPassword);
+
+    await User.updatePassword(employee.employeeid, hashedPassword);
+    await User.setFirstLogin(employee.employeeid, false);
+
+    await User.createLog(employee.employeeid, "Cambio de contraseña en primer acceso", ipAddress);
+
+    const userPayload = {
+      id: employee.employeeid,
+      email: employee.email,
+      name: employee.name,
+      role: employee.role,
+      privileges: ["read_profile"]
+    };
+
+    const token = generateToken(userPayload);
+
+    await User.createLog(employee.employeeid, "Inicio de sesión completado después de cambio de contraseña en primer acceso", ipAddress);
+
+    return res.status(200).json({
+      success: true, message: "Password changed successfully", nextStep: "SETUP_2FA_OPTIONAL", token,
+      data: {
+        employeeId: employee.employeeid,
+        email: employee.email,
+        name: employee.name,
+        role: employee.role,
+        shouldPrompt2FASetup: true
+      },
+    });
+  } catch (err) {
+    console.error("First login password change error:", err);
+    return res.status(500).json({success: false, message: "Internal Server Error"});
   }
 };
 

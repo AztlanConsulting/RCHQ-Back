@@ -9,6 +9,7 @@ const { adminPolicy } = require("../policies/user.policies");
 const router = express.Router();
 
 router.post("/login", userController.loginFunction);
+router.post("/first-login/change-password", userController.changePasswordFirstLogin);
 
 router.post("/2fa", userController.twoFactorAuth);
 

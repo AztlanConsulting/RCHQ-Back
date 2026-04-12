@@ -52,7 +52,7 @@ async function findEmployeeByEmail(email) {
 
 async function getEmployeeById(employeeid) {
   const { rows } = await pool.query(
-    `SELECT e.employeeid, e.email, e."Name" AS name, e.roleid, r."Name" AS role, e.isactive, e.hasfirstlogin, e.totpsecret, e.temptotpsecret, e.failedloginattempts, e.blockeduntil 
+    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, e.roleid, r."Name" AS role, e.isactive, e.hasfirstlogin, e.totpsecret, e.temptotpsecret, e.failedloginattempts, e.blockeduntil 
     FROM public.employee e
     INNER JOIN public.role r ON r.roleid = e.roleid
     WHERE e.employeeid = $1`,
