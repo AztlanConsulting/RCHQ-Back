@@ -57,6 +57,23 @@ exports.getProfile = (req, res) => {
   });
 };
 
+exports.activate2FA = async (req, res) => {
+  if (!req.body) {
+    return res.status(400).json({ message: "Bad Request" });
+  }
+  const { id } = req.body;
+  try {
+    const active2FA = await User.active2FA(id);
+    if (!active2FA) {
+      return res.status(500).json({ message: "Failed to activate 2FA" });
+    }
+    return res.status(200).json({ message: "2FA activated successfully" });
+  }catch (error) {
+    console.error("Error activating 2FA:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 exports.twoFactorAuth = async (req, res) => {
   if (!req.body) {
     return res.status(400).json({ message: "Bad Request" });
@@ -64,16 +81,27 @@ exports.twoFactorAuth = async (req, res) => {
 
   try {
     const { id } = req.body;
-    const tempSecret = speakeasy.generateSecret();
-    // Store tempSecret in database associated with the userId for later verification
+    const user = await User.findActiveEmployeeById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    const qrlImage = await QRCode.toDataURL(tempSecret.otpauth_url);
+    const tempSecret = speakeasy.generateSecret({
+      name: `RCHQ:${user.email}`,
+      issuer: 'RCHQ',
+    });
+
+    // Store tempSecret in database associated with the userId for later verification
+    await User.saveTempSecret(id, tempSecret.base32);
+
+    const qrImage = await QRCode.toDataURL(tempSecret.otpauth_url);
+
+    if (!qrImage) {
+      return res.status(500).json({ message: "Failed to generate QR code" });
+    };
 
     res.json({
-      id: id,
-      secret: tempSecret.base32,
-      otpauth_url: tempSecret.otpauth_url,
-      qrlImage: qrlImage,
+      qrImage: qrImage,
     });
   } catch (error) {
     console.error("Error in 2FA setup:", error);
@@ -81,60 +109,34 @@ exports.twoFactorAuth = async (req, res) => {
   }
 };
 
-exports.verifyTwoFactorAuth = (req, res) => {
+exports.verifyTwoFactorAuth = async (req, res) => {
   if (!req.body) {
     return res.status(400).json({ message: "Bad Request" });
   }
 
-  const { token, userId } = req.body;
-
+  const { token, id } = req.body;
+  console.log("Verifying 2FA for user ID:", id, "with token:", token);
   try {
-    const user = User; //get user from database using userId
+    const user = await User.findActiveEmployeeById(id); 
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    };
     //get user's temp secret from database using userId
-    const { base32: secret } = user.tempSecret;
+    const secret = user.totpsecret;
     let verified = speakeasy.totp.verify({
-      secret: secret,
-      encoding: "base32",
-      token: token,
-    });
-
-    if (verified) {
-      // save secret as permanent for the user in database and delete temp secret
-      user.secret = user.tempSecret;
-      res.json({ verified: true, message: "2FA verification successful" });
-    } else {
-      res.status(401).json({ verified: false, message: "Invalid 2FA token" });
-    }
-  } catch (error) {
-    console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-exports.validateTwoFactorAuth = (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
-  }
-
-  const { token, userId } = req.body;
-
-  try {
-    const user = User; //get user from database using userId
-
-    //get user's temp secret from database using userId
-    const { base32: secret } = user.secret;
-    let tokenValidate = speakeasy.totp.verify({
       secret: secret,
       encoding: "base32",
       token: token,
       window: 1, // allow a window of 1 time step before and after to account for clock drift
     });
 
-    if (tokenValidate) {
-      res.json({ validated: true, message: "2FA verification successful" });
+    if (verified) {
+      // Activate 2FA for the user
+      await User.active2FA(id);
+      res.status(200).json({ verified: true, message: "2FA verification successful" });
     } else {
-      res.status(401).json({ validated: false, message: "Invalid 2FA token" });
+      res.status(401).json({ verified: false, message: "Invalid 2FA token" });
     }
   } catch (error) {
     console.error("Error in 2FA setup:", error);

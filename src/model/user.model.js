@@ -1,4 +1,7 @@
 const pool = require("../db");
+const { PrismaClient } = require('@prisma/client');
+
+const primsa = new PrismaClient();
 
 const user = {
   id: 1,
@@ -13,27 +16,6 @@ const user = {
   secret: null,
 };
 
-const adminUser = {
-  _id: "admin1",
-  role: "admin",
-  password: "123",
-};
-
-const coordinatorAllowed = {
-  _id: "coord1",
-  role: "coordinator",
-  password: "123",
-};
-
-const coordinatorDenied = {
-  _id: "coord2",
-  role: "coordinator",
-  password: "123",
-};
-
-const resource = {
-  coordinators: ["coord1", "coord3"],
-};
 
 /**
  * @param {string} email
@@ -50,6 +32,35 @@ async function findActiveEmployeeByEmail(email) {
   return rows[0];
 }
 
+const active2FA = async (id) => {
+  const active2FA = await primsa.employee.update({
+    where: { employeeid: id },
+    data: { hasfirstlogin: true },
+  });
+  return active2FA;
+};
+
+const saveTempSecret = async (id, tempSecret) => {
+  const saveTempSecret = await primsa.employee.update({
+    where: { employeeid: id },
+    data: { totpsecret: tempSecret },
+  });
+  if (!saveTempSecret) {
+    throw new Error("Failed to save temp secret");
+  }
+};
+
+const findActiveEmployeeById = async (id) => {
+  const user = await primsa.employee.findUnique({
+    where: { employeeid: id, isactive: true },
+    select: { employeeid: true, email: true, Name: true, totpsecret: true },
+  });
+  return user;
+};
+
 module.exports = Object.assign(user, {
   findActiveEmployeeByEmail,
+  active2FA,
+  saveTempSecret,
+  findActiveEmployeeById,
 });

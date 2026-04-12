@@ -1,57 +1,215 @@
--- Minimal seed: one house, one role, one employee (FK order: house + role, then employee).
--- Login: dev@example.com / 123
--- Re-run safe: deletes seed rows by fixed IDs then inserts (dev only).
+-- =========================
+-- EXTENSION UUID
+-- =========================
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-BEGIN;
+-- =========================
+-- CATÁLOGOS
+-- =========================
 
-DELETE FROM public.employee WHERE employeeid = 'a0000003-0000-4000-8000-000000000003';
-DELETE FROM public.house WHERE houseid = 'a0000001-0000-4000-8000-000000000001';
-DELETE FROM public.role WHERE roleid = 'a0000002-0000-4000-8000-000000000002';
+INSERT INTO donationtype VALUES
+(gen_random_uuid(), 'Alimentos'),
+(gen_random_uuid(), 'Ropa');
 
-INSERT INTO public.house (houseid, "Name", "Location", phonenumber, description, image)
-VALUES (
-  'a0000001-0000-4000-8000-000000000001',
-  'Desarrollo',
-  'Tec de Monterrey',
-  '4424792232',
-  'Casa de desarrollo',
-  'boop'
-);
+INSERT INTO donator VALUES
+(gen_random_uuid(), 'Juan Donador'),
+(gen_random_uuid(), 'Empresa XYZ');
 
-INSERT INTO public.role (roleid, "Name")
-VALUES ('a0000002-0000-4000-8000-000000000002', 'admin');
+INSERT INTO workday VALUES
+(gen_random_uuid(), 'Lunes'),
+(gen_random_uuid(), 'Martes');
 
-INSERT INTO public.employee (
-  employeeid,
-  houseid,
-  roleid,
-  "Name",
-  surname,
-  isactive,
-  email,
-  "Password",
-  hasfirstlogin,
-  totpsecret,
-  curp,
-  birthdate,
-  picture,
-  startdate
+INSERT INTO role VALUES
+(gen_random_uuid(), 'Admin'),
+(gen_random_uuid(), 'Empleado');
+
+INSERT INTO eventtype VALUES
+(gen_random_uuid(), 'Reunión'),
+(gen_random_uuid(), 'Capacitación');
+
+INSERT INTO insidecertifications VALUES
+(gen_random_uuid(), 'Primeros Auxilios', 'Curso básico');
+
+-- =========================
+-- HOUSE
+-- =========================
+
+INSERT INTO house VALUES
+(gen_random_uuid(), 'Casa Hogar Qro', 'Querétaro', '4421234567', 'Casa principal', 'img.jpg');
+
+-- =========================
+-- EMPLOYEE
+-- =========================
+
+INSERT INTO employee (
+  employeeid, houseid, roleid, "Name", surname,
+  isactive, email, "Password", hasfirstlogin,
+  totpsecret, curp, birthdate, picture,
+  startdate, nss, bank_account
 )
 VALUES (
-  'a0000003-0000-4000-8000-000000000003',
-  'a0000001-0000-4000-8000-000000000001',
-  'a0000002-0000-4000-8000-000000000002',
-  'Andre',
-  'Agle',
+  gen_random_uuid(),
+  (SELECT houseid FROM house LIMIT 1),
+  (SELECT roleid FROM role LIMIT 1),
+  'Carlos',
+  'Ramírez',
   true,
-  'andre@gmail.com',
-  'andatti',
+  'carlos@test.com',
+  'hashed_pass',
   true,
   NULL,
-  'XAXX010101HDFXXX01',
-  '2003-10-04',
-  'boop',
-  '2026-04-09'
+  'RAMC900101HDFXXX01',
+  '1990-01-01',
+  'foto.jpg',
+  CURRENT_DATE,
+  '12345678901',
+  '123456789012345678'
 );
 
-COMMIT;
+-- =========================
+-- DONATION
+-- =========================
+
+INSERT INTO donation VALUES (
+  gen_random_uuid(),
+  (SELECT donatorid FROM donator LIMIT 1),
+  (SELECT donationtypeid FROM donationtype LIMIT 1),
+  CURRENT_DATE,
+  'Arroz',
+  50,
+  'kg'
+);
+
+-- =========================
+-- FAULT
+-- =========================
+
+INSERT INTO fault VALUES (
+  gen_random_uuid(),
+  CURRENT_DATE,
+  'Llegada tarde'
+);
+
+INSERT INTO employeefault VALUES (
+  (SELECT faultid FROM fault LIMIT 1),
+  (SELECT employeeid FROM employee LIMIT 1)
+);
+
+-- =========================
+-- WORKDAY REL
+-- =========================
+
+INSERT INTO employeeworkday VALUES (
+  (SELECT workdayid FROM workday LIMIT 1),
+  (SELECT employeeid FROM employee LIMIT 1),
+  '08:00',
+  '17:00'
+);
+
+-- =========================
+-- ADDRESS
+-- =========================
+
+INSERT INTO employeeaddress VALUES (
+  gen_random_uuid(),
+  (SELECT employeeid FROM employee LIMIT 1),
+  'https://maps.google.com',
+  NOW()
+);
+
+-- =========================
+-- LOGS
+-- =========================
+
+INSERT INTO logs VALUES (
+  gen_random_uuid(),
+  (SELECT employeeid FROM employee LIMIT 1),
+  NOW(),
+  'Login exitoso',
+  '127.0.0.1'
+);
+
+-- =========================
+-- BACKUP CODES
+-- =========================
+
+INSERT INTO employeebackupcode VALUES (
+  gen_random_uuid(),
+  (SELECT employeeid FROM employee LIMIT 1),
+  'ABC123'
+);
+
+-- =========================
+-- DOCUMENTS
+-- =========================
+
+INSERT INTO documents (
+  documentid, cv, birth_certificate
+)
+VALUES (
+  gen_random_uuid(),
+  'cv.pdf',
+  'birth.pdf'
+);
+
+INSERT INTO employeedocuments VALUES (
+  (SELECT documentid FROM documents LIMIT 1),
+  (SELECT employeeid FROM employee LIMIT 1),
+  'url_doc'
+);
+
+-- =========================
+-- CERTIFICATIONS
+-- =========================
+
+INSERT INTO employeeinsidecertification VALUES (
+  (SELECT insidecertificationid FROM insidecertifications LIMIT 1),
+  (SELECT employeeid FROM employee LIMIT 1),
+  CURRENT_DATE
+);
+
+-- =========================
+-- EVENTS
+-- =========================
+
+INSERT INTO personalevent VALUES (
+  gen_random_uuid(),
+  (SELECT eventtypeid FROM eventtype LIMIT 1),
+  NOW(),
+  NOW() + interval '2 hours',
+  'Evento personal',
+  'Descripción'
+);
+
+INSERT INTO employeepersonalevent VALUES (
+  (SELECT personaleventid FROM personalevent LIMIT 1),
+  (SELECT employeeid FROM employee LIMIT 1)
+);
+
+-- =========================
+-- GLOBAL EVENT
+-- =========================
+
+INSERT INTO globalevent VALUES (
+  gen_random_uuid(),
+  (SELECT eventtypeid FROM eventtype LIMIT 1),
+  CURRENT_DATE,
+  '09:00',
+  '18:00',
+  'Día especial',
+  'Evento global',
+  false
+);
+
+-- =========================
+-- VACATIONS
+-- =========================
+
+INSERT INTO vacationsrequest VALUES (
+  gen_random_uuid(),
+  (SELECT employeeid FROM employee LIMIT 1),
+  CURRENT_DATE,
+  CURRENT_DATE + interval '5 days',
+  1,
+  'Aprobado'
+);
