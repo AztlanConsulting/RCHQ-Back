@@ -7,7 +7,8 @@ const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword} = require("../utils/password");
 
 exports.loginFunction = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
+  const ipAddress = req.ip;
 
   if (!email || !password) {
     return res.status(400).json({ success: false, message: "Email and password required" });
@@ -24,7 +25,7 @@ exports.loginFunction = async (req, res) => {
     // Empleado inactivo
     if (!employee.isactive) {
       await User.createLog(
-        employee.employeeid, "Intento de acceso denegado: usuario inactivo",
+        employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress,
       );
 
       return res.status(403).json({
@@ -50,13 +51,13 @@ exports.loginFunction = async (req, res) => {
     if (!passwordMatches) {
       const attempts = await User.incrementFailedAttempts(employee.employeeid);
 
-      await User.createLog(employee.employeeid, "Intento fallido de autenticación",);
+      await User.createLog(employee.employeeid, "Intento fallido de autenticación", ipAddress);
 
       if (attempts >=3) {
         const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
         await User.setBlockedUntil(employee.employeeid, blockedUntil);
 
-        await User.createLog(employee.employeeid, "Cuenta bloqueada temporalmente por múltiples intentos fallidos",);
+        await User.createLog(employee.employeeid, "Cuenta bloqueada temporalmente por múltiples intentos fallidos", ipAddress);
 
         return res.status(423).json({
           success: false, message: "Account temporarily blocked", nextStep: "WAIT_BLOCK", blockedUntil,
@@ -79,7 +80,7 @@ exports.loginFunction = async (req, res) => {
 
     // Primer login
     if (employee.hasfirstlogin) {
-      await User.createLog(employee.employeeid, "Primer inicio de sesión exitoso",);
+      await User.createLog(employee.employeeid, "Primer acceso validado, pendiente cambio de contraseña", ipAddress);
 
       return res.status(200).json({
         success: true, message: "First login, password change required", nextStep: "CHANGE_PASSWORD",
@@ -106,7 +107,7 @@ exports.loginFunction = async (req, res) => {
     // Login completo sin 2fa
     const token = generateToken(userPayload);
 
-    await User.createLog(employee.employeeid, "Inicio de sesión exitoso");
+    await User.createLog(employee.employeeid, "Inicio de sesión exitoso", ipAddress);
 
     return res.status(200).json({
       success: true, message: "Login successful", nextStep: "LOGIN_COMPLETE", token, remind2FA: true,

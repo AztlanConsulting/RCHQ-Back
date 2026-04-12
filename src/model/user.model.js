@@ -117,11 +117,11 @@ async function clearLoginSecurityState(employeeid) {
 }
 
 // temporal porque solo funciona cuando employee existe
-async function createLog(employeeid, description) {
+async function createLog(employeeid, description, ipAddress) {
   await pool.query(
-    `INSERT INTO public.logs (logid, employeeid, moment, description)
-    VALUES (gen_random_uuid(), $1, NOW(), $2)`,
-    [employeeid, description],
+    `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
+    VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
+    [employeeid, description, ipAddress],
   );
 }
 
