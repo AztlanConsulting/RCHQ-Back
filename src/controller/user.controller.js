@@ -221,87 +221,167 @@ exports.getProfile = (req, res) => {
   });
 };
 
-exports.twoFactorAuth = async (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
+exports.setupTwoFactorAuth = async (req, res) => {
+  const {employeeId} = req.body || {};
+  const ipAddress = req.ip;
+  
+  if (!employeeId) {
+    return res.status(400).json({ success:false, message: "employeeID is required" });
   }
 
   try {
-    const { id } = req.body;
-    const tempSecret = speakeasy.generateSecret();
+    const employee = await User.getEmployeeById(employeeId);
+
+    if (!employee) {
+      return res.status(404).json({success: false, message: "Employee not found"});
+    }
+
+    if (!employee.isactive) {
+      await User.createLog(employee.employeeid, "Intento de configuración de 2FA para usuario inactivo", ipAddress); 
+      return res.status(403).json({success: false, message: "Access not allowed"});
+  }
+
+    const tempSecret = speakeasy.generateSecret({
+      name: `RCHQ (${employee.email})`,
+      issuer: "RCHQ",
+      length: 20
+    });
+    
     // Store tempSecret in database associated with the userId for later verification
+    await User.saveTempTotpSecret(employee.employeeid, tempSecret.base32);
+    
+    const qrImage = await QRCode.toDataURL(tempSecret.otpauth_url);
 
-    const qrlImage = await QRCode.toDataURL(tempSecret.otpauth_url);
-
-    res.json({
-      id: id,
-      secret: tempSecret.base32,
-      otpauth_url: tempSecret.otpauth_url,
-      qrlImage: qrlImage,
+    return res.status(200).json({
+      success: true, message: "2FA setup started", nextStep: "VERIFY_2FA_SETUP",
+      data: {
+        employeeId: employee.employeeid,
+        qrImage,
+        otpauth_url: tempSecret.otpauth_url,
+      },
     });
   } catch (error) {
     console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-exports.verifyTwoFactorAuth = (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
+exports.verifyTwoFactorSetup = async (req, res) => {
+  const { token, employeeId} = req.body || {};
+  const ipAddress = req.ip;
+
+  if (!token || !employeeId) {
+    return res.status(400).json({success: false, message: "employeeId and token are required"});
   }
-
-  const { token, userId } = req.body;
-
+  
   try {
-    const user = User; //get user from database using userId
+    const employee = await User.getEmployeeById(employeeId);
 
-    //get user's temp secret from database using userId
-    const { base32: secret } = user.tempSecret;
-    let verified = speakeasy.totp.verify({
-      secret: secret,
+    if (!employee) {
+      return res.status(404).json({success: false, message: "Employee not found"});
+    }
+
+    if (!employee.temptotpsecret) {
+      return res.status(409).json({success: false, message: "No pending 2FA setup found"});
+    }
+
+    //get user's temp secret from database using employeeId
+    const verified = speakeasy.totp.verify({
+      secret: employee.temptotpsecret,
       encoding: "base32",
-      token: token,
+      token,
+      window: 1
     });
 
-    if (verified) {
-      // save secret as permanent for the user in database and delete temp secret
-      user.secret = user.tempSecret;
-      res.json({ verified: true, message: "2FA verification successful" });
-    } else {
-      res.status(401).json({ verified: false, message: "Invalid 2FA token" });
+    if (!verified) {
+      await User.createLog(employee.employeeid, "Activación fallida de 2FA", ipAddress);
+
+      return res.status(200).json({success:false, message: "2FA setup could not be completed. You can try again later in settings",
+        nextStep: "SETUP_2FA_OPTIONAL",
+        data: {
+          employeeId: employee.employeeid,
+          canRetryInSettings: true
+        }
+      });
     }
+
+    await User.activateTempTotpSecret(employee.employeeid);
+
+    await User.createLog(employee.employeeid, "Activación exitosa de 2FA", ipAddress);
+
+    return res.status(200).json({success: true, message: "2FA activated successfully",
+      nextStep: "LOGIN_COMPLETE",
+      data: {
+        employeeId: employee.employeeid,
+        twoFactorEnabled: true
+      }
+    });
   } catch (error) {
-    console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("2FA verify setup error:", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
 
-exports.validateTwoFactorAuth = (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
+exports.validateTwoFactorAuth = async (req, res) => {
+  const { token, employeeId } = req.body || {};
+  const ipAddress = req.ip;
+
+  if (!token || !employeeId) {
+    return res.status(400).json({success:false, message: "employeeId and token are required"});
   }
 
-  const { token, userId } = req.body;
-
   try {
-    const user = User; //get user from database using userId
+    const employee = await User.getEmployeeById(employeeId);
 
-    //get user's temp secret from database using userId
-    const { base32: secret } = user.secret;
-    let tokenValidate = speakeasy.totp.verify({
-      secret: secret,
+    if (!employee) {
+      return res.status(404).json({success: false, message: "Employee not found"});
+    }
+
+    if (!employee.isactive) {
+      await User.createLog(employee.employeeid, "Intento de validación de 2FA para usuario inactivo", ipAddress); 
+      return res.status(403).json({success: false, message: "Access not allowed"});
+    }
+
+    if (!employee.totpsecret) {
+      return res.status(409).json({success: false, message: "2FA is not enabled for this account"});
+    }
+
+    const isValid = speakeasy.totp.verify({
+      secret: employee.totpsecret,
       encoding: "base32",
-      token: token,
-      window: 1, // allow a window of 1 time step before and after to account for clock drift
+      token,
+      window: 1
     });
 
-    if (tokenValidate) {
-      res.json({ validated: true, message: "2FA verification successful" });
-    } else {
-      res.status(401).json({ validated: false, message: "Invalid 2FA token" });
+    if (!isValid) {
+      await User.createLog(employee.employeeid, "Fallo de autenticación 2FA", ipAddress);
+      return res.status(401).json({success: false, message: "Invalid 2FA token"});
     }
+
+    const userPayload = {
+      id: employee.employeeid,
+      email: employee.email,
+      name: employee.name,
+      role: employee.role,
+      privileges: ["read_profile"],
+    };
+
+    const tokenJwt = generateToken(userPayload);
+
+    await User.createLog(employee.employeeid, "Inicio de sesión exitoso con 2FA", ipAddress);
+
+    return res.status(200).json({success:true, message: "2FA validation successful",
+      nextStep: "LOGIN_COMPLETE",
+      token: tokenJwt,
+      data: {
+        employeeId: employee.employeeid,
+        email: employee.email,
+        name: employee.name,
+        role: employee.role,
+      },
+    });
   } catch (error) {
-    console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error("2FA validation error:", error);
+    return res.status(500).json({success: false, message: "Internal Server Error" });
   }
 };

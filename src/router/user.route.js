@@ -11,11 +11,9 @@ const router = express.Router();
 router.post("/login", userController.loginFunction);
 router.post("/first-login/change-password", userController.changePasswordFirstLogin);
 
-router.post("/2fa", userController.twoFactorAuth);
-
-router.post("/verify-2fa", userController.verifyTwoFactorAuth);
-
-router.post("/validate-2fa", userController.validateTwoFactorAuth);
+router.post("/2fa/setup", userController.setupTwoFactorAuth);
+router.post("/2fa/verify-setup", userController.verifyTwoFactorSetup);
+router.post("/2fa/validate", userController.validateTwoFactorAuth);
 
 // Protected route example with ABAC and RBAC
 router.get(
