@@ -44,15 +44,21 @@ model employee {
   roleid                      String                        @db.Uuid
   Name                        String                        @db.VarChar
   surname                     String                        @db.VarChar
-  isactive                    Boolean
+  isactive                    Boolean?
   email                       String                        @db.VarChar
   Password                    String                        @db.VarChar
   hasfirstlogin               Boolean
   totpsecret                  String?                       @db.VarChar
-  curp                        String                        @db.VarChar
-  birthdate                   DateTime                      @db.Date
-  picture                     String                        @db.VarChar
+  curp                        String?                       @db.VarChar
+  birthdate                   DateTime?                     @db.Date
+  picture                     String?                       @db.VarChar
   startdate                   DateTime                      @db.Date
+  nss                         String?                       @db.VarChar(11)
+  bank_account                String?                       @db.VarChar(18)
+  failedloginattempts         Int                           @default(0)
+  blockeduntil                DateTime?                     @db.Timestamp(6)
+  temptotpsecret              String?                       @db.VarChar
+  temptotpsecretcreatedat     DateTime?                     @db.Timestamp(6)
   house                       house                         @relation(fields: [houseid], references: [houseid], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                        role                          @relation(fields: [roleid], references: [roleid], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employeeaddress             employeeaddress[]
@@ -210,6 +216,7 @@ model logs {
   employeeid  String   @db.Uuid
   moment      DateTime @db.Timestamp(6)
   description String   @db.VarChar
+  ip_address  String   @db.VarChar(45)
   employee    employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "logs_employee_fk")
 }
 

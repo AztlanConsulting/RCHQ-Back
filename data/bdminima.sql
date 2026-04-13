@@ -132,7 +132,7 @@ CREATE TABLE public.logs (
 	employeeid uuid NOT NULL,
 	moment timestamp NOT NULL,
 	description varchar NOT NULL,
-	ip_address varchar(15) NOT NULL,
+	ip_address varchar(45) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (logid),
 	CONSTRAINT logs_employee_fk FOREIGN KEY (employeeid) REFERENCES public.employee(employeeid)
 );
