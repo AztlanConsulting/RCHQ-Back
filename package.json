@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -33,7 +34,8 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.4.0",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "prisma": "^6.19.3"
   },
   "lint-staged": {
     "*.js": [
