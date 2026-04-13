@@ -5,14 +5,14 @@ const { generateToken, generateFirstLoginToken, generatePre2faToken } = require(
 const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword, hashPassword} = require("../utils/password");
-const { getClientIp } = require("../utils/IP");
+const { getClientIp } = require("../utils/ip");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
 exports.loginFunction = async (req, res) => {
   const { email, password } = req.body || {};
   const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-  const ipAddress = req.ip;
+  const ipAddress = getClientIp(req);
 
   if (!normalizedEmail || !password) {
     return res.status(400).json({ success: false, message: "Email and password required" });
@@ -31,15 +31,6 @@ exports.loginFunction = async (req, res) => {
       await User.createLogThrottled(
         employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress, 5,
       );
-      //DEBUG
-      const logResult = await User.createLogThrottled(
-        employee.employeeid,
-        "Intento de acceso denegado: usuario inactivo",
-        ipAddress,
-        5,
-      );
-
-      console.log("logResult inactive user:", logResult);
 
       return res.status(401).json({
         success:false, message: "Invalid credentials",
@@ -67,15 +58,6 @@ exports.loginFunction = async (req, res) => {
       const attempts = await User.incrementFailedAttempts(employee.employeeid);
 
       await User.createLogThrottled(employee.employeeid, "Intento fallido de autenticación", ipAddress, 5);
-      // DEBUG
-      const logResult = await User.createLogThrottled(
-        employee.employeeid,
-        "Intento fallido de autenticación",
-        ipAddress,
-        5,
-      );
-
-      console.log("logResult wrong password:", logResult);
 
       if (attempts >=3) {
         const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
@@ -162,7 +144,7 @@ exports.loginFunction = async (req, res) => {
 exports.changePasswordFirstLogin = async (req, res) => {
   const {newPassword, confirmPassword} = req.body || {};
   const employeeId = req.user?.id;
-  const ipAddress = req.ip;
+  const ipAddress = getClientIp(req);
 
   if (!employeeId) {
     return res.status(401).json({success: false, message: "User not authenticated",});
@@ -265,7 +247,7 @@ exports.getProfile = (req, res) => {
 
 exports.setupTwoFactorAuth = async (req, res) => {
   const employeeId = req.user?.id;
-  const ipAddress = req.ip;
+  const ipAddress = getClientIp(req);
   
   if (!employeeId) {
     return res.status(401).json({ success:false, message: "User not authenticated" });
@@ -329,7 +311,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
 exports.verifyTwoFactorSetup = async (req, res) => {
   const { token } = req.body || {};
   const employeeId = req.user?.id;
-  const ipAddress = req.ip;
+  const ipAddress = getClientIp(req);
 
   if (!employeeId) {
     return res.status(401).json({success: false, message: "User not authenticated"});
@@ -412,7 +394,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
 exports.validateTwoFactorAuth = async (req, res) => {
   const { token } = req.body || {};
   const employeeId = req.user?.id;
-  const ipAddress = req.ip;
+  const ipAddress = getClientIp(req);
 
   if (!employeeId) {
     return res.status(401).json({success: false, message: "User not authenticated"});
