@@ -125,6 +125,31 @@ async function createLog(employeeid, description, ipAddress) {
   );
 }
 
+async function createLogThrottled(employeeid, description, ipAddress, windowMinutes = 5) {
+  const { rows } = await pool.query(
+    `SELECT 1
+    FROM public.logs
+    WHERE employeeid = $1
+    AND description = $2
+    AND ip_address = $3
+    AND moment >= NOW() - ($4::text || ' minutes')::interval
+    LIMIT 1`,
+    [employeeid, description, ipAddress, String(windowMinutes)],
+  );
+
+  if (rows.length > 0) {
+    return { inserted: false };
+  }
+
+  await pool.query(
+    `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
+    VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
+    [employeeid, description, ipAddress],
+  );
+
+  return { inserted: true };
+}
+
 async function saveTempTotpSecret(employeeid, secret) {
   await pool.query(
     `UPDATE public.employee SET temptotpsecret = $1 WHERE employeeid = $2`,
@@ -160,4 +185,5 @@ module.exports = {
   clearTempTotpSecret,
   activateTempTotpSecret,
   clearBlockedUntil,
+  createLogThrottled
 };

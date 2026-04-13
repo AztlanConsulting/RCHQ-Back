@@ -24,8 +24,8 @@ exports.loginFunction = async (req, res) => {
 
     // Empleado inactivo
     if (!employee.isactive) {
-      await User.createLog(
-        employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress,
+      await User.createLogThrottled(
+        employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress, 5,
       );
 
       return res.status(403).json({
@@ -53,7 +53,7 @@ exports.loginFunction = async (req, res) => {
     if (!passwordMatches) {
       const attempts = await User.incrementFailedAttempts(employee.employeeid);
 
-      await User.createLog(employee.employeeid, "Intento fallido de autenticación", ipAddress);
+      await User.createLogThrottled(employee.employeeid, "Intento fallido de autenticación", ipAddress, 5);
 
       if (attempts >=3) {
         const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
@@ -252,7 +252,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
     }
 
     if (!employee.isactive) {
-      await User.createLog(employee.employeeid, "Intento de configuración de 2FA para usuario inactivo", ipAddress); 
+      await User.createLogThrottled(employee.employeeid, "Intento de configuración de 2FA para usuario inactivo", ipAddress, 5); 
       return res.status(403).json({success: false, message: "Access not allowed"});
   }
 
@@ -323,7 +323,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     });
 
     if (!verified) {
-      await User.createLog(employee.employeeid, "Activación fallida de 2FA", ipAddress);
+      await User.createLogThrottled(employee.employeeid, "Activación fallida de 2FA", ipAddress, 5);
 
       return res.status(200).json({success:false, message: "2FA setup could not be completed. You can try again later in settings",
         nextStep: "SETUP_2FA_OPTIONAL",
@@ -387,7 +387,7 @@ exports.validateTwoFactorAuth = async (req, res) => {
     });
 
     if (!isValid) {
-      await User.createLog(employee.employeeid, "Fallo de autenticación 2FA", ipAddress);
+      await User.createLogThrottled(employee.employeeid, "Fallo de autenticación 2FA", ipAddress, 5);
       return res.status(401).json({success: false, message: "Invalid 2FA token"});
     }
 
