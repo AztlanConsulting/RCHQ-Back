@@ -177,6 +177,75 @@ async function activateTempTotpSecret(employeeid) {
   );
 }
 
+async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAddress) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `UPDATE public.employee
+      SET "Password" = $1,
+      hasfirstlogin = false
+      WHERE employeeid = $2`,
+      [hashedPassword, employeeid],
+    );
+
+    await client.query(
+      `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
+      VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
+      [employeeid, "Cambio de contraseña en primer acceso", ipAddress],
+    );
+
+    await client.query(
+      `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
+      VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
+      [
+        employeeid,
+        "Inicio de sesión completado después de cambio de contraseña en primer acceso",
+        ipAddress,
+      ],
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    await client.query(
+      `UPDATE public.employee
+      SET totpsecret = temptotpsecret,
+      temptotpsecret = NULL,
+      temptotpsecretcreatedat = NULL
+      WHERE employeeid = $1`,
+      [employeeid],
+    );
+
+    await client.query(
+      `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
+      VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
+      [employeeid, "Activación exitosa de 2FA", ipAddress],
+    );
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   findEmployeeByEmail,
   updatePassword,
@@ -191,5 +260,7 @@ module.exports = {
   clearTempTotpSecret,
   activateTempTotpSecret,
   clearBlockedUntil,
-  createLogThrottled
+  createLogThrottled,
+  completeFirstLoginPasswordChange,
+  activateTempTotpSecretWithLog,
 };

@@ -10,14 +10,15 @@ const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de config
 
 exports.loginFunction = async (req, res) => {
   const { email, password } = req.body || {};
+  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
   const ipAddress = req.ip;
 
-  if (!email || !password) {
+  if (!normalizedEmail || !password) {
     return res.status(400).json({ success: false, message: "Email and password required" });
   }
 
   try {
-    const employee = await User.findEmployeeByEmail(email);
+    const employee = await User.findEmployeeByEmail(normalizedEmail);
 
     // Empleado no existe
     if (!employee) {
@@ -186,22 +187,21 @@ exports.changePasswordFirstLogin = async (req, res) => {
     
     const hashedPassword = await hashPassword(newPassword);
 
-    await User.updatePassword(employee.employeeid, hashedPassword);
-    await User.setFirstLogin(employee.employeeid, false);
-
-    await User.createLog(employee.employeeid, "Cambio de contraseña en primer acceso", ipAddress);
+    await User.completeFirstLoginPasswordChange(
+      employee.employeeid,
+      hashedPassword,
+      ipAddress,
+    );
 
     const userPayload = {
       id: employee.employeeid,
       email: employee.email,
       name: employee.name,
       role: employee.role,
-      privileges: ["read_profile"]
+      privileges: ["read_profile"],
     };
 
     const token = generateToken(userPayload);
-
-    await User.createLog(employee.employeeid, "Inicio de sesión completado después de cambio de contraseña en primer acceso", ipAddress);
 
     return res.status(200).json({
       success: true, message: "Password changed successfully", nextStep: "SETUP_2FA_OPTIONAL", token,
@@ -376,9 +376,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
       });
     }
 
-    await User.activateTempTotpSecret(employee.employeeid);
-
-    await User.createLog(employee.employeeid, "Activación exitosa de 2FA", ipAddress);
+    await User.activateTempTotpSecretWithLog(employee.employeeid, ipAddress);
 
     return res.status(200).json({success: true, message: "2FA activated successfully",
       nextStep: "LOGIN_COMPLETE",
