@@ -30,8 +30,8 @@ exports.loginFunction = async (req, res) => {
         employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress, 5,
       );
 
-      return res.status(403).json({
-        success:false, message: "Access not allowed",
+      return res.status(401).json({
+        success:false, message: "Invalid credentials",
       });
     }
 
