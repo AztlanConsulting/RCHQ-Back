@@ -1,7 +1,7 @@
 const User = require("../model/user.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const { generateToken } = require("../utils/jwt");
+const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
 const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword, hashPassword} = require("../utils/password");
@@ -80,12 +80,16 @@ exports.loginFunction = async (req, res) => {
 
     // Primer login
     if (employee.hasfirstlogin) {
+      const firstLoginToken = generateFirstLoginToken({
+        id: employee.employeeid,
+        email: employee.email,
+      });
+
       await User.createLog(employee.employeeid, "Primer acceso validado, pendiente cambio de contraseña", ipAddress);
 
       return res.status(200).json({
-        success: true, message: "First login, password change required", nextStep: "CHANGE_PASSWORD",
+        success: true, message: "First login, password change required", nextStep: "CHANGE_PASSWORD", firstLoginToken,
         data: {
-          employeeId: employee.employeeid,
           email: employee.email,
           name: employee.name,
           role: employee.role,
@@ -95,10 +99,14 @@ exports.loginFunction = async (req, res) => {
 
     // Usuario ya tiene 2fa activado
     if (employee.totpsecret) {
+      const pre2faToken = generatePre2faToken({
+        id: employee.employeeid,
+        email: employee.email,
+      });
+
       return res.status(200).json({
-        success:true, message: "2FA required", nextStep: "VALIDATE_2FA",
+        success:true, message: "2FA required", nextStep: "VALIDATE_2FA", pre2faToken,
         data: {
-          employeeId: employee.employeeid,
           email: employee.email,
         },
       });
@@ -128,11 +136,16 @@ exports.loginFunction = async (req, res) => {
 };
 
 exports.changePasswordFirstLogin = async (req, res) => {
-  const {employeeId, newPassword, confirmPassword} = req.body || {};
+  const {newPassword, confirmPassword} = req.body || {};
+  const employeeId = req.user?.id;
   const ipAddress = req.ip;
 
-  if (!employeeId || !newPassword || !confirmPassword) {
-    return res.status(400).json({success: false, message: "employeeId, newPassword and confirmPassword are required",});
+  if (!employeeId) {
+    return res.status(401).json({success: false, message: "User not authenticated",});
+  }
+
+  if (!newPassword || !confirmPassword) {
+    return res.status(400).json({success: false, message: "newPassword and confirmPassword are required",});
   }
 
   if (newPassword !== confirmPassword) {
@@ -222,11 +235,11 @@ exports.getProfile = (req, res) => {
 };
 
 exports.setupTwoFactorAuth = async (req, res) => {
-  const {employeeId} = req.body || {};
+  const employeeId = req.user?.id;
   const ipAddress = req.ip;
   
   if (!employeeId) {
-    return res.status(400).json({ success:false, message: "employeeID is required" });
+    return res.status(401).json({ success:false, message: "User not authenticated" });
   }
 
   try {
@@ -267,11 +280,16 @@ exports.setupTwoFactorAuth = async (req, res) => {
 };
 
 exports.verifyTwoFactorSetup = async (req, res) => {
-  const { token, employeeId} = req.body || {};
+  const { token } = req.body || {};
+  const employeeId = req.user?.id;
   const ipAddress = req.ip;
 
-  if (!token || !employeeId) {
-    return res.status(400).json({success: false, message: "employeeId and token are required"});
+  if (!employeeId) {
+    return res.status(401).json({success: false, message: "User not authenticated"});
+  }
+
+  if (!token) {
+    return res.status(400).json({success: false, message: "token is required"});
   }
   
   try {
@@ -323,11 +341,15 @@ exports.verifyTwoFactorSetup = async (req, res) => {
 };
 
 exports.validateTwoFactorAuth = async (req, res) => {
-  const { token, employeeId } = req.body || {};
+  const { token } = req.body || {};
+  const employeeId = req.user?.id;
   const ipAddress = req.ip;
 
-  if (!token || !employeeId) {
-    return res.status(400).json({success:false, message: "employeeId and token are required"});
+  if (!employeeId) {
+    return res.status(401).json({success: false, message: "User not authenticated"});
+  }
+  if (!token) {
+    return res.status(400).json({success:false, message: "token is required"});
   }
 
   try {
