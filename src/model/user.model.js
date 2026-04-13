@@ -1,249 +1,292 @@
-const pool = require("../db");
+const {randomUUID} = require("crypto");
+const prisma = require("../prisma");
 
-// const user = {
-//   id: 1,
-//   // username: "manuel",
-//   email: "manuel@gmail.com",
-//   password: "123",
-//   role: "admin",
-//   privileges: ["read_profile"],
-//   tempSecret: {
-//     base32: "JBSWY3DPEHPK3PXP",
-//   },
-//   secret: null,
-// };
-
-// const adminUser = {
-//   _id: "admin1",
-//   role: "admin",
-//   password: "123",
-// };
-
-// const coordinatorAllowed = {
-//   _id: "coord1",
-//   role: "coordinator",
-//   password: "123",
-// };
-
-// const coordinatorDenied = {
-//   _id: "coord2",
-//   role: "coordinator",
-//   password: "123",
-// };
-
-// const resource = {
-//   coordinators: ["coord1", "coord3"],
-// };
+function mapEmployee(employee) {
+  if (!employee) return undefined;
+  
+  return {
+    employeeid: employee.employeeid,
+    email: employee.email,
+    pwd: employee.Password,
+    name: employee.Name,
+    role: employee.role?.Name,
+    roleid: employee.roleid,
+    isactive: employee.isactive,
+    hasfirstlogin: employee.hasfirstlogin,
+    totpsecret: employee.totpsecret,
+    curp: employee.curp,
+    birthdate: employee.birthdate,
+    picture: employee.picture,
+    startdate: employee.startdate,
+    nss: employee.nss,
+    bank_account: employee.bank_account,
+    failedloginattempts: employee.failedloginattempts,
+    blockeduntil: employee.blockeduntil,
+    temptotpsecret: employee.temptotpsecret,
+    temptotpsecretcreatedat: employee.temptotpsecretcreatedat,
+  };
+}
 
 /**
  * @param {string} email
  * @returns {Promise<{ employeeid: string, email: string, pwd: string, name: string, role: string } | undefined>}
  */
 async function findEmployeeByEmail(email) {
-  const { rows } = await pool.query(
-    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, r."Name" AS role,
-    e.isactive, e.hasfirstlogin, e.totpsecret, e.roleid, e.failedloginattempts, e.blockeduntil,
-    e.temptotpsecret, e.temptotpsecretcreatedat
-    FROM public.employee e
-    INNER JOIN public.role r ON r.roleid = e.roleid
-    WHERE LOWER(TRIM(e.email)) = LOWER(TRIM($1))`,
-    [email],
-  );
-  return rows[0];
+  const employee = await prisma.employee.findFirst({
+    where: {
+      email: {
+        equals: email.trim(),
+        mode: "insensitive",
+      },
+    },
+    include: {
+      role: {
+        select: {
+          Name: true,
+        },
+      },
+    },
+  });
+  return mapEmployee(employee);
 }
 
 async function getEmployeeById(employeeid) {
-  const { rows } = await pool.query(
-    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, e.roleid, r."Name" AS role,
-    e.isactive, e.hasfirstlogin, e.totpsecret, e.temptotpsecret, e.temptotpsecretcreatedat,
-    e.failedloginattempts, e.blockeduntil
-    FROM public.employee e
-    INNER JOIN public.role r ON r.roleid = e.roleid
-    WHERE e.employeeid = $1`,
-    [employeeid],
-  );
-  return rows[0];
+  const employee = await prisma.employee.findUnique({
+    where: { employeeid },
+    include: {
+      role: {
+        select: {
+          Name: true,
+        },
+      },
+    },
+  });
+  return mapEmployee(employee);
 }
 
 async function updatePassword(employeeid, newPassword) {
-  await pool.query(
-    `UPDATE public.employee SET "Password" = $1 WHERE employeeid = $2`,
-    [newPassword, employeeid],
-  );
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      Password: newPassword,
+    },
+  });
 }
 
 async function setFirstLogin(employeeid, hasFirstLogin) {
-  await pool.query(
-    `UPDATE public.employee SET hasfirstlogin = $1 WHERE employeeid = $2`,
-    [hasFirstLogin, employeeid],
-  );
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      hasfirstlogin: hasFirstLogin,
+    },
+  });
 }
 
 async function incrementFailedAttempts(employeeid) {
-  const {rows} = await pool.query(
-    `UPDATE public.employee SET failedloginattempts = COALESCE(failedloginattempts, 0) + 1 WHERE employeeid = $1
-    RETURNING failedloginattempts`,
-    [employeeid],
-  );
-  return rows[0]?.failedloginattempts ?? 0;
+  const employee = await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      failedloginattempts: {
+        increment: 1,
+      },
+    },
+    select: {
+      failedloginattempts: true,
+    },
+  });
+  return employee.failedloginattempts ?? 0;
 }
 
 async function resetFailedAttempts(employeeid) {
-  await pool.query(
-    `UPDATE public.employee SET failedloginattempts = 0 WHERE employeeid = $1`,
-    [employeeid],
-  );
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      failedloginattempts: 0,
+    },
+  });
 }
 
 async function setBlockedUntil(employeeid, blockedUntil) {
-  const { rows } = await pool.query(
-    `UPDATE public.employee SET blockeduntil = $1 WHERE employeeid = $2
-    RETURNING employeeid, blockeduntil`,
-    [blockedUntil, employeeid],
-  );
-  return rows[0];
+  return prisma.employee.update({
+    where: { employeeid },
+    data: {
+      blockeduntil: blockedUntil,
+    },
+    select: {
+      employeeid: true,
+      blockeduntil: true,
+    },
+  });
 }
 
 async function clearBlockedUntil(employeeid) {
-  const { rows } = await pool.query(
-    `UPDATE public.employee SET blockeduntil = NULL WHERE employeeid = $1
-    RETURNING employeeid, blockeduntil`,
-    [employeeid],
-  );
-  return rows[0];
+  return prisma.employee.update({
+    where: { employeeid },
+    data: {
+      blockeduntil: null,
+    },
+    select: {
+      employeeid: true,
+      blockeduntil: true,
+    },
+  });
 }
 
 async function clearLoginSecurityState(employeeid) {
-  await pool.query(
-    `UPDATE public.employee SET failedloginattempts = 0, blockeduntil = NULL WHERE employeeid = $1`,
-    [employeeid],
-  );
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      failedloginattempts: 0,
+      blockeduntil: null,
+    },
+  });
 }
 
 // temporal porque solo funciona cuando employee existe
 async function createLog(employeeid, description, ipAddress) {
-  await pool.query(
-    `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
-    VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
-    [employeeid, description, ipAddress],
-  );
+  await prisma.logs.create({
+    data: {
+      logid: randomUUID(),
+      employeeid,
+      moment: new Date(),
+      description,
+      ip_address: ipAddress,
+    },
+  });
 }
 
 async function createLogThrottled(employeeid, description, ipAddress, windowMinutes = 5) {
-  const { rows } = await pool.query(
-    `SELECT 1
-    FROM public.logs
-    WHERE employeeid = $1
-    AND description = $2
-    AND ip_address = $3
-    AND moment >= NOW() - ($4::text || ' minutes')::interval
-    LIMIT 1`,
-    [employeeid, description, ipAddress, String(windowMinutes)],
-  );
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000);
 
-  if (rows.length > 0) {
+  const existing = await prisma.logs.findFirst({
+    where: {
+      employeeid,
+      description,
+      ip_address: ipAddress,
+      moment: {
+        gte: since,
+      },
+    },
+    select: {
+      logid: true,
+    },
+  });
+
+  if (existing) {
     return { inserted: false };
   }
 
-  await pool.query(
-    `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
-    VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
-    [employeeid, description, ipAddress],
-  );
+  await prisma.logs.create({
+    data: {
+      logid: randomUUID(),
+      employeeid,
+      moment: new Date(),
+      description,
+      ip_address: ipAddress,
+    },
+  });
 
   return { inserted: true };
 }
 
 async function saveTempTotpSecret(employeeid, secret) {
-  await pool.query(
-    `UPDATE public.employee SET temptotpsecret = $1, temptotpsecretcreatedat = NOW() WHERE employeeid = $2`,
-    [secret, employeeid],
-  );
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      temptotpsecret: secret,
+      temptotpsecretcreatedat: new Date(),
+    },
+  });
 }
 
 async function clearTempTotpSecret(employeeid) {
-  await pool.query(
-    `UPDATE public.employee SET temptotpsecret = NULL, temptotpsecretcreatedat = NULL WHERE employeeid = $1`,
-    [employeeid],
-  );
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      temptotpsecret: null,
+      temptotpsecretcreatedat: null,
+    },
+  });
 }
 
 async function activateTempTotpSecret(employeeid) {
-  await pool.query(
-    `UPDATE public.employee
-    SET totpsecret = temptotpsecret, temptotpsecret = NULL, temptotpsecretcreatedat = NULL
-    WHERE employeeid = $1`,
-    [employeeid],
-  );
+  const employee = await prisma.employee.findUnique({
+    where: { employeeid },
+    select: {
+      temptotpsecret: true,
+    },
+  });
+
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      totpsecret: employee?.temptotpsecret ?? null,
+      temptotpsecret: null,
+      temptotpsecretcreatedat: null,
+    },
+  });
 }
 
 async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAddress) {
-  const client = await pool.connect();
+  await prisma.$transaction(async (tx) => {
+    await tx.employee.update({
+      where: { employeeid },
+      data: {
+        Password: hashedPassword,
+        hasfirstlogin: false,
+      },
+    });
 
-  try {
-    await client.query("BEGIN");
-
-    await client.query(
-      `UPDATE public.employee
-      SET "Password" = $1,
-      hasfirstlogin = false
-      WHERE employeeid = $2`,
-      [hashedPassword, employeeid],
-    );
-
-    await client.query(
-      `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
-      VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
-      [employeeid, "Cambio de contraseña en primer acceso", ipAddress],
-    );
-
-    await client.query(
-      `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
-      VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
-      [
+    await tx.logs.create({
+      data: {
+        logid: randomUUID(),
         employeeid,
-        "Inicio de sesión completado después de cambio de contraseña en primer acceso",
-        ipAddress,
-      ],
-    );
+        moment: new Date(),
+        description: "Cambio de contraseña en primer acceso",
+        ip_address: ipAddress,
+      },
+    });
 
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+    await tx.logs.create({
+      data: {
+        logid: randomUUID(),
+        employeeid,
+        moment: new Date(),
+        description: "Inicio de sesión completado después de cambio de contraseña en primer acceso",
+        ip_address: ipAddress,
+      },
+    });
+  });
 }
 
 async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
-  const client = await pool.connect();
+  await prisma.$transaction(async (tx) => {
+    const employee = await tx.employee.findUnique({
+      where: { employeeid },
+      select: {
+        temptotpsecret: true,
+      },
+    });
 
-  try {
-    await client.query("BEGIN");
+    await tx.employee.update({
+      where: { employeeid },
+      data: {
+        totpsecret: employee?.temptotpsecret ?? null,
+        temptotpsecret: null,
+        temptotpsecretcreatedat: null,
+      },
+    });
 
-    await client.query(
-      `UPDATE public.employee
-      SET totpsecret = temptotpsecret,
-      temptotpsecret = NULL,
-      temptotpsecretcreatedat = NULL
-      WHERE employeeid = $1`,
-      [employeeid],
-    );
-
-    await client.query(
-      `INSERT INTO public.logs (logid, employeeid, moment, description, ip_address)
-      VALUES (gen_random_uuid(), $1, NOW(), $2, $3)`,
-      [employeeid, "Activación exitosa de 2FA", ipAddress],
-    );
-
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
-  }
+    await tx.logs.create({
+      data: {
+        logid: randomUUID(),
+        employeeid,
+        moment: new Date(),
+        description: "Activación exitosa de 2FA",
+        ip_address: ipAddress,
+      },
+    });
+  });
 }
 
 module.exports = {

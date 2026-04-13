@@ -30,6 +30,15 @@ exports.loginFunction = async (req, res) => {
       await User.createLogThrottled(
         employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress, 5,
       );
+      //DEBUG
+      const logResult = await User.createLogThrottled(
+        employee.employeeid,
+        "Intento de acceso denegado: usuario inactivo",
+        ipAddress,
+        5,
+      );
+
+      console.log("logResult inactive user:", logResult);
 
       return res.status(401).json({
         success:false, message: "Invalid credentials",
@@ -57,6 +66,15 @@ exports.loginFunction = async (req, res) => {
       const attempts = await User.incrementFailedAttempts(employee.employeeid);
 
       await User.createLogThrottled(employee.employeeid, "Intento fallido de autenticación", ipAddress, 5);
+      // DEBUG
+      const logResult = await User.createLogThrottled(
+        employee.employeeid,
+        "Intento fallido de autenticación",
+        ipAddress,
+        5,
+      );
+
+      console.log("logResult wrong password:", logResult);
 
       if (attempts >=3) {
         const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
