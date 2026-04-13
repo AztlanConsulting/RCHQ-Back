@@ -1,18 +1,18 @@
 CREATE TABLE public.donationtype (
 	donationtypeid uuid NOT NULL,
-	"name" varchar NOT NULL,
+	name varchar NOT NULL,
 	CONSTRAINT donationtype_pk PRIMARY KEY (donationtypeid)
 );
 
 CREATE TABLE public.donator (
 	donatorid uuid NOT NULL,
-	"Name" varchar NOT NULL,
+	name varchar NOT NULL,
 	CONSTRAINT donator_pk PRIMARY KEY (donatorid)
 );
 
 CREATE TABLE public.fault (
 	faultid uuid NOT NULL,
-	"Date" date NOT NULL,
+	date date NOT NULL,
 	description text NOT NULL,
 	CONSTRAINT fault_pk PRIMARY KEY (faultid)
 );
@@ -25,17 +25,17 @@ CREATE TABLE public.workday (
 
 CREATE TABLE public.house (
 	houseid uuid NOT NULL,
-	"Name" varchar NOT NULL,
-	"Location" text NOT NULL,
+	name varchar NOT NULL,
+	location text NOT NULL,
 	phonenumber varchar(10) NOT NULL,
 	description text NOT NULL,
 	image varchar NOT NULL,
 	CONSTRAINT house_pk PRIMARY KEY (houseid)
 );
 
-CREATE TABLE public."Role" (
+CREATE TABLE public.role (
 	roleid uuid NOT NULL,
-	"Name" varchar NOT NULL,
+	name varchar NOT NULL,
 	CONSTRAINT role_pk PRIMARY KEY (roleid)
 );
 
@@ -43,11 +43,11 @@ CREATE TABLE public.employee (
 	employeeid uuid NOT NULL,
 	houseid uuid NOT NULL,
 	roleid uuid NOT NULL,
-	"Name" varchar NOT NULL,
+	name varchar NOT NULL,
 	surname varchar NOT NULL,
 	isactive bool NULL,
 	email varchar NOT NULL,
-	"Password" varchar NOT NULL,
+	password varchar NOT NULL,
 	hasfirstlogin bool NOT NULL,
 	totpsecret varchar NULL,
 	curp varchar NULL,
@@ -58,14 +58,14 @@ CREATE TABLE public.employee (
 	bank_account varchar(18) NULL,
 	CONSTRAINT employee_pk PRIMARY KEY (employeeid),
 	CONSTRAINT employee_house_fk FOREIGN KEY (houseid) REFERENCES public.house(houseid),
-	CONSTRAINT employee_role_fk FOREIGN KEY (roleid) REFERENCES public."role"(roleid)
+	CONSTRAINT employee_role_fk FOREIGN KEY (roleid) REFERENCES public.role(roleid)
 );
 
 CREATE TABLE public.donation (
 	donationid uuid NOT NULL,
 	donatorid uuid NOT NULL,
 	donationtypeid uuid NOT NULL,
-	"Date" date NOT NULL,
+	date date NOT NULL,
 	product varchar NOT NULL,
 	quantity decimal NOT NULL,
 	measurment varchar NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE public.outsidecertification (
 	outsidecertificationid uuid NOT NULL,
 	employeeid uuid NOT NULL,
 	file varchar NOT NULL,
-	"Name" varchar NOT NULL,
+	name varchar NOT NULL,
 	CONSTRAINT outsidecertification_pk PRIMARY KEY (outsidecertificationid),
 	CONSTRAINT outsidecertification_employee_fk FOREIGN KEY (employeeid) REFERENCES public.employee(employeeid)
 );
@@ -93,8 +93,8 @@ CREATE TABLE public.outsidecertification (
 CREATE TABLE public.employeeworkday (
 	workdayid uuid NOT NULL,
 	employeeid uuid NOT NULL,
-	"Start" time NOT NULL,
-	"End" time NOT NULL,
+	start time NOT NULL,
+	end time NOT NULL,
 	CONSTRAINT employeeworkday_workday_fk FOREIGN KEY (workdayid) REFERENCES public.workday(workdayid),
 	CONSTRAINT employeeworkday_employee_fk FOREIGN KEY (employeeid) REFERENCES public.employee(employeeid)
 );
@@ -103,7 +103,7 @@ CREATE TABLE public.psychologicalevaluation (
 	psychologicalevaluationid uuid NOT NULL,
 	employeeid uuid NOT NULL,
 	file varchar NOT NULL,
-	"Date" date NOT NULL,
+	date date NOT NULL,
 	CONSTRAINT psychologicalevaluation_pk PRIMARY KEY (psychologicalevaluationid)
 );
 
@@ -111,7 +111,7 @@ CREATE TABLE public.employeeaddress (
 	employeeaddressid uuid NOT NULL,
 	employeeid uuid NOT NULL,
 	url varchar NOT NULL,
-	"Date" timestamp NOT NULL,
+	date timestamp NOT NULL,
 	CONSTRAINT employeeaddress_pk PRIMARY KEY (employeeaddressid),
 	CONSTRAINT employeeaddress_employee_fk FOREIGN KEY (employeeid) REFERENCES public.employee(employeeid)
 );
@@ -119,8 +119,8 @@ CREATE TABLE public.employeeaddress (
 CREATE TABLE public.vacationsrequest (
 	vacationsrequestid uuid NOT NULL,
 	employeeid uuid NOT NULL,
-	"Start" date NOT NULL,
-	"End" date NOT NULL,
+	start date NOT NULL,
+	end date NOT NULL,
 	status int NOT NULL,
 	feedback text NULL,
 	CONSTRAINT vacationsrequest_pk PRIMARY KEY (vacationsrequestid),
@@ -147,7 +147,7 @@ CREATE TABLE public.employeebackupcode (
 
 CREATE TABLE public.insidecertifications (
 	insidecertificationid uuid NOT NULL,
-	"Name" varchar NOT NULL,
+	name varchar NOT NULL,
 	description text NOT NULL,
 	CONSTRAINT insidecertifications_pk PRIMARY KEY (insidecertificationid)
 );
@@ -155,7 +155,7 @@ CREATE TABLE public.insidecertifications (
 CREATE TABLE public.employeeinsidecertification (
 	insidecertificationid uuid NOT NULL,
 	employeeid uuid NOT NULL,
-	"Date" date NOT NULL,
+	date date NOT NULL,
 	CONSTRAINT employeeinsidecertification_insidecertifications_fk FOREIGN KEY (insidecertificationid) REFERENCES public.insidecertifications(insidecertificationid),
 	CONSTRAINT employeeinsidecertification_employee_fk FOREIGN KEY (employeeid) REFERENCES public.employee(employeeid)
 );
@@ -193,7 +193,7 @@ CREATE TABLE public.employeedocuments (
 
 CREATE TABLE public.eventtype (
 	eventtypeid uuid NOT NULL,
-	"Name" varchar NOT NULL,
+	name varchar NOT NULL,
 	CONSTRAINT eventtype_pk PRIMARY KEY (eventtypeid)
 );
 
@@ -202,7 +202,7 @@ CREATE TABLE public.housedonation (
 	houseid uuid NOT NULL,
 	donationid uuid NOT NULL,
 	quantity decimal NOT NULL,
-	"Date" date NOT NULL,
+	date date NOT NULL,
 	CONSTRAINT housedonation_pk PRIMARY KEY (housedonationid),
 	CONSTRAINT housedonation_house_fk FOREIGN KEY (houseid) REFERENCES public.house(houseid),
 	CONSTRAINT housedonation_donation_fk FOREIGN KEY (donationid) REFERENCES public.donation(donationid)
@@ -211,9 +211,9 @@ CREATE TABLE public.housedonation (
 CREATE TABLE public.personalevent (
 	personaleventid uuid NOT NULL,
 	eventtypeid uuid NOT NULL,
-	"Start" timestamp NOT NULL,
-	"End" timestamp NOT NULL,
-	"Name" varchar NOT NULL,
+	start timestamp NOT NULL,
+	end timestamp NOT NULL,
+	name varchar NOT NULL,
 	description text NOT NULL,
 	CONSTRAINT personalevent_pk PRIMARY KEY (personaleventid),
 	CONSTRAINT personalevent_eventtype_fk FOREIGN KEY (eventtypeid) REFERENCES public.eventtype(eventtypeid)
@@ -223,10 +223,10 @@ CREATE TABLE public.houseevent (
 	houseeventid uuid NOT NULL,
 	eventtypeid uuid NOT NULL,
 	houseid uuid NOT NULL,
-	"Date" date NOT NULL,
-	"Start" time NOT NULL,
-	"End" date NOT NULL,
-	"Name" varchar NOT NULL,
+	date date NOT NULL,
+	start time NOT NULL,
+	end date NOT NULL,
+	name varchar NOT NULL,
 	description text NULL,
 	CONSTRAINT houseevent_pk PRIMARY KEY (houseeventid),
 	CONSTRAINT houseevent_eventtype_fk FOREIGN KEY (eventtypeid) REFERENCES public.eventtype(eventtypeid),
@@ -236,10 +236,10 @@ CREATE TABLE public.houseevent (
 CREATE TABLE public.globalevent (
 	globaleventid uuid NOT NULL,
 	eventtypeid uuid NOT NULL,
-	"Date" date NOT NULL,
-	"Start" time NOT NULL,
-	"End" time NOT NULL,
-	"Name" varchar NOT NULL,
+	date date NOT NULL,
+	start time NOT NULL,
+	end time NOT NULL,
+	name varchar NOT NULL,
 	description text NULL,
 	isfreeday boolean NOT NULL,
 	CONSTRAINT globalevent_pk PRIMARY KEY (globaleventid),
