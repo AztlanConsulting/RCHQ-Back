@@ -220,21 +220,27 @@ exports.changePasswordFirstLogin = async (req, res) => {
 };
 
 exports.getProfile = (req, res) => {
-  const resource = {
-    coordinators: User.coordinators || [],
-  };
+  // const resource = {
+  //   coordinators: User.coordinators || [],
+  // };
 
-  // Check if the user has access to the profile resource based on the admin policy
-  // this one can be omitted if we use the authorize middleware in the route,
-  // but it's here for demonstration purposes
-  if (!canAccess(req.user, adminPolicy, resource)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
+  // // Check if the user has access to the profile resource based on the admin policy
+  // // this one can be omitted if we use the authorize middleware in the route,
+  // // but it's here for demonstration purposes
+  // if (!canAccess(req.user, adminPolicy, resource)) {
+  //   return res.status(403).json({ message: "Forbidden" });
+  // }
 
-  res.status(200).json({
-    username: req.user.name || User.username,
-    role: req.user.role || User.role,
-    privileges: req.user.privileges || User.privileges,
+  return res.status(200).json({
+    success: true,
+    message: "Profile retrieved successfully",
+    data: {
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+      privileges: req.user.privileges || [],
+    },
   });
 };
 

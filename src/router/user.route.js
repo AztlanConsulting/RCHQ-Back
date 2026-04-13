@@ -21,8 +21,8 @@ router.post("/2fa/validate", verifyPre2faToken, userController.validateTwoFactor
 router.get(
   "/profile",
   verifyToken,
-  requireRole("admin", "user"),
-  authorize(adminPolicy, { coordinators: userModel.coordinators || [] }),
+  // requireRole("admin", "user"),
+  // authorize(adminPolicy, { coordinators: userModel.coordinators || [] }),
   userController.getProfile,
 );
 
