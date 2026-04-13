@@ -5,6 +5,7 @@ const { generateToken, generateFirstLoginToken, generatePre2faToken } = require(
 const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword, hashPassword} = require("../utils/password");
+const { getClientIp } = require("../utils/IP");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
@@ -386,7 +387,6 @@ exports.verifyTwoFactorSetup = async (req, res) => {
       await User.createLogThrottled(employee.employeeid, "Activación fallida de 2FA", ipAddress, 5);
 
       return res.status(200).json({success:false, message: "2FA setup could not be completed. You can try again later in settings",
-        nextStep: "SETUP_2FA_OPTIONAL",
         data: {
           employeeId: employee.employeeid,
           canRetryInSettings: true
@@ -397,7 +397,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     await User.activateTempTotpSecretWithLog(employee.employeeid, ipAddress);
 
     return res.status(200).json({success: true, message: "2FA activated successfully",
-      nextStep: "LOGIN_COMPLETE",
+      nextStep: "2FA_SETUP_COMPLETE",
       data: {
         employeeId: employee.employeeid,
         twoFactorEnabled: true
@@ -474,5 +474,45 @@ exports.validateTwoFactorAuth = async (req, res) => {
   } catch (error) {
     console.error("2FA validation error:", error);
     return res.status(500).json({success: false, message: "Internal Server Error" });
+  }
+};
+
+exports.disableTwoFactorAuth = async (req, res) => {
+  const employeeId = req.user?.id;
+  const ipAddress = getClientIp(req);
+
+  if (!employeeId) {
+    return res.status(401).json({success: false, message: "User not authenticated"});
+  }
+
+  try {
+    const employee = await User.getEmployeeById(employeeId);
+
+    if (!employee) {
+      return res.status(404).json({success: false, message: "Employee not found"});
+    }
+
+    if (!employee.isactive) {
+      await User.createLogThrottled(employee.employeeid, "Intento de desactivación de 2FA para usuario inactivo", ipAddress, 5); 
+      return res.status(403).json({success: false, message: "Access not allowed"});
+    }
+
+    if (!employee.totpsecret) {
+      return res.status(409).json({ success: false, message: "2FA is not enabled for this account" });
+    }
+
+    await User.disableTotpSecretWithLog(employee.employeeid, ipAddress);
+
+    return res.status(200).json({
+      success: true,
+      message: "2FA disabled successfully",
+      data: {
+        employeeId: employee.employeeid,
+        twoFactorEnabled: false,
+      },
+    });
+  } catch (error) {
+    console.error("2FA disable error:", error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

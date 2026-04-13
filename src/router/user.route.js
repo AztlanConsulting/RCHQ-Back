@@ -16,6 +16,7 @@ router.post("/first-login/change-password", verifyFirstLoginToken, userControlle
 router.post("/2fa/setup", verifyToken, userController.setupTwoFactorAuth);
 router.post("/2fa/verify-setup", verifyToken, userController.verifyTwoFactorSetup);
 router.post("/2fa/validate", verifyPre2faToken, userController.validateTwoFactorAuth);
+router.post("/2fa/disable", verifyToken, userController.disableTwoFactorAuth);
 
 // Protected route example with ABAC and RBAC
 router.get(

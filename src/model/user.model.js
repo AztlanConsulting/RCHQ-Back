@@ -289,6 +289,29 @@ async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
   });
 }
 
+async function disableTotpSecretWithLog(employeeid,ipAddress) {
+  await prisma.$transaction(async (tx) => {
+    await tx.employee.update({
+      where: { employeeid },
+      data: {
+        totpsecret: null,
+        temptotpsecret: null,
+        temptotpsecretcreatedat: null,
+      },
+    });
+
+    await tx.logs.create({
+      data: {
+        logid: randomUUID(),
+        employeeid,
+        moment: new Date(),
+        description: "Desactivación exitosa de 2FA",
+        ip_address: ipAddress,
+      },
+    });
+  });
+}
+
 module.exports = {
   findEmployeeByEmail,
   updatePassword,
@@ -306,4 +329,5 @@ module.exports = {
   createLogThrottled,
   completeFirstLoginPasswordChange,
   activateTempTotpSecretWithLog,
+  disableTotpSecretWithLog
 };
