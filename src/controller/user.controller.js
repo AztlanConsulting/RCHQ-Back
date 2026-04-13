@@ -42,7 +42,9 @@ exports.loginFunction = async (req, res) => {
 
     // Limpiar bloqueo cuando expire
     if (employee.blockeduntil && new Date(employee.blockeduntil) <= new Date()) {
-      await User.clearBlockedUntil(employee.employeeid);
+      await User.clearLoginSecurityState(employee.employeeid);
+      employee.failedloginattempts = 0;
+      employee.blockeduntil = null;
     }
 
     // Contraseña incorrecta
@@ -254,6 +256,10 @@ exports.setupTwoFactorAuth = async (req, res) => {
       return res.status(403).json({success: false, message: "Access not allowed"});
   }
 
+    if (employee.totpsecret) {
+      return res.status(409).json({success: false, message: "2FA is already enabled for this account"});
+    }
+
     const tempSecret = speakeasy.generateSecret({
       name: `RCHQ (${employee.email})`,
       issuer: "RCHQ",
@@ -297,6 +303,11 @@ exports.verifyTwoFactorSetup = async (req, res) => {
 
     if (!employee) {
       return res.status(404).json({success: false, message: "Employee not found"});
+    }
+
+    if (!employee.isactive) {
+      await User.createLog(employee.employeeid, "Intento de verificación 2FA para usuario inactivo", ipAddress);
+      return res.status(403).json({ success: false, message: "Access not allowed" });
     }
 
     if (!employee.temptotpsecret) {

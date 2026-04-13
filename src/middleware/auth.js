@@ -4,7 +4,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer")) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ success: false, message: "No token provided" });
   }
 
@@ -20,7 +20,7 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch {
-    return res.status(401).json({ success:false, message: "Invalid or expiredtoken" });
+    return res.status(401).json({ success:false, message: "Invalid or expired token" });
   }
 };
 
