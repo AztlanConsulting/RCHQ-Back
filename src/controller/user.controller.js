@@ -368,7 +368,8 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     if (!verified) {
       await User.createLogThrottled(employee.employeeid, "Activación fallida de 2FA", ipAddress, 5);
 
-      return res.status(200).json({success:false, message: "2FA setup could not be completed. You can try again later in settings",
+      return res.status(400).json({success:false, message: "Invalid 2FA code. Setup could not be completed.",
+        nextStep: "2FA_SETUP_FAILED",
         data: {
           employeeId: employee.employeeid,
           canRetryInSettings: true
