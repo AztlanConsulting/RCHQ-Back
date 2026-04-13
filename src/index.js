@@ -1,6 +1,9 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
 
@@ -24,6 +27,11 @@ const userRouter = require("./router/user.route");
 app.use("/users", userRouter);
 
 app.use(errorHandler);
+
+app.get("/test", async (req, res) => {
+  const users = await prisma.employee.findMany();
+  res.json(users);
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

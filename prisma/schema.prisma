@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model documents {
+  documentid        String              @id(map: "documents_pk") @db.Uuid
+  Name              String              @db.VarChar
+  employeedocuments employeedocuments[] @ignore
+}
+
+model donation {
+  donationid     String          @id(map: "donation_pk") @db.Uuid
+  donatorid      String          @db.Uuid
+  donationtypeid String          @db.Uuid
+  Date           DateTime        @db.Date
+  product        String          @db.VarChar
+  quantity       Decimal         @db.Decimal
+  measurment     String          @db.VarChar
+  donationtype   donationtype    @relation(fields: [donationtypeid], references: [donationtypeid], onDelete: NoAction, onUpdate: NoAction, map: "donation_donationtype_fk")
+  donator        donator         @relation(fields: [donatorid], references: [donatorid], onDelete: NoAction, onUpdate: NoAction, map: "donation_donator_fk")
+  housedonation  housedonation[]
+}
+
+model donationtype {
+  donationtypeid String     @id(map: "donationtype_pk") @db.Uuid
+  name           String     @db.VarChar
+  donation       donation[]
+}
+
+model donator {
+  donatorid String     @id(map: "donator_pk") @db.Uuid
+  Name      String     @db.VarChar
+  donation  donation[]
+}
+
+model employee {
+  employeeid                  String                        @id(map: "employee_pk") @db.Uuid
+  houseid                     String                        @db.Uuid
+  roleid                      String                        @db.Uuid
+  Name                        String                        @db.VarChar
+  surname                     String                        @db.VarChar
+  isactive                    Boolean
+  email                       String                        @db.VarChar
+  Password                    String                        @db.VarChar
+  hasfirstlogin               Boolean
+  totpsecret                  String?                       @db.VarChar
+  curp                        String                        @db.VarChar
+  birthdate                   DateTime                      @db.Date
+  picture                     String                        @db.VarChar
+  startdate                   DateTime                      @db.Date
+  house                       house                         @relation(fields: [houseid], references: [houseid], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
+  role                        role                          @relation(fields: [roleid], references: [roleid], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
+  employeeaddress             employeeaddress[]
+  employeebackupcode          employeebackupcode[]
+  employeedocuments           employeedocuments[]           @ignore
+  employeefault               employeefault[]               @ignore
+  employeeinsidecertification employeeinsidecertification[] @ignore
+  employeepersonalevent       employeepersonalevent[]       @ignore
+  employeeworkday             employeeworkday[]             @ignore
+  logs                        logs[]
+  outsidecertification        outsidecertification[]
+  vacationsrequest            vacationsrequest[]
+}
+
+model employeeaddress {
+  employeeaddressid String   @id(map: "employeeaddress_pk") @db.Uuid
+  employeeid        String   @db.Uuid
+  url               String   @db.VarChar
+  Date              DateTime @db.Timestamp(6)
+  employee          employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "employeeaddress_employee_fk")
+}
+
+model employeebackupcode {
+  backupcodeid String   @id(map: "employeebackupcode_pk") @db.Uuid
+  employeeid   String   @db.Uuid
+  code         String   @db.VarChar
+  employee     employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "employeebackupcode_employee_fk")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model employeedocuments {
+  documentid String    @db.Uuid
+  employeeid String    @db.Uuid
+  url        String    @db.VarChar
+  documents  documents @relation(fields: [documentid], references: [documentid], onDelete: NoAction, onUpdate: NoAction, map: "employeedocuments_documents_fk")
+  employee   employee  @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "employeedocuments_employee_fk")
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model employeefault {
+  faultid    String   @db.Uuid
+  employeeid String   @db.Uuid
+  employee   employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "newtable_employee_fk")
+  fault      fault    @relation(fields: [faultid], references: [faultid], onDelete: NoAction, onUpdate: NoAction, map: "newtable_fault_fk")
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model employeeinsidecertification {
+  insidecertificationid String               @db.Uuid
+  employeeid            String               @db.Uuid
+  Date                  DateTime             @db.Date
+  employee              employee             @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "employeeinsidecertification_employee_fk")
+  insidecertifications  insidecertifications @relation(fields: [insidecertificationid], references: [insidecertificationid], onDelete: NoAction, onUpdate: NoAction, map: "employeeinsidecertification_insidecertifications_fk")
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model employeepersonalevent {
+  personaleventid String        @db.Uuid
+  employeeid      String        @db.Uuid
+  employee        employee      @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "employeepersonalevent_employee_fk")
+  personalevent   personalevent @relation(fields: [personaleventid], references: [personaleventid], onDelete: NoAction, onUpdate: NoAction, map: "employeepersonalevent_personalevent_fk")
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model employeeworkday {
+  workdayid  String   @db.Uuid
+  employeeid String   @db.Uuid
+  Start      DateTime @db.Time(6)
+  End        DateTime @db.Time(6)
+  employee   employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "employeeworkday_employee_fk")
+  workday    workday  @relation(fields: [workdayid], references: [workdayid], onDelete: NoAction, onUpdate: NoAction, map: "employeeworkday_workday_fk")
+
+  @@ignore
+}
+
+model eventtype {
+  eventtypeid   String          @id(map: "eventtype_pk") @db.Uuid
+  Name          String          @db.VarChar
+  globalevent   globalevent[]
+  houseevent    houseevent[]
+  personalevent personalevent[]
+}
+
+model fault {
+  faultid       String          @id(map: "fault_pk") @db.Uuid
+  Date          DateTime        @db.Date
+  description   String
+  employeefault employeefault[] @ignore
+}
+
+model globalevent {
+  globaleventid String    @id(map: "globalevent_pk") @db.Uuid
+  eventtypeid   String    @db.Uuid
+  Date          DateTime  @db.Date
+  Start         DateTime  @db.Time(6)
+  End           DateTime  @db.Time(6)
+  Name          String    @db.VarChar
+  description   String?
+  isfreeday     Boolean
+  eventtype     eventtype @relation(fields: [eventtypeid], references: [eventtypeid], onDelete: NoAction, onUpdate: NoAction, map: "globalevent_eventtype_fk")
+}
+
+model house {
+  houseid       String          @id(map: "house_pk") @db.Uuid
+  Name          String          @db.VarChar
+  Location      String
+  phonenumber   String          @db.VarChar(10)
+  description   String
+  image         String          @db.VarChar
+  employee      employee[]
+  housedonation housedonation[]
+  houseevent    houseevent[]
+}
+
+model housedonation {
+  housedonationid String   @id(map: "housedonation_pk") @db.Uuid
+  houseid         String   @db.Uuid
+  donationid      String   @db.Uuid
+  quantity        Decimal  @db.Decimal
+  Date            DateTime @db.Date
+  donation        donation @relation(fields: [donationid], references: [donationid], onDelete: NoAction, onUpdate: NoAction, map: "housedonation_donation_fk")
+  house           house    @relation(fields: [houseid], references: [houseid], onDelete: NoAction, onUpdate: NoAction, map: "housedonation_house_fk")
+}
+
+model houseevent {
+  houseeventid String    @id(map: "houseevent_pk") @db.Uuid
+  eventtypeid  String    @db.Uuid
+  houseid      String    @db.Uuid
+  Date         DateTime  @db.Date
+  Start        DateTime  @db.Time(6)
+  End          DateTime  @db.Date
+  Name         String    @db.VarChar
+  description  String?
+  eventtype    eventtype @relation(fields: [eventtypeid], references: [eventtypeid], onDelete: NoAction, onUpdate: NoAction, map: "houseevent_eventtype_fk")
+  house        house     @relation(fields: [houseid], references: [houseid], onDelete: NoAction, onUpdate: NoAction, map: "houseevent_house_fk")
+}
+
+model insidecertifications {
+  insidecertificationid       String                        @id(map: "insidecertifications_pk") @db.Uuid
+  Name                        String                        @db.VarChar
+  description                 String
+  employeeinsidecertification employeeinsidecertification[] @ignore
+}
+
+model logs {
+  logid       String   @id(map: "logs_pk") @db.Uuid
+  employeeid  String   @db.Uuid
+  moment      DateTime @db.Timestamp(6)
+  description String   @db.VarChar
+  employee    employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "logs_employee_fk")
+}
+
+model outsidecertification {
+  outsidecertificationid String   @id(map: "outsidecertification_pk") @db.Uuid
+  employeeid             String   @db.Uuid
+  file                   String   @db.VarChar
+  Name                   String   @db.VarChar
+  employee               employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "outsidecertification_employee_fk")
+}
+
+model personalevent {
+  personaleventid       String                  @id(map: "personalevent_pk") @db.Uuid
+  eventtypeid           String                  @db.Uuid
+  Start                 DateTime                @db.Timestamp(6)
+  End                   DateTime                @db.Timestamp(6)
+  Name                  String                  @db.VarChar
+  description           String
+  employeepersonalevent employeepersonalevent[] @ignore
+  eventtype             eventtype               @relation(fields: [eventtypeid], references: [eventtypeid], onDelete: NoAction, onUpdate: NoAction, map: "personalevent_eventtype_fk")
+}
+
+model privilege {
+  privilegeid   String          @id(map: "privilege_pk") @db.Uuid
+  NAME          String          @db.VarChar
+  Description   String          @db.VarChar
+  roleprivilege roleprivilege[] @ignore
+}
+
+model psychologicalevaluation {
+  psychologicalevaluationid String   @id(map: "psychologicalevaluation_pk") @db.Uuid
+  employeeid                String   @db.Uuid
+  file                      String   @db.VarChar
+  Date                      DateTime @db.Date
+}
+
+model role {
+  roleid        String          @id(map: "role_pk") @db.Uuid
+  Name          String          @db.VarChar
+  employee      employee[]
+  roleprivilege roleprivilege[] @ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model roleprivilege {
+  roleid      String    @db.Uuid
+  privilegeid String    @db.Uuid
+  privilege   privilege @relation(fields: [privilegeid], references: [privilegeid], onDelete: NoAction, onUpdate: NoAction, map: "roleprivilege_privilege_fk")
+  role        role      @relation(fields: [roleid], references: [roleid], onDelete: NoAction, onUpdate: NoAction, map: "roleprivilege_role_fk")
+
+  @@ignore
+}
+
+model vacationsrequest {
+  vacationsrequestid String   @id(map: "vacationsrequest_pk") @db.Uuid
+  employeeid         String   @db.Uuid
+  Start              DateTime @db.Date
+  End                DateTime @db.Date
+  status             Int
+  feedback           String?
+  employee           employee @relation(fields: [employeeid], references: [employeeid], onDelete: NoAction, onUpdate: NoAction, map: "vacationsrequest_employee_fk")
+}
+
+model workday {
+  workdayid       String            @id(map: "workday_pk") @db.Uuid
+  name            String            @db.VarChar
+  employeeworkday employeeworkday[] @ignore
+}
