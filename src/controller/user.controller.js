@@ -460,11 +460,16 @@ exports.validateTwoFactorAuth = async (req, res) => {
 };
 
 exports.disableTwoFactorAuth = async (req, res) => {
+  const { password } = req.body || {};
   const employeeId = req.user?.id;
   const ipAddress = getClientIp(req);
 
   if (!employeeId) {
     return res.status(401).json({success: false, message: "User not authenticated"});
+  }
+
+  if (!password) {
+    return res.status(400).json({success: false, message: "Password is required to disable 2FA"});
   }
 
   try {
@@ -483,11 +488,19 @@ exports.disableTwoFactorAuth = async (req, res) => {
       return res.status(409).json({ success: false, message: "2FA is not enabled for this account" });
     }
 
+    const passwordMatches = await verifyPassword(password, employee.pwd);
+
+    if (!passwordMatches) {
+      await User.createLogThrottled(employee.employeeid, "Fallo de desactivación de 2FA por contraseña incorrecta", ipAddress, 5);
+      return res.status(401).json({success: false, message: "Invalid credentials"});
+    }
+
     await User.disableTotpSecretWithLog(employee.employeeid, ipAddress);
 
     return res.status(200).json({
       success: true,
       message: "2FA disabled successfully",
+      nextStep: "2FA_DISABLED",
       data: {
         employeeId: employee.employeeid,
         twoFactorEnabled: false,
