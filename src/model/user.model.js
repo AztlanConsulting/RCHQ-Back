@@ -41,7 +41,9 @@ const pool = require("../db");
  */
 async function findEmployeeByEmail(email) {
   const { rows } = await pool.query(
-    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, r."Name" AS role, e.isactive, e.hasfirstlogin, e.totpsecret, e.roleid, e.failedloginattempts, e.blockeduntil, e.temptotpsecret
+    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, r."Name" AS role,
+    e.isactive, e.hasfirstlogin, e.totpsecret, e.roleid, e.failedloginattempts, e.blockeduntil,
+    e.temptotpsecret, e.temptotpsecretcreatedat
     FROM public.employee e
     INNER JOIN public.role r ON r.roleid = e.roleid
     WHERE LOWER(TRIM(e.email)) = LOWER(TRIM($1))`,
@@ -52,7 +54,9 @@ async function findEmployeeByEmail(email) {
 
 async function getEmployeeById(employeeid) {
   const { rows } = await pool.query(
-    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, e.roleid, r."Name" AS role, e.isactive, e.hasfirstlogin, e.totpsecret, e.temptotpsecret, e.failedloginattempts, e.blockeduntil 
+    `SELECT e.employeeid, e.email, e."Password" AS pwd, e."Name" AS name, e.roleid, r."Name" AS role,
+    e.isactive, e.hasfirstlogin, e.totpsecret, e.temptotpsecret, e.temptotpsecretcreatedat,
+    e.failedloginattempts, e.blockeduntil
     FROM public.employee e
     INNER JOIN public.role r ON r.roleid = e.roleid
     WHERE e.employeeid = $1`,
@@ -152,21 +156,23 @@ async function createLogThrottled(employeeid, description, ipAddress, windowMinu
 
 async function saveTempTotpSecret(employeeid, secret) {
   await pool.query(
-    `UPDATE public.employee SET temptotpsecret = $1 WHERE employeeid = $2`,
+    `UPDATE public.employee SET temptotpsecret = $1, temptotpsecretcreatedat = NOW() WHERE employeeid = $2`,
     [secret, employeeid],
   );
 }
 
 async function clearTempTotpSecret(employeeid) {
   await pool.query(
-    `UPDATE public.employee SET temptotpsecret = NULL WHERE employeeid = $1`,
+    `UPDATE public.employee SET temptotpsecret = NULL, temptotpsecretcreatedat = NULL WHERE employeeid = $1`,
     [employeeid],
   );
 }
 
 async function activateTempTotpSecret(employeeid) {
   await pool.query(
-    `UPDATE public.employee SET totpsecret = temptotpsecret, temptotpsecret = NULL WHERE employeeid = $1`,
+    `UPDATE public.employee
+    SET totpsecret = temptotpsecret, temptotpsecret = NULL, temptotpsecretcreatedat = NULL
+    WHERE employeeid = $1`,
     [employeeid],
   );
 }

@@ -6,6 +6,8 @@ const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword, hashPassword} = require("../utils/password");
 
+const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
+
 exports.loginFunction = async (req, res) => {
   const { email, password } = req.body || {};
   const ipAddress = req.ip;
@@ -260,6 +262,20 @@ exports.setupTwoFactorAuth = async (req, res) => {
       return res.status(409).json({success: false, message: "2FA is already enabled for this account"});
     }
 
+    if (employee.temptotpsecret && employee.temptotpsecretcreatedat) {
+      const createdAt = new Date(employee.temptotpsecretcreatedat);
+      const expiresAt = new Date(createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000);
+
+      if (expiresAt > new Date()) {
+        return res.status(409).json({
+          success: false,
+          message: "A 2FA setup is already pending. Please complete it or wait for it to expire.",
+        });
+      }
+
+      await User.clearTempTotpSecret(employee.employeeid);
+    }
+
     const tempSecret = speakeasy.generateSecret({
       name: `RCHQ (${employee.email})`,
       issuer: "RCHQ",
@@ -312,6 +328,26 @@ exports.verifyTwoFactorSetup = async (req, res) => {
 
     if (!employee.temptotpsecret) {
       return res.status(409).json({success: false, message: "No pending 2FA setup found"});
+    }
+
+    if (!employee.temptotpsecretcreatedat) {
+      await User.clearTempTotpSecret(employee.employeeid);
+      return res.status(409).json({
+        success: false,
+        message: "Invalid pending 2FA setup state",
+      });
+    }
+
+    const createdAt = new Date(employee.temptotpsecretcreatedat);
+    const expiresAt = new Date(createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000);
+
+    if (expiresAt <= new Date()) {
+      await User.clearTempTotpSecret(employee.employeeid);
+
+      return res.status(409).json({
+        success: false,
+        message: "Pending 2FA setup has expired. Please start again.",
+      });
     }
 
     //get user's temp secret from database using employeeId
