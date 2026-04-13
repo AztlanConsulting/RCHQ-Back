@@ -45,7 +45,7 @@ VALUES (
   'Agle',
   true,
   'andre@gmail.com',
-  'andatti',
+  '$2b$10$rq5m7kAMRGBWuGwdAEo/3eoIqIBFFihEhAjE/0tTjl3EmUctsE7E6', --andatti
   true,
   NULL,
   'XAXX010101HDFXXX01',
