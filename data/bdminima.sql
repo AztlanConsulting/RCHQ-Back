@@ -39,35 +39,23 @@ CREATE TABLE public."Role" (
 	CONSTRAINT role_pk PRIMARY KEY (roleid)
 );
 
-CREATE TABLE public.roleprivilage (
-	roleid uuid NOT NULL,
-	privilegeid uuid NOT NULL,
-	CONSTRAINT roleprivilage_role_fk FOREIGN KEY (roleid) REFERENCES public."Role"(roleid),
-	CONSTRAINT roleprivilage_privilege_fk FOREIGN KEY (privilegeid) REFERENCES public.privilage(privilegeid)
-);
-
-CREATE TABLE public.privilage (
-	privilegeid uuid NOT NULL,
-	"NAME" varchar NOT NULL,
-	"Description" varchar NOT NULL,
-	CONSTRAINT privilege_pk PRIMARY KEY (privilegeid)
-);
-
 CREATE TABLE public.employee (
 	employeeid uuid NOT NULL,
 	houseid uuid NOT NULL,
 	roleid uuid NOT NULL,
 	"Name" varchar NOT NULL,
 	surname varchar NOT NULL,
-	isactive boolean NOT NULL,
+	isactive bool NULL,
 	email varchar NOT NULL,
 	"Password" varchar NOT NULL,
-	hasfirstlogin boolean NOT NULL,
+	hasfirstlogin bool NOT NULL,
 	totpsecret varchar NULL,
-	curp varchar NOT NULL,
-	birthdate date NOT NULL,
-	picture varchar NOT NULL,
+	curp varchar NULL,
+	birthdate date NULL,
+	picture varchar NULL,
 	startdate date NOT NULL,
+	nss varchar(11) NULL,
+	bank_account varchar(18) NULL,
 	CONSTRAINT employee_pk PRIMARY KEY (employeeid),
 	CONSTRAINT employee_house_fk FOREIGN KEY (houseid) REFERENCES public.house(houseid),
 	CONSTRAINT employee_role_fk FOREIGN KEY (roleid) REFERENCES public."role"(roleid)
@@ -144,6 +132,7 @@ CREATE TABLE public.logs (
 	employeeid uuid NOT NULL,
 	moment timestamp NOT NULL,
 	description varchar NOT NULL,
+	ip_address varchar(15) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (logid),
 	CONSTRAINT logs_employee_fk FOREIGN KEY (employeeid) REFERENCES public.employee(employeeid)
 );
@@ -173,7 +162,24 @@ CREATE TABLE public.employeeinsidecertification (
 
 CREATE TABLE public.documents (
 	documentid uuid NOT NULL,
-	"Name" varchar NOT NULL,
+	cv varchar NULL,
+	birth_certificate varchar NULL,
+	tax_status_certificate varchar NULL,
+	address_certificate varchar NULL,
+	nss varchar NULL,
+	profesional_id varchar NULL,
+	education_certificate varchar NULL,
+	medical_certificate varchar NULL,
+	state_criminal_record_certificate varchar NULL,
+	federal_criminal_record_certificate varchar NULL,
+	first_recommendation_letter varchar NULL,
+	second_recommendation_letter varchar NULL,
+	driver_license varchar NULL,
+	signed_regulation varchar NULL,
+	signed_contract varchar NULL,
+	signed_confidential_letter varchar NULL,
+	signed_ethics_letter varchar NULL,
+	induction_manual varchar NULL,
 	CONSTRAINT documents_pk PRIMARY KEY (documentid)
 );
 

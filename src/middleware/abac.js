@@ -8,7 +8,7 @@ const authorize = (policyFn, resource) => (req, res, next) => {
     return next();
   }
 
-  return res.status(403).json({ message: 'Access Denied' });
+  return res.status(403).json({ message: "Access Denied" });
 };
 
 module.exports = {
