@@ -105,6 +105,21 @@ exports.loginFunction = async (req, res) => {
 
     // Usuario ya tiene 2fa activado
     if (employee.totpsecret) {
+      if (employee.twofablockeduntil && new Date(employee.twofablockeduntil) > new Date()) {
+        return res.status(423).json({
+          success: false,
+          message: "2FA temporarily blocked",
+          nextStep: "WAIT_2FA_BLOCK",
+          blockedUntil: employee.twofablockeduntil,
+        });
+      }
+
+      if (employee.twofablockeduntil && new Date(employee.twofablockeduntil) <= new Date()) {
+        await User.clear2FASecurityState(employee.employeeid);
+        employee.failed2faattempts = 0;
+        employee.twofablockeduntil = null;
+      }
+      
       const pre2faToken = generatePre2faToken({
         id: employee.employeeid,
         email: employee.email,
