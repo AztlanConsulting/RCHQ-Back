@@ -33,8 +33,16 @@ const twoFactorTokenSchema = z.object({
         .regex(/^\d{6}$/, "token must be a 6-digit code"),
 });
 
+const disableTwoFactorSchema = z.object({
+    password: z
+        .string()
+        .min(1, "Password is required")
+        .max(70, "Password is too long"),
+});
+
 module.exports = {
     loginSchema,
     firstLoginChangePasswordSchema,
     twoFactorTokenSchema,
+    disableTwoFactorSchema,
 };

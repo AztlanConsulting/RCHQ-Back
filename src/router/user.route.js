@@ -9,7 +9,10 @@ const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
 const verifyPre2faToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");
 const {
-  loginSchema, firstLoginChangePasswordSchema, twoFactorTokenSchema,
+  loginSchema,
+  firstLoginChangePasswordSchema,
+  twoFactorTokenSchema,
+  disableTwoFactorSchema
 } = require("../schemas/auth.schemas");
 
 const router = express.Router();
@@ -46,7 +49,7 @@ router.post(
 router.post(
   "/2fa/disable",
   verifyToken,
-  validate(twoFactorTokenSchema),
+  validate(disableTwoFactorSchema),
   userController.disableTwoFactorAuth
 );
 
