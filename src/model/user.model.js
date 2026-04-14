@@ -1,5 +1,7 @@
 const {randomUUID} = require("crypto");
 const prisma = require("../prisma");
+const { hashIp } = require("../utils/hashIp");
+const { LOG_ACTIONS } = require("../utils/logActions");
 
 function mapEmployee(employee) {
   if (!employee) return undefined;
@@ -144,51 +146,17 @@ async function clearLoginSecurityState(employeeid) {
   });
 }
 
-// temporal porque solo funciona cuando employee existe
-async function createLog(employeeid, description, ipAddress) {
+async function createLog(employeeid, actionId, ipAddress, affected = null) {
   await prisma.logs.create({
     data: {
       log_id: randomUUID(),
       employee_id: employeeid,
       moment: new Date(),
-      description,
-      ip_address: ipAddress,
-    },
-  });
-}
-
-async function createLogThrottled(employeeid, description, ipAddress, windowMinutes = 5) {
-  const since = new Date(Date.now() - windowMinutes * 60 * 1000);
-
-  const existing = await prisma.logs.findFirst({
-    where: {
-      employee_id: employeeid,
       action_id: actionId,
-      ip_address: ipAddress,
-      moment: {
-        gte: since,
-      },
-    },
-    select: {
-      log_id: true,
+      affected,
+      ip_address: hashIp(ipAddress),
     },
   });
-
-  if (existing) {
-    return { inserted: false };
-  }
-
-  await prisma.logs.create({
-    data: {
-      log_id: randomUUID(),
-      employee_id: employeeid,
-      moment: new Date(),
-      description,
-      ip_address: ipAddress,
-    },
-  });
-
-  return { inserted: true };
 }
 
 async function saveTempTotpSecret(employeeid, secret) {
@@ -230,6 +198,8 @@ async function activateTempTotpSecret(employeeid) {
 }
 
 async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAddress) {
+  const hashedIp = hashIp(ipAddress);
+
   await prisma.$transaction(async (tx) => {
     await tx.employee.update({
       where: { employee_id: employeeid },
@@ -244,8 +214,9 @@ async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAd
         log_id: randomUUID(),
         employee_id: employeeid,
         moment: new Date(),
-        description: "Cambio de contraseña en primer acceso",
-        ip_address: ipAddress,
+        action_id: LOG_ACTIONS.FIRST_LOGIN_PASSWORD_CHANGED,
+        affected: null,
+        ip_address: hashedIp,
       },
     });
 
@@ -254,14 +225,17 @@ async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAd
         log_id: randomUUID(),
         employee_id: employeeid,
         moment: new Date(),
-        description: "Inicio de sesión completado después de cambio de contraseña en primer acceso",
-        ip_address: ipAddress,
+        action_id: LOG_ACTIONS.FIRST_LOGIN_COMPLETED,
+        affected: null,
+        ip_address: hashedIp,
       },
     });
   });
 }
 
 async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
+  const hashedIp = hashIp(ipAddress);
+
   await prisma.$transaction(async (tx) => {
     const employee = await tx.employee.findUnique({
       where: { employee_id: employeeid },
@@ -284,14 +258,17 @@ async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
         log_id: randomUUID(),
         employee_id: employeeid,
         moment: new Date(),
-        description: "Activación exitosa de 2FA",
-        ip_address: ipAddress,
+        action_id: LOG_ACTIONS.TWO_FA_SETUP_SUCCESS,
+        affected: null,
+        ip_address: hashedIp,
       },
     });
   });
 }
 
-async function disableTotpSecretWithLog(employeeid,ipAddress) {
+async function disableTotpSecretWithLog(employeeid, ipAddress) {
+  const hashedIp = hashIp(ipAddress);
+
   await prisma.$transaction(async (tx) => {
     await tx.employee.update({
       where: { employee_id: employeeid },
@@ -307,8 +284,9 @@ async function disableTotpSecretWithLog(employeeid,ipAddress) {
         log_id: randomUUID(),
         employee_id: employeeid,
         moment: new Date(),
-        description: "Desactivación exitosa de 2FA",
-        ip_address: ipAddress,
+        action_id: LOG_ACTIONS.TWO_FA_DISABLED,
+        affected: null,
+        ip_address: hashedIp,
       },
     });
   });
@@ -367,11 +345,10 @@ module.exports = {
   clearTempTotpSecret,
   activateTempTotpSecret,
   clearBlockedUntil,
-  createLogThrottled,
   completeFirstLoginPasswordChange,
   activateTempTotpSecretWithLog,
   disableTotpSecretWithLog,
   incrementFailed2FAAttempts,
   set2FABlockedUntil,
-  clear2FASecurityState
+  clear2FASecurityState,
 };
