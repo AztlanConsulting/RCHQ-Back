@@ -83,7 +83,7 @@ CREATE TABLE public.employee (
 	surname varchar(50) NOT NULL,
 	is_active bool NOT NULL,
 	email varchar(60) NOT NULL,
-	password varchar(32) NOT NULL,
+	password varchar(72) NOT NULL,
 	has_first_login bool NOT NULL,
 	failed_login_attempts int NOT NULL DEFAULT 0,
 	failed_2fa_attempts int NOT NULL DEFAULT 0,
@@ -155,14 +155,23 @@ CREATE TABLE public.vacations_request (
 	CONSTRAINT vacations_request_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
+CREATE TABLE public.action (
+	action_id char(10) NOT NULL,
+	description varchar NOT NULL,
+	important bool NOT NULL,
+	CONSTRAINT action_pk PRIMARY KEY (action_id)
+);
+
 CREATE TABLE public.logs (
 	log_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	moment timestamp NOT NULL,
-	actions int NOT NULL,
-	ip_address varchar(15) NOT NULL,
+	action_id int NOT NULL,
+	affected char(120) NULL,
+	ip_address varchar(72) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (log_id),
-	CONSTRAINT logs_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
+	CONSTRAINT logs_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
+	CONSTRAINT logs_action_fk FOREIGN KEY (action_id) REFERENCES public.action(action_id)
 );
 
 CREATE TABLE public.employee_backup_code (
