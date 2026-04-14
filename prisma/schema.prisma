@@ -43,6 +43,12 @@ model donation {
   house_donation   house_donation[]
 }
 
+model donation_type {
+  donation_type_id String     @id(map: "donation_type_pk") @db.Uuid
+  name             String     @db.VarChar(30)
+  donation         donation[]
+}
+
 model donator {
   donator_id String     @id(map: "donator_pk") @db.Uuid
   name       String     @db.VarChar(100)
@@ -71,6 +77,8 @@ model employee {
   blocked_until                 DateTime?                       @db.Timestamp(6)
   temp_totp_secret              String?                         @db.VarChar
   temp_totp_secret_created_at   DateTime?                       @db.Timestamp(6)
+  failed_2fa_attempts           Int                             @default(0)
+  twofa_blocked_until           DateTime?                       @db.Timestamp(6)
   house                         house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                          role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address              employee_address[]
@@ -84,52 +92,6 @@ model employee {
   outside_certification         outside_certification[]
   psychological_evaluation      psychological_evaluation[]
   vacations_request             vacations_request[]
-}
-
-model fault {
-  fault_id       String           @id(map: "fault_pk") @db.Uuid
-  date           DateTime         @db.Date
-  description    String
-  employee_fault employee_fault[] @ignore
-}
-
-model house {
-  house_id       String           @id(map: "house_pk") @db.Uuid
-  name           String           @db.VarChar(60)
-  location       String
-  phone_number   String           @db.VarChar(15)
-  description    String
-  image          String           @db.VarChar(100)
-  employee       employee[]
-  house_donation house_donation[]
-  house_event    house_event[]
-}
-
-model logs {
-  log_id      String   @id(map: "logs_pk") @db.Uuid
-  employee_id String   @db.Uuid
-  moment      DateTime @db.Timestamp(6)
-  actions     Int
-  ip_address  String   @db.VarChar(15)
-  employee    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "logs_employee_fk")
-}
-
-model role {
-  role_id  String     @id(map: "role_pk") @db.Uuid
-  name     String     @db.VarChar(50)
-  employee employee[]
-}
-
-model workday {
-  workday_id       String             @id(map: "workday_pk") @db.Uuid
-  name             String             @db.VarChar(9)
-  employee_workday employee_workday[] @ignore
-}
-
-model donation_type {
-  donation_type_id String     @id(map: "donation_type_pk") @db.Uuid
-  name             String     @db.VarChar(30)
-  donation         donation[]
 }
 
 model employee_address {
@@ -209,6 +171,13 @@ model event_type {
   personal_event personal_event[]
 }
 
+model fault {
+  fault_id       String           @id(map: "fault_pk") @db.Uuid
+  date           DateTime         @db.Date
+  description    String
+  employee_fault employee_fault[] @ignore
+}
+
 model global_event {
   global_event_id String     @id(map: "global_event_pk") @db.Uuid
   event_type_id   String     @db.Uuid
@@ -219,6 +188,18 @@ model global_event {
   description     String?
   is_free_day     Boolean
   event_type      event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "global_event_event_type_fk")
+}
+
+model house {
+  house_id       String           @id(map: "house_pk") @db.Uuid
+  name           String           @db.VarChar(60)
+  location       String
+  phone_number   String           @db.VarChar(15)
+  description    String
+  image          String           @db.VarChar(100)
+  employee       employee[]
+  house_donation house_donation[]
+  house_event    house_event[]
 }
 
 model house_donation {
@@ -251,6 +232,15 @@ model inside_certifications {
   employee_inside_certification employee_inside_certification[] @ignore
 }
 
+model logs {
+  log_id      String   @id(map: "logs_pk") @db.Uuid
+  employee_id String   @db.Uuid
+  moment      DateTime @db.Timestamp(6)
+  actions     Int
+  ip_address  String   @db.VarChar(15)
+  employee    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "logs_employee_fk")
+}
+
 model outside_certification {
   outside_certification_id String   @id(map: "outside_certification_pk") @db.Uuid
   employee_id              String   @db.Uuid
@@ -278,6 +268,12 @@ model psychological_evaluation {
   employee                    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "psychological_evaluation_employee_fk")
 }
 
+model role {
+  role_id  String     @id(map: "role_pk") @db.Uuid
+  name     String     @db.VarChar(50)
+  employee employee[]
+}
+
 model vacations_request {
   vacations_request_id String   @id(map: "vacations_request_pk") @db.Uuid
   employee_id          String   @db.Uuid
@@ -286,4 +282,10 @@ model vacations_request {
   status               Int
   feedback             String?
   employee             employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "vacations_request_employee_fk")
+}
+
+model workday {
+  workday_id       String             @id(map: "workday_pk") @db.Uuid
+  name             String             @db.VarChar(9)
+  employee_workday employee_workday[] @ignore
 }
