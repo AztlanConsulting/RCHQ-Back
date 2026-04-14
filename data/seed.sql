@@ -84,4 +84,25 @@ VALUES (
   NULL
 );
 
+INSERT INTO public.action (action_id, description, important) VALUES
+('auth-001', 'Intento fallido de autenticación', false),
+('auth-002', 'Cuenta bloqueada temporalmente por múltiples intentos fallidos', false),
+('auth-003', 'Inicio de sesión exitoso', false),
+('auth-004', 'Primer acceso validado, pendiente cambio de contraseña', false),
+('auth-005', 'Cambio de contraseña en primer acceso', false),
+('auth-006', 'Inicio de sesión completado después de cambio de contraseña en primer acceso', false),
+('auth-007', 'Activación exitosa de 2FA', false),
+('auth-008', 'Activación fallida de 2FA', false),
+('auth-009', 'Fallo de autenticación 2FA', false),
+('auth-010', 'Inicio de sesión exitoso con 2FA', false),
+('auth-011', 'Desactivación exitosa de 2FA', false),
+('auth-012', 'Intento de acceso denegado: usuario inactivo', false),
+('auth-013', 'Intento de cambio de contraseña en primer acceso para usuario inactivo', false),
+('auth-014', 'Intento de configuración de 2FA para usuario inactivo', false),
+('auth-015', 'Intento de verificación 2FA para usuario inactivo', false),
+('auth-016', 'Intento de validación de 2FA para usuario inactivo', false),
+('auth-017', 'Intento de desactivación de 2FA para usuario inactivo', false),
+('auth-018', 'Fallo de desactivación de 2FA por contraseña incorrecta', false),
+('auth-019', '2FA bloqueado temporalmente por múltiples intentos fallidos', false);
+
 COMMIT;
