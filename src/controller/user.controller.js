@@ -7,170 +7,19 @@ const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword, hashPassword} = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
 const { LOG_ACTIONS } = require("../utils/logActions");
+const authService = require("../service/auth.service");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
 exports.loginFunction = async (req, res) => {
-  const { email, password } = req.body || {};
-  const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-  const ipAddress = getClientIp(req);
-
-  if (!normalizedEmail || !password) {
-    return res.status(400).json({ success: false, message: "Email and password required" });
-  }
-
   try {
-    const employee = await User.findEmployeeByEmail(normalizedEmail);
-
-    // Empleado no existe
-    if (!employee) {
-      return res.status(401).json({success: false, message: "Invalid credentials",});
-    }
-
-    // Empleado inactivo
-    if (!employee.isactive) {
-      await User.createLog(
-        employee.employeeid,
-        LOG_ACTIONS.INACTIVE_ACCESS_DENIED,
-        ipAddress
-      );
-
-      return res.status(401).json({
-        success:false, message: "Invalid credentials",
-      });
-    }
-
-    // Cuenta bloqueada temporalmente
-    if (employee.blockeduntil && new Date(employee.blockeduntil) > new Date()) {
-      return res.status(423).json({
-        success: false, message: "Account temporarily blocked", nextStep: "WAIT_BLOCK", blockedUntil: employee.blockeduntil,
-      });
-    }
-
-    // Limpiar bloqueo cuando expire
-    if (employee.blockeduntil && new Date(employee.blockeduntil) <= new Date()) {
-      await User.clearLoginSecurityState(employee.employeeid);
-      employee.failedloginattempts = 0;
-      employee.blockeduntil = null;
-    }
-
-    // Contraseña incorrecta
-    const passwordMatches = await verifyPassword(password, employee.pwd);
-
-    if (!passwordMatches) {
-      const attempts = await User.incrementFailedAttempts(employee.employeeid);
-
-      await User.createLog(
-        employee.employeeid,
-        LOG_ACTIONS.LOGIN_FAILED,
-        ipAddress
-      );
-
-      if (attempts >=3) {
-        const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
-        await User.setBlockedUntil(employee.employeeid, blockedUntil);
-
-        await User.createLog(
-          employee.employeeid,
-          LOG_ACTIONS.ACCOUNT_BLOCKED,
-          ipAddress
-        );
-
-        return res.status(423).json({
-          success: false, message: "Account temporarily blocked", nextStep: "WAIT_BLOCK", blockedUntil,
-        });
-      }
-
-      return res.status(401).json({success: false, message: "Invalid credentials"});
-    }
-
-    // Limpiar intentos y bloqueo si la contraseña es correcta
-    await User.clearLoginSecurityState(employee.employeeid);
-
-    const userPayload = {
-      id: employee.employeeid,
-      email: employee.email,
-      name: employee.name,
-      role: employee.role,
-      privileges: ["read_profile"],
-    };
-
-    // Primer login
-    if (employee.hasfirstlogin) {
-      const firstLoginToken = generateFirstLoginToken({
-        id: employee.employeeid,
-        email: employee.email,
-      });
-
-      await User.createLog(
-        employee.employeeid,
-        LOG_ACTIONS.FIRST_LOGIN_PENDING_PASSWORD_CHANGE,
-        ipAddress
-      );
-
-      return res.status(200).json({
-        success: true, message: "First login, password change required", nextStep: "CHANGE_PASSWORD", firstLoginToken,
-        data: {
-          email: employee.email,
-          name: employee.name,
-          role: employee.role,
-        },
-      });
-    }
-
-    // Usuario ya tiene 2fa activado
-    if (employee.totpsecret) {
-      if (employee.twofablockeduntil && new Date(employee.twofablockeduntil) > new Date()) {
-        return res.status(423).json({
-          success: false,
-          message: "2FA temporarily blocked",
-          nextStep: "WAIT_2FA_BLOCK",
-          blockedUntil: employee.twofablockeduntil,
-        });
-      }
-
-      if (employee.twofablockeduntil && new Date(employee.twofablockeduntil) <= new Date()) {
-        await User.clear2FASecurityState(employee.employeeid);
-        employee.failed2faattempts = 0;
-        employee.twofablockeduntil = null;
-      }
-      
-      const pre2faToken = generatePre2faToken({
-        id: employee.employeeid,
-        email: employee.email,
-      });
-
-      return res.status(200).json({
-        success:true, message: "2FA required", nextStep: "VALIDATE_2FA", pre2faToken,
-        data: {
-          email: employee.email,
-        },
-      });
-    }
-
-    // Login completo sin 2fa
-    const token = generateToken(userPayload);
-
-    await User.createLog(
-      employee.employeeid,
-      LOG_ACTIONS.LOGIN_SUCCESS,
-      ipAddress
-    );
-
-    return res.status(200).json({
-      success: true, message: "Login successful", nextStep: "LOGIN_COMPLETE", token, remind2FA: true,
-      data: {
-        employeeId: employee.employeeid,
-        email: employee.email,
-        name: employee.name,
-        role: employee.role,
-      },
-    });
-
+    const result = await authService.login(req);
+    return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({
-      success: false, message: "Internal Server Error"
+      success: false,
+      message: "Internal Server Error",
     });
   }
 };
