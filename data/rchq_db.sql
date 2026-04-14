@@ -104,6 +104,13 @@ CREATE TABLE public.employee (
 	CONSTRAINT employee_role_fk FOREIGN KEY (role_id) REFERENCES public.role(role_id)
 );
 
+CREATE TABLE public.action (
+	action_id char(10) NOT NULL,
+	description varchar NOT NULL,
+	important bool NOT NULL,
+	CONSTRAINT action_pk PRIMARY KEY (action_id)
+);
+
 CREATE TABLE public.donation (
 	donation_id uuid NOT NULL,
 	donator_id uuid NOT NULL,
@@ -155,19 +162,12 @@ CREATE TABLE public.vacations_request (
 	CONSTRAINT vacations_request_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
-CREATE TABLE public.action (
-	action_id char(10) NOT NULL,
-	description varchar NOT NULL,
-	important bool NOT NULL,
-	CONSTRAINT action_pk PRIMARY KEY (action_id)
-);
-
 CREATE TABLE public.logs (
 	log_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	moment timestamp NOT NULL,
-	action_id int NOT NULL,
-	affected char(120) NULL,
+	action_id char NOT NULL,
+	affected varchar(120) NULL,
 	ip_address varchar(72) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (log_id),
 	CONSTRAINT logs_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
