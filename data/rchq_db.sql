@@ -106,7 +106,7 @@ CREATE TABLE public.employee (
 
 CREATE TABLE public.action (
 	action_id char(10) NOT NULL,
-	description varchar NOT NULL,
+	description varchar(120) NOT NULL,
 	important bool NOT NULL,
 	CONSTRAINT action_pk PRIMARY KEY (action_id)
 );
@@ -166,7 +166,7 @@ CREATE TABLE public.logs (
 	log_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	moment timestamp NOT NULL,
-	action_id char NOT NULL,
+	action_id char(10) NOT NULL,
 	affected varchar(120) NULL,
 	ip_address varchar(72) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (log_id),
@@ -185,6 +185,7 @@ CREATE TABLE public.employee_backup_code (
 CREATE TABLE public.employee_fault (
 	fault_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
+	CONSTRAINT employee_fault_pk PRIMARY KEY (fault_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_fault_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
 	CONSTRAINT employee_fault_fault_fk FOREIGN KEY (fault_id) REFERENCES public.fault(fault_id)
 );
@@ -194,6 +195,7 @@ CREATE TABLE public.employee_workday (
 	employee_id uuid NOT NULL,
 	start time NOT NULL,
 	"end" time NOT NULL,
+	CONSTRAINT employee_workday_pk PRIMARY KEY (workday_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_workday_workday_fk FOREIGN KEY (workday_id) REFERENCES public.workday(workday_id),
 	CONSTRAINT employee_workday_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -202,6 +204,7 @@ CREATE TABLE public.employee_inside_certification (
 	inside_certification_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	date date NOT NULL,
+	CONSTRAINT employee_inside_certification_pk PRIMARY KEY (inside_certification_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_inside_certification_inside_certifications_fk FOREIGN KEY (inside_certification_id) REFERENCES public.inside_certifications(inside_certification_id),
 	CONSTRAINT employee_inside_certification_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -210,6 +213,7 @@ CREATE TABLE public.employee_documents (
 	document_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	url varchar(100) NOT NULL,
+	CONSTRAINT employee_documents_pk PRIMARY KEY (document_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_documents_documents_fk FOREIGN KEY (document_id) REFERENCES public.documents(document_id),
 	CONSTRAINT employee_documents_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -242,7 +246,7 @@ CREATE TABLE public.house_event (
 	house_id uuid NOT NULL,
 	date date NOT NULL,
 	start time NOT NULL,
-	"end" date NOT NULL,
+	"end" date NOT NULL, -- me parece que aquí se debería cambiar a "end" time
 	name varchar(70) NOT NULL,
 	description text NULL,
 	CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),
@@ -266,6 +270,7 @@ CREATE TABLE public.global_event (
 CREATE TABLE public.employee_personal_event (
 	personal_event_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
+	CONSTRAINT employee_personal_event_pk PRIMARY KEY (personal_event_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_personal_event_personal_event_fk FOREIGN KEY (personal_event_id) REFERENCES public.personal_event(personal_event_id),
 	CONSTRAINT employee_personal_event_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );

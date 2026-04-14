@@ -1,5 +1,5 @@
 -- Minimal seed: one house, one role, one employee
--- Login: dev@example.com / 123
+-- Login: andre@gmail.com / Andatti67
 -- Re-run safe
 
 -- =========================
@@ -62,8 +62,8 @@ INSERT INTO public.employee (
 )
 VALUES (
   gen_random_uuid(),
-  (SELECT houseid FROM house LIMIT 1),
-  (SELECT roleid FROM role LIMIT 1),
+  (SELECT house_id FROM house LIMIT 1),
+  (SELECT role_id FROM role LIMIT 1),
   'Carlos',
   'Ramírez',
   true,
