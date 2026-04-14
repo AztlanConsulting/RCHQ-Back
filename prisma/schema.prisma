@@ -8,7 +8,7 @@ datasource db {
 }
 
 model action {
-  action_id   String  @id(map: "action_pk") @db.Char(10)
+  action_id   String  @id(map: "action_pk") @db.Char(8)
   description String  @db.VarChar(120)
   important   Boolean
   logs        logs[]
@@ -238,7 +238,7 @@ model logs {
   log_id      String   @id(map: "logs_pk") @db.Uuid
   employee_id String   @db.Uuid
   moment      DateTime @db.Timestamp(6)
-  action_id   String   @db.Char(10)
+  action_id   String   @db.Char(8)
   affected    String?  @db.VarChar(120)
   ip_address  String   @db.VarChar(72)
   action      action   @relation(fields: [action_id], references: [action_id], onDelete: NoAction, onUpdate: NoAction, map: "logs_action_fk")

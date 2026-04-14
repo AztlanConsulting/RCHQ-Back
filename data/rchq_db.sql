@@ -105,7 +105,7 @@ CREATE TABLE public.employee (
 );
 
 CREATE TABLE public.action (
-	action_id char(10) NOT NULL,
+	action_id char(8) NOT NULL,
 	description varchar(120) NOT NULL,
 	important bool NOT NULL,
 	CONSTRAINT action_pk PRIMARY KEY (action_id)
@@ -166,7 +166,7 @@ CREATE TABLE public.logs (
 	log_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	moment timestamp NOT NULL,
-	action_id char(10) NOT NULL,
+	action_id char(8) NOT NULL,
 	affected varchar(120) NULL,
 	ip_address varchar(72) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (log_id),
