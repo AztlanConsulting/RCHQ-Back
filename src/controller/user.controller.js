@@ -6,6 +6,7 @@ const { canAccess } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
 const {verifyPassword, hashPassword} = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
+const { LOG_ACTIONS } = require("../utils/logActions");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
@@ -28,8 +29,10 @@ exports.loginFunction = async (req, res) => {
 
     // Empleado inactivo
     if (!employee.isactive) {
-      await User.createLogThrottled(
-        employee.employeeid, "Intento de acceso denegado: usuario inactivo", ipAddress, 5,
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.INACTIVE_ACCESS_DENIED,
+        ipAddress
       );
 
       return res.status(401).json({
@@ -57,13 +60,21 @@ exports.loginFunction = async (req, res) => {
     if (!passwordMatches) {
       const attempts = await User.incrementFailedAttempts(employee.employeeid);
 
-      await User.createLogThrottled(employee.employeeid, "Intento fallido de autenticación", ipAddress, 5);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.LOGIN_FAILED,
+        ipAddress
+      );
 
       if (attempts >=3) {
         const blockedUntil = new Date(Date.now() + 15 * 60 * 1000); // Bloquea por 15 minutos
         await User.setBlockedUntil(employee.employeeid, blockedUntil);
 
-        await User.createLog(employee.employeeid, "Cuenta bloqueada temporalmente por múltiples intentos fallidos", ipAddress);
+        await User.createLog(
+          employee.employeeid,
+          LOG_ACTIONS.ACCOUNT_BLOCKED,
+          ipAddress
+        );
 
         return res.status(423).json({
           success: false, message: "Account temporarily blocked", nextStep: "WAIT_BLOCK", blockedUntil,
@@ -91,7 +102,11 @@ exports.loginFunction = async (req, res) => {
         email: employee.email,
       });
 
-      await User.createLog(employee.employeeid, "Primer acceso validado, pendiente cambio de contraseña", ipAddress);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.FIRST_LOGIN_PENDING_PASSWORD_CHANGE,
+        ipAddress
+      );
 
       return res.status(200).json({
         success: true, message: "First login, password change required", nextStep: "CHANGE_PASSWORD", firstLoginToken,
@@ -136,7 +151,11 @@ exports.loginFunction = async (req, res) => {
     // Login completo sin 2fa
     const token = generateToken(userPayload);
 
-    await User.createLog(employee.employeeid, "Inicio de sesión exitoso", ipAddress);
+    await User.createLog(
+      employee.employeeid,
+      LOG_ACTIONS.LOGIN_SUCCESS,
+      ipAddress
+    );
 
     return res.status(200).json({
       success: true, message: "Login successful", nextStep: "LOGIN_COMPLETE", token, remind2FA: true,
@@ -186,7 +205,11 @@ exports.changePasswordFirstLogin = async (req, res) => {
     }
 
     if (!employee.isactive) {
-      await User.createLog(employee.employeeid, "Intento de cambio de contraseña en primer acceso para usuario inactivo", ipAddress,);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.FIRST_LOGIN_CHANGE_PASSWORD_INACTIVE,
+        ipAddress
+      );
 
       return res.status(403).json({success: false, message: "Access not allowed",});
       }
@@ -276,7 +299,12 @@ exports.setupTwoFactorAuth = async (req, res) => {
     }
 
     if (!employee.isactive) {
-      await User.createLogThrottled(employee.employeeid, "Intento de configuración de 2FA para usuario inactivo", ipAddress, 5); 
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_SETUP_INACTIVE,
+        ipAddress
+      );
+
       return res.status(403).json({success: false, message: "Access not allowed"});
   }
 
@@ -344,7 +372,12 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     }
 
     if (!employee.isactive) {
-      await User.createLog(employee.employeeid, "Intento de verificación 2FA para usuario inactivo", ipAddress);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_VERIFY_INACTIVE,
+        ipAddress
+      );
+
       return res.status(403).json({ success: false, message: "Access not allowed" });
     }
 
@@ -381,7 +414,11 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     });
 
     if (!verified) {
-      await User.createLogThrottled(employee.employeeid, "Activación fallida de 2FA", ipAddress, 5);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_SETUP_FAILED,
+        ipAddress
+      );
 
       return res.status(400).json({success:false, message: "Invalid 2FA code. Setup could not be completed.",
         nextStep: "2FA_SETUP_FAILED",
@@ -427,7 +464,12 @@ exports.validateTwoFactorAuth = async (req, res) => {
     }
 
     if (!employee.isactive) {
-      await User.createLog(employee.employeeid, "Intento de validación de 2FA para usuario inactivo", ipAddress); 
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_VALIDATE_INACTIVE,
+        ipAddress
+      );
+
       return res.status(403).json({success: false, message: "Access not allowed"});
     }
 
@@ -456,17 +498,25 @@ exports.validateTwoFactorAuth = async (req, res) => {
       window: 1
     });
 
-    // si el otp es inválido se suma intento, logue y bloquea si rebasa umbral
+    // si el otp es inválido se suma intento, loguea y bloquea si rebasa umbral
     if (!isValid) {
       const attempts = await User.incrementFailed2FAAttempts(employee.employeeid);
-      await User.createLogThrottled(employee.employeeid, "Fallo de autenticación 2FA", ipAddress, 5);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_LOGIN_FAILED,
+        ipAddress
+      );
 
       if (attempts >= 3) {
         const blockedUntil = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
         await User.set2FABlockedUntil(employee.employeeid, blockedUntil);
 
-        await User.createLog(employee.employeeid, "2FA bloqueado temporalmente por múltiples intentos fallidos", ipAddress);
+        await User.createLog(
+          employee.employeeid,
+          LOG_ACTIONS.TWO_FA_BLOCKED,
+          ipAddress
+        );
 
         return res.status(423).json({success: false, message: "2FA temporarily blocked", nextStep: "WAIT_2FA_BLOCK", blockedUntil});
       }
@@ -487,7 +537,11 @@ exports.validateTwoFactorAuth = async (req, res) => {
 
     const tokenJwt = generateToken(userPayload);
 
-    await User.createLog(employee.employeeid, "Inicio de sesión exitoso con 2FA", ipAddress);
+    await User.createLog(
+      employee.employeeid,
+      LOG_ACTIONS.TWO_FA_LOGIN_SUCCESS,
+      ipAddress
+    );
 
     return res.status(200).json({success:true, message: "2FA validation successful",
       nextStep: "LOGIN_COMPLETE",
@@ -526,7 +580,12 @@ exports.disableTwoFactorAuth = async (req, res) => {
     }
 
     if (!employee.isactive) {
-      await User.createLogThrottled(employee.employeeid, "Intento de desactivación de 2FA para usuario inactivo", ipAddress, 5); 
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_DISABLE_INACTIVE,
+        ipAddress
+      );
+
       return res.status(403).json({success: false, message: "Access not allowed"});
     }
 
@@ -537,7 +596,12 @@ exports.disableTwoFactorAuth = async (req, res) => {
     const passwordMatches = await verifyPassword(password, employee.pwd);
 
     if (!passwordMatches) {
-      await User.createLogThrottled(employee.employeeid, "Fallo de desactivación de 2FA por contraseña incorrecta", ipAddress, 5);
+      await User.createLog(
+        employee.employeeid,
+        LOG_ACTIONS.TWO_FA_DISABLE_WRONG_PASSWORD,
+        ipAddress
+      );
+
       return res.status(401).json({success: false, message: "Invalid credentials"});
     }
 
