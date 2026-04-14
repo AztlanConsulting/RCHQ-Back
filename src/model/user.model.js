@@ -44,7 +44,7 @@ async function findEmployeeByEmail(email) {
     include: {
       role: {
         select: {
-          Name: true,
+          name: true,
         },
       },
     },
@@ -54,11 +54,11 @@ async function findEmployeeByEmail(email) {
 
 async function getEmployeeById(employeeid) {
   const employee = await prisma.employee.findUnique({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     include: {
       role: {
         select: {
-          Name: true,
+          name: true,
         },
       },
     },
@@ -68,78 +68,78 @@ async function getEmployeeById(employeeid) {
 
 async function updatePassword(employeeid, newPassword) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      Password: newPassword,
+      password: newPassword,
     },
   });
 }
 
 async function setFirstLogin(employeeid, hasFirstLogin) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      hasfirstlogin: hasFirstLogin,
+      has_first_login: hasFirstLogin,
     },
   });
 }
 
 async function incrementFailedAttempts(employeeid) {
   const employee = await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      failedloginattempts: {
+      failed_login_attempts: {
         increment: 1,
       },
     },
     select: {
-      failedloginattempts: true,
+      failed_login_attempts: true,
     },
   });
-  return employee.failedloginattempts ?? 0;
+  return employee.failed_login_attempts ?? 0;
 }
 
 async function resetFailedAttempts(employeeid) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      failedloginattempts: 0,
+      failed_login_attempts: 0,
     },
   });
 }
 
 async function setBlockedUntil(employeeid, blockedUntil) {
   return prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      blockeduntil: blockedUntil,
+      blocked_until: blockedUntil,
     },
     select: {
-      employeeid: true,
-      blockeduntil: true,
+      employee_id: true,
+      blocked_until: true,
     },
   });
 }
 
 async function clearBlockedUntil(employeeid) {
   return prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      blockeduntil: null,
+      blocked_until: null,
     },
     select: {
-      employeeid: true,
-      blockeduntil: true,
+      employee_id: true,
+      blocked_until: true,
     },
   });
 }
 
 async function clearLoginSecurityState(employeeid) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      failedloginattempts: 0,
-      blockeduntil: null,
+      failed_login_attempts: 0,
+      blocked_until: null,
     },
   });
 }
@@ -148,8 +148,8 @@ async function clearLoginSecurityState(employeeid) {
 async function createLog(employeeid, description, ipAddress) {
   await prisma.logs.create({
     data: {
-      logid: randomUUID(),
-      employeeid,
+      log_id: randomUUID(),
+      employee_id: employeeid,
       moment: new Date(),
       description,
       ip_address: ipAddress,
@@ -162,15 +162,15 @@ async function createLogThrottled(employeeid, description, ipAddress, windowMinu
 
   const existing = await prisma.logs.findFirst({
     where: {
-      employeeid,
-      description,
+      employee_id: employeeid,
+      action_id: actionId,
       ip_address: ipAddress,
       moment: {
         gte: since,
       },
     },
     select: {
-      logid: true,
+      log_id: true,
     },
   });
 
@@ -180,8 +180,8 @@ async function createLogThrottled(employeeid, description, ipAddress, windowMinu
 
   await prisma.logs.create({
     data: {
-      logid: randomUUID(),
-      employeeid,
+      log_id: randomUUID(),
+      employee_id: employeeid,
       moment: new Date(),
       description,
       ip_address: ipAddress,
@@ -193,38 +193,38 @@ async function createLogThrottled(employeeid, description, ipAddress, windowMinu
 
 async function saveTempTotpSecret(employeeid, secret) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      temptotpsecret: secret,
-      temptotpsecretcreatedat: new Date(),
+      temp_totp_secret: secret,
+      temp_totp_secret_created_at: new Date(),
     },
   });
 }
 
 async function clearTempTotpSecret(employeeid) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      temptotpsecret: null,
-      temptotpsecretcreatedat: null,
+      temp_totp_secret: null,
+      temp_totp_secret_created_at: null,
     },
   });
 }
 
 async function activateTempTotpSecret(employeeid) {
   const employee = await prisma.employee.findUnique({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     select: {
-      temptotpsecret: true,
+      temp_totp_secret: true,
     },
   });
 
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      totpsecret: employee?.temptotpsecret ?? null,
-      temptotpsecret: null,
-      temptotpsecretcreatedat: null,
+      totp_secret: employee?.temp_totp_secret ?? null,
+      temp_totp_secret: null,
+      temp_totp_secret_created_at: null,
     },
   });
 }
@@ -232,17 +232,17 @@ async function activateTempTotpSecret(employeeid) {
 async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAddress) {
   await prisma.$transaction(async (tx) => {
     await tx.employee.update({
-      where: { employeeid },
+      where: { employee_id: employeeid },
       data: {
-        Password: hashedPassword,
-        hasfirstlogin: false,
+        password: hashedPassword,
+        has_first_login: false,
       },
     });
 
     await tx.logs.create({
       data: {
-        logid: randomUUID(),
-        employeeid,
+        log_id: randomUUID(),
+        employee_id: employeeid,
         moment: new Date(),
         description: "Cambio de contraseña en primer acceso",
         ip_address: ipAddress,
@@ -251,8 +251,8 @@ async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAd
 
     await tx.logs.create({
       data: {
-        logid: randomUUID(),
-        employeeid,
+        log_id: randomUUID(),
+        employee_id: employeeid,
         moment: new Date(),
         description: "Inicio de sesión completado después de cambio de contraseña en primer acceso",
         ip_address: ipAddress,
@@ -264,25 +264,25 @@ async function completeFirstLoginPasswordChange(employeeid, hashedPassword, ipAd
 async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
   await prisma.$transaction(async (tx) => {
     const employee = await tx.employee.findUnique({
-      where: { employeeid },
+      where: { employee_id: employeeid },
       select: {
-        temptotpsecret: true,
+        temp_totp_secret: true,
       },
     });
 
     await tx.employee.update({
-      where: { employeeid },
+      where: { employee_id: employeeid },
       data: {
-        totpsecret: employee?.temptotpsecret ?? null,
-        temptotpsecret: null,
-        temptotpsecretcreatedat: null,
+        totp_secret: employee?.temp_totp_secret ?? null,
+        temp_totp_secret: null,
+        temp_totp_secret_created_at: null,
       },
     });
 
     await tx.logs.create({
       data: {
-        logid: randomUUID(),
-        employeeid,
+        log_id: randomUUID(),
+        employee_id: employeeid,
         moment: new Date(),
         description: "Activación exitosa de 2FA",
         ip_address: ipAddress,
@@ -294,18 +294,18 @@ async function activateTempTotpSecretWithLog(employeeid, ipAddress) {
 async function disableTotpSecretWithLog(employeeid,ipAddress) {
   await prisma.$transaction(async (tx) => {
     await tx.employee.update({
-      where: { employeeid },
+      where: { employee_id: employeeid },
       data: {
-        totpsecret: null,
-        temptotpsecret: null,
-        temptotpsecretcreatedat: null,
+        totp_secret: null,
+        temp_totp_secret: null,
+        temp_totp_secret_created_at: null,
       },
     });
 
     await tx.logs.create({
       data: {
-        logid: randomUUID(),
-        employeeid,
+        log_id: randomUUID(),
+        employee_id: employeeid,
         moment: new Date(),
         description: "Desactivación exitosa de 2FA",
         ip_address: ipAddress,
@@ -316,39 +316,39 @@ async function disableTotpSecretWithLog(employeeid,ipAddress) {
 
 async function incrementFailed2FAAttempts(employeeid) {
   const employee = await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      failed2faattempts: {
+      failed_2fa_attempts: {
         increment: 1,
       },
     },
     select: {
-      failed2faattempts: true,
+      failed_2fa_attempts: true,
     },
   });
 
-  return employee.failed2faattempts ?? 0;
+  return employee.failed_2fa_attempts ?? 0;
 }
 
 async function set2FABlockedUntil(employeeid, blockedUntil) {
   return prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      twofablockeduntil: blockedUntil,
+      two_fa_blocked_until: blockedUntil,
     },
     select: {
-      employeeid: true,
-      twofablockeduntil: true,
+      employee_id: true,
+      two_fa_blocked_until: true,
     },
   });
 }
 
 async function clear2FASecurityState(employeeid) {
   await prisma.employee.update({
-    where: { employeeid },
+    where: { employee_id: employeeid },
     data: {
-      failed2faattempts: 0,
-      twofablockeduntil: null,
+      failed_2fa_attempts: 0,
+      two_fa_blocked_until: null,
     },
   });
 }
