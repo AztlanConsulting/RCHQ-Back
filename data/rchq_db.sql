@@ -39,6 +39,42 @@ CREATE TABLE public.role (
 	CONSTRAINT role_pk PRIMARY KEY (role_id)
 );
 
+CREATE TABLE public.event_type (
+	event_type_id uuid NOT NULL,
+	name varchar(30) NOT NULL,
+	CONSTRAINT event_type_pk PRIMARY KEY (event_type_id)
+);
+
+CREATE TABLE public.inside_certifications (
+	inside_certification_id uuid NOT NULL,
+	name varchar(70) NOT NULL,
+	description text NOT NULL,
+	CONSTRAINT inside_certifications_pk PRIMARY KEY (inside_certification_id)
+);
+
+CREATE TABLE public.documents (
+	document_id uuid NOT NULL,
+	cv varchar(100) NULL,
+	birth_certificate varchar(100) NULL,
+	tax_status_certificate varchar(100) NULL,
+	address_certificate varchar(100) NULL,
+	nss varchar(100) NULL,
+	professional_id varchar(100) NULL,
+	education_certificate varchar(100) NULL,
+	medical_certificate varchar(100) NULL,
+	state_criminal_record_certificate varchar(100) NULL,
+	federal_criminal_record_certificate varchar(100) NULL,
+	first_recommendation_letter varchar(100) NULL,
+	second_recommendation_letter varchar(100) NULL,
+	driver_license varchar(100) NULL,
+	signed_regulation varchar(100) NULL,
+	signed_contract varchar(100) NULL,
+	signed_confidential_letter varchar(100) NULL,
+	signed_ethics_letter varchar(100) NULL,
+	induction_manual varchar(100) NULL,
+	CONSTRAINT documents_pk PRIMARY KEY (document_id)
+);
+
 CREATE TABLE public.employee (
 	employee_id uuid NOT NULL,
 	house_id uuid NOT NULL,
@@ -79,11 +115,13 @@ CREATE TABLE public.donation (
 	CONSTRAINT donation_donation_type_fk FOREIGN KEY (donation_type_id) REFERENCES public.donation_type(donation_type_id)
 );
 
-CREATE TABLE public.employee_fault (
-	fault_id uuid NOT NULL,
+CREATE TABLE public.psychological_evaluation (
+	psychological_evaluation_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
-	CONSTRAINT employee_fault_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
-	CONSTRAINT employee_fault_fault_fk FOREIGN KEY (fault_id) REFERENCES public.fault(fault_id)
+	file varchar(100) NOT NULL,
+	date date NOT NULL,
+	CONSTRAINT psychological_evaluation_pk PRIMARY KEY (psychological_evaluation_id),
+	CONSTRAINT psychological_evaluation_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
 CREATE TABLE public.outside_certification (
@@ -93,23 +131,6 @@ CREATE TABLE public.outside_certification (
 	name varchar(70) NOT NULL,
 	CONSTRAINT outside_certification_pk PRIMARY KEY (outside_certification_id),
 	CONSTRAINT outside_certification_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
-);
-
-CREATE TABLE public.employee_workday (
-	workday_id uuid NOT NULL,
-	employee_id uuid NOT NULL,
-	start time NOT NULL,
-	end time NOT NULL,
-	CONSTRAINT employee_workday_workday_fk FOREIGN KEY (workday_id) REFERENCES public.workday(workday_id),
-	CONSTRAINT employee_workday_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
-);
-
-CREATE TABLE public.psychological_evaluation (
-	psychological_evaluation_id uuid NOT NULL,
-	employee_id uuid NOT NULL,
-	file varchar(100) NOT NULL,
-	date date NOT NULL,
-	CONSTRAINT psychological_evaluation_pk PRIMARY KEY (psychological_evaluation_id)
 );
 
 CREATE TABLE public.employee_address (
@@ -125,7 +146,7 @@ CREATE TABLE public.vacations_request (
 	vacations_request_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	start date NOT NULL,
-	end date NOT NULL,
+	"end" date NOT NULL,
 	status int NOT NULL,
 	feedback text NULL,
 	CONSTRAINT vacations_request_pk PRIMARY KEY (vacations_request_id),
@@ -150,11 +171,20 @@ CREATE TABLE public.employee_backup_code (
 	CONSTRAINT employee_backup_code_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
-CREATE TABLE public.inside_certifications (
-	inside_certification_id uuid NOT NULL,
-	name varchar(70) NOT NULL,
-	description text NOT NULL,
-	CONSTRAINT inside_certifications_pk PRIMARY KEY (inside_certification_id)
+CREATE TABLE public.employee_fault (
+	fault_id uuid NOT NULL,
+	employee_id uuid NOT NULL,
+	CONSTRAINT employee_fault_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
+	CONSTRAINT employee_fault_fault_fk FOREIGN KEY (fault_id) REFERENCES public.fault(fault_id)
+);
+
+CREATE TABLE public.employee_workday (
+	workday_id uuid NOT NULL,
+	employee_id uuid NOT NULL,
+	start time NOT NULL,
+	"end" time NOT NULL,
+	CONSTRAINT employee_workday_workday_fk FOREIGN KEY (workday_id) REFERENCES public.workday(workday_id),
+	CONSTRAINT employee_workday_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
 CREATE TABLE public.employee_inside_certification (
@@ -165,41 +195,12 @@ CREATE TABLE public.employee_inside_certification (
 	CONSTRAINT employee_inside_certification_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
-CREATE TABLE public.documents (
-	document_id uuid NOT NULL,
-	cv varchar(100) NULL,
-	birth_certificate varchar(100) NULL,
-	tax_status_certificate varchar(100) NULL,
-	address_certificate varchar(100) NULL,
-	nss varchar(100) NULL,
-	professional_id varchar(100) NULL,
-	education_certificate varchar(100) NULL,
-	medical_certificate varchar(100) NULL,
-	state_criminal_record_certificate varchar(100) NULL,
-	federal_criminal_record_certificate varchar(100) NULL,
-	first_recommendation_letter varchar(100) NULL,
-	second_recommendation_letter varchar(100) NULL,
-	driver_license varchar(100) NULL,
-	signed_regulation varchar(100) NULL,
-	signed_contract varchar(100) NULL,
-	signed_confidential_letter varchar(100) NULL,
-	signed_ethics_letter varchar(100) NULL,
-	induction_manual varchar(100) NULL,
-	CONSTRAINT documents_pk PRIMARY KEY (document_id)
-);
-
 CREATE TABLE public.employee_documents (
 	document_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	url varchar(100) NOT NULL,
 	CONSTRAINT employee_documents_documents_fk FOREIGN KEY (document_id) REFERENCES public.documents(document_id),
 	CONSTRAINT employee_documents_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
-);
-
-CREATE TABLE public.event_type (
-	event_type_id uuid NOT NULL,
-	name varchar(30) NOT NULL,
-	CONSTRAINT event_type_pk PRIMARY KEY (event_type_id)
 );
 
 CREATE TABLE public.house_donation (
@@ -217,7 +218,7 @@ CREATE TABLE public.personal_event (
 	personal_event_id uuid NOT NULL,
 	event_type_id uuid NOT NULL,
 	start timestamp NOT NULL,
-	end timestamp NOT NULL,
+	"end" timestamp NOT NULL,
 	name varchar(70) NOT NULL,
 	description text NOT NULL,
 	CONSTRAINT personal_event_pk PRIMARY KEY (personal_event_id),
@@ -230,7 +231,7 @@ CREATE TABLE public.house_event (
 	house_id uuid NOT NULL,
 	date date NOT NULL,
 	start time NOT NULL,
-	end date NOT NULL,
+	"end" date NOT NULL,
 	name varchar(70) NOT NULL,
 	description text NULL,
 	CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),
@@ -243,7 +244,7 @@ CREATE TABLE public.global_event (
 	event_type_id uuid NOT NULL,
 	date date NOT NULL,
 	start time NOT NULL,
-	end time NOT NULL,
+	"end" time NOT NULL,
 	name varchar(70) NOT NULL,
 	description text NULL,
 	is_free_day boolean NOT NULL,
