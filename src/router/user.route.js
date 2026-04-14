@@ -29,7 +29,6 @@ router.post(
 router.post(
   "/2fa/setup",
   verifyToken,
-  validate(twoFactorTokenSchema),
   userController.setupTwoFactorAuth
 );
 router.post(

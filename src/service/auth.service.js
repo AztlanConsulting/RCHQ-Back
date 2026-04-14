@@ -19,16 +19,9 @@ const {
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
 
 async function login(req) {
-    const { email, password } = req.body || {};
-    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    const { email, password } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
     const ipAddress = getClientIp(req);
-
-    if (!normalizedEmail || !password) {
-        return {
-            status: 400,
-            body: { success: false, message: "Email and password required" },
-        };
-    }
 
     const employee = await User.findEmployeeByEmail(normalizedEmail);
 
@@ -164,7 +157,7 @@ async function login(req) {
 }
 
 async function changePasswordFirstLogin(req) {
-    const { newPassword, confirmPassword } = req.body || {};
+    const { newPassword, confirmPassword } = req.body;
     const employeeId = req.user?.id;
     const ipAddress = getClientIp(req);
 
@@ -172,27 +165,6 @@ async function changePasswordFirstLogin(req) {
         return {
             status: 401,
             body: { success: false, message: "User not authenticated" },
-        };
-    }
-
-    if (!newPassword || !confirmPassword) {
-        return {
-            status: 400,
-            body: { success: false, message: "newPassword and confirmPassword are required" },
-        };
-    }
-
-    if (newPassword !== confirmPassword) {
-        return {
-            status: 400,
-            body: { success: false, message: "Passwords do not match" },
-        };
-    }
-
-    if (newPassword.length < 8 || newPassword.length > 70) {
-        return {
-            status: 400,
-            body: { success: false, message: "Password must be between 8 and 70 characters long" },
         };
     }
 
@@ -358,13 +330,6 @@ async function verifyTwoFactorSetup(req) {
         };
     }
 
-    if (!token) {
-        return {
-            status: 400,
-            body: { success: false, message: "token is required" },
-        };
-    }
-
     const employee = await User.getEmployeeById(employeeId);
 
     if (!employee) {
@@ -475,13 +440,6 @@ async function validateTwoFactorAuth(req) {
         return {
             status: 401,
             body: { success: false, message: "User not authenticated" },
-        };
-    }
-
-    if (!token) {
-        return {
-            status: 400,
-            body: { success: false, message: "token is required" },
         };
     }
 
