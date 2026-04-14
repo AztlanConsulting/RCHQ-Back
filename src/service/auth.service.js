@@ -88,6 +88,7 @@ async function login(req) {
 
     if (employee.hasfirstlogin) {
         const firstLoginToken = buildFirstLoginJwt(employee);
+        await authLogger.logFirstLoginPendingPasswordChange(employee.employeeid, ipAddress);
 
         return {
             status: 200,

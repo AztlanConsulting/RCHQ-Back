@@ -17,9 +17,18 @@ async function logInactiveAccess(employeeId, ipAddress) {
     await User.createLog(employeeId, LOG_ACTIONS.INACTIVE_ACCESS_DENIED, ipAddress);
 }
 
+async function logFirstLoginPendingPasswordChange(employeeId, ipAddress) {
+    await User.createLog(
+        employeeId,
+        LOG_ACTIONS.FIRST_LOGIN_PENDING_PASSWORD_CHANGE,
+        ipAddress
+    );
+}
+
 module.exports = {
     logLoginFailed,
     logAccountBlocked,
     logLoginSuccess,
     logInactiveAccess,
+    logFirstLoginPendingPasswordChange,
 };
