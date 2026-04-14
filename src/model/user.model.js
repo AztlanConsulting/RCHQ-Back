@@ -21,7 +21,9 @@ function mapEmployee(employee) {
     nss: employee.nss,
     bank_account: employee.bank_account,
     failedloginattempts: employee.failed_login_attempts,
+    failed2faattempts: employee.failed_2fa_attempts,
     blockeduntil: employee.blocked_until,
+    twofablockeduntil: employee.two_fa_blocked_until,
     temptotpsecret: employee.temp_totp_secret,
     temptotpsecretcreatedat: employee.temp_totp_secret_created_at,
   };
@@ -312,6 +314,45 @@ async function disableTotpSecretWithLog(employeeid,ipAddress) {
   });
 }
 
+async function incrementFailed2FAAttempts(employeeid) {
+  const employee = await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      failed2faattempts: {
+        increment: 1,
+      },
+    },
+    select: {
+      failed2faattempts: true,
+    },
+  });
+
+  return employee.failed2faattempts ?? 0;
+}
+
+async function set2FABlockedUntil(employeeid, blockedUntil) {
+  return prisma.employee.update({
+    where: { employeeid },
+    data: {
+      twofablockeduntil: blockedUntil,
+    },
+    select: {
+      employeeid: true,
+      twofablockeduntil: true,
+    },
+  });
+}
+
+async function clear2FASecurityState(employeeid) {
+  await prisma.employee.update({
+    where: { employeeid },
+    data: {
+      failed2faattempts: 0,
+      twofablockeduntil: null,
+    },
+  });
+}
+
 module.exports = {
   findEmployeeByEmail,
   updatePassword,
@@ -329,5 +370,8 @@ module.exports = {
   createLogThrottled,
   completeFirstLoginPasswordChange,
   activateTempTotpSecretWithLog,
-  disableTotpSecretWithLog
+  disableTotpSecretWithLog,
+  incrementFailed2FAAttempts,
+  set2FABlockedUntil,
+  clear2FASecurityState
 };

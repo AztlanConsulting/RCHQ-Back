@@ -420,6 +420,20 @@ exports.validateTwoFactorAuth = async (req, res) => {
       return res.status(409).json({success: false, message: "2FA is not enabled for this account"});
     }
 
+    // si el paso de 2fa está temporalmente bloqueado
+    if (employee.twofablockeduntil && new Date(employee.twofablockeduntil) > new Date()) {
+      return res.status(423).json({
+        success: false, message: "2FA temporarily blocked", nextStep: "WAIT_2FA_BLOCK", blockedUntil: employee.twofablockeduntil,
+      });
+    }
+
+    // limpiar estado si el bloqueo ya expiró
+    if (employee.twofablockeduntil && new Date(employee.twofablockeduntil) <= new Date()) {
+      await User.clear2FASecurityState(employee.employeeid);
+      employee.failed2faattempts = 0;
+      employee.twofablockeduntil = null;
+    }
+
     const isValid = speakeasy.totp.verify({
       secret: employee.totpsecret,
       encoding: "base32",
@@ -427,10 +441,26 @@ exports.validateTwoFactorAuth = async (req, res) => {
       window: 1
     });
 
+    // si el otp es inválido se suma intento, logue y bloquea si rebasa umbral
     if (!isValid) {
+      const attempts = await User.incrementFailed2FAAttempts(employee.employeeid);
       await User.createLogThrottled(employee.employeeid, "Fallo de autenticación 2FA", ipAddress, 5);
-      return res.status(401).json({success: false, message: "Invalid 2FA token"});
+
+      if (attempts >= 3) {
+        const blockedUntil = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+
+        await User.set2FABlockedUntil(employee.employeeid, blockedUntil);
+
+        await User.createLog(employee.employeeid, "2FA bloqueado temporalmente por múltiples intentos fallidos", ipAddress);
+
+        return res.status(423).json({success: false, message: "2FA temporarily blocked", nextStep: "WAIT_2FA_BLOCK", blockedUntil});
+      }
+
+      return res.status(401).json({ success: false, message: "Invalid 2FA token" });
     }
+
+    // si el otp es válido se limpia seguridad 2FA
+    await User.clear2FASecurityState(employee.employeeid);
 
     const userPayload = {
       id: employee.employeeid,
