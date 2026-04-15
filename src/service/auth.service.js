@@ -32,22 +32,22 @@ async function login(req) {
         };
     }
 
-    if (!employee.isactive) {
-        await authLogger.logInactiveAccess(employee.employeeid, ipAddress);
+    if (!employee.isActive) {
+        await authLogger.logInactiveAccess(employee.employeeId, ipAddress);
         return {
             status: 401,
             body: { success: false, message: "Invalid credentials" },
         };
     }
 
-    if (isBlockedUntil(employee.blockeduntil)) {
+    if (isBlockedUntil(employee.blockedUntil)) {
         return {
             status: 423,
             body: {
                 success: false,
                 message: "Account temporarily blocked",
                 nextStep: "WAIT_BLOCK",
-                blockedUntil: employee.blockeduntil,
+                blockedUntil: employee.blockedUntil,
             },
         };
     }
@@ -57,13 +57,13 @@ async function login(req) {
     const passwordMatches = await verifyPassword(password, employee.pwd);
 
     if (!passwordMatches) {
-        const attempts = await User.incrementFailedAttempts(employee.employeeid);
-        await authLogger.logLoginFailed(employee.employeeid, ipAddress);
+        const attempts = await User.incrementFailedAttempts(employee.employeeId);
+        await authLogger.logLoginFailed(employee.employeeId, ipAddress);
 
         if (attempts >= 3) {
             const blockedUntil = new Date(Date.now() + 15 * 60 * 1000);
-            await User.setBlockedUntil(employee.employeeid, blockedUntil);
-            await authLogger.logAccountBlocked(employee.employeeid, ipAddress);
+            await User.setBlockedUntil(employee.employeeId, blockedUntil);
+            await authLogger.logAccountBlocked(employee.employeeId, ipAddress);
 
             return {
                 status: 423,
@@ -82,11 +82,11 @@ async function login(req) {
         };
     }
 
-    await User.clearLoginSecurityState(employee.employeeid);
+    await User.clearLoginSecurityState(employee.employeeId);
 
-    if (employee.hasfirstlogin) {
+    if (employee.hasFirstLogin) {
         const firstLoginToken = buildFirstLoginJwt(employee);
-        await authLogger.logFirstLoginPendingPasswordChange(employee.employeeid, ipAddress);
+        await authLogger.logFirstLoginPendingPasswordChange(employee.employeeId, ipAddress);
 
         return {
             status: 200,
@@ -104,15 +104,15 @@ async function login(req) {
         };
     }
 
-    if (employee.totpsecret) {
-        if (isBlockedUntil(employee.twofablockeduntil)) {
+    if (employee.totpSecret) {
+        if (isBlockedUntil(employee.twoFaBlockedUntil)) {
             return {
                 status: 423,
                 body: {
                     success: false,
                     message: "2FA temporarily blocked",
                     nextStep: "WAIT_2FA_BLOCK",
-                    blockedUntil: employee.twofablockeduntil,
+                    blockedUntil: employee.twoFaBlockedUntil,
                 },
             };
         }
@@ -136,7 +136,7 @@ async function login(req) {
     }
 
     const token = buildSessionToken(employee);
-    await authLogger.logLoginSuccess(employee.employeeid, ipAddress);
+    await authLogger.logLoginSuccess(employee.employeeId, ipAddress);
 
     return {
         status: 200,
@@ -147,7 +147,7 @@ async function login(req) {
             token,
             remind2FA: true,
             data: {
-                employeeId: employee.employeeid,
+                employeeId: employee.employeeId,
                 email: employee.email,
                 name: employee.name,
                 role: employee.role,
@@ -177,9 +177,9 @@ async function changePasswordFirstLogin(req) {
         };
     }
 
-    if (!employee.isactive) {
+    if (!employee.isActive) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.FIRST_LOGIN_CHANGE_PASSWORD_INACTIVE,
             ipAddress
         );
@@ -190,7 +190,7 @@ async function changePasswordFirstLogin(req) {
         };
     }
 
-    if (!employee.hasfirstlogin) {
+    if (!employee.hasFirstLogin) {
         return {
             status: 409,
             body: { success: false, message: "First login password change is no longer required" },
@@ -209,7 +209,7 @@ async function changePasswordFirstLogin(req) {
     const hashedPassword = await hashPassword(newPassword);
 
     await User.completeFirstLoginPasswordChange(
-        employee.employeeid,
+        employee.employeeId,
         hashedPassword,
         ipAddress,
     );
@@ -224,7 +224,7 @@ async function changePasswordFirstLogin(req) {
             nextStep: "SETUP_2FA_OPTIONAL",
             token,
             data: {
-                employeeId: employee.employeeid,
+                employeeId: employee.employeeId,
                 email: employee.email,
                 name: employee.name,
                 role: employee.role,
@@ -254,9 +254,9 @@ async function setupTwoFactorAuth(req) {
         };
     }
 
-    if (!employee.isactive) {
+    if (!employee.isActive) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_SETUP_INACTIVE,
             ipAddress
         );
@@ -267,15 +267,15 @@ async function setupTwoFactorAuth(req) {
         };
     }
 
-    if (employee.totpsecret) {
+    if (employee.totpSecret) {
         return {
             status: 409,
             body: { success: false, message: "2FA is already enabled for this account" },
         };
     }
 
-    if (employee.temptotpsecret && employee.temptotpsecretcreatedat) {
-        const createdAt = new Date(employee.temptotpsecretcreatedat);
+    if (employee.tempTotpSecret && employee.tempTotpSecretCreatedAt) {
+        const createdAt = new Date(employee.tempTotpSecretCreatedAt);
         const expiresAt = new Date(
             createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
         );
@@ -290,7 +290,7 @@ async function setupTwoFactorAuth(req) {
             };
         }
 
-        await User.clearTempTotpSecret(employee.employeeid);
+        await User.clearTempTotpSecret(employee.employeeId);
     }
 
     const tempSecret = speakeasy.generateSecret({
@@ -299,7 +299,7 @@ async function setupTwoFactorAuth(req) {
         length: 20,
     });
 
-    await User.saveTempTotpSecret(employee.employeeid, tempSecret.base32);
+    await User.saveTempTotpSecret(employee.employeeId, tempSecret.base32);
 
     const qrImage = await QRCode.toDataURL(tempSecret.otpauth_url);
 
@@ -310,9 +310,9 @@ async function setupTwoFactorAuth(req) {
             message: "2FA setup started",
             nextStep: "VERIFY_2FA_SETUP",
             data: {
-                employeeId: employee.employeeid,
+                employeeId: employee.employeeId,
                 qrImage,
-                otpauth_url: tempSecret.otpauth_url,
+                otpauthUrl: tempSecret.otpauth_url,
             },
         },
     };
@@ -339,9 +339,9 @@ async function verifyTwoFactorSetup(req) {
         };
     }
 
-    if (!employee.isactive) {
+    if (!employee.isActive) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_VERIFY_INACTIVE,
             ipAddress
         );
@@ -352,15 +352,15 @@ async function verifyTwoFactorSetup(req) {
         };
     }
 
-    if (!employee.temptotpsecret) {
+    if (!employee.tempTotpSecret) {
         return {
             status: 409,
             body: { success: false, message: "No pending 2FA setup found" },
         };
     }
 
-    if (!employee.temptotpsecretcreatedat) {
-        await User.clearTempTotpSecret(employee.employeeid);
+    if (!employee.tempTotpSecretCreatedAt) {
+        await User.clearTempTotpSecret(employee.employeeId);
         return {
             status: 409,
             body: {
@@ -370,13 +370,13 @@ async function verifyTwoFactorSetup(req) {
         };
     }
 
-    const createdAt = new Date(employee.temptotpsecretcreatedat);
+    const createdAt = new Date(employee.tempTotpSecretCreatedAt);
     const expiresAt = new Date(
         createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
     );
 
     if (expiresAt <= new Date()) {
-        await User.clearTempTotpSecret(employee.employeeid);
+        await User.clearTempTotpSecret(employee.employeeId);
 
         return {
             status: 409,
@@ -388,7 +388,7 @@ async function verifyTwoFactorSetup(req) {
     }
 
     const verified = speakeasy.totp.verify({
-        secret: employee.temptotpsecret,
+        secret: employee.tempTotpSecret,
         encoding: "base32",
         token,
         window: 1,
@@ -396,7 +396,7 @@ async function verifyTwoFactorSetup(req) {
 
     if (!verified) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_SETUP_FAILED,
             ipAddress
         );
@@ -408,14 +408,14 @@ async function verifyTwoFactorSetup(req) {
                 message: "Invalid 2FA code. Setup could not be completed.",
                 nextStep: "2FA_SETUP_FAILED",
                 data: {
-                    employeeId: employee.employeeid,
+                    employeeId: employee.employeeId,
                     canRetryInSettings: true,
                 },
             },
         };
     }
 
-    await User.activateTempTotpSecretWithLog(employee.employeeid, ipAddress);
+    await User.activateTempTotpSecretWithLog(employee.employeeId, ipAddress);
 
     return {
         status: 200,
@@ -424,7 +424,7 @@ async function verifyTwoFactorSetup(req) {
             message: "2FA activated successfully",
             nextStep: "2FA_SETUP_COMPLETE",
             data: {
-                employeeId: employee.employeeid,
+                employeeId: employee.employeeId,
                 twoFactorEnabled: true,
             },
         },
@@ -452,9 +452,9 @@ async function validateTwoFactorAuth(req) {
         };
     }
 
-    if (!employee.isactive) {
+    if (!employee.isActive) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_VALIDATE_INACTIVE,
             ipAddress
         );
@@ -465,21 +465,21 @@ async function validateTwoFactorAuth(req) {
         };
     }
 
-    if (!employee.totpsecret) {
+    if (!employee.totpSecret) {
         return {
             status: 409,
             body: { success: false, message: "2FA is not enabled for this account" },
         };
     }
 
-    if (isBlockedUntil(employee.twofablockeduntil)) {
+    if (isBlockedUntil(employee.twoFaBlockedUntil)) {
         return {
             status: 423,
             body: {
                 success: false,
                 message: "2FA temporarily blocked",
                 nextStep: "WAIT_2FA_BLOCK",
-                blockedUntil: employee.twofablockeduntil,
+                blockedUntil: employee.twoFaBlockedUntil,
             },
         };
     }
@@ -487,17 +487,17 @@ async function validateTwoFactorAuth(req) {
     await clearExpired2FABlock(employee);
 
     const isValid = speakeasy.totp.verify({
-        secret: employee.totpsecret,
+        secret: employee.totpSecret,
         encoding: "base32",
         token,
         window: 1,
     });
 
     if (!isValid) {
-        const attempts = await User.incrementFailed2FAAttempts(employee.employeeid);
+        const attempts = await User.incrementFailed2FAAttempts(employee.employeeId);
 
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_LOGIN_FAILED,
             ipAddress
         );
@@ -505,10 +505,10 @@ async function validateTwoFactorAuth(req) {
         if (attempts >= 3) {
             const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
 
-            await User.set2FABlockedUntil(employee.employeeid, blockedUntil);
+            await User.set2FABlockedUntil(employee.employeeId, blockedUntil);
 
             await User.createLog(
-                employee.employeeid,
+                employee.employeeId,
                 LOG_ACTIONS.TWO_FA_BLOCKED,
                 ipAddress
             );
@@ -530,12 +530,12 @@ async function validateTwoFactorAuth(req) {
         };
     }
 
-    await User.clear2FASecurityState(employee.employeeid);
+    await User.clear2FASecurityState(employee.employeeId);
 
     const tokenJwt = buildSessionToken(employee);
 
     await User.createLog(
-        employee.employeeid,
+        employee.employeeId,
         LOG_ACTIONS.TWO_FA_LOGIN_SUCCESS,
         ipAddress
     );
@@ -548,7 +548,7 @@ async function validateTwoFactorAuth(req) {
             nextStep: "LOGIN_COMPLETE",
             token: tokenJwt,
             data: {
-                employeeId: employee.employeeid,
+                employeeId: employee.employeeId,
                 email: employee.email,
                 name: employee.name,
                 role: employee.role,
@@ -585,9 +585,9 @@ async function disableTwoFactorAuth(req) {
         };
     }
 
-    if (!employee.isactive) {
+    if (!employee.isActive) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_DISABLE_INACTIVE,
             ipAddress
         );
@@ -598,7 +598,7 @@ async function disableTwoFactorAuth(req) {
         };
     }
 
-    if (!employee.totpsecret) {
+    if (!employee.totpSecret) {
         return {
             status: 409,
             body: { success: false, message: "2FA is not enabled for this account" },
@@ -609,7 +609,7 @@ async function disableTwoFactorAuth(req) {
 
     if (!passwordMatches) {
         await User.createLog(
-            employee.employeeid,
+            employee.employeeId,
             LOG_ACTIONS.TWO_FA_DISABLE_WRONG_PASSWORD,
             ipAddress
         );
@@ -620,7 +620,7 @@ async function disableTwoFactorAuth(req) {
         };
     }
 
-    await User.disableTotpSecretWithLog(employee.employeeid, ipAddress);
+    await User.disableTotpSecretWithLog(employee.employeeId, ipAddress);
 
     return {
         status: 200,
@@ -629,7 +629,7 @@ async function disableTwoFactorAuth(req) {
             message: "2FA disabled successfully",
             nextStep: "2FA_DISABLED",
             data: {
-                employeeId: employee.employeeid,
+                employeeId: employee.employeeId,
                 twoFactorEnabled: false,
             },
         },

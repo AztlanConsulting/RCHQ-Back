@@ -2,7 +2,7 @@ const { generateToken, generateFirstLoginToken, generatePre2faToken } = require(
 
 function buildUserPayload(employee) {
     return {
-        id: employee.employeeid,
+        id: employee.employeeId,
         email: employee.email,
         name: employee.name,
         role: employee.role,
@@ -16,14 +16,14 @@ function buildSessionToken(employee) {
 
 function buildFirstLoginJwt(employee) {
     return generateFirstLoginToken({
-        id: employee.employeeid,
+        id: employee.employeeId,
         email: employee.email,
     });
 }
 
 function buildPre2faJwt(employee) {
     return generatePre2faToken({
-        id: employee.employeeid,
+        id: employee.employeeId,
         email: employee.email,
     });
 }
