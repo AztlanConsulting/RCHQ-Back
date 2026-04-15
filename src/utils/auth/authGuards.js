@@ -9,18 +9,18 @@ function isExpiredBlock(dateValue) {
 }
 
 async function clearExpiredLoginBlock(employee) {
-    if (isExpiredBlock(employee.blockeduntil)) {
-        await User.clearLoginSecurityState(employee.employeeid);
-        employee.failedloginattempts = 0;
-        employee.blockeduntil = null;
+    if (isExpiredBlock(employee.blockedUntil)) {
+        await User.clearLoginSecurityState(employee.employeeId);
+        employee.failedLoginAttempts = 0;
+        employee.blockedUntil = null;
     }
 }
 
 async function clearExpired2FABlock(employee) {
-    if (isExpiredBlock(employee.twofablockeduntil)) {
-        await User.clear2FASecurityState(employee.employeeid);
-        employee.failed2faattempts = 0;
-        employee.twofablockeduntil = null;
+    if (isExpiredBlock(employee.twoFaBlockedUntil)) {
+        await User.clear2FASecurityState(employee.employeeId);
+        employee.failed2faAttempts = 0;
+        employee.twoFaBlockedUntil = null;
     }
 }
 

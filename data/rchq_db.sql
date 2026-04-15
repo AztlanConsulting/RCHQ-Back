@@ -166,7 +166,7 @@ CREATE TABLE public.logs (
 	log_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	moment timestamp NOT NULL,
-	action_id char(8) NOT NULL,
+	action_id varchar(8) NOT NULL,
 	affected varchar(120) NULL,
 	ip_address varchar(72) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (log_id),
@@ -246,7 +246,7 @@ CREATE TABLE public.house_event (
 	house_id uuid NOT NULL,
 	date date NOT NULL,
 	start time NOT NULL,
-	"end" date NOT NULL, -- me parece que aquí se debería cambiar a "end" time
+	"end" time NOT NULL,
 	name varchar(70) NOT NULL,
 	description text NULL,
 	CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),

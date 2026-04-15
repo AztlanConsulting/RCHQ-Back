@@ -220,7 +220,7 @@ model house_event {
   house_id       String     @db.Uuid
   date           DateTime   @db.Date
   start          DateTime   @db.Time(6)
-  end            DateTime   @db.Date
+  end            DateTime   @db.Time(6)
   name           String     @db.VarChar(70)
   description    String?
   event_type     event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "house_event_event_type_fk")
@@ -238,7 +238,7 @@ model logs {
   log_id      String   @id(map: "logs_pk") @db.Uuid
   employee_id String   @db.Uuid
   moment      DateTime @db.Timestamp(6)
-  action_id   String   @db.Char(8)
+  action_id   String   @db.VarChar(8)
   affected    String?  @db.VarChar(120)
   ip_address  String   @db.VarChar(72)
   action      action   @relation(fields: [action_id], references: [action_id], onDelete: NoAction, onUpdate: NoAction, map: "logs_action_fk")
