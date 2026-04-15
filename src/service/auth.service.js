@@ -1,7 +1,7 @@
 const User = require("../model/user.model");
 const { hashPassword, verifyPassword } = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
-const authLogger = require("../utils/auth/authLogger");
+const { createLog } = require("../utils/logs");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const { LOG_ACTIONS } = require("../utils/logActions");
@@ -15,6 +15,7 @@ const {
     clearExpiredLoginBlock,
     clearExpired2FABlock,
 } = require("../utils/auth/authGuards");
+const prisma = require("../prisma");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
 
@@ -33,7 +34,11 @@ async function login(req) {
     }
 
     if (!employee.isActive) {
-        await authLogger.logInactiveAccess(employee.employeeId, ipAddress);
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.INACTIVE_ACCESS_DENIED,
+            ipAddress
+        );
         return {
             status: 401,
             body: { success: false, message: "Invalid credentials" },
@@ -58,12 +63,20 @@ async function login(req) {
 
     if (!passwordMatches) {
         const attempts = await User.incrementFailedAttempts(employee.employeeId);
-        await authLogger.logLoginFailed(employee.employeeId, ipAddress);
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.LOGIN_FAILED,
+            ipAddress
+        );
 
         if (attempts >= 3) {
             const blockedUntil = new Date(Date.now() + 15 * 60 * 1000);
             await User.setBlockedUntil(employee.employeeId, blockedUntil);
-            await authLogger.logAccountBlocked(employee.employeeId, ipAddress);
+            await createLog(
+                employee.employeeId,
+                LOG_ACTIONS.ACCOUNT_BLOCKED,
+                ipAddress
+            );
 
             return {
                 status: 423,
@@ -86,7 +99,11 @@ async function login(req) {
 
     if (employee.hasFirstLogin) {
         const firstLoginToken = buildFirstLoginJwt(employee);
-        await authLogger.logFirstLoginPendingPasswordChange(employee.employeeId, ipAddress);
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.FIRST_LOGIN_PENDING_PASSWORD_CHANGE,
+            ipAddress
+        );
 
         return {
             status: 200,
@@ -136,7 +153,11 @@ async function login(req) {
     }
 
     const token = buildSessionToken(employee);
-    await authLogger.logLoginSuccess(employee.employeeId, ipAddress);
+    await createLog(
+        employee.employeeId,
+        LOG_ACTIONS.LOGIN_SUCCESS,
+        ipAddress
+    );
 
     return {
         status: 200,
@@ -178,7 +199,7 @@ async function changePasswordFirstLogin(req) {
     }
 
     if (!employee.isActive) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.FIRST_LOGIN_CHANGE_PASSWORD_INACTIVE,
             ipAddress
@@ -208,11 +229,31 @@ async function changePasswordFirstLogin(req) {
 
     const hashedPassword = await hashPassword(newPassword);
 
-    await User.completeFirstLoginPasswordChange(
-        employee.employeeId,
-        hashedPassword,
-        ipAddress,
-    );
+    await prisma.$transaction(async (tx) => {
+        await tx.employee.update({
+            where: { employee_id: employee.employeeId },
+            data: {
+                password: hashedPassword,
+                has_first_login: false,
+            },
+        });
+
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.FIRST_LOGIN_PASSWORD_CHANGED,
+            ipAddress,
+            null,
+            tx
+        );
+
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.FIRST_LOGIN_COMPLETED,
+            ipAddress,
+            null,
+            tx
+        );
+    });
 
     const token = buildSessionToken(employee);
 
@@ -255,7 +296,7 @@ async function setupTwoFactorAuth(req) {
     }
 
     if (!employee.isActive) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_SETUP_INACTIVE,
             ipAddress
@@ -340,7 +381,7 @@ async function verifyTwoFactorSetup(req) {
     }
 
     if (!employee.isActive) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_VERIFY_INACTIVE,
             ipAddress
@@ -395,7 +436,7 @@ async function verifyTwoFactorSetup(req) {
     });
 
     if (!verified) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_SETUP_FAILED,
             ipAddress
@@ -415,7 +456,31 @@ async function verifyTwoFactorSetup(req) {
         };
     }
 
-    await User.activateTempTotpSecretWithLog(employee.employeeId, ipAddress);
+    await prisma.$transaction(async (tx) => {
+        const employeeInTx = await tx.employee.findUnique({
+            where: { employee_id: employee.employeeId },
+            select: {
+                temp_totp_secret: true,
+            },
+        });
+
+        await tx.employee.update({
+            where: { employee_id: employee.employeeId },
+            data: {
+                totp_secret: employeeInTx?.temp_totp_secret ?? null,
+                temp_totp_secret: null,
+                temp_totp_secret_created_at: null,
+            },
+        });
+
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.TWO_FA_SETUP_SUCCESS,
+            ipAddress,
+            null,
+            tx
+        );
+    });
 
     return {
         status: 200,
@@ -453,7 +518,7 @@ async function validateTwoFactorAuth(req) {
     }
 
     if (!employee.isActive) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_VALIDATE_INACTIVE,
             ipAddress
@@ -496,7 +561,7 @@ async function validateTwoFactorAuth(req) {
     if (!isValid) {
         const attempts = await User.incrementFailed2FAAttempts(employee.employeeId);
 
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_LOGIN_FAILED,
             ipAddress
@@ -507,7 +572,7 @@ async function validateTwoFactorAuth(req) {
 
             await User.set2FABlockedUntil(employee.employeeId, blockedUntil);
 
-            await User.createLog(
+            await createLog(
                 employee.employeeId,
                 LOG_ACTIONS.TWO_FA_BLOCKED,
                 ipAddress
@@ -534,7 +599,7 @@ async function validateTwoFactorAuth(req) {
 
     const tokenJwt = buildSessionToken(employee);
 
-    await User.createLog(
+    await createLog(
         employee.employeeId,
         LOG_ACTIONS.TWO_FA_LOGIN_SUCCESS,
         ipAddress
@@ -586,7 +651,7 @@ async function disableTwoFactorAuth(req) {
     }
 
     if (!employee.isActive) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_DISABLE_INACTIVE,
             ipAddress
@@ -608,7 +673,7 @@ async function disableTwoFactorAuth(req) {
     const passwordMatches = await verifyPassword(password, employee.pwd);
 
     if (!passwordMatches) {
-        await User.createLog(
+        await createLog(
             employee.employeeId,
             LOG_ACTIONS.TWO_FA_DISABLE_WRONG_PASSWORD,
             ipAddress
@@ -620,7 +685,24 @@ async function disableTwoFactorAuth(req) {
         };
     }
 
-    await User.disableTotpSecretWithLog(employee.employeeId, ipAddress);
+    await prisma.$transaction(async (tx) => {
+        await tx.employee.update({
+            where: { employee_id: employee.employeeId },
+            data: {
+                totp_secret: null,
+                temp_totp_secret: null,
+                temp_totp_secret_created_at: null,
+            },
+        });
+
+        await createLog(
+            employee.employeeId,
+            LOG_ACTIONS.TWO_FA_DISABLED,
+            ipAddress,
+            null,
+            tx
+        );
+    });
 
     return {
         status: 200,

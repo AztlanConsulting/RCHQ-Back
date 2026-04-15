@@ -1,7 +1,4 @@
-const {randomUUID} = require("crypto");
 const prisma = require("../prisma");
-const { hashIp } = require("../utils/hashIp");
-const { LOG_ACTIONS } = require("../utils/logActions");
 
 function mapEmployee(employee) {
   if (!employee) return undefined;
@@ -142,19 +139,6 @@ async function clearLoginSecurityState(employeeId) {
   });
 }
 
-async function createLog(employeeId, actionId, ipAddress, affected = null) {
-  await prisma.logs.create({
-    data: {
-      log_id: randomUUID(),
-      employee_id: employeeId,
-      moment: new Date(),
-      action_id: actionId,
-      affected,
-      ip_address: hashIp(ipAddress),
-    },
-  });
-}
-
 async function saveTempTotpSecret(employeeId, secret) {
   await prisma.employee.update({
     where: { employee_id: employeeId },
@@ -172,119 +156,6 @@ async function clearTempTotpSecret(employeeId) {
       temp_totp_secret: null,
       temp_totp_secret_created_at: null,
     },
-  });
-}
-
-async function activateTempTotpSecret(employeeId) {
-  const employee = await prisma.employee.findUnique({
-    where: { employee_id: employeeId },
-    select: {
-      temp_totp_secret: true,
-    },
-  });
-
-  await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      totp_secret: employee?.temp_totp_secret ?? null,
-      temp_totp_secret: null,
-      temp_totp_secret_created_at: null,
-    },
-  });
-}
-
-async function completeFirstLoginPasswordChange(employeeId, hashedPassword, ipAddress) {
-  const hashedIp = hashIp(ipAddress);
-
-  await prisma.$transaction(async (tx) => {
-    await tx.employee.update({
-      where: { employee_id: employeeId },
-      data: {
-        password: hashedPassword,
-        has_first_login: false,
-      },
-    });
-
-    await tx.logs.create({
-      data: {
-        log_id: randomUUID(),
-        employee_id: employeeId,
-        moment: new Date(),
-        action_id: LOG_ACTIONS.FIRST_LOGIN_PASSWORD_CHANGED,
-        affected: null,
-        ip_address: hashedIp,
-      },
-    });
-
-    await tx.logs.create({
-      data: {
-        log_id: randomUUID(),
-        employee_id: employeeId,
-        moment: new Date(),
-        action_id: LOG_ACTIONS.FIRST_LOGIN_COMPLETED,
-        affected: null,
-        ip_address: hashedIp,
-      },
-    });
-  });
-}
-
-async function activateTempTotpSecretWithLog(employeeId, ipAddress) {
-  const hashedIp = hashIp(ipAddress);
-
-  await prisma.$transaction(async (tx) => {
-    const employee = await tx.employee.findUnique({
-      where: { employee_id: employeeId },
-      select: {
-        temp_totp_secret: true,
-      },
-    });
-
-    await tx.employee.update({
-      where: { employee_id: employeeId },
-      data: {
-        totp_secret: employee?.temp_totp_secret ?? null,
-        temp_totp_secret: null,
-        temp_totp_secret_created_at: null,
-      },
-    });
-
-    await tx.logs.create({
-      data: {
-        log_id: randomUUID(),
-        employee_id: employeeId,
-        moment: new Date(),
-        action_id: LOG_ACTIONS.TWO_FA_SETUP_SUCCESS,
-        affected: null,
-        ip_address: hashedIp,
-      },
-    });
-  });
-}
-
-async function disableTotpSecretWithLog(employeeId, ipAddress) {
-  const hashedIp = hashIp(ipAddress);
-
-  await prisma.$transaction(async (tx) => {
-    await tx.employee.update({
-      where: { employee_id: employeeId },
-      data: {
-        totp_secret: null,
-        temp_totp_secret: null,
-        temp_totp_secret_created_at: null,
-      },
-    });
-
-    await tx.logs.create({
-      data: {
-        log_id: randomUUID(),
-        employee_id: employeeId,
-        moment: new Date(),
-        action_id: LOG_ACTIONS.TWO_FA_DISABLED,
-        affected: null,
-        ip_address: hashedIp,
-      },
-    });
   });
 }
 
@@ -337,13 +208,8 @@ module.exports = {
   clearLoginSecurityState,
   getEmployeeById,
   saveTempTotpSecret,
-  createLog,
   clearTempTotpSecret,
-  activateTempTotpSecret,
   clearBlockedUntil,
-  completeFirstLoginPasswordChange,
-  activateTempTotpSecretWithLog,
-  disableTotpSecretWithLog,
   incrementFailed2FAAttempts,
   set2FABlockedUntil,
   clear2FASecurityState,
