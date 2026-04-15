@@ -56,18 +56,18 @@ else Campos completos
         employee.controller -> ReactView : alert("Usuario ya existente")
         activate ReactView
 
-        ReactView -> employee.routes : response.redirect("/employee/{employeeid}")
+        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
         deactivate ReactView
         
     else Usuario no existe
         
         create employee
-        employee.controller -> employee : create({\n employeeid,\n houseid,\n roleid,\n name,\n surname,\n isactive,\n email,\n password,\n hasfirstlogin,\n totpsecret,\n curp,\n rfc,\n nss,\n bank_account,\n birthdate,\n picture,\n startdate\n})
+        employee.controller -> employee : create({\n employee_id,\n house_id,\n role_id,\n name,\n surname,\n is_active,\n email,\n password,\n has_first_login,\n totp_secret,\n curp,\n rfc,\n nss,\n bank_account,\n birth_date,\n picture,\n start_date\n})
         activate employee
 
         employee.controller ->> employee : create()
         
-        employee ->> PostgreSQL : INSERT INTO employee(\nemployeeid,\nhouseid,\nroleid,\nname,\nsurname,\nisactive,\nemail,\npassword,\nhasfirstlogin,\ntotpsecret,\ncurp,\nrfc,\nnss,\nbank_account,\nbirthdate,\npicture,\nstartdate)\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        employee ->> PostgreSQL : INSERT INTO employee(\nemployee_id,\nhouse_id,\nrole_id,\nname,\nsurname,\nis_active,\nemail,\npassword,\nhas_first_login,\ntotp_secret,\ncurp,\nrfc,\nnss,\nbank_account,\nbirth_date,\npicture,\nstartd_ate)\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         activate PostgreSQL
         PostgreSQL -->> employee : Insert OK
