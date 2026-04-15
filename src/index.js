@@ -5,6 +5,8 @@ const { PrismaClient } = require('@prisma/client');
 const { getClientIp } = require("./utils/IP");
 const { logFunction } = require("./utils/logs");
 
+const employeeRouter = require("./router/employee.route");
+
 const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
@@ -27,6 +29,8 @@ app.use(
 
 const userRouter = require("./router/user.route");
 app.use("/users", userRouter);
+
+app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
 
