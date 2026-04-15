@@ -2,6 +2,7 @@ const Employee = require("../model/employee.model");
 const Logs = require("../model/log.model");
 const { hashPassword } = require("../utils/password");
 const { employeeCreateSchema } = require("../schemas/employee.schemas");
+const { LOG_ACTIONS } = require("../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
 
 const EmployeeService = {
@@ -83,7 +84,7 @@ const EmployeeService = {
         log_id: uuidv4(),
         employee_id: actorId,
         moment: new Date(),
-        action_id: "empl-001",
+        action_id: LOG_ACTIONS.EMPLOYEE_CREATED,
         affected: newEmployee.employee_id,
         ip_address: req.ip,
       });
