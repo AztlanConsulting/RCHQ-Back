@@ -41,7 +41,7 @@ CREATE TABLE public.role (
 
 CREATE TABLE public.event_type (
 	event_type_id uuid NOT NULL,
-	name varchar(30) NOT NUL UNIQUE,
+	name varchar(30) NOT NULL UNIQUE,
 	CONSTRAINT event_type_pk PRIMARY KEY (event_type_id)
 );
 
