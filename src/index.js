@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const { PrismaClient } = require('@prisma/client');
+const { getClientIp } = require("./utils/IP");
+const { logFunction } = require("./utils/logs");
 
 const prisma = new PrismaClient();
 
@@ -29,8 +31,17 @@ app.use("/users", userRouter);
 app.use(errorHandler);
 
 app.get("/test", async (req, res) => {
-  const users = await prisma.employee.findMany();
-  res.json(users);
+  const ip = getClientIp(req);
+  try {
+    const id = "b6d789e5-1916-4db4-90db-36b6d8776588"; // Valid UUID for testing
+    const users = await prisma.employee.findMany();
+    await logFunction(id, new Date(), "Fetched all users", ip);
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+    
 });
 
 app.listen(port, () => {

@@ -8,8 +8,8 @@ datasource db {
 }
 
 model action {
-  action_id   String  @id(map: "action_pk") @db.Char(10)
-  description String  @db.VarChar
+  action_id   String  @id(map: "action_pk") @db.Char(8)
+  description String  @db.VarChar(120)
   important   Boolean
   logs        logs[]
 }
@@ -34,7 +34,7 @@ model documents {
   signed_confidential_letter          String?              @db.VarChar(100)
   signed_ethics_letter                String?              @db.VarChar(100)
   induction_manual                    String?              @db.VarChar(100)
-  employee_documents                  employee_documents[] @ignore
+  employee_documents                  employee_documents[]
 }
 
 model donation {
@@ -90,11 +90,11 @@ model employee {
   role                          role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address              employee_address[]
   employee_backup_code          employee_backup_code[]
-  employee_documents            employee_documents[]            @ignore
-  employee_fault                employee_fault[]                @ignore
-  employee_inside_certification employee_inside_certification[] @ignore
-  employee_personal_event       employee_personal_event[]       @ignore
-  employee_workday              employee_workday[]              @ignore
+  employee_documents            employee_documents[]
+  employee_fault                employee_fault[]
+  employee_inside_certification employee_inside_certification[]
+  employee_personal_event       employee_personal_event[]
+  employee_workday              employee_workday[]
   logs                          logs[]
   outside_certification         outside_certification[]
   psychological_evaluation      psychological_evaluation[]
@@ -116,7 +116,6 @@ model employee_backup_code {
   employee       employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_backup_code_employee_fk")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model employee_documents {
   document_id String    @db.Uuid
   employee_id String    @db.Uuid
@@ -124,20 +123,18 @@ model employee_documents {
   documents   documents @relation(fields: [document_id], references: [document_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_documents_documents_fk")
   employee    employee  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_documents_employee_fk")
 
-  @@ignore
+  @@id([document_id, employee_id], map: "employee_documents_pk")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model employee_fault {
   fault_id    String   @db.Uuid
   employee_id String   @db.Uuid
   employee    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_fault_employee_fk")
   fault       fault    @relation(fields: [fault_id], references: [fault_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_fault_fault_fk")
 
-  @@ignore
+  @@id([fault_id, employee_id], map: "employee_fault_pk")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model employee_inside_certification {
   inside_certification_id String                @db.Uuid
   employee_id             String                @db.Uuid
@@ -145,20 +142,18 @@ model employee_inside_certification {
   employee                employee              @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_inside_certification_employee_fk")
   inside_certifications   inside_certifications @relation(fields: [inside_certification_id], references: [inside_certification_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_inside_certification_inside_certifications_fk")
 
-  @@ignore
+  @@id([inside_certification_id, employee_id], map: "employee_inside_certification_pk")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model employee_personal_event {
   personal_event_id String         @db.Uuid
   employee_id       String         @db.Uuid
   employee          employee       @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_personal_event_employee_fk")
   personal_event    personal_event @relation(fields: [personal_event_id], references: [personal_event_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_personal_event_personal_event_fk")
 
-  @@ignore
+  @@id([personal_event_id, employee_id], map: "employee_personal_event_pk")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model employee_workday {
   workday_id  String   @db.Uuid
   employee_id String   @db.Uuid
@@ -167,7 +162,7 @@ model employee_workday {
   employee    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_workday_employee_fk")
   workday     workday  @relation(fields: [workday_id], references: [workday_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_workday_workday_fk")
 
-  @@ignore
+  @@id([workday_id, employee_id], map: "employee_workday_pk")
 }
 
 model event_type {
@@ -182,7 +177,7 @@ model fault {
   fault_id       String           @id(map: "fault_pk") @db.Uuid
   date           DateTime         @db.Date
   description    String
-  employee_fault employee_fault[] @ignore
+  employee_fault employee_fault[]
 }
 
 model global_event {
@@ -236,14 +231,14 @@ model inside_certifications {
   inside_certification_id       String                          @id(map: "inside_certifications_pk") @db.Uuid
   name                          String                          @db.VarChar(70)
   description                   String
-  employee_inside_certification employee_inside_certification[] @ignore
+  employee_inside_certification employee_inside_certification[]
 }
 
 model logs {
   log_id      String   @id(map: "logs_pk") @db.Uuid
   employee_id String   @db.Uuid
   moment      DateTime @db.Timestamp(6)
-  action_id   String   @db.Char(1)
+  action_id   String   @db.Char(8)
   affected    String?  @db.VarChar(120)
   ip_address  String   @db.VarChar(72)
   action      action   @relation(fields: [action_id], references: [action_id], onDelete: NoAction, onUpdate: NoAction, map: "logs_action_fk")
@@ -265,7 +260,7 @@ model personal_event {
   end                     DateTime                  @db.Timestamp(6)
   name                    String                    @db.VarChar(70)
   description             String
-  employee_personal_event employee_personal_event[] @ignore
+  employee_personal_event employee_personal_event[]
   event_type              event_type                @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "personal_event_event_type_fk")
 }
 
@@ -296,5 +291,5 @@ model vacations_request {
 model workday {
   workday_id       String             @id(map: "workday_pk") @db.Uuid
   name             String             @db.VarChar(9)
-  employee_workday employee_workday[] @ignore
+  employee_workday employee_workday[]
 }

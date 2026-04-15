@@ -1,8 +1,10 @@
 -- Minimal seed: one house, one role, one employee
--- Login: dev@example.com / 123
+-- Login: andre@gmail.com / Andatti67
 -- Re-run safe
 
-BEGIN;
+-- =========================
+-- CATÁLOGOS
+-- =========================
 
 
 DELETE FROM public.employee WHERE employee_id = 'a0000003-0000-4000-8000-000000000003';
@@ -59,14 +61,14 @@ INSERT INTO public.employee (
   temp_totp_secret_created_at
 )
 VALUES (
-  'a0000003-0000-4000-8000-000000000003',
-  'a0000001-0000-4000-8000-000000000001',
-  'a0000002-0000-4000-8000-000000000002',
-  'Andre',
-  'Agle',
+  gen_random_uuid(),
+  (SELECT house_id FROM house LIMIT 1),
+  (SELECT role_id FROM role LIMIT 1),
+  'Carlos',
+  'Ramírez',
   true,
-  'dev@example.com',
-  '$2b$10$rq5m7kAMRGBWuGwdAEo/3eoIqIBFFihEhAjE/0tTjl3EmUctsE7E6',
+  'andre@gmail.com',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
   true,
   0,
   NULL,
@@ -81,5 +83,26 @@ VALUES (
   NULL,
   NULL
 );
+
+INSERT INTO public.action (action_id, description, important) VALUES
+('auth-001', 'Intento fallido de autenticación', false),
+('auth-002', 'Cuenta bloqueada temporalmente por múltiples intentos fallidos', false),
+('auth-003', 'Inicio de sesión exitoso', false),
+('auth-004', 'Primer acceso validado, pendiente cambio de contraseña', false),
+('auth-005', 'Cambio de contraseña en primer acceso', false),
+('auth-006', 'Inicio de sesión completado después de cambio de contraseña en primer acceso', false),
+('auth-007', 'Activación exitosa de 2FA', false),
+('auth-008', 'Activación fallida de 2FA', false),
+('auth-009', 'Fallo de autenticación 2FA', false),
+('auth-010', 'Inicio de sesión exitoso con 2FA', false),
+('auth-011', 'Desactivación exitosa de 2FA', false),
+('auth-012', 'Intento de acceso denegado: usuario inactivo', false),
+('auth-013', 'Intento de cambio de contraseña en primer acceso para usuario inactivo', false),
+('auth-014', 'Intento de configuración de 2FA para usuario inactivo', false),
+('auth-015', 'Intento de verificación 2FA para usuario inactivo', false),
+('auth-016', 'Intento de validación de 2FA para usuario inactivo', false),
+('auth-017', 'Intento de desactivación de 2FA para usuario inactivo', false),
+('auth-018', 'Fallo de desactivación de 2FA por contraseña incorrecta', false),
+('auth-019', '2FA bloqueado temporalmente por múltiples intentos fallidos', false);
 
 COMMIT;
