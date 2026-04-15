@@ -1,6 +1,7 @@
 const Employee = require("../model/employee.model");
 const Logs = require("../model/log.model");
-const { hashPassword } = require("../utils/hashPwd");
+const { hashPassword } = require("../utils/password");
+const { employeeCreateSchema } = require("../schemas/employee.schemas");
 const { v4: uuidv4 } = require("uuid");
 
 const employeeController = {
@@ -34,6 +35,17 @@ const employeeController = {
 
   async postAdd(req, res) {
     try {
+      const result = employeeCreateSchema.safeParse(req.body);
+
+      if (!result.success) {
+        return res.status(400).json({
+          errors: result.error.errors.map(e => ({
+            campo: e.path[0],
+            mensaje: e.message
+          }))
+        });
+      }
+
       const {
         house_id,
         role_id,
@@ -46,13 +58,7 @@ const employeeController = {
         bank_account,
         birth_date,
         picture
-      } = req.body;
-
-      if (!house_id || !role_id || !name || !surname || !email || !curp) {
-        return res.status(400).json({
-          error: "Campos obligatorios faltantes. Intenta más tarde."
-        });
-      }
+      } = result.data;
 
       const existing = await Employee.findByCurp(curp);
 
@@ -93,7 +99,7 @@ const employeeController = {
         log_id: uuidv4(),
         employee_id: actorId,
         moment: new Date(),
-        action_id: "emp-001",
+        action_id: "empl-001",
         affected: newEmployee.employee_id,
         ip_address: req.ip
       });
