@@ -2,7 +2,7 @@
 
 |Administrador|
 start
-:Seleccionar registrar usuario;
+:Seleccionar registrar empleado;
 
 |Sistema|
 :Solicita datos al administrador;
@@ -14,13 +14,14 @@ repeat
 - Puesto de trabajo
 - Nombre
 - Apellidos
-- Correo;
+- Correo
+- CURP;
 
 |Sistema|
 if (¿Ingresar datos opcionales?) then (SI)
     |Administrador|
     :Registra datos opcionales:
-    - CURP
+    - RFC
     - Cuenta bancaria
     - Cumpleaños
     - Foto del empleado;
