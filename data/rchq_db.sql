@@ -1,6 +1,6 @@
 CREATE TABLE public.donation_type (
 	donation_type_id uuid NOT NULL,
-	name varchar(30) NOT NULL,
+	name varchar(30) NOT NULL UNIQUE,
 	CONSTRAINT donation_type_pk PRIMARY KEY (donation_type_id)
 );
 
@@ -19,13 +19,13 @@ CREATE TABLE public.fault (
 
 CREATE TABLE public.workday (
 	workday_id uuid NOT NULL,
-	name varchar(9) NOT NULL,
+	name varchar(9) NOT NULL UNIQUE,
 	CONSTRAINT workday_pk PRIMARY KEY (workday_id)
 );
 
 CREATE TABLE public.house (
 	house_id uuid NOT NULL,
-	name varchar(60) NOT NULL,
+	name varchar(60) NOT NULL UNIQUE,
 	location text NOT NULL,
 	phone_number varchar(15) NOT NULL,
 	description text NOT NULL,
@@ -35,19 +35,19 @@ CREATE TABLE public.house (
 
 CREATE TABLE public.role (
 	role_id uuid NOT NULL,
-	name varchar(50) NOT NULL,
+	name varchar(50) NOT NULL UNIQUE,
 	CONSTRAINT role_pk PRIMARY KEY (role_id)
 );
 
 CREATE TABLE public.event_type (
 	event_type_id uuid NOT NULL,
-	name varchar(30) NOT NULL,
+	name varchar(30) NOT NUL UNIQUE,
 	CONSTRAINT event_type_pk PRIMARY KEY (event_type_id)
 );
 
 CREATE TABLE public.inside_certifications (
 	inside_certification_id uuid NOT NULL,
-	name varchar(70) NOT NULL,
+	name varchar(70) NOT NULL UNIQUE,
 	description text NOT NULL,
 	CONSTRAINT inside_certifications_pk PRIMARY KEY (inside_certification_id)
 );
@@ -82,18 +82,18 @@ CREATE TABLE public.employee (
 	name varchar(50) NOT NULL,
 	surname varchar(50) NOT NULL,
 	is_active bool NOT NULL,
-	email varchar(60) NOT NULL,
+	email varchar(60) NOT NULL UNIQUE,
 	password varchar(72) NOT NULL,
 	has_first_login bool NOT NULL,
 	failed_login_attempts int NOT NULL DEFAULT 0,
 	failed_2fa_attempts int NOT NULL DEFAULT 0,
 	totp_secret varchar(32) NULL,
-	curp varchar(18) NOT NULL,
-	rfc varchar(13) NULL,
+	curp varchar(18) NOT NULL UNIQUE,
+	rfc varchar(13) NULL UNIQUE,
 	birth_date date NULL,
 	picture varchar(150) NULL,
 	start_date date NOT NULL,
-	nss varchar(11) NULL,
+	nss varchar(11) NULL UNIQUE,
 	bank_account varchar(18) NULL,
 	blocked_until timestamp NULL,
 	two_fa_blocked_until timestamp,
@@ -177,7 +177,7 @@ CREATE TABLE public.logs (
 CREATE TABLE public.employee_backup_code (
 	backup_code_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
-	code varchar(10) NOT NULL,
+	code varchar(10) NOT NULL UNIQUE,
 	CONSTRAINT employee_backup_code_pk PRIMARY KEY (backup_code_id),
 	CONSTRAINT employee_backup_code_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
