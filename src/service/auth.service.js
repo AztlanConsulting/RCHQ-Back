@@ -1,7 +1,7 @@
 const User = require("../model/user.model");
 const { hashPassword, verifyPassword } = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
-const { createLog } = require("../utils/logs");
+const { createLog } = require("../model/log.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 const { LOG_ACTIONS } = require("../utils/logActions");
