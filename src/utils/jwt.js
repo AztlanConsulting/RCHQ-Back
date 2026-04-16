@@ -11,6 +11,7 @@ const generateToken = (user) => {
       email: user.email,
       name: user.name,
       role: user.role,
+      houseId: user.houseId,
       privileges: user.privileges,
       tokenType: "SESSION",
     },

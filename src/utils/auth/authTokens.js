@@ -6,6 +6,7 @@ function buildUserPayload(employee) {
         email: employee.email,
         name: employee.name,
         role: employee.role,
+        houseId: employee.houseId,
         privileges: ["read_profile"],
     };
 }

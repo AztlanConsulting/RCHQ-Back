@@ -62,7 +62,7 @@ const EmployeeService = {
 
     const newEmployee = await Employee.create({
       employee_id: uuidv4(),
-      house_id,
+      house_id: req.user.houseId,
       role_id,
       name,
       surname,

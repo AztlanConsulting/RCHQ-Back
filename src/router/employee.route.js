@@ -4,7 +4,7 @@ const verifyToken = require("../middleware/auth");
 
 const employeeController = require("../controller/employee.controller");
 
-router.get('/add', employeeController.getAdd);
+router.get('/add', verifyToken, employeeController.getAdd);
 
 router.get('/:id', employeeController.getById);
 
