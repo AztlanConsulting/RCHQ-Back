@@ -1,6 +1,6 @@
 CREATE TABLE public.donation_type (
 	donation_type_id uuid NOT NULL,
-	name varchar(30) NOT NULL,
+	name varchar(30) NOT NULL UNIQUE,
 	CONSTRAINT donation_type_pk PRIMARY KEY (donation_type_id)
 );
 
@@ -19,13 +19,13 @@ CREATE TABLE public.fault (
 
 CREATE TABLE public.workday (
 	workday_id uuid NOT NULL,
-	name varchar(9) NOT NULL,
+	name varchar(9) NOT NULL UNIQUE,
 	CONSTRAINT workday_pk PRIMARY KEY (workday_id)
 );
 
 CREATE TABLE public.house (
 	house_id uuid NOT NULL,
-	name varchar(60) NOT NULL,
+	name varchar(60) NOT NULL UNIQUE,
 	location text NOT NULL,
 	phone_number varchar(15) NOT NULL,
 	description text NOT NULL,
@@ -35,19 +35,19 @@ CREATE TABLE public.house (
 
 CREATE TABLE public.role (
 	role_id uuid NOT NULL,
-	name varchar(50) NOT NULL,
+	name varchar(50) NOT NULL UNIQUE,
 	CONSTRAINT role_pk PRIMARY KEY (role_id)
 );
 
 CREATE TABLE public.event_type (
 	event_type_id uuid NOT NULL,
-	name varchar(30) NOT NULL,
+	name varchar(30) NOT NULL UNIQUE,
 	CONSTRAINT event_type_pk PRIMARY KEY (event_type_id)
 );
 
 CREATE TABLE public.inside_certifications (
 	inside_certification_id uuid NOT NULL,
-	name varchar(70) NOT NULL,
+	name varchar(70) NOT NULL UNIQUE,
 	description text NOT NULL,
 	CONSTRAINT inside_certifications_pk PRIMARY KEY (inside_certification_id)
 );
@@ -82,18 +82,18 @@ CREATE TABLE public.employee (
 	name varchar(50) NOT NULL,
 	surname varchar(50) NOT NULL,
 	is_active bool NOT NULL,
-	email varchar(60) NOT NULL,
+	email varchar(60) NOT NULL UNIQUE,
 	password varchar(72) NOT NULL,
 	has_first_login bool NOT NULL,
 	failed_login_attempts int NOT NULL DEFAULT 0,
 	failed_2fa_attempts int NOT NULL DEFAULT 0,
 	totp_secret varchar(32) NULL,
-	curp varchar(18) NOT NULL,
-	rfc varchar(13) NULL,
+	curp varchar(18) NOT NULL UNIQUE,
+	rfc varchar(13) NULL UNIQUE,
 	birth_date date NULL,
 	picture varchar(150) NULL,
 	start_date date NOT NULL,
-	nss varchar(11) NULL,
+	nss varchar(11) NULL UNIQUE,
 	bank_account varchar(18) NULL,
 	blocked_until timestamp NULL,
 	two_fa_blocked_until timestamp,
@@ -105,8 +105,8 @@ CREATE TABLE public.employee (
 );
 
 CREATE TABLE public.action (
-	action_id char(10) NOT NULL,
-	description varchar NOT NULL,
+	action_id char(8) NOT NULL,
+	description varchar(120) NOT NULL,
 	important bool NOT NULL,
 	CONSTRAINT action_pk PRIMARY KEY (action_id)
 );
@@ -166,7 +166,7 @@ CREATE TABLE public.logs (
 	log_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	moment timestamp NOT NULL,
-	action_id char NOT NULL,
+	action_id varchar(8) NOT NULL,
 	affected varchar(120) NULL,
 	ip_address varchar(72) NOT NULL,
 	CONSTRAINT logs_pk PRIMARY KEY (log_id),
@@ -177,7 +177,7 @@ CREATE TABLE public.logs (
 CREATE TABLE public.employee_backup_code (
 	backup_code_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
-	code varchar(10) NOT NULL,
+	code varchar(10) NOT NULL UNIQUE,
 	CONSTRAINT employee_backup_code_pk PRIMARY KEY (backup_code_id),
 	CONSTRAINT employee_backup_code_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -185,6 +185,7 @@ CREATE TABLE public.employee_backup_code (
 CREATE TABLE public.employee_fault (
 	fault_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
+	CONSTRAINT employee_fault_pk PRIMARY KEY (fault_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_fault_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
 	CONSTRAINT employee_fault_fault_fk FOREIGN KEY (fault_id) REFERENCES public.fault(fault_id)
 );
@@ -194,6 +195,7 @@ CREATE TABLE public.employee_workday (
 	employee_id uuid NOT NULL,
 	start time NOT NULL,
 	"end" time NOT NULL,
+	CONSTRAINT employee_workday_pk PRIMARY KEY (workday_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_workday_workday_fk FOREIGN KEY (workday_id) REFERENCES public.workday(workday_id),
 	CONSTRAINT employee_workday_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -202,6 +204,7 @@ CREATE TABLE public.employee_inside_certification (
 	inside_certification_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	date date NOT NULL,
+	CONSTRAINT employee_inside_certification_pk PRIMARY KEY (inside_certification_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_inside_certification_inside_certifications_fk FOREIGN KEY (inside_certification_id) REFERENCES public.inside_certifications(inside_certification_id),
 	CONSTRAINT employee_inside_certification_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -210,6 +213,7 @@ CREATE TABLE public.employee_documents (
 	document_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
 	url varchar(100) NOT NULL,
+	CONSTRAINT employee_documents_pk PRIMARY KEY (document_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_documents_documents_fk FOREIGN KEY (document_id) REFERENCES public.documents(document_id),
 	CONSTRAINT employee_documents_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
@@ -242,7 +246,7 @@ CREATE TABLE public.house_event (
 	house_id uuid NOT NULL,
 	date date NOT NULL,
 	start time NOT NULL,
-	"end" date NOT NULL,
+	"end" time NOT NULL,
 	name varchar(70) NOT NULL,
 	description text NULL,
 	CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),
@@ -266,6 +270,7 @@ CREATE TABLE public.global_event (
 CREATE TABLE public.employee_personal_event (
 	personal_event_id uuid NOT NULL,
 	employee_id uuid NOT NULL,
+	CONSTRAINT employee_personal_event_pk PRIMARY KEY (personal_event_id, employee_id), --poner esta como pk era necesario para que prisma no fallara
 	CONSTRAINT employee_personal_event_personal_event_fk FOREIGN KEY (personal_event_id) REFERENCES public.personal_event(personal_event_id),
 	CONSTRAINT employee_personal_event_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );

@@ -1,143 +1,101 @@
-const User = require("../model/user.model");
-const speakeasy = require("speakeasy");
-const QRCode = require("qrcode");
-const { generateToken } = require("../utils/jwt");
-const { canAccess } = require("../middleware/abac");
-const { adminPolicy } = require("../policies/user.policies");
+// const User = require("../model/user.model");
+// const speakeasy = require("speakeasy");
+// const QRCode = require("qrcode");
+// const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
+// const { canAccess } = require("../middleware/abac");
+// const { adminPolicy } = require("../policies/user.policies");
+// const {verifyPassword, hashPassword} = require("../utils/password");
+// const { getClientIp } = require("../utils/ip");
+// const { LOG_ACTIONS } = require("../utils/logActions");
+const authService = require("../service/auth.service");
+
+// const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
 exports.loginFunction = async (req, res) => {
-  const { email, password } = req.body;
-
-  console.log("Login attempt:", email, password);
-
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password required" });
-  }
-
   try {
-    const row = await User.findActiveEmployeeByEmail(email);
-    if (!row || row.pwd !== password) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    const user = {
-      id: row.employeeid,
-      email: row.email,
-      name: row.name,
-      role: row.role,
-      privileges: ["read_profile"],
-    };
-
-    res.status(200).json({
-      message: "Login successful",
-      token: generateToken(user),
-    });
+    const result = await authService.login(req);
+    return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
   }
 };
 
 exports.getProfile = (req, res) => {
-  const resource = {
-    coordinators: User.coordinators || [],
-  };
-
-  // Check if the user has access to the profile resource based on the admin policy
-  // this one can be omitted if we use the authorize middleware in the route,
-  // but it's here for demonstration purposes
-  if (!canAccess(req.user, adminPolicy, resource)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-
-  res.status(200).json({
-    username: req.user.name || User.username,
-    role: req.user.role || User.role,
-    privileges: req.user.privileges || User.privileges,
+  return res.status(200).json({
+    success: true,
+    message: "Profile retrieved successfully",
+    data: {
+      employeeId: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+      privileges: req.user.privileges || [],
+    },
   });
 };
 
-exports.twoFactorAuth = async (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
-  }
+// exports.changePasswordFirstLogin = async (req, res) => {
+//   try {
+//     const result = await authService.changePasswordFirstLogin(req);
+//     return res.status(result.status).json(result.body);
+//   } catch (err) {
+//     console.error("First login password change error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 
-  try {
-    const { id } = req.body;
-    const tempSecret = speakeasy.generateSecret();
-    // Store tempSecret in database associated with the userId for later verification
+// exports.setupTwoFactorAuth = async (req, res) => {
+//   try {
+//     const result = await authService.setupTwoFactorAuth(req);
+//     return res.status(result.status).json(result.body);
+//   } catch (error) {
+//     console.error("Error in 2FA setup:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 
-    const qrlImage = await QRCode.toDataURL(tempSecret.otpauth_url);
+// exports.verifyTwoFactorSetup = async (req, res) => {
+//   try {
+//     const result = await authService.verifyTwoFactorSetup(req);
+//     return res.status(result.status).json(result.body);
+//   } catch (error) {
+//     console.error("2FA verify setup error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 
-    res.json({
-      id: id,
-      secret: tempSecret.base32,
-      otpauth_url: tempSecret.otpauth_url,
-      qrlImage: qrlImage,
-    });
-  } catch (error) {
-    console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+// exports.validateTwoFactorAuth = async (req, res) => {
+//   try {
+//     const result = await authService.validateTwoFactorAuth(req);
+//     return res.status(result.status).json(result.body);
+//   } catch (error) {
+//     console.error("2FA validation error:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal Server Error",
+//     });
+//   }
+// };
 
-exports.verifyTwoFactorAuth = (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
-  }
-
-  const { token, userId } = req.body;
-
-  try {
-    const user = User; //get user from database using userId
-
-    //get user's temp secret from database using userId
-    const { base32: secret } = user.tempSecret;
-    let verified = speakeasy.totp.verify({
-      secret: secret,
-      encoding: "base32",
-      token: token,
-    });
-
-    if (verified) {
-      // save secret as permanent for the user in database and delete temp secret
-      user.secret = user.tempSecret;
-      res.json({ verified: true, message: "2FA verification successful" });
-    } else {
-      res.status(401).json({ verified: false, message: "Invalid 2FA token" });
-    }
-  } catch (error) {
-    console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-exports.validateTwoFactorAuth = (req, res) => {
-  if (!req.body) {
-    return res.status(400).json({ message: "Bad Request" });
-  }
-
-  const { token, userId } = req.body;
-
-  try {
-    const user = User; //get user from database using userId
-
-    //get user's temp secret from database using userId
-    const { base32: secret } = user.secret;
-    let tokenValidate = speakeasy.totp.verify({
-      secret: secret,
-      encoding: "base32",
-      token: token,
-      window: 1, // allow a window of 1 time step before and after to account for clock drift
-    });
-
-    if (tokenValidate) {
-      res.json({ validated: true, message: "2FA verification successful" });
-    } else {
-      res.status(401).json({ validated: false, message: "Invalid 2FA token" });
-    }
-  } catch (error) {
-    console.error("Error in 2FA setup:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+// exports.disableTwoFactorAuth = async (req, res) => {
+//   try {
+//     const result = await authService.disableTwoFactorAuth(req);
+//     return res.status(result.status).json(result.body);
+//   } catch (error) {
+//     console.error("2FA disable error:", error);
+//     return res.status(500).json({ success: false, message: "Internal Server Error" });
+//   }
+// };
