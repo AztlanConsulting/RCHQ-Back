@@ -8,6 +8,7 @@ const {verifyPassword, hashPassword} = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
 const { LOG_ACTIONS } = require("../utils/logActions");
 const authService = require("../service/auth.service");
+const userService = require("../service/user.service");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
@@ -37,29 +38,17 @@ exports.changePasswordFirstLogin = async (req, res) => {
   }
 };
 
-exports.getProfile = (req, res) => {
-  // const resource = {
-  //   coordinators: User.coordinators || [],
-  // };
-
-  // // Check if the user has access to the profile resource based on the admin policy
-  // // this one can be omitted if we use the authorize middleware in the route,
-  // // but it's here for demonstration purposes
-  // if (!canAccess(req.user, adminPolicy, resource)) {
-  //   return res.status(403).json({ message: "Forbidden" });
-  // }
-
-  return res.status(200).json({
-    success: true,
-    message: "Profile retrieved successfully",
-    data: {
-      id: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
-      role: req.user.role,
-      privileges: req.user.privileges || [],
-    },
-  });
+exports.getUserData = async (req, res) => {
+  try {
+    const result = await userService.getUserData(req);
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("getUserData error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
 };
 
 exports.setupTwoFactorAuth = async (req, res) => {

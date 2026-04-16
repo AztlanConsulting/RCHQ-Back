@@ -53,13 +53,10 @@ router.post(
   userController.disableTwoFactorAuth
 );
 
-// Protected route example with ABAC and RBAC
 router.get(
   "/profile",
   verifyToken,
-  // requireRole("admin", "user"),
-  // authorize(adminPolicy, { coordinators: userModel.coordinators || [] }),
-  userController.getProfile,
+  userController.getUserData
 );
 
 module.exports = router;
