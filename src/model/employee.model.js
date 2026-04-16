@@ -36,7 +36,11 @@ const Employee = {
     };
 
     return await prisma.employee.create({ data });
-  }
+  },
+
+  async getAllRoles() {
+    return await prisma.role.findMany();
+  },
 };
 
 module.exports = Employee;
