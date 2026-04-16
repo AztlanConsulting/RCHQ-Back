@@ -19,7 +19,6 @@ const LOGIN_BLOCK_MINUTES = 15;
 const MAX_LOGIN_ATTEMPTS = 3;
 
 async function login(req) {
-    console.log("Login attempt with data:", req.body);
     const { email, password } = req.body;
     const normalizedEmail = email.trim().toLowerCase();
     const ipAddress = getClientIp(req);
