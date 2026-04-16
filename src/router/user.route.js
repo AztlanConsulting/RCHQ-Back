@@ -17,7 +17,7 @@ const {
 
 const router = express.Router();
 
-router.post("/login", userController.loginFunction);
+router.post("/login", validate(loginSchema), userController.loginFunction);
 //router.post("/first-login/change-password", verifyFirstLoginToken, userController.changePasswordFirstLogin);
 
 // router.post(
