@@ -28,7 +28,11 @@ async function login(req) {
     if (!employee) {
         return {
             status: 401,
-            body: { success: false, message: "Invalid credentials" },
+            body: {
+                success: false,
+                code: "INVALID_CREDENTIALS",
+                message: "Credenciales inválidas",
+            },
         };
     }
 
@@ -41,7 +45,11 @@ async function login(req) {
 
         return {
             status: 401,
-            body: { success: false, message: "Invalid credentials" },
+            body: {
+                success: false,
+                code: "INVALID_CREDENTIALS",
+                message: "Credenciales inválidas",
+            },
         };
     }
 
@@ -50,7 +58,8 @@ async function login(req) {
             status: 423,
             body: {
                 success: false,
-                message: "Account temporarily blocked",
+                code: "ACCOUNT_TEMPORARILY_BLOCKED",
+                message: "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
                 blockedUntil: employee.blockedUntil,
             },
         };
@@ -84,7 +93,8 @@ async function login(req) {
                 status: 423,
                 body: {
                     success: false,
-                    message: "Account temporarily blocked",
+                    code: "ACCOUNT_TEMPORARILY_BLOCKED",
+                    message: "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
                     blockedUntil,
                 },
             };
@@ -92,7 +102,11 @@ async function login(req) {
 
         return {
             status: 401,
-            body: { success: false, message: "Invalid credentials" },
+            body: {
+                success: false,
+                code: "INVALID_CREDENTIALS",
+                message: "Credenciales inválidas",
+            },
         };
     }
 
@@ -110,7 +124,7 @@ async function login(req) {
         status: 200,
         body: {
             success: true,
-            message: "Login successful",
+            message: "Inicio de sesión exitoso",
             data: {
                 token,
                 user: {
