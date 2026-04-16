@@ -56,7 +56,7 @@ router.post(
 router.get(
   "/profile",
   verifyToken,
-  userController.getUserData
+  userController.getUserProfile
 );
 
 module.exports = router;

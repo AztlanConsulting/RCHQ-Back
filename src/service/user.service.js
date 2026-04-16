@@ -1,6 +1,6 @@
 const User = require("../model/user.model");
 
-async function getUserData(req) {
+async function getUserProfile(req) {
   const employeeId = req.user.id;
 
   const employee = await User.findEmployeeProfile(employeeId);
@@ -24,4 +24,4 @@ async function getUserData(req) {
   };
 }
 
-module.exports = { getUserData };
+module.exports = { getUserProfile };

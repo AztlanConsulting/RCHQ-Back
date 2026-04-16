@@ -38,7 +38,7 @@ exports.changePasswordFirstLogin = async (req, res) => {
   }
 };
 
-exports.getUserData = async (req, res) => {
+exports.getUserProfile = async (req, res) => {
   try {
     const result = await userService.getUserData(req);
     return res.status(result.status).json(result.body);
