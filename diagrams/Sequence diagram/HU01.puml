@@ -4,8 +4,10 @@ actor navegador
 boundary employee.routes
 boundary "React (employeeForm.jsx)" as ReactView
 control employee.controller
-entity employee
-entity logs
+control employee.service
+control logs.service
+entity employee.model
+entity logs.model
 database PostgreSQL
 
 autonumber
@@ -22,7 +24,6 @@ deactivate employee.controller
 activate ReactView
 
 ReactView -> navegador : Mostrar formulario para agregar empleado
-activate navegador
 
 navegador -> ReactView : Ingresa datos obligatorios\n(house_id, role_id, name, surname, email, curp)
 
@@ -47,10 +48,22 @@ else Campos completos
     deactivate employee.routes
     activate employee.controller
 
-    employee.controller -> PostgreSQL : SELECT * FROM employee WHERE curp = ?
+    employee.controller -> employee.service : findByCurp(curp)
+    activate employee.service
+
+    employee.service -> employee.model : findByCurp(curp)
+    activate employee.model
+
+    employee.model -> PostgreSQL : prisma.employee.findUnique()
     activate PostgreSQL
-    PostgreSQL -->> employee.controller : Resultado
+    PostgreSQL -->> employee.model : result
     deactivate PostgreSQL
+
+    employee.model -->> employee.service : employee | null
+    deactivate employee.model
+
+    employee.service -->> employee.controller : exists / not exists
+    deactivate employee.service
 
     alt Usuario ya existe
         employee.controller -> ReactView : alert("Usuario ya existente")
@@ -60,34 +73,40 @@ else Campos completos
         deactivate ReactView
         
     else Usuario no existe
-        
-        create employee
-        employee.controller -> employee : create({\n employee_id,\n house_id,\n role_id,\n name,\n surname,\n is_active,\n email,\n password,\n has_first_login,\n totp_secret,\n curp,\n rfc,\n nss,\n bank_account,\n birth_date,\n picture,\n start_date\n})
-        activate employee
+        employee.controller -> employee.service : createEmployee(data)
+        activate employee.service
 
-        employee.controller ->> employee : create()
-        
-        employee ->> PostgreSQL : INSERT INTO employee(\nemployee_id,\nhouse_id,\nrole_id,\nname,\nsurname,\nis_active,\nemail,\npassword,\nhas_first_login,\ntotp_secret,\ncurp,\nrfc,\nnss,\nbank_account,\nbirth_date,\npicture,\nstartd_ate)\nVALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        employee.service -> employee.model : create(data)
+        activate employee.model
 
+        employee.model -> PostgreSQL : prisma.employee.create()
         activate PostgreSQL
-        PostgreSQL -->> employee : Insert OK
+        PostgreSQL -->> employee.model : employeeCreated
         deactivate PostgreSQL
 
-        employee -->> employee.controller : Promesa
-        deactivate employee
+        employee.model -->> employee.service : employeeCreated
+        deactivate employee.model
 
-        create logs
-        employee.controller -> logs : create({ log_id, employee_id, moment, action_id, affected, ip_address })
-        activate logs
+        employee.service -->> employee.controller : employeeCreated
+        deactivate employee.service
+        
+        employee.controller -> logs.service : createLog(log)
+        activate logs.service
 
-        logs -> PostgreSQL : INSERT INTO logs(\nlog_id,\nemployee_id,\nmoment, \naction_id, \naffected, \nip_address)\nVALUES (?, ?, ?, ?)
+        logs.service -> logs.model : create(log)
+        activate logs.model
+
+        logs.model -> PostgreSQL : prisma.logs.create()
         activate PostgreSQL
-        PostgreSQL -->> logs : Insert OK
+        PostgreSQL -->> logs.model : logSaved
         deactivate PostgreSQL
 
-        logs -->> employee.controller : Promesa
-        deactivate logs
-        
+        logs.model -->> logs.service : logSaved
+        deactivate logs.model
+
+        logs.service -->> employee.controller : logSaved
+        deactivate logs.service
+
         employee.controller -> ReactView : alert("Usuario creado con éxito")
         deactivate employee.controller
         activate ReactView
