@@ -27,11 +27,11 @@ router.post("/login", userController.loginFunction);
 //   userController.changePasswordFirstLogin
 // );
 
-// router.post(
-//   "/2fa/setup",
-//   verifyToken,
-//   userController.setupTwoFactorAuth
-// );
+router.post(
+ "/2fa/setup",
+verifyToken,
+userController.setupTwoFactorAuth
+);
 // router.post(
 //   "/2fa/verify-setup",
 //   verifyToken,

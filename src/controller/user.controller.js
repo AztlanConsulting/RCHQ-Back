@@ -1,6 +1,6 @@
 // const User = require("../model/user.model");
-// const speakeasy = require("speakeasy");
-// const QRCode = require("qrcode");
+const speakeasy = require("speakeasy");
+const QRCode = require("qrcode");
 // const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
 // const { canAccess } = require("../middleware/abac");
 // const { adminPolicy } = require("../policies/user.policies");
@@ -51,18 +51,18 @@ exports.getProfile = (req, res) => {
 //   }
 // };
 
-// exports.setupTwoFactorAuth = async (req, res) => {
-//   try {
-//     const result = await authService.setupTwoFactorAuth(req);
-//     return res.status(result.status).json(result.body);
-//   } catch (error) {
-//     console.error("Error in 2FA setup:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+ exports.setupTwoFactorAuth = async (req, res) => {
+  try {
+    const result = await authService.setupTwoFactorAuth(req);
+    return res.status(result.status).json(result.body);
+  } catch (error) {
+     console.error("Error in 2FA setup:", error);
+    return res.status(500).json({
+      success: false,
+     message: "Internal Server Error",
+    });
+  }
+};
 
 // exports.verifyTwoFactorSetup = async (req, res) => {
 //   try {

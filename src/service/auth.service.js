@@ -222,89 +222,89 @@ async function login(req) {
 //     };
 // }
 
-// async function setupTwoFactorAuth(req) {
-//     const employeeId = req.user?.id;
-//     const ipAddress = getClientIp(req);
+async function setupTwoFactorAuth(req) {
+     const employeeId = req.user?.id;
+    const ipAddress = getClientIp(req);
 
-//     if (!employeeId) {
-//         return {
-//             status: 401,
-//             body: { success: false, message: "User not authenticated" },
-//         };
-//     }
+    if (!employeeId) {
+       return {
+           status: 401,
+           body: { success: false, message: "User not authenticated" },
+      };
+  }
 
-//     const employee = await User.getEmployeeById(employeeId);
+    const employee = await User.getEmployeeById(employeeId);
 
-//     if (!employee) {
-//         return {
-//             status: 404,
-//             body: { success: false, message: "Employee not found" },
-//         };
-//     }
+     if (!employee) {
+        return {
+            status: 404,
+            body: { success: false, message: "Employee not found" },
+        };
+    }
 
-//     if (!employee.isActive) {
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.TWO_FA_SETUP_INACTIVE,
-//             ipAddress
-//         );
+   if (!employee.isActive) {
+        await createLog(
+           employee.employeeId,
+             LOG_ACTIONS.TWO_FA_SETUP_INACTIVE,
+          ipAddress
+        );
 
-//         return {
-//             status: 403,
-//             body: { success: false, message: "Access not allowed" },
-//         };
-//     }
+         return {
+            status: 403,
+             body: { success: false, message: "Access not allowed" },
+       };
+    }
 
-//     if (employee.totpSecret) {
-//         return {
-//             status: 409,
-//             body: { success: false, message: "2FA is already enabled for this account" },
-//         };
-//     }
+    if (employee.totpSecret) {
+        return {
+             status: 409,
+             body: { success: false, message: "2FA is already enabled for this account" },
+         };
+     }
 
-//     if (employee.tempTotpSecret && employee.tempTotpSecretCreatedAt) {
-//         const createdAt = new Date(employee.tempTotpSecretCreatedAt);
-//         const expiresAt = new Date(
-//             createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
-//         );
+     if (employee.tempTotpSecret && employee.tempTotpSecretCreatedAt) {
+         const createdAt = new Date(employee.tempTotpSecretCreatedAt);
+         const expiresAt = new Date(
+             createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
+         );
 
-//         if (expiresAt > new Date()) {
-//             return {
-//                 status: 409,
-//                 body: {
-//                     success: false,
-//                     message: "A 2FA setup is already pending. Please complete it or wait for it to expire.",
-//                 },
-//             };
-//         }
+         if (expiresAt > new Date()) {
+             return {
+                 status: 409,
+                 body: {
+                     success: false,
+                     message: "A 2FA setup is already pending. Please complete it or wait for it to expire.",
+                 },
+             };
+         }
 
-//         await User.clearTempTotpSecret(employee.employeeId);
-//     }
+         await User.clearTempTotpSecret(employee.employeeId);
+     }
 
-//     const tempSecret = speakeasy.generateSecret({
-//         name: `RCHQ (${employee.email})`,
-//         issuer: "RCHQ",
-//         length: 20,
-//     });
+     const tempSecret = speakeasy.generateSecret({
+         name: `RCHQ (${employee.email})`,
+         issuer: "RCHQ",
+         length: 20,
+     });
 
-//     await User.saveTempTotpSecret(employee.employeeId, tempSecret.base32);
+     await User.saveTempTotpSecret(employee.employeeId, tempSecret.base32);
 
-//     const qrImage = await QRCode.toDataURL(tempSecret.otpauth_url);
+     const qrImage = await QRCode.toDataURL(tempSecret.otpauth_url);
 
-//     return {
-//         status: 200,
-//         body: {
-//             success: true,
-//             message: "2FA setup started",
-//             nextStep: "VERIFY_2FA_SETUP",
-//             data: {
-//                 employeeId: employee.employeeId,
-//                 qrImage,
-//                 otpauthUrl: tempSecret.otpauth_url,
-//             },
-//         },
-//     };
-// }
+     return {
+         status: 200,
+         body: {
+             success: true,
+             message: "2FA setup started",
+             nextStep: "VERIFY_2FA_SETUP",
+             data: {
+                 employeeId: employee.employeeId,
+                 qrImage,
+                 otpauthUrl: tempSecret.otpauth_url,
+             },
+         },
+     };
+}
 
 // async function verifyTwoFactorSetup(req) {
 //     const { token } = req.body || {};
@@ -668,7 +668,7 @@ async function login(req) {
 module.exports = {
     login,
     // changePasswordFirstLogin,
-    // setupTwoFactorAuth,
+    setupTwoFactorAuth,
     // verifyTwoFactorSetup,
     // validateTwoFactorAuth,
     // disableTwoFactorAuth,
