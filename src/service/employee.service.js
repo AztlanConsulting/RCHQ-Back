@@ -11,6 +11,11 @@ const EmployeeService = {
     return await Employee.findById(id);
   },
 
+  async getRoles() {
+    const prisma = require("../prisma");
+    return await prisma.role.findMany();
+  },
+
   async createEmployee(req) {
     const result = employeeCreateSchema.safeParse(req.body);
 
