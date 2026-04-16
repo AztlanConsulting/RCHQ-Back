@@ -61,23 +61,23 @@ async function getEmployeeById(employeeId) {
   return mapEmployee(employee);
 }
 
-async function updatePassword(employeeId, newPassword) {
-  await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      password: newPassword,
-    },
-  });
-}
+// async function updatePassword(employeeId, newPassword) {
+//   await prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       password: newPassword,
+//     },
+//   });
+// }
 
-async function setFirstLogin(employeeId, hasFirstLogin) {
-  await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      has_first_login: hasFirstLogin,
-    },
-  });
-}
+// async function setFirstLogin(employeeId, hasFirstLogin) {
+//   await prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       has_first_login: hasFirstLogin,
+//     },
+//   });
+// }
 
 async function incrementFailedAttempts(employeeId) {
   const employee = await prisma.employee.update({
@@ -139,78 +139,78 @@ async function clearLoginSecurityState(employeeId) {
   });
 }
 
-async function saveTempTotpSecret(employeeId, secret) {
-  await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      temp_totp_secret: secret,
-      temp_totp_secret_created_at: new Date(),
-    },
-  });
-}
+// async function saveTempTotpSecret(employeeId, secret) {
+//   await prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       temp_totp_secret: secret,
+//       temp_totp_secret_created_at: new Date(),
+//     },
+//   });
+// }
 
-async function clearTempTotpSecret(employeeId) {
-  await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      temp_totp_secret: null,
-      temp_totp_secret_created_at: null,
-    },
-  });
-}
+// async function clearTempTotpSecret(employeeId) {
+//   await prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       temp_totp_secret: null,
+//       temp_totp_secret_created_at: null,
+//     },
+//   });
+// }
 
-async function incrementFailed2FAAttempts(employeeId) {
-  const employee = await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      failed_2fa_attempts: {
-        increment: 1,
-      },
-    },
-    select: {
-      failed_2fa_attempts: true,
-    },
-  });
+// async function incrementFailed2FAAttempts(employeeId) {
+//   const employee = await prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       failed_2fa_attempts: {
+//         increment: 1,
+//       },
+//     },
+//     select: {
+//       failed_2fa_attempts: true,
+//     },
+//   });
 
-  return employee.failed_2fa_attempts ?? 0;
-}
+//   return employee.failed_2fa_attempts ?? 0;
+// }
 
-async function set2FABlockedUntil(employeeId, blockedUntil) {
-  return prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      two_fa_blocked_until: blockedUntil,
-    },
-    select: {
-      employee_id: true,
-      two_fa_blocked_until: true,
-    },
-  });
-}
+// async function set2FABlockedUntil(employeeId, blockedUntil) {
+//   return prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       two_fa_blocked_until: blockedUntil,
+//     },
+//     select: {
+//       employee_id: true,
+//       two_fa_blocked_until: true,
+//     },
+//   });
+// }
 
-async function clear2FASecurityState(employeeId) {
-  await prisma.employee.update({
-    where: { employee_id: employeeId },
-    data: {
-      failed_2fa_attempts: 0,
-      two_fa_blocked_until: null,
-    },
-  });
-}
+// async function clear2FASecurityState(employeeId) {
+//   await prisma.employee.update({
+//     where: { employee_id: employeeId },
+//     data: {
+//       failed_2fa_attempts: 0,
+//       two_fa_blocked_until: null,
+//     },
+//   });
+// }
 
 module.exports = {
   findEmployeeByEmail,
-  updatePassword,
-  setFirstLogin,
+  // updatePassword,
+  // setFirstLogin,
   incrementFailedAttempts,
   resetFailedAttempts,
   setBlockedUntil,
   clearLoginSecurityState,
   getEmployeeById,
-  saveTempTotpSecret,
-  clearTempTotpSecret,
+  // saveTempTotpSecret,
+  // clearTempTotpSecret,
   clearBlockedUntil,
-  incrementFailed2FAAttempts,
-  set2FABlockedUntil,
-  clear2FASecurityState,
+  // incrementFailed2FAAttempts,
+  // set2FABlockedUntil,
+  // clear2FASecurityState,
 };
