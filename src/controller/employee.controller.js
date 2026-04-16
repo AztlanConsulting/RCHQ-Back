@@ -1,10 +1,20 @@
 const EmployeeService = require("../service/employee.service");
 
 const employeeController = {
-  getAdd(req, res) {
-    return res.status(200).json({
-      message: "Aquí se renderizará el formulario en React"
-    });
+  async getAdd(req, res) {
+    try {
+      const roles = await EmployeeService.getRoles();
+
+      return res.status(200).json({
+        roles,
+      });
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({
+        error: "Error cargando datos del formulario"
+      });
+    }
   },
 
   async getById(req, res) {
