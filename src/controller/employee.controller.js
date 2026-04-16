@@ -7,7 +7,7 @@ const employeeController = {
 
       return res.status(200).json({
         roles,
-        house_id: req.user.house_id,
+        house_id: req.user.houseId,
       });
 
     } catch (error) {
