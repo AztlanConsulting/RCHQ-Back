@@ -4,40 +4,40 @@ const loginSchema = z.object({
     email: z
         .string()
         .trim()
-        .email("Invalid email format")
-        .max(255, "Email is too long"),
+        .email("Formato de email inválido")
+        .max(255, "El email es demasiado largo"),
     password: z
         .string()
-        .min(1, "Password is required")
-        .max(70, "Password is too long"),
+        .min(1, "La contraseña es requerida")
+        .max(70, "La contraseña es demasiado larga"),
 });
 
 const firstLoginChangePasswordSchema = z
     .object({
         newPassword: z
             .string()
-            .min(8, "Password must be at least 8 characters long")
-            .max(70, "Password must be at most 70 characters long"),
+            .min(8, "La contraseña debe tener al menos 8 caracteres")
+            .max(70, "La contraseña debe tener como máximo 70 caracteres"),
         confirmPassword: z
             .string()
-            .min(1, "confirmPassword is required"),
+            .min(1, "La confirmación de contraseña es requerida"),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
-        message: "Passwords do not match",
+        message: "Las contraseñas no coinciden",
         path: ["confirmPassword"],
     });
 
 const twoFactorTokenSchema = z.object({
     token: z
         .string()
-        .regex(/^\d{6}$/, "token must be a 6-digit code"),
+        .regex(/^\d{6}$/, "El token debe ser un código de 6 dígitos"),
 });
 
 const disableTwoFactorSchema = z.object({
     password: z
         .string()
-        .min(1, "Password is required")
-        .max(70, "Password is too long"),
+        .min(1, "La contraseña es requerida")
+        .max(70, "La contraseña es demasiado larga"),
 });
 
 module.exports = {
