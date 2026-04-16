@@ -75,8 +75,7 @@ const EmployeeService = {
       start_date: new Date(),
     });
 
-    const actorId =
-      req.user?.employee_id || "8f55364d-1a53-43b6-a18f-3c73c9092797";
+    const actorId = req.user?.id;
 
     let logError = null;
 
