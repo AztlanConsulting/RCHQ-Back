@@ -18,7 +18,7 @@ const EmployeeService = {
       return {
         status: 400,
         body: {
-          errors: result.error.errors.map((e) => ({
+          errors: result.error.issues.map((e) => ({
             campo: e.path[0],
             mensaje: e.message,
           })),
