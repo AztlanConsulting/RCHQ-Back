@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
 const sessionExpiresIn = "1h"; // pendiente refresh token para otra US
 // const firstLoginExpiresIn = "15m";
-// const pre2faExpiresIn = "10m";
+const pre2faExpiresIn = "10m";
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -32,18 +32,17 @@ const generateToken = (user) => {
 //   );
 // };
 
-// const generatePre2faToken = (user) => {
-//   return jwt.sign(
-//     {
-//       id: user.id,
-//       email: user.email,
-//       purpose: "LOGIN_2FA_PENDING",
-//       tokenType: "PRE_2FA",
-//     },
-//     jwtSecret,
-//     { expiresIn: pre2faExpiresIn },
-//   );
-// }
+const generatePre2faToken = (user) => {
+  return jwt.sign(
+    {
+       id: user.id,
+       email: user.email,
+       tokenType: "PRE_2FA",
+     },
+     jwtSecret,
+     { expiresIn: pre2faExpiresIn },
+   );
+ }
 
 const decodeToken = (token) => {
   if (!token) {
@@ -60,5 +59,5 @@ module.exports = {
   generateToken,
   decodeToken,
   // generateFirstLoginToken,
-  // generatePre2faToken,
+  generatePre2faToken,
 };

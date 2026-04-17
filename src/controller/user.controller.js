@@ -7,6 +7,7 @@ const QRCode = require("qrcode");
 // const {verifyPassword, hashPassword} = require("../utils/password");
 // const { getClientIp } = require("../utils/ip");
 // const { LOG_ACTIONS } = require("../utils/logActions");
+const User = require("../model/user.model")
 const authService = require("../service/auth.service");
 
 // const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
@@ -77,25 +78,25 @@ exports.getProfile = (req, res) => {
    }
  };
 
-// exports.validateTwoFactorAuth = async (req, res) => {
-//   try {
-//     const result = await authService.validateTwoFactorAuth(req);
-//     return res.status(result.status).json(result.body);
-//   } catch (error) {
-//     console.error("2FA validation error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+exports.validateTwoFactorAuth = async (req, res) => {
+  try {
+    const result = await authService.validateTwoFactorAuth(req);
+     return res.status(result.status).json(result.body);
+   } catch (error) {
+     console.error("2FA validation error:", error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal Server Error",
+     });
+   }
+  };
 
-// exports.disableTwoFactorAuth = async (req, res) => {
-//   try {
-//     const result = await authService.disableTwoFactorAuth(req);
-//     return res.status(result.status).json(result.body);
-//   } catch (error) {
-//     console.error("2FA disable error:", error);
-//     return res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// };
+ exports.disableTwoFactorAuth = async (req, res) => {
+   try {
+     const result = await authService.disableTwoFactorAuth(req);
+     return res.status(result.status).json(result.body);
+   } catch (error) {
+     console.error("2FA disable error:", error);
+     return res.status(500).json({ success: false, message: "Internal Server Error" });
+   }
+ };

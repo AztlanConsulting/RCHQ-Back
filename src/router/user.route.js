@@ -3,13 +3,13 @@ const verifyToken = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");
 const userController = require("../controller/user.controller");
 // const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
-// const verifyPre2faToken = require("../middleware/pre2faAuth");
+const verifyPre2faToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");
 const {
   loginSchema,
   //firstLoginChangePasswordSchema,
   twoFactorTokenSchema,
-  //disableTwoFactorSchema
+  disableTwoFactorSchema
 } = require("../schemas/auth.schemas");
 
 const router = express.Router();
@@ -36,19 +36,19 @@ verifyToken,
 validate(twoFactorTokenSchema),
 userController.verifyTwoFactorSetup
 );
-// router.post(
-//   "/2fa/validate",
-//   verifyPre2faToken,
-//   validate(twoFactorTokenSchema),
-//   userController.validateTwoFactorAuth
-// );
-// router.post(
-//   "/2fa/disable",
-//   verifyToken,
-//   validate(disableTwoFactorSchema),
-//   userController.disableTwoFactorAuth
-// );
+router.post(
+"/2fa/validate",
+verifyPre2faToken,
+validate(twoFactorTokenSchema),
+userController.validateTwoFactorAuth
+);
 
+router.post(
+   "/2fa/disable",
+   verifyToken,
+   validate(disableTwoFactorSchema),
+   userController.disableTwoFactorAuth
+);
 // Protected route example with ABAC and RBAC
 router.get(
   "/profile",
