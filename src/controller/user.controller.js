@@ -64,18 +64,18 @@ exports.getProfile = (req, res) => {
   }
 };
 
-// exports.verifyTwoFactorSetup = async (req, res) => {
-//   try {
-//     const result = await authService.verifyTwoFactorSetup(req);
-//     return res.status(result.status).json(result.body);
-//   } catch (error) {
-//     console.error("2FA verify setup error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+ exports.verifyTwoFactorSetup = async (req, res) => {
+   try {
+     const result = await authService.verifyTwoFactorSetup(req);
+     return res.status(result.status).json(result.body);
+   } catch (error) {
+     console.error("2FA verify setup error:", error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal Server Error",
+     });
+   }
+ };
 
 // exports.validateTwoFactorAuth = async (req, res) => {
 //   try {

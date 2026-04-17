@@ -72,6 +72,7 @@ model employee {
   email                         String                          @unique @db.VarChar(60)
   password                      String                          @db.VarChar(72)
   has_first_login               Boolean
+  is_active_2fa                 Boolean                         @default(false)
   failed_login_attempts         Int                             @default(0)
   failed_2fa_attempts           Int                             @default(0)
   totp_secret                   String?                         @db.VarChar(32)

@@ -12,6 +12,7 @@ function mapEmployee(employee) {
     roleId: employee.role_id,
     isActive: employee.is_active,
     hasFirstLogin: employee.has_first_login,
+    isActive2FA: employee.is_active_2fa,
     totpSecret: employee.totp_secret,
     curp: employee.curp,
     birthDate: employee.birth_date,
@@ -139,25 +140,25 @@ async function clearLoginSecurityState(employeeId) {
   });
 }
 
-// async function saveTempTotpSecret(employeeId, secret) {
-//   await prisma.employee.update({
-//     where: { employee_id: employeeId },
-//     data: {
-//       temp_totp_secret: secret,
-//       temp_totp_secret_created_at: new Date(),
-//     },
-//   });
-// }
+async function saveTempTotpSecret(employeeId, secret) {
+  await prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      temp_totp_secret: secret,
+      temp_totp_secret_created_at: new Date(),
+    },
+  });
+}
 
-// async function clearTempTotpSecret(employeeId) {
-//   await prisma.employee.update({
-//     where: { employee_id: employeeId },
-//     data: {
-//       temp_totp_secret: null,
-//       temp_totp_secret_created_at: null,
-//     },
-//   });
-// }
+ async function clearTempTotpSecret(employeeId) {
+   await prisma.employee.update({
+     where: { employee_id: employeeId },
+     data: {
+       temp_totp_secret: null,
+       temp_totp_secret_created_at: null,
+     },
+   });
+ }
 
 // async function incrementFailed2FAAttempts(employeeId) {
 //   const employee = await prisma.employee.update({
@@ -207,8 +208,8 @@ module.exports = {
   setBlockedUntil,
   clearLoginSecurityState,
   getEmployeeById,
-  // saveTempTotpSecret,
-  // clearTempTotpSecret,
+  saveTempTotpSecret,
+  clearTempTotpSecret,
   clearBlockedUntil,
   // incrementFailed2FAAttempts,
   // set2FABlockedUntil,

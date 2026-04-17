@@ -14,7 +14,7 @@ const { isBlockedUntil, clearExpiredLoginBlock,
 } = require("../utils/auth/authGuards");
 const prisma = require("../prisma");
 
-// const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
+const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
 const MAX_LOGIN_ATTEMPTS = 3;
 
@@ -125,6 +125,7 @@ async function login(req) {
         body: {
             success: true,
             message: "Inicio de sesión exitoso",
+            is_active_2fa: employee.isActive2FA,
             data: {
                 token,
                 user: {
@@ -237,7 +238,7 @@ async function login(req) {
 // }
 
 async function setupTwoFactorAuth(req) {
-     const employeeId = req.user?.id;
+     const employeeId = req.body.id;
     const ipAddress = getClientIp(req);
 
     if (!employeeId) {
@@ -276,24 +277,6 @@ async function setupTwoFactorAuth(req) {
          };
      }
 
-     if (employee.tempTotpSecret && employee.tempTotpSecretCreatedAt) {
-         const createdAt = new Date(employee.tempTotpSecretCreatedAt);
-         const expiresAt = new Date(
-             createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
-         );
-
-         if (expiresAt > new Date()) {
-             return {
-                 status: 409,
-                 body: {
-                     success: false,
-                     message: "A 2FA setup is already pending. Please complete it or wait for it to expire.",
-                 },
-             };
-         }
-
-         await User.clearTempTotpSecret(employee.employeeId);
-     }
 
      const tempSecret = speakeasy.generateSecret({
          name: `RCHQ (${employee.email})`,
@@ -320,142 +303,143 @@ async function setupTwoFactorAuth(req) {
      };
 }
 
-// async function verifyTwoFactorSetup(req) {
-//     const { token } = req.body || {};
-//     const employeeId = req.user?.id;
-//     const ipAddress = getClientIp(req);
+async function verifyTwoFactorSetup(req) {
+     const { token } = req.body || {};
+     const employeeId = req.user?.id;
+     const ipAddress = getClientIp(req);
 
-//     if (!employeeId) {
-//         return {
-//             status: 401,
-//             body: { success: false, message: "User not authenticated" },
-//         };
-//     }
+     if (!employeeId) {
+         return {
+             status: 401,
+             body: { success: false, message: "User not authenticated" },
+         };
+     }
 
-//     const employee = await User.getEmployeeById(employeeId);
+     const employee = await User.getEmployeeById(employeeId);
 
-//     if (!employee) {
-//         return {
-//             status: 404,
-//             body: { success: false, message: "Employee not found" },
-//         };
-//     }
+     if (!employee) {
+         return {
+             status: 404,
+             body: { success: false, message: "Employee not found" },
+         };
+     }
 
-//     if (!employee.isActive) {
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.TWO_FA_VERIFY_INACTIVE,
-//             ipAddress
-//         );
+     if (!employee.isActive) {
+         await createLog(
+             employee.employeeId,
+             LOG_ACTIONS.TWO_FA_VERIFY_INACTIVE,
+             ipAddress
+         );
 
-//         return {
-//             status: 403,
-//             body: { success: false, message: "Access not allowed" },
-//         };
-//     }
+         return {
+             status: 403,
+             body: { success: false, message: "Access not allowed" },
+         };
+     }
 
-//     if (!employee.tempTotpSecret) {
-//         return {
-//             status: 409,
-//             body: { success: false, message: "No pending 2FA setup found" },
-//         };
-//     }
+     if (!employee.tempTotpSecret) {
+         return {
+             status: 409,
+             body: { success: false, message: "No pending 2FA setup found" },
+         };
+     }
 
-//     if (!employee.tempTotpSecretCreatedAt) {
-//         await User.clearTempTotpSecret(employee.employeeId);
-//         return {
-//             status: 409,
-//             body: {
-//                 success: false,
-//                 message: "Invalid pending 2FA setup state",
-//             },
-//         };
-//     }
+     if (!employee.tempTotpSecretCreatedAt) {
+         await User.clearTempTotpSecret(employee.employeeId);
+         return {
+             status: 409,
+             body: {
+                 success: false,
+                 message: "Invalid pending 2FA setup state",
+             },
+         };
+     }
 
-//     const createdAt = new Date(employee.tempTotpSecretCreatedAt);
-//     const expiresAt = new Date(
-//         createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
-//     );
+     const createdAt = new Date(employee.tempTotpSecretCreatedAt);
+     const expiresAt = new Date(
+         createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000
+     );
 
-//     if (expiresAt <= new Date()) {
-//         await User.clearTempTotpSecret(employee.employeeId);
+     if (expiresAt <= new Date()) {
+         await User.clearTempTotpSecret(employee.employeeId);
 
-//         return {
-//             status: 409,
-//             body: {
-//                 success: false,
-//                 message: "Pending 2FA setup has expired. Please start again.",
-//             },
-//         };
-//     }
+         return {
+             status: 409,
+             body: {
+                 success: false,
+                 message: "Pending 2FA setup has expired. Please start again.",
+             },
+         };
+     }
 
-//     const verified = speakeasy.totp.verify({
-//         secret: employee.tempTotpSecret,
-//         encoding: "base32",
-//         token,
-//         window: 1,
-//     });
+     const verified = speakeasy.totp.verify({
+         secret: employee.tempTotpSecret,
+         encoding: "base32",
+         token,
+         window: 1,
+     });
 
-//     if (!verified) {
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.TWO_FA_SETUP_FAILED,
-//             ipAddress
-//         );
+     if (!verified) {
+         await createLog(
+             employee.employeeId,
+             LOG_ACTIONS.TWO_FA_SETUP_FAILED,
+             ipAddress
+         );
 
-//         return {
-//             status: 400,
-//             body: {
-//                 success: false,
-//                 message: "Invalid 2FA code. Setup could not be completed.",
-//                 nextStep: "2FA_SETUP_FAILED",
-//                 data: {
-//                     employeeId: employee.employeeId,
-//                     canRetryInSettings: true,
-//                 },
-//             },
-//         };
-//     }
+         return {
+             status: 400,
+             body: {
+                 success: false,
+                 message: "Invalid 2FA code. Setup could not be completed.",
+                 nextStep: "2FA_SETUP_FAILED",
+                 data: {
+                     employeeId: employee.employeeId,
+                     canRetryInSettings: true,
+                 },
+             },
+         };
+     }
 
-//     await prisma.$transaction(async (tx) => {
-//         const employeeInTx = await tx.employee.findUnique({
-//             where: { employee_id: employee.employeeId },
-//             select: {
-//                 temp_totp_secret: true,
-//             },
-//         });
+     await prisma.$transaction(async (tx) => {
+         const employeeInTx = await tx.employee.findUnique({
+             where: { employee_id: employee.employeeId },
+             select: {
+                 temp_totp_secret: true,
+             },
+         });
 
-//         await tx.employee.update({
-//             where: { employee_id: employee.employeeId },
-//             data: {
-//                 totp_secret: employeeInTx?.temp_totp_secret ?? null,
-//                 temp_totp_secret: null,
-//                 temp_totp_secret_created_at: null,
-//             },
-//         });
+         await tx.employee.update({
+             where: { employee_id: employee.employeeId },
+             data: {
+                 totp_secret: employeeInTx?.temp_totp_secret ?? null,
+                 temp_totp_secret: null,
+                 temp_totp_secret_created_at: null,
+                 is_active_2fa:true,
+             },
+         });
 
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.TWO_FA_SETUP_SUCCESS,
-//             ipAddress,
-//             null,
-//             tx
-//         );
-//     });
+         await createLog(
+             employee.employeeId,
+             LOG_ACTIONS.TWO_FA_SETUP_SUCCESS,
+             ipAddress,
+             null,
+             tx
+         );
+     });
 
-//     return {
-//         status: 200,
-//         body: {
-//             success: true,
-//             message: "2FA activated successfully",
-//             nextStep: "2FA_SETUP_COMPLETE",
-//             data: {
-//                 employeeId: employee.employeeId,
-//                 twoFactorEnabled: true,
-//             },
-//         },
-//     };
-// }
+     return {
+         status: 200,
+         body: {
+             success: true,
+             message: "2FA activated successfully",
+             nextStep: "2FA_SETUP_COMPLETE",
+             data: {
+                 employeeId: employee.employeeId,
+                 twoFactorEnabled: true,
+             },
+         },
+     };
+ };
 
 // async function validateTwoFactorAuth(req) {
 //     const { token } = req.body || {};
@@ -683,7 +667,7 @@ module.exports = {
     login,
     // changePasswordFirstLogin,
     setupTwoFactorAuth,
-    // verifyTwoFactorSetup,
+    verifyTwoFactorSetup,
     // validateTwoFactorAuth,
     // disableTwoFactorAuth,
 };

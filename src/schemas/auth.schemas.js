@@ -29,22 +29,22 @@ const loginSchema = z.object({
 //         path: ["confirmPassword"],
 //     });
 
-// const twoFactorTokenSchema = z.object({
-//     token: z
-//         .string()
-//         .regex(/^\d{6}$/, "El token debe ser un código de 6 dígitos"),
-// });
+const twoFactorTokenSchema = z.object({
+    token: z
+        .string()
+        .regex(/^\d{6}$/, "El token debe ser un código de 6 dígitos"),
+});
 
-// const disableTwoFactorSchema = z.object({
-//     password: z
-//         .string()
-//         .min(1, "La contraseña es requerida")
-//         .max(70, "La contraseña es demasiado larga"),
+//const disableTwoFactorSchema = z.object({
+ //   password: z
+ //       .string()
+ //       .min(1, "La contraseña es requerida")
+ //       .max(70, "La contraseña es demasiado larga"),
 // });
 
 module.exports = {
     loginSchema,
     // firstLoginChangePasswordSchema,
-    // twoFactorTokenSchema,
-    // disableTwoFactorSchema,
+    twoFactorTokenSchema,
+   // disableTwoFactorSchema,
 };
