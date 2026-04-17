@@ -457,8 +457,9 @@ async function verifyTwoFactorSetup(req) {
 
 async function validateTwoFactorAuth(req) {
      const { token } = req.body || {};
-     const employeeId = req.user?.id;
+     const employeeId = req.user?.id || req.user?.employeeId;
      const ipAddress = getClientIp(req);
+     console.log("servicio");
 
      if (!employeeId) {
          return {
@@ -516,6 +517,7 @@ async function validateTwoFactorAuth(req) {
          token,
          window: 1,
      });
+    console.log(isValid);
 
      if (!isValid) {
          const attempts = await User.incrementFailed2FAAttempts(employee.employeeId);

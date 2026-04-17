@@ -36,6 +36,8 @@ verifyToken,
 validate(twoFactorTokenSchema),
 userController.verifyTwoFactorSetup
 );
+
+console.log("hola");
 router.post(
 "/2fa/validate",
 verifyPre2faToken,

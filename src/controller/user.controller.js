@@ -79,6 +79,7 @@ exports.getProfile = (req, res) => {
  };
 
 exports.validateTwoFactorAuth = async (req, res) => {
+  console.log("controllador");
   try {
     const result = await authService.validateTwoFactorAuth(req);
      return res.status(result.status).json(result.body);

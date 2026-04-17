@@ -18,9 +18,7 @@ const verifyPre2faToken = (req, res, next) => {
         const decoded = jwt.verify(token, JWT_SECRET);
 
         if (
-            decoded.tokenType !== "PRE_2FA" ||
-            decoded.purpose !== "LOGIN_2FA_PENDING"
-        ) {
+            decoded.tokenType !== "PRE_2FA") {
             return res.status(403).json({
                 success: false,
                 message: "Invalid pre-2FA token",
