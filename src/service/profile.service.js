@@ -1,9 +1,9 @@
-const User = require("../model/user.model");
+const profile = require("../model/profile.model");
 
 async function getUserProfile(req) {
   const employeeId = req.user.id;
 
-  const employee = await User.findEmployeeProfile(employeeId);
+  const employee = await profile.findEmployeeProfile(employeeId);
 
   if (!employee) {
     return {
