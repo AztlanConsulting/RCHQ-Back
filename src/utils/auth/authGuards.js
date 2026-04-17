@@ -17,10 +17,9 @@ async function clearExpiredLoginBlock(employee) {
 }
 
 async function clearExpired2FABlock(employee) {
-    if (isExpiredBlock(employee.twoFaBlockedUntil)) {
+    // TIENE que validar que la fecha exista antes de compararla
+    if (employee.twoFaBlockedUntil && new Date(employee.twoFaBlockedUntil) <= new Date()) {
         await User.clear2FASecurityState(employee.employeeId);
-        employee.failed2faAttempts = 0;
-        employee.twoFaBlockedUntil = null;
     }
 }
 
