@@ -1,4 +1,4 @@
-const EmployeeService = require("../service/employee.service");
+const EmployeeService = require("../../service/employee/employeeAdd.service");
 
 const employeeController = {
   async getAdd(req, res) {

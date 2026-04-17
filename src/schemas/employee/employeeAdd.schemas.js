@@ -8,10 +8,6 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._/-]+$/;
 
 const employeeCreateSchema = z.object({
-  house_id: z
-    .string()
-    .uuid("El house_id debe ser un UUID válido"),
-
   role_id: z
     .string()
     .uuid("El role_id debe ser un UUID válido"),

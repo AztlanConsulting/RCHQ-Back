@@ -1,18 +1,6 @@
-const prisma = require("../prisma");
+const prisma = require("../../prisma");
 
 const Employee = {
-
-  async findByCurp(curp) {
-    return await prisma.employee.findUnique({
-      where: { curp }
-    });
-  },
-
-  async findById(employee_id) {
-    return await prisma.employee.findUnique({
-      where: { employee_id }
-    });
-  },
 
   async create(employeeData) {
     const data = {
@@ -36,10 +24,6 @@ const Employee = {
     };
 
     return await prisma.employee.create({ data });
-  },
-
-  async getAllRoles() {
-    return await prisma.role.findMany();
   },
 };
 

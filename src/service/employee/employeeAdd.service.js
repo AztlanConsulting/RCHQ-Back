@@ -1,19 +1,19 @@
-const Employee = require("../model/employee.model");
-const { createLog } = require("../model/log.model");
-const { getClientIp } = require("../utils/ip");
-const { hashPassword } = require("../utils/password");
-const { employeeCreateSchema } = require("../schemas/employee.schemas");
-const { LOG_ACTIONS } = require("../utils/logActions");
+const Employee = require("../../model/employee/employeeAdd.model");
+const Consult = require("../../model/consult/consult.model");
+const { createLog } = require("../../model/log.model");
+const { getClientIp } = require("../../utils/ip");
+const { hashPassword } = require("../../utils/password");
+const { employeeCreateSchema } = require("../../schemas/employee/employeeAdd.schemas");
+const { LOG_ACTIONS } = require("../../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
 
 const EmployeeService = {
   async getById(id) {
-    return await Employee.findById(id);
+    return await Consult.findById(id);
   },
 
   async getRoles() {
-    const prisma = require("../prisma");
-    return await prisma.role.findMany();
+    return await Consult.getAllRoles();
   },
 
   async createEmployee(req) {
@@ -45,7 +45,7 @@ const EmployeeService = {
       picture,
     } = result.data;
 
-    const existing = await Employee.findByCurp(curp);
+    const existing = await Consult.findByCurp(curp);
 
     if (existing) {
       return {
