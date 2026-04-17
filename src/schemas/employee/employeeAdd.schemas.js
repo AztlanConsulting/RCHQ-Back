@@ -7,6 +7,9 @@ const NAMES_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._/-]+$/;
 
+// 🔥 helper para convertir "" a null
+const emptyToNull = (val) => (val === "" ? null : val);
+
 const employeeCreateSchema = z.object({
   role_id: z
     .string()
@@ -42,44 +45,69 @@ const employeeCreateSchema = z.object({
   rfc: z
     .string()
     .trim()
-    .toUpperCase()
-    .length(13, "El RFC debe tener exactamente 13 dígitos")
-    .regex(RFC_REGEX, "Formato del RFC inválido")
+    .transform(emptyToNull)
     .nullable()
+    .refine((val) => val === null || val.length === 13, {
+      message: "El RFC debe tener exactamente 13 dígitos",
+    })
+    .refine((val) => val === null || RFC_REGEX.test(val), {
+      message: "Formato del RFC inválido",
+    })
     .optional(),
 
   nss: z
     .string()
     .trim()
-    .length(11, "El NSS debe tener exactamente 11 dígitos")
-    .regex(ONLY_NUMBERS_REGEX, "El NSS solo debe contener números")
+    .transform(emptyToNull)
     .nullable()
+    .refine((val) => val === null || val.length === 11, {
+      message: "El NSS debe tener exactamente 11 dígitos",
+    })
+    .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
+      message: "El NSS solo debe contener números",
+    })
     .optional(),
 
   bank_account: z
     .string()
     .trim()
-    .length(18, "La CLABE debe tener exactamente 18 dígitos")
-    .regex(ONLY_NUMBERS_REGEX, "La cuenta CLABE solo debe contener números")
+    .transform(emptyToNull)
     .nullable()
+    .refine((val) => val === null || val.length === 18, {
+      message: "La CLABE debe tener exactamente 18 dígitos",
+    })
+    .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
+      message: "La cuenta CLABE solo debe contener números",
+    })
     .optional(),
 
   birth_date: z
     .string()
-    .regex(DATE_REGEX, "Formato de fecha inválido (YYYY-MM-DD)")
-    .refine((date) => !isNaN(Date.parse(date)), {
-        message: "Fecha inválida",
-    })
+    .trim()
+    .transform(emptyToNull)
     .nullable()
+    .refine((val) => val === null || DATE_REGEX.test(val), {
+      message: "Formato de fecha inválido (YYYY-MM-DD)",
+    })
+    .refine((val) => val === null || !isNaN(Date.parse(val)), {
+      message: "Fecha inválida",
+    })
     .optional(),
 
   picture: z
     .string()
     .trim()
-    .regex(SAFE_FILENAME_REGEX, "El nombre contiene caracteres no permitidos")
-    .regex(/\.(jpg|jpeg|png|webp)$/i, "Formato de imagen no válido")
-    .max(150, "El nombre de la imagen es demasiado largo")
+    .transform(emptyToNull)
     .nullable()
+    .refine((val) => val === null || SAFE_FILENAME_REGEX.test(val), {
+      message: "El nombre contiene caracteres no permitidos",
+    })
+    .refine((val) => val === null || /\.(jpg|jpeg|png|webp)$/i.test(val), {
+      message: "Formato de imagen no válido",
+    })
+    .refine((val) => val === null || val.length <= 150, {
+      message: "El nombre de la imagen es demasiado largo",
+    })
     .optional(),
 });
 
