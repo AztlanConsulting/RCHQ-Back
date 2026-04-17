@@ -8,7 +8,6 @@ const {verifyPassword, hashPassword} = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
 const { LOG_ACTIONS } = require("../utils/logActions");
 const authService = require("../service/auth.service");
-const userService = require("../service/user.service");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
@@ -31,19 +30,6 @@ exports.changePasswordFirstLogin = async (req, res) => {
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("First login password change error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-exports.getUserProfile = async (req, res) => {
-  try {
-    const result = await userService.getUserData(req);
-    return res.status(result.status).json(result.body);
-  } catch (err) {
-    console.error("getUserData error:", err);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",

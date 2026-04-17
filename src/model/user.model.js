@@ -198,46 +198,6 @@ async function clear2FASecurityState(employeeId) {
   });
 }
 
-// Specific function to get employee data only for profile endpoint.
-async function findEmployeeProfile(employeeId) {
-  const employee = await prisma.employee.findUnique({
-    where: { employee_id: employeeId },
-    select: {
-      house_id:     true,
-      role_id:      true,
-      name:         true,
-      surname:      true,
-      email:        true,
-      rfc:          true,
-      curp:         true,
-      nss:          true,
-      bank_account: true,
-      birth_date:   true,
-      picture:      true,
-    },
-  });
-
-  if (!employee) return null;
-
-  return mapProfile(employee);
-}
-
-function mapProfile(e) {
-  return {
-    houseId:     e.house_id,
-    roleId:      e.role_id,
-    name:        e.name,
-    surname:     e.surname,
-    email:       e.email,
-    rfc:         e.rfc,
-    curp:        e.curp,
-    nss:         e.nss,
-    bankAccount: e.bank_account,
-    birthDate:   e.birth_date,
-    picture:     e.picture,
-  };
-}
-
 module.exports = {
   findEmployeeByEmail,
   updatePassword,
@@ -253,5 +213,4 @@ module.exports = {
   incrementFailed2FAAttempts,
   set2FABlockedUntil,
   clear2FASecurityState,
-  findEmployeeProfile,
 };

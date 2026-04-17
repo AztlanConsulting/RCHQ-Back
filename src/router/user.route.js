@@ -2,6 +2,7 @@ const express = require("express");
 const verifyToken = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");
 const userController = require("../controller/user.controller");
+const profileController = require("../controller/profile.controller");
 const userModel = require("../model/user.model");
 const { authorize } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/user.policies");
@@ -56,7 +57,7 @@ router.post(
 router.get(
   "/profile",
   verifyToken,
-  userController.getUserProfile
+  profileController.getUserProfile
 );
 
 module.exports = router;
