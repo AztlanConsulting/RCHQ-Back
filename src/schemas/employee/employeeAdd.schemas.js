@@ -7,110 +7,113 @@ const NAMES_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._/-]+$/;
 
-// 🔥 helper para convertir "" a null
 const emptyToNull = (val) => (val === "" ? null : val);
 
 const employeeCreateSchema = z.object({
-  role_id: z
-    .string()
-    .uuid("El role_id debe ser un UUID válido"),
+    role_id: z.string().uuid("El role_id debe ser un UUID válido"),
 
-  name: z
-    .string()
-    .trim()
-    .min(2, "El nombre es obligatorio")
-    .max(50, "El nombre es demasiado largo")
-    .regex(NAMES_REGEX, "No se permiten caracteres especiales, números o emojis en el nombre"),
+    name: z
+        .string()
+        .trim()
+        .min(2, "El nombre es obligatorio")
+        .max(50, "El nombre es demasiado largo")
+        .regex(
+            NAMES_REGEX,
+            "No se permiten caracteres especiales, números o emojis en el nombre",
+        ),
 
-  surname: z
-    .string()
-    .trim()
-    .min(2, "El apellido es obligatorio")
-    .max(50, "El apellido es demasiado largo")
-    .regex(NAMES_REGEX, "No se permiten caracteres especiales, números o emojis en el apellido"),
+    surname: z
+        .string()
+        .trim()
+        .min(2, "El apellido es obligatorio")
+        .max(50, "El apellido es demasiado largo")
+        .regex(
+            NAMES_REGEX,
+            "No se permiten caracteres especiales, números o emojis en el apellido",
+        ),
 
-  email: z
-    .string()
-    .trim()
-    .email("Formato de correo inválido")
-    .max(60, "El correo es demasiado largo"),
+    email: z
+        .string()
+        .trim()
+        .email("Formato de correo inválido")
+        .max(60, "El correo es demasiado largo"),
 
-  curp: z
-    .string()
-    .trim()
-    .length(18, "El CURP debe tener exactamente 18 dígitos")
-    .toUpperCase()
-    .regex(CURP_REGEX, "Formato del CURP inválido"),
+    curp: z
+        .string()
+        .trim()
+        .length(18, "El CURP debe tener exactamente 18 dígitos")
+        .toUpperCase()
+        .regex(CURP_REGEX, "Formato del CURP inválido"),
 
-  rfc: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || val.length === 13, {
-      message: "El RFC debe tener exactamente 13 dígitos",
-    })
-    .refine((val) => val === null || RFC_REGEX.test(val), {
-      message: "Formato del RFC inválido",
-    })
-    .optional(),
+    rfc: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || val.length === 13, {
+            message: "El RFC debe tener exactamente 13 dígitos",
+        })
+        .refine((val) => val === null || RFC_REGEX.test(val), {
+            message: "Formato del RFC inválido",
+        })
+        .optional(),
 
-  nss: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || val.length === 11, {
-      message: "El NSS debe tener exactamente 11 dígitos",
-    })
-    .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
-      message: "El NSS solo debe contener números",
-    })
-    .optional(),
+    nss: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || val.length === 11, {
+            message: "El NSS debe tener exactamente 11 dígitos",
+        })
+        .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
+            message: "El NSS solo debe contener números",
+        })
+        .optional(),
 
-  bank_account: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || val.length === 18, {
-      message: "La CLABE debe tener exactamente 18 dígitos",
-    })
-    .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
-      message: "La cuenta CLABE solo debe contener números",
-    })
-    .optional(),
+    bank_account: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || val.length === 18, {
+            message: "La CLABE debe tener exactamente 18 dígitos",
+        })
+        .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
+            message: "La cuenta CLABE solo debe contener números",
+        })
+        .optional(),
 
-  birth_date: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || DATE_REGEX.test(val), {
-      message: "Formato de fecha inválido (YYYY-MM-DD)",
-    })
-    .refine((val) => val === null || !isNaN(Date.parse(val)), {
-      message: "Fecha inválida",
-    })
-    .optional(),
+    birth_date: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || DATE_REGEX.test(val), {
+            message: "Formato de fecha inválido (YYYY-MM-DD)",
+        })
+        .refine((val) => val === null || !isNaN(Date.parse(val)), {
+            message: "Fecha inválida",
+        })
+        .optional(),
 
-  picture: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || SAFE_FILENAME_REGEX.test(val), {
-      message: "El nombre contiene caracteres no permitidos",
-    })
-    .refine((val) => val === null || /\.(jpg|jpeg|png|webp)$/i.test(val), {
-      message: "Formato de imagen no válido",
-    })
-    .refine((val) => val === null || val.length <= 150, {
-      message: "El nombre de la imagen es demasiado largo",
-    })
-    .optional(),
+    picture: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || SAFE_FILENAME_REGEX.test(val), {
+            message: "El nombre contiene caracteres no permitidos",
+        })
+        .refine((val) => val === null || /\.(jpg|jpeg|png|webp)$/i.test(val), {
+            message: "Formato de imagen no válido",
+        })
+        .refine((val) => val === null || val.length <= 150, {
+            message: "El nombre de la imagen es demasiado largo",
+        })
+        .optional(),
 });
 
 module.exports = {
-  employeeCreateSchema,
+    employeeCreateSchema,
 };
