@@ -37,7 +37,6 @@ validate(twoFactorTokenSchema),
 userController.verifyTwoFactorSetup
 );
 
-console.log("hola");
 router.post(
 "/2fa/validate",
 verifyPre2faToken,
@@ -50,6 +49,12 @@ router.post(
    verifyToken,
    validate(disableTwoFactorSchema),
    userController.disableTwoFactorAuth
+);
+
+router.get(
+  "/status/2FA",
+  verifyToken,
+  userController.getStatus2FA
 );
 // Protected route example with ABAC and RBAC
 router.get(

@@ -459,7 +459,6 @@ async function validateTwoFactorAuth(req) {
      const { token } = req.body || {};
      const employeeId = req.user?.id || req.user?.employeeId;
      const ipAddress = getClientIp(req);
-     console.log("servicio");
 
      if (!employeeId) {
          return {
@@ -517,7 +516,6 @@ async function validateTwoFactorAuth(req) {
          token,
          window: 1,
      });
-    console.log(isValid);
 
      if (!isValid) {
          const attempts = await User.incrementFailed2FAAttempts(employee.employeeId);
@@ -581,6 +579,48 @@ async function validateTwoFactorAuth(req) {
              },
          },
      };
+ }
+
+ async function getStatus2FA(req){
+    const employeeId = req.user?.id;
+    const ipAddress = getClientIp(req);
+
+
+    if (!employeeId){
+        return{
+            status:404,
+            body: {sucess: false, message: "User not found"},
+        }
+    }
+
+    const employee = await User.getEmployeeById(employeeId);
+
+    if(!employee){
+        return{
+            status:404,
+            body: {sucess: false, message: "User not found"},
+        }
+    }
+    if (!employee.isActive) {
+         await createLog(
+             employee.employeeId,
+             LOG_ACTIONS.TWO_FA_DISABLE_INACTIVE,
+             ipAddress
+         );
+
+        return {
+            status: 403,
+            body: { success: false, message: "Access not allowed" },
+         };
+    }
+
+    return{
+        status:200,
+        body: {
+            sucess:true,
+            Status2FA: employee.isActive2FA,
+        }
+    }
  }
 
 async function disableTwoFactorAuth(req) {
@@ -675,7 +715,7 @@ async function disableTwoFactorAuth(req) {
              data: {
                  employeeId: employee.employeeId,
                  twoFactorEnabled: false,
-                 is_active_2fa: false,
+                 isActive2FA: false,
              },
          },
      };
@@ -687,5 +727,6 @@ module.exports = {
     setupTwoFactorAuth,
     verifyTwoFactorSetup,
     validateTwoFactorAuth,
+    getStatus2FA,
     disableTwoFactorAuth,
 };

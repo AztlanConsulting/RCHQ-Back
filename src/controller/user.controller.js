@@ -79,7 +79,6 @@ exports.getProfile = (req, res) => {
  };
 
 exports.validateTwoFactorAuth = async (req, res) => {
-  console.log("controllador");
   try {
     const result = await authService.validateTwoFactorAuth(req);
      return res.status(result.status).json(result.body);
@@ -91,6 +90,19 @@ exports.validateTwoFactorAuth = async (req, res) => {
      });
    }
   };
+
+  exports.getStatus2FA = async (req, res) => {
+    try {
+    const result = await authService.getStatus2FA(req);
+     return res.status(result.status).json(result.body);
+   } catch (error) {
+     console.error("2FA validation error:", error);
+     return res.status(500).json({
+       success: false,
+       message: "Internal Server Error",
+     });
+   }
+  }
 
  exports.disableTwoFactorAuth = async (req, res) => {
    try {
