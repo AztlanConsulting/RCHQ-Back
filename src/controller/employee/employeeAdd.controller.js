@@ -38,7 +38,17 @@ const employeeController = {
 
     async postAdd(req, res) {
         try {
-            const result = await EmployeeService.createEmployee(req);
+            const data = { ...req.body };
+
+            if (req.file) {
+                data.picture = req.file.path;
+            }
+
+            const result = await EmployeeService.createEmployee(
+                data,
+                req.user,
+                req
+            );
 
             return res.status(result.status).json(result.body);
         } catch (error) {

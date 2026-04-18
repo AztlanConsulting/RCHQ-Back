@@ -18,8 +18,8 @@ const EmployeeService = {
         return await Consult.getAllRoles();
     },
 
-    async createEmployee(req) {
-        const result = employeeCreateSchema.safeParse(req.body);
+    async createEmployee(data, user, req) {
+        const result = employeeCreateSchema.safeParse(data);
 
         if (!result.success) {
             return {
@@ -34,7 +34,6 @@ const EmployeeService = {
         }
 
         const {
-            house_id,
             role_id,
             name,
             surname,
@@ -64,7 +63,7 @@ const EmployeeService = {
 
         const newEmployee = await Employee.create({
             employee_id: uuidv4(),
-            house_id: req.user.houseId,
+            house_id: user.houseId,
             role_id,
             name,
             surname,
@@ -78,11 +77,11 @@ const EmployeeService = {
             nss,
             bank_account,
             birth_date: birth_date ? new Date(birth_date) : null,
-            picture,
+            picture: picture || null,
             start_date: new Date(),
         });
 
-        const actorId = req.user?.id;
+        const actorId = user?.id;
 
         let logError = null;
 
