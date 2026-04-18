@@ -7,9 +7,11 @@ const { getClientIp } = require("../../utils/ip");
 exports.addAbsence = async (req, res) => {
     try {
         const actorEmployeeId = req.user?.id;
+        const requesterHouseId = req.resolvedRequester?.houseId;
 
         const result = await addAbsence({
             actorEmployeeId,
+            requesterHouseId,
             targetEmployeeId: req.params.employeeId,
             body: req.body,
             file: req.file,
@@ -20,6 +22,13 @@ exports.addAbsence = async (req, res) => {
                 success: false,
                 message: result.message || "Datos inválidos",
                 errors: result.errors,
+            });
+        }
+
+        if (result.code == RESPONSES.ABSENCE.NULL_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "Dentro del rango seleccionado no hay ningún día hábil para asignar la ausencia"
             });
         }
 
