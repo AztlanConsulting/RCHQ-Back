@@ -1,16 +1,9 @@
-// const User = require("../model/user.model");
-const speakeasy = require("speakeasy");
-const QRCode = require("qrcode");
 // const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
 // const { canAccess } = require("../middleware/abac");
 // const { adminPolicy } = require("../policies/user.policies");
 // const {verifyPassword, hashPassword} = require("../utils/password");
-// const { getClientIp } = require("../utils/ip");
-// const { LOG_ACTIONS } = require("../utils/logActions");
-const User = require("../model/user.model")
 const authService = require("../service/auth.service");
 
-// const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10; // tiempo que el código de configuración de 2FA es válido
 
 exports.loginFunction = async (req, res) => {
   try {
