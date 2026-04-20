@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "start:test": "dotenv -e .env.test -- nodemon src/index.js",    
+    "start:test": "dotenv -e .env.test -- nodemon src/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

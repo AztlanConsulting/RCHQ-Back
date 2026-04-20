@@ -18,7 +18,7 @@ jest.mock("../../utils/auth/authTokens");
 jest.mock("../../utils/auth/authGuards");
 jest.mock("../../prisma", () => ({
   $transaction: jest.fn((cb) =>
-    cb({ employee: { findUnique: jest.fn(), update: jest.fn() } })
+    cb({ employee: { findUnique: jest.fn(), update: jest.fn() } }),
   ),
 }));
 jest.mock("speakeasy");
@@ -28,8 +28,15 @@ const User = require("../../model/user.model");
 const { verifyPassword } = require("../../utils/password");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
-const { buildSessionToken, buildPre2faJwt } = require("../../utils/auth/authTokens");
-const { isBlockedUntil, clearExpiredLoginBlock, clearExpired2FABlock } = require("../../utils/auth/authGuards");
+const {
+  buildSessionToken,
+  buildPre2faJwt,
+} = require("../../utils/auth/authTokens");
+const {
+  isBlockedUntil,
+  clearExpiredLoginBlock,
+  clearExpired2FABlock,
+} = require("../../utils/auth/authGuards");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 
@@ -77,7 +84,9 @@ describe("login", () => {
     User.findEmployeeByEmail.mockResolvedValue(null);
 
     // Act
-    const result = await login(makeReq({ email: "no@existe.com", password: "pass" }));
+    const result = await login(
+      makeReq({ email: "no@existe.com", password: "pass" }),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -86,10 +95,15 @@ describe("login", () => {
 
   it("retorna 401 si el usuario está inactivo", async () => {
     // Arrange
-    User.findEmployeeByEmail.mockResolvedValue({ ...mockEmployee, isActive: false });
+    User.findEmployeeByEmail.mockResolvedValue({
+      ...mockEmployee,
+      isActive: false,
+    });
 
     // Act
-    const result = await login(makeReq({ email: "test@gmail.com", password: "pass" }));
+    const result = await login(
+      makeReq({ email: "test@gmail.com", password: "pass" }),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -99,11 +113,16 @@ describe("login", () => {
   it("retorna 423 si la cuenta está bloqueada", async () => {
     // Arrange
     const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
-    User.findEmployeeByEmail.mockResolvedValue({ ...mockEmployee, blockedUntil });
+    User.findEmployeeByEmail.mockResolvedValue({
+      ...mockEmployee,
+      blockedUntil,
+    });
     isBlockedUntil.mockReturnValue(true);
 
     // Act
-    const result = await login(makeReq({ email: "test@gmail.com", password: "pass" }));
+    const result = await login(
+      makeReq({ email: "test@gmail.com", password: "pass" }),
+    );
 
     // Assert
     expect(result.status).toBe(423);
@@ -118,12 +137,16 @@ describe("login", () => {
     User.incrementFailedAttempts.mockResolvedValue(1);
 
     // Act
-    const result = await login(makeReq({ email: "test@gmail.com", password: "wrong" }));
+    const result = await login(
+      makeReq({ email: "test@gmail.com", password: "wrong" }),
+    );
 
     // Assert
     expect(result.status).toBe(401);
     expect(result.body.code).toBe("INVALID_CREDENTIALS");
-    expect(User.incrementFailedAttempts).toHaveBeenCalledWith(mockEmployee.employeeId);
+    expect(User.incrementFailedAttempts).toHaveBeenCalledWith(
+      mockEmployee.employeeId,
+    );
     expect(createLog).toHaveBeenCalled();
   });
 
@@ -135,7 +158,9 @@ describe("login", () => {
     User.setBlockedUntil.mockResolvedValue();
 
     // Act
-    const result = await login(makeReq({ email: "test@gmail.com", password: "wrong" }));
+    const result = await login(
+      makeReq({ email: "test@gmail.com", password: "wrong" }),
+    );
 
     // Assert
     expect(result.status).toBe(423);
@@ -150,7 +175,9 @@ describe("login", () => {
     User.clearLoginSecurityState.mockResolvedValue();
 
     // Act
-    const result = await login(makeReq({ email: "test@gmail.com", password: "correct" }));
+    const result = await login(
+      makeReq({ email: "test@gmail.com", password: "correct" }),
+    );
 
     // Assert
     expect(result.status).toBe(200);
@@ -162,12 +189,17 @@ describe("login", () => {
 
   it("retorna pre2FAToken cuando el usuario tiene 2FA activo", async () => {
     // Arrange
-    User.findEmployeeByEmail.mockResolvedValue({ ...mockEmployee, isActive2FA: true });
+    User.findEmployeeByEmail.mockResolvedValue({
+      ...mockEmployee,
+      isActive2FA: true,
+    });
     verifyPassword.mockResolvedValue(true);
     User.clearLoginSecurityState.mockResolvedValue();
 
     // Act
-    const result = await login(makeReq({ email: "test@gmail.com", password: "correct" }));
+    const result = await login(
+      makeReq({ email: "test@gmail.com", password: "correct" }),
+    );
 
     // Assert
     expect(result.status).toBe(200);
@@ -206,7 +238,7 @@ describe("setupTwoFactorAuth", () => {
     User.getEmployeeById.mockResolvedValue(null);
 
     // Act
-    const result = await setupTwoFactorAuth(makeReq({},{ id: "abc-123" }));
+    const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
 
     // Assert
     expect(result.status).toBe(404);
@@ -214,7 +246,10 @@ describe("setupTwoFactorAuth", () => {
 
   it("retorna 403 si el empleado está inactivo", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, isActive: false });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      isActive: false,
+    });
 
     // Act
     const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
@@ -226,7 +261,10 @@ describe("setupTwoFactorAuth", () => {
 
   it("retorna 409 si el 2FA ya está configurado (totpSecret existe)", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "EXISTINGSECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "EXISTINGSECRET",
+    });
 
     // Act
     const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
@@ -250,9 +288,15 @@ describe("setupTwoFactorAuth", () => {
 
     // Assert
     expect(result.status).toBe(200);
-    expect(result.body.data).toHaveProperty("qrImage", "data:image/png;base64,fake");
+    expect(result.body.data).toHaveProperty(
+      "qrImage",
+      "data:image/png;base64,fake",
+    );
     expect(result.body.nextStep).toBe("VERIFY_2FA_SETUP");
-    expect(User.saveTempTotpSecret).toHaveBeenCalledWith("abc-123", "SECRETBASE32");
+    expect(User.saveTempTotpSecret).toHaveBeenCalledWith(
+      "abc-123",
+      "SECRETBASE32",
+    );
   });
 });
 
@@ -261,7 +305,9 @@ describe("setupTwoFactorAuth", () => {
 describe("verifyTwoFactorSetup", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
     // Arrange / Act
-    const result = await verifyTwoFactorSetup(makeReq({ token: "123456" }, null));
+    const result = await verifyTwoFactorSetup(
+      makeReq({ token: "123456" }, null),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -272,7 +318,9 @@ describe("verifyTwoFactorSetup", () => {
     User.getEmployeeById.mockResolvedValue(null);
 
     // Act
-    const result = await verifyTwoFactorSetup(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await verifyTwoFactorSetup(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(404);
@@ -280,10 +328,15 @@ describe("verifyTwoFactorSetup", () => {
 
   it("retorna 409 si no hay setup de 2FA pendiente (sin tempTotpSecret)", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, tempTotpSecret: null });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      tempTotpSecret: null,
+    });
 
     // Act
-    const result = await verifyTwoFactorSetup(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await verifyTwoFactorSetup(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(409);
@@ -300,7 +353,9 @@ describe("verifyTwoFactorSetup", () => {
     User.clearTempTotpSecret.mockResolvedValue();
 
     // Act
-    const result = await verifyTwoFactorSetup(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await verifyTwoFactorSetup(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(409);
@@ -318,7 +373,9 @@ describe("verifyTwoFactorSetup", () => {
     speakeasy.totp = { verify: jest.fn().mockReturnValue(false) };
 
     // Act
-    const result = await verifyTwoFactorSetup(makeReq({ token: "000000" }, { id: "abc-123" }));
+    const result = await verifyTwoFactorSetup(
+      makeReq({ token: "000000" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(400);
@@ -330,9 +387,11 @@ describe("verifyTwoFactorSetup", () => {
     const createdAt = new Date();
     const prisma = require("../../prisma");
     const mockUpdate = jest.fn().mockResolvedValue({});
-    const mockFindUnique = jest.fn().mockResolvedValue({ temp_totp_secret: "SECRETBASE32" });
+    const mockFindUnique = jest
+      .fn()
+      .mockResolvedValue({ temp_totp_secret: "SECRETBASE32" });
     prisma.$transaction.mockImplementation((cb) =>
-      cb({ employee: { update: mockUpdate, findUnique: mockFindUnique } })
+      cb({ employee: { update: mockUpdate, findUnique: mockFindUnique } }),
     );
 
     User.getEmployeeById.mockResolvedValue({
@@ -343,7 +402,9 @@ describe("verifyTwoFactorSetup", () => {
     speakeasy.totp = { verify: jest.fn().mockReturnValue(true) };
 
     // Act
-    const result = await verifyTwoFactorSetup(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await verifyTwoFactorSetup(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(200);
@@ -356,7 +417,9 @@ describe("verifyTwoFactorSetup", () => {
 describe("validateTwoFactorAuth", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
     // Arrange / Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "123456" }, null));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "123456" }, null),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -367,7 +430,9 @@ describe("validateTwoFactorAuth", () => {
     User.getEmployeeById.mockResolvedValue(null);
 
     // Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(404);
@@ -375,10 +440,15 @@ describe("validateTwoFactorAuth", () => {
 
   it("retorna 409 si el 2FA no está habilitado (sin totpSecret)", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: null });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: null,
+    });
 
     // Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(409);
@@ -387,11 +457,17 @@ describe("validateTwoFactorAuth", () => {
   it("retorna 423 si el 2FA está bloqueado por intentos fallidos", async () => {
     // Arrange
     const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "SECRET", twoFaBlockedUntil: blockedUntil });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "SECRET",
+      twoFaBlockedUntil: blockedUntil,
+    });
     isBlockedUntil.mockReturnValue(true);
 
     // Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "000000" }, { id: "abc-123" }));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "000000" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(423);
@@ -400,12 +476,17 @@ describe("validateTwoFactorAuth", () => {
 
   it("retorna 401 si el código 2FA es incorrecto", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "SECRET",
+    });
     speakeasy.totp = { verify: jest.fn().mockReturnValue(false) };
     User.incrementFailed2FAAttempts.mockResolvedValue(1);
 
     // Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "000000" }, { id: "abc-123" }));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "000000" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -414,13 +495,18 @@ describe("validateTwoFactorAuth", () => {
 
   it("bloquea el 2FA al llegar a 3 intentos fallidos", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "SECRET",
+    });
     speakeasy.totp = { verify: jest.fn().mockReturnValue(false) };
     User.incrementFailed2FAAttempts.mockResolvedValue(3);
     User.set2FABlockedUntil.mockResolvedValue();
 
     // Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "000000" }, { id: "abc-123" }));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "000000" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(423);
@@ -429,12 +515,17 @@ describe("validateTwoFactorAuth", () => {
 
   it("retorna token de sesión cuando el código 2FA es correcto", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "SECRET",
+    });
     speakeasy.totp = { verify: jest.fn().mockReturnValue(true) };
     User.clear2FASecurityState.mockResolvedValue();
 
     // Act
-    const result = await validateTwoFactorAuth(makeReq({ token: "123456" }, { id: "abc-123" }));
+    const result = await validateTwoFactorAuth(
+      makeReq({ token: "123456" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(200);
@@ -468,7 +559,10 @@ describe("getStatus2FA", () => {
 
   it("retorna 403 si el empleado está inactivo", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, isActive: false });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      isActive: false,
+    });
 
     // Act
     const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
@@ -479,7 +573,10 @@ describe("getStatus2FA", () => {
 
   it("retorna false cuando el 2FA no está activo", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, isActive2FA: false });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      isActive2FA: false,
+    });
 
     // Act
     const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
@@ -491,7 +588,11 @@ describe("getStatus2FA", () => {
 
   it("retorna true cuando el 2FA está activo", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, isActive2FA: true, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      isActive2FA: true,
+      totpSecret: "SECRET",
+    });
 
     // Act
     const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
@@ -507,7 +608,9 @@ describe("getStatus2FA", () => {
 describe("disableTwoFactorAuth", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
     // Arrange / Act
-    const result = await disableTwoFactorAuth(makeReq({ password: "pass" }, null));
+    const result = await disableTwoFactorAuth(
+      makeReq({ password: "pass" }, null),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -526,7 +629,9 @@ describe("disableTwoFactorAuth", () => {
     User.getEmployeeById.mockResolvedValue(null);
 
     // Act
-    const result = await disableTwoFactorAuth(makeReq({ password: "pass" }, { id: "abc-123" }));
+    const result = await disableTwoFactorAuth(
+      makeReq({ password: "pass" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(404);
@@ -534,10 +639,16 @@ describe("disableTwoFactorAuth", () => {
 
   it("retorna 403 si el empleado está inactivo", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, isActive: false, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      isActive: false,
+      totpSecret: "SECRET",
+    });
 
     // Act
-    const result = await disableTwoFactorAuth(makeReq({ password: "pass" }, { id: "abc-123" }));
+    const result = await disableTwoFactorAuth(
+      makeReq({ password: "pass" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(403);
@@ -546,10 +657,15 @@ describe("disableTwoFactorAuth", () => {
 
   it("retorna 409 si el 2FA no está activo", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: null });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: null,
+    });
 
     // Act
-    const result = await disableTwoFactorAuth(makeReq({ password: "pass" }, { id: "abc-123" }));
+    const result = await disableTwoFactorAuth(
+      makeReq({ password: "pass" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(409);
@@ -557,11 +673,16 @@ describe("disableTwoFactorAuth", () => {
 
   it("retorna 401 con contraseña incorrecta", async () => {
     // Arrange
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "SECRET",
+    });
     verifyPassword.mockResolvedValue(false);
 
     // Act
-    const result = await disableTwoFactorAuth(makeReq({ password: "wrong" }, { id: "abc-123" }));
+    const result = await disableTwoFactorAuth(
+      makeReq({ password: "wrong" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(401);
@@ -573,13 +694,18 @@ describe("disableTwoFactorAuth", () => {
     const prisma = require("../../prisma");
     const mockUpdate = jest.fn().mockResolvedValue({});
     prisma.$transaction.mockImplementation((cb) =>
-      cb({ employee: { update: mockUpdate } })
+      cb({ employee: { update: mockUpdate } }),
     );
-    User.getEmployeeById.mockResolvedValue({ ...mockEmployee, totpSecret: "SECRET" });
+    User.getEmployeeById.mockResolvedValue({
+      ...mockEmployee,
+      totpSecret: "SECRET",
+    });
     verifyPassword.mockResolvedValue(true);
 
     // Act
-    const result = await disableTwoFactorAuth(makeReq({ password: "correct" }, { id: "abc-123" }));
+    const result = await disableTwoFactorAuth(
+      makeReq({ password: "correct" }, { id: "abc-123" }),
+    );
 
     // Assert
     expect(result.status).toBe(200);

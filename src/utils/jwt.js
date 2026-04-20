@@ -35,14 +35,14 @@ const generateToken = (user) => {
 const generatePre2faToken = (user) => {
   return jwt.sign(
     {
-       id: user.id,
-       email: user.email,
-       tokenType: "PRE_2FA",
-     },
-     jwtSecret,
-     { expiresIn: pre2faExpiresIn },
-   );
- }
+      id: user.id,
+      email: user.email,
+      tokenType: "PRE_2FA",
+    },
+    jwtSecret,
+    { expiresIn: pre2faExpiresIn },
+  );
+};
 
 const decodeToken = (token) => {
   if (!token) {

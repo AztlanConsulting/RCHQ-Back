@@ -9,7 +9,7 @@ const {
   loginSchema,
   //firstLoginChangePasswordSchema,
   twoFactorTokenSchema,
-  disableTwoFactorSchema
+  disableTwoFactorSchema,
 } = require("../schemas/auth.schemas");
 
 const router = express.Router();
@@ -24,38 +24,30 @@ router.post("/login", validate(loginSchema), userController.loginFunction);
 //   userController.changePasswordFirstLogin
 // );
 
-router.post(
- "/2fa/setup",
-verifyToken,
-userController.setupTwoFactorAuth
-);
+router.post("/2fa/setup", verifyToken, userController.setupTwoFactorAuth);
 
 router.post(
-"/2fa/verify",
-verifyToken,
-validate(twoFactorTokenSchema),
-userController.verifyTwoFactorSetup
-);
-
-router.post(
-"/2fa/validate",
-verifyPre2faToken,
-validate(twoFactorTokenSchema),
-userController.validateTwoFactorAuth
-);
-
-router.post(
-   "/2fa/disable",
-   verifyToken,
-   validate(disableTwoFactorSchema),
-   userController.disableTwoFactorAuth
-);
-
-router.get(
-  "/status/2FA",
+  "/2fa/verify",
   verifyToken,
-  userController.getStatus2FA
+  validate(twoFactorTokenSchema),
+  userController.verifyTwoFactorSetup,
 );
+
+router.post(
+  "/2fa/validate",
+  verifyPre2faToken,
+  validate(twoFactorTokenSchema),
+  userController.validateTwoFactorAuth,
+);
+
+router.post(
+  "/2fa/disable",
+  verifyToken,
+  validate(disableTwoFactorSchema),
+  userController.disableTwoFactorAuth,
+);
+
+router.get("/status/2FA", verifyToken, userController.getStatus2FA);
 // Protected route example with ABAC and RBAC
 router.get(
   "/profile",

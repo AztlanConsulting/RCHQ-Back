@@ -2,7 +2,7 @@ const prisma = require("../prisma");
 
 function mapEmployee(employee) {
   if (!employee) return undefined;
-  
+
   return {
     employeeId: employee.employee_id,
     email: employee.email,
@@ -150,54 +150,54 @@ async function saveTempTotpSecret(employeeId, secret) {
   });
 }
 
- async function clearTempTotpSecret(employeeId) {
-   await prisma.employee.update({
-     where: { employee_id: employeeId },
-     data: {
-       temp_totp_secret: null,
-       temp_totp_secret_created_at: null,
-     },
-   });
- }
+async function clearTempTotpSecret(employeeId) {
+  await prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      temp_totp_secret: null,
+      temp_totp_secret_created_at: null,
+    },
+  });
+}
 
 async function incrementFailed2FAAttempts(employeeId) {
-   const employee = await prisma.employee.update({
-     where: { employee_id: employeeId },
-     data: {
-       failed_2fa_attempts: {
-         increment: 1,
-       },
-     },
-     select: {
-       failed_2fa_attempts: true,
-     },
-   });
+  const employee = await prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      failed_2fa_attempts: {
+        increment: 1,
+      },
+    },
+    select: {
+      failed_2fa_attempts: true,
+    },
+  });
 
-   return employee.failed_2fa_attempts ?? 0;
- }
+  return employee.failed_2fa_attempts ?? 0;
+}
 
- async function set2FABlockedUntil(employeeId, blockedUntil) {
-   return prisma.employee.update({
-     where: { employee_id: employeeId },
-     data: {
-       two_fa_blocked_until: blockedUntil,
-     },
-     select: {
-       employee_id: true,
-       two_fa_blocked_until: true,
-     },
-   });
- }
+async function set2FABlockedUntil(employeeId, blockedUntil) {
+  return prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      two_fa_blocked_until: blockedUntil,
+    },
+    select: {
+      employee_id: true,
+      two_fa_blocked_until: true,
+    },
+  });
+}
 
- async function clear2FASecurityState(employeeId) {
-   await prisma.employee.update({
-     where: { employee_id: employeeId },
-     data: {
-       failed_2fa_attempts: 0,
-       two_fa_blocked_until: null,
-     },
-   });
- }
+async function clear2FASecurityState(employeeId) {
+  await prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      failed_2fa_attempts: 0,
+      two_fa_blocked_until: null,
+    },
+  });
+}
 
 module.exports = {
   findEmployeeByEmail,
