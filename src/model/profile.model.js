@@ -4,8 +4,8 @@ async function findEmployeeProfile(employeeId) {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
     select: {
-      house_id:     true,
-      role_id:      true,
+      house_name:     true,
+      role_name:      true,
       name:         true,
       surname:      true,
       email:        true,
@@ -25,8 +25,8 @@ async function findEmployeeProfile(employeeId) {
 
 function mapProfile(e) {
   return {
-    houseId:     e.house_id,
-    roleId:      e.role_id,
+    houseName:     e.house_name,
+    roleName:      e.role_name,
     name:        e.name,
     surname:     e.surname,
     email:       e.email,

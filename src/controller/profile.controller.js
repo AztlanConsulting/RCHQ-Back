@@ -1,4 +1,3 @@
-const authService = require("../service/auth.service");
 const profileService = require("../service/profile.service");
 
 exports.getUserProfile = async (req, res) => {
