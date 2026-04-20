@@ -252,7 +252,7 @@ async function login(req) {
 // }
 
 async function setupTwoFactorAuth(req) {
-     const employeeId = req.body.id;
+    const employeeId = req.user?.id || req.user?.employeeId;
     const ipAddress = getClientIp(req);
 
     if (!employeeId) {
@@ -589,7 +589,7 @@ async function validateTwoFactorAuth(req) {
     if (!employeeId){
         return{
             status:404,
-            body: {sucess: false, message: "User not found"},
+            body: {success: false, message: "User not found"},
         }
     }
 
@@ -598,7 +598,7 @@ async function validateTwoFactorAuth(req) {
     if(!employee){
         return{
             status:404,
-            body: {sucess: false, message: "User not found"},
+            body: {success: false, message: "User not found"},
         }
     }
     if (!employee.isActive) {
@@ -617,7 +617,7 @@ async function validateTwoFactorAuth(req) {
     return{
         status:200,
         body: {
-            sucess:true,
+            success:true,
             Status2FA: employee.isActive2FA,
         }
     }
