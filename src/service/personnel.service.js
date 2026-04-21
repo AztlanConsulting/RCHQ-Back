@@ -23,7 +23,7 @@ async function getEmployeeDetail(req) {
     }
 
     // get basic employee info
-    const employeeBasicInfo = Personnel.getEmployeeById(employeeID);
+    const employeeBasicInfo = await Personnel.getEmployeeById(employeeID);
 
     // If the employee whose detail we want to see doesn't exist,
     // return 404 Not Found
@@ -39,10 +39,10 @@ async function getEmployeeDetail(req) {
     }
 
     // get administrativeEmployeeInfo
-    const employeeAdminInfo = Personnel.getAdminEmployeeInfoById(employeeID);
+    const employeeAdminInfo = await Personnel.getAdminEmployeeInfoById(employeeID);
 
     // get employee record
-    const employeeRecord = Personnel.getEmployeeRecord(employeeID);
+    const employeeRecord = await Personnel.getEmployeeRecord(employeeID);
 
     // create log of get-employee-detail
     // deberiamos wrappear esto en un try/catch??
