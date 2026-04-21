@@ -85,6 +85,7 @@ CREATE TABLE public.employee (
 	email varchar(60) NOT NULL UNIQUE,
 	password varchar(72) NOT NULL,
 	has_first_login bool NOT NULL,
+	is_active_2FA bool NOT NULL DEFAULT false,
 	failed_login_attempts int NOT NULL DEFAULT 0,
 	failed_2fa_attempts int NOT NULL DEFAULT 0,
 	totp_secret varchar(32) NULL,

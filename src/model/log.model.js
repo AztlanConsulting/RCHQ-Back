@@ -2,7 +2,13 @@ const { randomUUID } = require("crypto");
 const prisma = require("../prisma");
 const { hashIp } = require("../utils/hashIp");
 
-async function createLog(employeeId, actionId, ipAddress, affected = null, db = prisma) {
+async function createLog(
+  employeeId,
+  actionId,
+  ipAddress,
+  affected = null,
+  db = prisma,
+) {
   await db.logs.create({
     data: {
       log_id: randomUUID(),

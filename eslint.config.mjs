@@ -7,11 +7,22 @@ export default [
     files: ["**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
-      globals: globals.node,
+      globals: {
+        ...globals.node,
+      },
       sourceType: "commonjs",
     },
     rules: {
       ...js.configs.recommended.rules,
+    },
+  },
+  {
+    files: ["**/*.test.js", "**/jest.setup.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.jest,
+      },
     },
   },
   eslintConfigPrettier,
