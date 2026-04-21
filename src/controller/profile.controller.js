@@ -8,7 +8,7 @@ exports.getUserProfile = async (req, res) => {
     console.error("getUserData error:", err);
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: "Error al obtener el perfil del usuario",
     });
   }
 };

@@ -1,17 +1,9 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { PrismaClient } = require('@prisma/client');
-const { getClientIp } = require("./utils/ip");
-const profileRouter = require("./router/profile.route");
-
-const prisma = new PrismaClient();
-
 const errorHandler = require("./middleware/ErrorHandler");
 // Loads the variables in the enviorment file
 require("dotenv").config();
-
-const port = Number(process.env.RUNNING_PORT || 3000);
 
 app.use(express.json());
 
@@ -27,10 +19,6 @@ app.use(
 const userRouter = require("./router/user.route");
 app.use("/users", userRouter);
 
-app.use("/users", profileRouter);
-
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+module.exports = app;

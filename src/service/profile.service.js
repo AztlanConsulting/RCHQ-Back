@@ -10,7 +10,7 @@ async function getUserProfile(req) {
       status: 404,
       body: {
         success: false,
-        message: "Profile not found",
+        message: "Perfil no encontrado",
       },
     };
   }
