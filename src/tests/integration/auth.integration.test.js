@@ -73,7 +73,7 @@ const generateSessionToken = () => {
       tokenType: "SESSION",
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 };
 
@@ -173,9 +173,15 @@ describe("POST /users/login - integration", () => {
     await createTestEmployee();
 
     // Act
-    await request(app).post("/users/login").send({ email: TEST_EMAIL, password: "wrong" });
-    await request(app).post("/users/login").send({ email: TEST_EMAIL, password: "wrong" });
-    await request(app).post("/users/login").send({ email: TEST_EMAIL, password: "wrong" });
+    await request(app)
+      .post("/users/login")
+      .send({ email: TEST_EMAIL, password: "wrong" });
+    await request(app)
+      .post("/users/login")
+      .send({ email: TEST_EMAIL, password: "wrong" });
+    await request(app)
+      .post("/users/login")
+      .send({ email: TEST_EMAIL, password: "wrong" });
     const emp = await prisma.employee.findUnique({
       where: { employee_id: TEST_EMPLOYEE_ID },
     });
@@ -186,7 +192,10 @@ describe("POST /users/login - integration", () => {
 
   it("retorna pre2FAToken cuando el usuario tiene 2FA activo", async () => {
     // Arrange
-    await createTestEmployee({ is_active_2fa: true, totp_secret: "FAKESECRET" });
+    await createTestEmployee({
+      is_active_2fa: true,
+      totp_secret: "FAKESECRET",
+    });
 
     // Act
     const res = await request(app)
@@ -242,7 +251,10 @@ describe("POST /users/2fa/setup - integration", () => {
 
   it("retorna 409 si 2FA ya está configurado en BD", async () => {
     // Arrange
-    await createTestEmployee({ totp_secret: "EXISTINGSECRET", is_active_2fa: true });
+    await createTestEmployee({
+      totp_secret: "EXISTINGSECRET",
+      is_active_2fa: true,
+    });
     const token = generateSessionToken();
 
     // Act
@@ -312,7 +324,10 @@ describe("POST /users/2fa/verify - integration", () => {
 describe("POST /users/2fa/disable - integration", () => {
   it("desactiva 2FA y limpia secrets en BD con contraseña correcta", async () => {
     // Arrange
-    await createTestEmployee({ is_active_2fa: true, totp_secret: "FAKESECRET" });
+    await createTestEmployee({
+      is_active_2fa: true,
+      totp_secret: "FAKESECRET",
+    });
     const token = generateSessionToken();
 
     // Act
@@ -333,7 +348,10 @@ describe("POST /users/2fa/disable - integration", () => {
 
   it("retorna 401 con contraseña incorrecta y NO modifica la BD", async () => {
     // Arrange
-    await createTestEmployee({ is_active_2fa: true, totp_secret: "FAKESECRET" });
+    await createTestEmployee({
+      is_active_2fa: true,
+      totp_secret: "FAKESECRET",
+    });
     const token = generateSessionToken();
 
     // Act
@@ -386,7 +404,10 @@ describe("GET /users/status/2FA - integration", () => {
 
   it("retorna true si 2FA está activo en BD", async () => {
     // Arrange
-    await createTestEmployee({ is_active_2fa: true, totp_secret: "FAKESECRET" });
+    await createTestEmployee({
+      is_active_2fa: true,
+      totp_secret: "FAKESECRET",
+    });
     const token = generateSessionToken();
 
     // Act

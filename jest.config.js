@@ -1,16 +1,16 @@
 module.exports = {
-testEnvironment: 'node',
+  testEnvironment: "node",
 
-verbose: true,
+  verbose: true,
 
-collectCoverage: true,
-coverageDirectory: 'coverage',
+  collectCoverage: true,
+  coverageDirectory: "coverage",
 
-testMatch: [
-'<rootDir>/src/tests/unit/**/*.test.js',
-'<rootDir>/src/tests/integration/**/*.test.js',
-],
+  testMatch: [
+    "<rootDir>/src/tests/unit/**/*.test.js",
+    "<rootDir>/src/tests/integration/**/*.test.js",
+  ],
 
-setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-testTimeout: 15000,
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  testTimeout: 15000,
 };
