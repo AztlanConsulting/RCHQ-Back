@@ -1,0 +1,64 @@
+const employeeService = require("../../service/employee/employeeAdd.service");
+
+const employeeController = {
+    async getAdd(req, res) {
+        try {
+            const roles = await employeeService.getRoles();
+
+            return res.status(200).json({
+                roles,
+                house_id: req.user.houseId,
+            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                error: "Error cargando datos del formulario",
+            });
+        }
+    },
+
+    async getById(req, res) {
+        try {
+            const result = await employeeService.getById(req.params.id);
+
+            if (!result) {
+                return res.status(404).json({
+                    error: "Empleado no encontrado",
+                });
+            }
+
+            return res.status(200).json(result);
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                error: "Error interno del servidor. Por favor intente más tarde.",
+            });
+        }
+    },
+
+    async postAdd(req, res) {
+        try {
+            const data = { ...req.body };
+
+            if (req.file) {
+                data.picture = req.file.path;
+            }
+
+            const result = await employeeService.createEmployee(
+                data,
+                req.user,
+                req,
+            );
+
+            return res.status(result.status).json(result.body);
+        } catch (error) {
+            console.error(error);
+
+            return res.status(500).json({
+                error: "No se pudo registrar correctamente el empleado",
+            });
+        }
+    },
+};
+
+module.exports = employeeController;
