@@ -35,6 +35,7 @@ const employeeCreateSchema = z.object({
     email: z
         .string()
         .trim()
+        .toLowerCase()
         .email("Formato de correo inválido")
         .max(60, "El correo es demasiado largo"),
 
@@ -92,9 +93,35 @@ const employeeCreateSchema = z.object({
         .refine((val) => val === null || DATE_REGEX.test(val), {
             message: "Formato de fecha inválido (YYYY-MM-DD)",
         })
-        .refine((val) => val === null || !isNaN(Date.parse(val)), {
-            message: "Fecha inválida",
-        })
+        .refine(
+            (val) => {
+                if (val === null) return true;
+
+                const birthDate = new Date(val);
+
+                if (isNaN(birthDate.getTime())) return false;
+
+                const year = birthDate.getFullYear();
+                const currentYear = new Date().getFullYear();
+
+                if (year < 1900 || year > currentYear) return false;
+
+                let age = currentYear - year;
+
+                const monthDiff = new Date().getMonth() - birthDate.getMonth();
+                const dayDiff = new Date().getDate() - birthDate.getDate();
+
+                if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                    age--;
+                }
+
+                return age >= 18;
+            },
+            {
+                message:
+                    "El empleado debe ser mayor de 18 años y la fecha debe ser posterior a 1900",
+            },
+        )
         .optional(),
 
     picture: z
