@@ -1,5 +1,5 @@
 const employee = require("../../model/employee/employeeAdd.model");
-const consult = require("../../model/consult/consult.model");
+const consult = require("../../model/employee/consult.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
