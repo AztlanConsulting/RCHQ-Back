@@ -7,7 +7,7 @@ const QRCode = require("qrcode");
 const { LOG_ACTIONS } = require("../utils/logActions");
 const {
   buildSessionToken,
-  // buildFirstLoginJwt,
+  buildFirstLoginJwt,
   buildPre2faJwt,
 } = require("../utils/auth/authTokens");
 const {
@@ -113,6 +113,31 @@ async function login(req) {
 
   await User.clearLoginSecurityState(employee.employeeId);
 
+  if (employee.hasFirstLogin) {
+    const firstLoginToken = buildFirstLoginJwt(employee);
+
+    await createLog(
+      employee.employeeId,
+      LOG_ACTIONS.FIRST_LOGIN_PENDING_PASSWORD_CHANGE,
+      ipAddress,
+    );
+
+    return {
+      status: 200,
+      body: {
+        success: true,
+        message: "First login requires password change",
+        nextStep: "CHANGE_PASSWORD_FIRST_LOGIN",
+        data: {
+          firstLoginToken,
+          employeeId: employee.employeeId,
+          email: employee.email,
+          name: employee.name,
+        },
+      },
+    };
+  }
+
   if (employee.isActive2FA) {
     const pre2FAToken = buildPre2faJwt(employee);
     return {
@@ -148,104 +173,6 @@ async function login(req) {
     },
   };
 }
-
-// async function changePasswordFirstLogin(req) {
-//     const { newPassword, confirmPassword } = req.body;
-//     const employeeId = req.user?.id;
-//     const ipAddress = getClientIp(req);
-
-//     if (!employeeId) {
-//         return {
-//             status: 401,
-//             body: { success: false, message: "User not authenticated" },
-//         };
-//     }
-
-//     const employee = await User.getEmployeeById(employeeId);
-
-//     if (!employee) {
-//         return {
-//             status: 404,
-//             body: { success: false, message: "Employee not found" },
-//         };
-//     }
-
-//     if (!employee.isActive) {
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.FIRST_LOGIN_CHANGE_PASSWORD_INACTIVE,
-//             ipAddress
-//         );
-
-//         return {
-//             status: 403,
-//             body: { success: false, message: "Access not allowed" },
-//         };
-//     }
-
-//     if (!employee.hasFirstLogin) {
-//         return {
-//             status: 409,
-//             body: { success: false, message: "First login password change is no longer required" },
-//         };
-//     }
-
-//     const isSamePassword = await verifyPassword(newPassword, employee.pwd);
-
-//     if (isSamePassword) {
-//         return {
-//             status: 400,
-//             body: { success: false, message: "New password must be different from current password" },
-//         };
-//     }
-
-//     const hashedPassword = await hashPassword(newPassword);
-
-//     await prisma.$transaction(async (tx) => {
-//         await tx.employee.update({
-//             where: { employee_id: employee.employeeId },
-//             data: {
-//                 password: hashedPassword,
-//                 has_first_login: false,
-//             },
-//         });
-
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.FIRST_LOGIN_PASSWORD_CHANGED,
-//             ipAddress,
-//             null,
-//             tx
-//         );
-
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.FIRST_LOGIN_COMPLETED,
-//             ipAddress,
-//             null,
-//             tx
-//         );
-//     });
-
-//     const token = buildSessionToken(employee);
-
-//     return {
-//         status: 200,
-//         body: {
-//             success: true,
-//             message: "Password changed successfully",
-//             nextStep: "SETUP_2FA_OPTIONAL",
-//             token,
-//             data: {
-//                 employeeId: employee.employeeId,
-//                 email: employee.email,
-//                 name: employee.name,
-//                 role: employee.role,
-//                 shouldPrompt2FASetup: true,
-//             },
-//         },
-//     };
-// }
 
 async function setupTwoFactorAuth(req) {
   const employeeId = req.user?.id || req.user?.employeeId;
@@ -720,7 +647,6 @@ async function disableTwoFactorAuth(req) {
 
 module.exports = {
   login,
-  // changePasswordFirstLogin,
   setupTwoFactorAuth,
   verifyTwoFactorSetup,
   validateTwoFactorAuth,

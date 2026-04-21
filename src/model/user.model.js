@@ -62,23 +62,33 @@ async function getEmployeeById(employeeId) {
   return mapEmployee(employee);
 }
 
-// async function updatePassword(employeeId, newPassword) {
-//   await prisma.employee.update({
-//     where: { employee_id: employeeId },
-//     data: {
-//       password: newPassword,
-//     },
-//   });
-// }
+async function updatePassword(employeeId, hashedPassword) {
+  await prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      password: hashedPassword,
+    },
+  });
+}
 
-// async function setFirstLogin(employeeId, hasFirstLogin) {
-//   await prisma.employee.update({
-//     where: { employee_id: employeeId },
-//     data: {
-//       has_first_login: hasFirstLogin,
-//     },
-//   });
-// }
+async function setFirstLogin(employeeId, hasFirstLogin) {
+  await prisma.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      has_first_login: hasFirstLogin,
+    },
+  });
+}
+
+async function updatePasswordAndClearFirstLogin(employeeId, hashedPassword, db = prisma) {
+  await db.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      password: hashedPassword,
+      has_first_login: false,
+    },
+  });
+}
 
 async function incrementFailedAttempts(employeeId) {
   const employee = await prisma.employee.update({
@@ -201,8 +211,9 @@ async function clear2FASecurityState(employeeId) {
 
 module.exports = {
   findEmployeeByEmail,
-  // updatePassword,
-  // setFirstLogin,
+  updatePassword,
+  setFirstLogin,
+  updatePasswordAndClearFirstLogin,
   incrementFailedAttempts,
   resetFailedAttempts,
   setBlockedUntil,

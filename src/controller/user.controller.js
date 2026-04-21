@@ -1,8 +1,5 @@
-// const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
-// const { canAccess } = require("../middleware/abac");
-// const { adminPolicy } = require("../policies/user.policies");
-// const {verifyPassword, hashPassword} = require("../utils/password");
 const authService = require("../service/auth.service");
+const passwordService = require("../service/password.service");
 
 exports.loginFunction = async (req, res) => {
   try {
@@ -31,18 +28,31 @@ exports.getProfile = (req, res) => {
   });
 };
 
-// exports.changePasswordFirstLogin = async (req, res) => {
-//   try {
-//     const result = await authService.changePasswordFirstLogin(req);
-//     return res.status(result.status).json(result.body);
-//   } catch (err) {
-//     console.error("First login password change error:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+exports.changePasswordFirstLogin = async (req, res) => {
+  try {
+    const result = await passwordService.changePasswordFirstLogin(req);
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("First login password change error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const result = await passwordService.changePassword(req);
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("Change password error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 exports.setupTwoFactorAuth = async (req, res) => {
   try {
