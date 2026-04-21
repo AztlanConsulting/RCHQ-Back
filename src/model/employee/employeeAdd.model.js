@@ -1,6 +1,6 @@
 const prisma = require("../../prisma");
 
-const Employee = {
+const employee = {
     async create(employeeData) {
         const data = {
             employee_id: employeeData.employee_id,
@@ -26,4 +26,4 @@ const Employee = {
     },
 };
 
-module.exports = Employee;
+module.exports = employee;

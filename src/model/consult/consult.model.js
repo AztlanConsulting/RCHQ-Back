@@ -1,22 +1,21 @@
 const prisma = require("../../prisma");
 
-const Consult = {
+const consult = {
+    async findByCurp(curp) {
+        return await prisma.employee.findUnique({
+            where: { curp },
+        });
+    },
 
-  async findByCurp(curp) {
-    return await prisma.employee.findUnique({
-      where: { curp }
-    });
-  },
+    async findById(employee_id) {
+        return await prisma.employee.findUnique({
+            where: { employee_id },
+        });
+    },
 
-  async findById(employee_id) {
-    return await prisma.employee.findUnique({
-      where: { employee_id }
-    });
-  },
+    async getAllRoles() {
+        return await prisma.role.findMany();
+    },
+};
 
-   async getAllRoles() {
-    return await prisma.role.findMany();
-  },
-}
-
-module.exports = Consult;
+module.exports = consult;

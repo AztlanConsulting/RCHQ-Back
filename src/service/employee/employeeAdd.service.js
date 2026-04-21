@@ -1,5 +1,5 @@
-const Employee = require("../../model/employee/employeeAdd.model");
-const Consult = require("../../model/consult/consult.model");
+const employee = require("../../model/employee/employeeAdd.model");
+const consult = require("../../model/consult/consult.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
@@ -10,13 +10,13 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
 const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
 
-const EmployeeService = {
+const employeeService = {
     async getById(id) {
-        return await Consult.findById(id);
+        return await consult.findById(id);
     },
 
     async getRoles() {
-        return await Consult.getAllRoles();
+        return await consult.getAllRoles();
     },
 
     async createEmployee(data, user, req) {
@@ -58,7 +58,7 @@ const EmployeeService = {
             picture,
         } = validatedData;
 
-        const existing = await Consult.findByCurp(curp);
+        const existing = await consult.findByCurp(curp);
 
         if (existing) {
             return {
@@ -73,7 +73,7 @@ const EmployeeService = {
         const password = "red_de_casas_hogar";
         const hashedPassword = await hashPassword(password);
 
-        const newEmployee = await Employee.create({
+        const newEmployee = await employee.create({
             employee_id: uuidv4(),
             house_id: user.houseId,
             role_id,
@@ -120,4 +120,4 @@ const EmployeeService = {
     },
 };
 
-module.exports = EmployeeService;
+module.exports = employeeService;

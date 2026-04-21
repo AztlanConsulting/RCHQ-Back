@@ -1,9 +1,9 @@
-const EmployeeService = require("../../service/employee/employeeAdd.service");
+const employeeService = require("../../service/employee/employeeAdd.service");
 
 const employeeController = {
     async getAdd(req, res) {
         try {
-            const roles = await EmployeeService.getRoles();
+            const roles = await employeeService.getRoles();
 
             return res.status(200).json({
                 roles,
@@ -19,7 +19,7 @@ const employeeController = {
 
     async getById(req, res) {
         try {
-            const result = await EmployeeService.getById(req.params.id);
+            const result = await employeeService.getById(req.params.id);
 
             if (!result) {
                 return res.status(404).json({
@@ -44,10 +44,10 @@ const employeeController = {
                 data.picture = req.file.path;
             }
 
-            const result = await EmployeeService.createEmployee(
+            const result = await employeeService.createEmployee(
                 data,
                 req.user,
-                req
+                req,
             );
 
             return res.status(result.status).json(result.body);

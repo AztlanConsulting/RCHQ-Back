@@ -1,6 +1,6 @@
-const Employee = require("../../model/employee/employeeAdd.model");
+const employee = require("../../model/employee/employeeAdd.model");
 const { createLog } = require("../../model/log.model");
-const Consult = require("../../model/consult/consult.model");
+const consult = require("../../model/consult/consult.model");
 
 // =====================================================
 // MOCKS
@@ -77,9 +77,9 @@ describe("Employee Service - createEmployee", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        Employee.create.mockResolvedValue({ employee_id: "emp-1" });
+        employee.create.mockResolvedValue({ employee_id: "emp-1" });
         createLog.mockResolvedValue();
-        Consult.findByCurp.mockResolvedValue(null);
+        consult.findByCurp.mockResolvedValue(null);
         jest.spyOn(console, "error").mockImplementation(() => {});
     });
 
@@ -103,7 +103,7 @@ describe("Employee Service - createEmployee", () => {
 
         // Assert
         expect(result.status).toBe(201);
-        expect(Employee.create).toHaveBeenCalled();
+        expect(employee.create).toHaveBeenCalled();
     });
 
     it("coordinator puede crear en su misma casa", async () => {
@@ -136,7 +136,7 @@ describe("Employee Service - createEmployee", () => {
 
         // Assert
         expect(result.status).toBe(201);
-        expect(Employee.create).toHaveBeenCalledWith(
+        expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 house_id: mockUserCoordinatorOtherHouse.houseId,
             }),
@@ -360,7 +360,7 @@ describe("Employee Service - createEmployee", () => {
         await createEmployee(data, mockUserAdmin, mockReq);
 
         // Assert
-        expect(Employee.create).toHaveBeenCalledWith(
+        expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({ name: "Juan", email: "test@mail.com" }),
         );
     });
@@ -373,7 +373,7 @@ describe("Employee Service - createEmployee", () => {
         await createEmployee(data, mockUserAdmin, mockReq);
 
         // Assert
-        expect(Employee.create).toHaveBeenCalledWith(
+        expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({ email: "juan.perez@mail.com" }),
         );
     });
@@ -504,7 +504,7 @@ describe("Employee Service - createEmployee", () => {
     it("debería retornar error y redirect si el empleado ya está registrado (Duplicado)", async () => {
         // Arrange
         const idExistente = "19c23934-e20a-42f4-b963-fab77caf1a1c";
-        Consult.findByCurp.mockResolvedValue({
+        consult.findByCurp.mockResolvedValue({
             employee_id: idExistente,
             curp: baseEmployee.curp,
         });
@@ -517,7 +517,7 @@ describe("Employee Service - createEmployee", () => {
         );
 
         // Assert
-        expect(Employee.create).not.toHaveBeenCalled();
+        expect(employee.create).not.toHaveBeenCalled();
         expect(result.status).toBe(409);
         expect(result.body).toEqual({
             error: "Empleado ya existente",
@@ -548,7 +548,7 @@ describe("Employee Service - createEmployee", () => {
         await createEmployee(data, mockUserAdmin, mockReq);
 
         // Assert
-        expect(Employee.create).toHaveBeenCalledWith(
+        expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 curp: "PEPJ800101HDFRRN09",
             }),
@@ -574,7 +574,7 @@ describe("Employee Service - createEmployee", () => {
         await createEmployee(data, mockUserCoordinatorOtherHouse, mockReq);
 
         // Assert
-        expect(Employee.create).toHaveBeenCalledWith(
+        expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 house_id: mockUserCoordinatorOtherHouse.houseId,
             }),
