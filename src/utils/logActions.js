@@ -18,6 +18,7 @@ const LOG_ACTIONS = {
   TWO_FA_DISABLE_INACTIVE: "auth-017",
   TWO_FA_DISABLE_WRONG_PASSWORD: "auth-018",
   TWO_FA_BLOCKED: "auth-019",
+  READ_EMPLOYEE_DETAIL: "personnel-01"
 };
 
 module.exports = { LOG_ACTIONS };
