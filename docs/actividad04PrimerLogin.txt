@@ -8,22 +8,22 @@ start
 :Validar credenciales de acceso;
 if (¿Credenciales válidas?) then (Sí)
 else (No)
-  :Mostrar credenciales inválidas;
-  stop
+:Mostrar credenciales inválidas;
+stop
 endif
 
 if (¿Usuario existe y está activo?) then (Sí)
 else (No)
-  :Mostrar acceso no permitido;
-  stop
+:Mostrar acceso no permitido;
+stop
 endif
 
 if (El usuario debe cambiar su contraseña por primer acceso?) then (Sí)
-  :Generar token temporal de primer login;
-  :Obligar al usuario a cambiar contraseña;
+:Generar token temporal de primer login;
+:Obligar al usuario a cambiar contraseña;
 else (No)
-  :Continuar flujo normal de login;
-  stop
+:Continuar flujo normal de login;
+stop
 endif
 
 |Usuario|
@@ -33,21 +33,21 @@ endif
 :Validar formato de nueva contraseña;
 if (¿Datos válidos?) then (Sí)
 else (No)
-  :Mostrar error de validación;
-  stop
+:Mostrar error de validación;
+stop
 endif
 
 if (¿Confirmación coincide?) then (Sí)
 else (No)
-  :Mostrar error de confirmación;
-  stop
+:Mostrar error de confirmación;
+stop
 endif
 
 :Comparar nueva contraseña con la actual;
 if (¿Nueva contraseña es diferente?) then (Sí)
 else (No)
-  :Mostrar error: nueva contraseña debe ser diferente;
-  stop
+:Mostrar error: nueva contraseña debe ser diferente;
+stop
 endif
 
 :Hashear nueva contraseña;
@@ -57,9 +57,9 @@ endif
 :Guardar log de primer login completado;
 
 if (¿Debe ofrecer/configurar 2FA después?) then (Sí)
-  :Continuar al flujo de 2FA;
+:Continuar al flujo de 2FA;
 else (No)
-  :Permitir acceso a la app;
+:Permitir acceso a la app;
 endif
 
 |Usuario|
