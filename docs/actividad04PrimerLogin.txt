@@ -2,10 +2,23 @@
 
 |Usuario|
 start
-:Acceder a inicio de sesión;
+:Ingresar correo y contraseña temporal;
 
 |Sistema|
-if (¿Es primer login?) then (Sí)
+:Validar credenciales de acceso;
+if (¿Credenciales válidas?) then (Sí)
+else (No)
+  :Mostrar credenciales inválidas;
+  stop
+endif
+
+if (¿Usuario existe y está activo?) then (Sí)
+else (No)
+  :Mostrar acceso no permitido;
+  stop
+endif
+
+if (El usuario debe cambiar su contraseña por primer acceso?) then (Sí)
   :Generar token temporal de primer login;
   :Obligar al usuario a cambiar contraseña;
 else (No)
