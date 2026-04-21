@@ -5,8 +5,6 @@ const errorHandler = require("./middleware/ErrorHandler");
 // Loads the variables in the enviorment file
 require("dotenv").config();
 
-const port = Number(process.env.RUNNING_PORT || 3000);
-
 app.use(express.json());
 
 app.use(
@@ -23,6 +21,4 @@ app.use("/users", userRouter);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+module.exports = app;
