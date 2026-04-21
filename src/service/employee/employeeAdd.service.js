@@ -8,6 +8,7 @@ const {
 } = require("../../schemas/employee/employeeAdd.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
+const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
 
 const EmployeeService = {
     async getById(id) {
@@ -33,6 +34,17 @@ const EmployeeService = {
             };
         }
 
+        const validatedData = result.data;
+        const resource = {
+            house_id: validatedData.house_id,
+        };
+
+        if (!createEmployeePolicy(user, resource)) {
+            return {
+                status: 403,
+                body: { message: "Acceso Denegado" },
+            };
+        }
         const {
             role_id,
             name,
@@ -44,7 +56,7 @@ const EmployeeService = {
             bank_account,
             birth_date,
             picture,
-        } = result.data;
+        } = validatedData;
 
         const existing = await Consult.findByCurp(curp);
 
