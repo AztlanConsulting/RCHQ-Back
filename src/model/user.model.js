@@ -20,6 +20,7 @@ function mapEmployee(employee) {
     startDate: employee.start_date,
     nss: employee.nss,
     bankAccount: employee.bank_account,
+    houseId: employee.house_id,
     failedLoginAttempts: employee.failed_login_attempts,
     failed2faAttempts: employee.failed_2fa_attempts,
     blockedUntil: employee.blocked_until,
