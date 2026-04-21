@@ -103,6 +103,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-016', 'Intento de validación de 2FA para usuario inactivo', false),
 ('auth-017', 'Intento de desactivación de 2FA para usuario inactivo', false),
 ('auth-018', 'Fallo de desactivación de 2FA por contraseña incorrecta', false),
-('auth-019', '2FA bloqueado temporalmente por múltiples intentos fallidos', false);
+('auth-019', '2FA bloqueado temporalmente por múltiples intentos fallidos', false),
+('empl-001', 'Empleado creado con exito', false);
 
 COMMIT;
