@@ -6,7 +6,7 @@ const employeeController = require("../controller/employee.controller");
 const router = express.Router();
 
 router.get(
-    "/employee-detail/:employeeId",
+    "/employee-detail/:employeeID",
     verifyToken,
     requireRole("admin"),
     // authorize(),
