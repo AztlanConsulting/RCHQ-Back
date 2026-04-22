@@ -3,7 +3,7 @@
 // const { adminPolicy } = require("../policies/user.policies");
 // const {verifyPassword, hashPassword} = require("../utils/password");
 // const authService = require("../service/auth.service");
-const employeeService = require("../service/personnel.service");
+const personnelService = require("../service/personnel.service");
 
 exports.getEmployeeDetail = async (req, res) => {
     try {

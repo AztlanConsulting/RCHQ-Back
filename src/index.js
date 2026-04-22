@@ -19,7 +19,10 @@ app.use(
 //const xd = require("./utils/mail");
 
 const userRouter = require("./router/user.route");
+const employeeRouter = require("./router/employee.route");
+
 app.use("/users", userRouter);
+app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
 

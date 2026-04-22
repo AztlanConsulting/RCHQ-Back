@@ -5,7 +5,7 @@ const { LOG_ACTIONS } = require("../utils/logActions");
 
 async function getEmployeeDetail(req) {
     const { userID } = req.user;
-    const { employeeID } = req.body;
+    const { employeeID } = req.params;
     const ipAddress = getClientIp(req);
 
     // Return 400 Bad request if there is no employee id to lookup
