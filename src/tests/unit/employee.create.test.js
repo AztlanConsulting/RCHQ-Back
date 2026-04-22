@@ -1,12 +1,12 @@
 const employee = require("../../model/employee/employeeAdd.model");
 const { createLog } = require("../../model/log.model");
-const consult = require("../../model/consult/consult.model");
+const consult = require("../../model/employee/consult.model");
 
 // =====================================================
 // MOCKS
 // =====================================================
 
-jest.mock("../../model/consult/consult.model", () => ({
+jest.mock("../../model/employee/consult.model", () => ({
     findByCurp: jest.fn(),
     findById: jest.fn(),
     getAllRoles: jest.fn(),
