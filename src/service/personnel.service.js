@@ -4,7 +4,7 @@ const { createLog } = require("../model/log.model");
 const { LOG_ACTIONS } = require("../utils/logActions");
 
 async function getEmployeeDetail(req) {
-    const { userID } = req.user;
+    const userID = req.user.id;
     const { employeeID } = req.params;
     const ipAddress = getClientIp(req);
 
