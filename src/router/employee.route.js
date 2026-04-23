@@ -9,9 +9,15 @@ const employeeControllerAdd = require("../controller/employee/employeeAdd.contro
 
 const employeeControllerGet = require("../controller/employee/employeeGet.controller");
 
-router.get("/add", verifyToken, employeeControllerAdd.getAdd);
+const {
+    getAdd,
+    getById,
+    postAdd,
+} = require("../controller/employee/employeeAdd.controller");
 
-router.get("/:id", employeeControllerAdd.getById);
+router.get("/add", verifyToken, getAdd);
+
+router.get("/:id", getById);
 
 router.post(
     "/add",
@@ -20,7 +26,7 @@ router.post(
     authorize(createEmployeePolicy, (req) => ({
         house_id: req.body.house_id,
     })),
-    employeeControllerAdd.postAdd,
+    postAdd,
 );
 
 router.get("/:id/documents", verifyToken, employeeControllerGet.getDocumentsByEmployee);
