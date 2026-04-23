@@ -1,4 +1,4 @@
-//model/employee/consult.model.js
+//model/employee/employeeGet.model.js
 const prisma = require("../../prisma");
 
 exports.findByCurp = async (curp) => {
@@ -23,5 +23,12 @@ exports.getDocumentsByEmployee = async (employeeId) => {
     include: {
       documents: true,
     },
+  });
+};
+
+exports.findDocumentRowByEmployee = async (employee_id) => {
+  return await prisma.employee_documents.findFirst({
+    where: { employee_id },
+    include: { documents: true },
   });
 };

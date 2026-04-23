@@ -22,10 +22,10 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    }),
+  cors({
+    origin: true,
+    credentials: true,
+  }),
 );
 
 //const xd = require("./utils/mail");
@@ -38,5 +38,5 @@ app.use("/employee", employeeRouter);
 app.use(errorHandler);
 
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
