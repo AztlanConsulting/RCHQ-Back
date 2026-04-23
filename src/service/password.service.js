@@ -178,24 +178,6 @@ async function changePasswordFirstLogin(req) {
         };
     }
 
-    if (employee.isActive2FA) {
-        const pre2FAToken = buildPre2faJwt(employee);
-        return {
-            status: 200,
-            body: {
-                success: true,
-                message: "Password changed successfully",
-                nextStep: "VERIFY_2FA",
-                data: {
-                    pre2FAToken,
-                    employeeId: employee.employeeId,
-                    email: employee.email,
-                    name: employee.name,
-                },
-            },
-        };
-    }
-
     const isSamePassword = await verifyPassword(newPassword, employee.pwd);
 
     if (isSamePassword) {
@@ -235,6 +217,28 @@ async function changePasswordFirstLogin(req) {
         );
     });
 
+    if (employee.isActive2FA) {
+        const pre2FAToken = buildPre2faJwt({
+            ...employee,
+            hasFirstLogin: false,
+        });
+
+        return {
+            status: 200,
+            body: {
+                success: true,
+                message: "Password changed successfully",
+                nextStep: "VERIFY_2FA",
+                data: {
+                    pre2FAToken,
+                    employeeId: employee.employeeId,
+                    email: employee.email,
+                    name: employee.name,
+                },
+            },
+        };
+    }
+
     const token = buildSessionToken({
         ...employee,
         pwd: hashedPassword,
@@ -255,7 +259,6 @@ async function changePasswordFirstLogin(req) {
                     name: employee.name,
                     role: employee.role,
                 },
-                shouldPrompt2FASetup: true,
             },
         },
     };
