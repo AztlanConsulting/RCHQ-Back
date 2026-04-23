@@ -29,6 +29,19 @@ function mapEmployee(employee) {
   };
 }
 
+function mapHouse(house) {
+  if (!house) return undefined;
+
+  return {
+    houseId: house.house_id,
+    name: house.name,
+    location: house.location,
+    phoneNumber: house.phone_number,
+    description: house.description,
+    image: house.image,
+  };
+}
+
 async function findEmployeeByEmail(email) {
   const employee = await prisma.employee.findFirst({
     where: {
@@ -60,6 +73,19 @@ async function getEmployeeById(employeeId) {
     },
   });
   return mapEmployee(employee);
+}
+
+async function getHouseByEmployeeId(employeeId) {
+  const employee = await prisma.employee.findUnique({
+    where: { employee_id: employeeId },
+    select: { house_id: true },
+  });
+  if (!employee) return undefined;
+
+  const house = await prisma.house.findUnique({
+    where: { house_id: employee.house_id },
+  });
+  return mapHouse(house);
 }
 
 // return information about the employee's schedule,
@@ -240,6 +266,7 @@ async function getEmployeeRecord(employeeId) {
 module.exports = {
   findEmployeeByEmail,
   getEmployeeById,
+  getHouseByEmployeeId,
   getAdminEmployeeInfoById,
   getEmployeeRecord
 };
