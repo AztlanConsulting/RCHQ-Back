@@ -4,7 +4,10 @@ const { createLog } = require("../model/log.model");
 const { LOG_ACTIONS } = require("../utils/logActions");
 const { getClientIp } = require("../utils/ip");
 const { verifyPassword, hashPassword } = require("../utils/password");
-const { buildSessionToken } = require("../utils/auth/authTokens");
+const {
+    buildSessionToken,
+    buildPre2faJwt,
+} = require("../utils/auth/authTokens");
 
 async function changePassword(req) {
     const { currentPassword, newPassword } = req.body || {};
@@ -14,7 +17,11 @@ async function changePassword(req) {
     if (!employeeId) {
         return {
             status: 401,
-            body: { success: false, message: "User not authenticated" },
+            body: {
+                success: false,
+                code: "USER_NOT_AUTHENTICATED",
+                message: "User not authenticated",
+            },
         };
     }
 
@@ -23,7 +30,11 @@ async function changePassword(req) {
     if (!employee) {
         return {
             status: 404,
-            body: { success: false, message: "Employee not found" },
+            body: {
+                success: false,
+                code: "EMPLOYEE_NOT_FOUND",
+                message: "Employee not found",
+            },
         };
     }
 
@@ -36,7 +47,11 @@ async function changePassword(req) {
 
         return {
             status: 403,
-            body: { success: false, message: "Access not allowed" },
+            body: {
+                success: false,
+                code: "ACCESS_NOT_ALLOWED",
+                message: "Access not allowed",
+            },
         };
     }
 
@@ -54,7 +69,11 @@ async function changePassword(req) {
 
         return {
             status: 401,
-            body: { success: false, message: "Invalid credentials" },
+            body: {
+                success: false,
+                code: "INVALID_CURRENT_PASSWORD",
+                message: "Invalid credentials",
+            },
         };
     }
 
@@ -65,8 +84,8 @@ async function changePassword(req) {
             status: 400,
             body: {
                 success: false,
-                message:
-                    "New password must be different from current password",
+                code: "PASSWORD_REUSE",
+                message: "New password must be different from current password",
             },
         };
     }
@@ -110,7 +129,11 @@ async function changePasswordFirstLogin(req) {
     if (!employeeId) {
         return {
             status: 401,
-            body: { success: false, message: "User not authenticated" },
+            body: {
+                success: false,
+                code: "USER_NOT_AUTHENTICATED",
+                message: "User not authenticated",
+            },
         };
     }
 
@@ -119,7 +142,11 @@ async function changePasswordFirstLogin(req) {
     if (!employee) {
         return {
             status: 404,
-            body: { success: false, message: "Employee not found" },
+            body: {
+                success: false,
+                code: "EMPLOYEE_NOT_FOUND",
+                message: "Employee not found",
+            },
         };
     }
 
@@ -132,7 +159,11 @@ async function changePasswordFirstLogin(req) {
 
         return {
             status: 403,
-            body: { success: false, message: "Access not allowed" },
+            body: {
+                success: false,
+                code: "ACCESS_NOT_ALLOWED",
+                message: "Access not allowed",
+            },
         };
     }
 
@@ -141,6 +172,7 @@ async function changePasswordFirstLogin(req) {
             status: 409,
             body: {
                 success: false,
+                code: "FIRST_LOGIN_ALREADY_COMPLETED",
                 message: "First login password change is no longer required",
             },
         };
@@ -171,8 +203,8 @@ async function changePasswordFirstLogin(req) {
             status: 400,
             body: {
                 success: false,
-                message:
-                    "New password must be different from current password",
+                code: "PASSWORD_REUSE",
+                message: "New password must be different from current password",
             },
         };
     }
@@ -214,7 +246,7 @@ async function changePasswordFirstLogin(req) {
         body: {
             success: true,
             message: "Password changed successfully",
-            nextStep: "SETUP_2FA_OPTIONAL",
+            nextStep: "LOGIN_COMPLETE",
             data: {
                 token,
                 user: {
