@@ -5,11 +5,15 @@ const { authorize } = require("../middleware/abac");
 const { createEmployeePolicy } = require("../policies/employeeAdd.policies");
 const upload = require("../middleware/upload");
 
-const employeeController = require("../controller/employee/employeeAdd.controller");
+const {
+    getAdd,
+    getById,
+    postAdd,
+} = require("../controller/employee/employeeAdd.controller");
 
-router.get("/add", verifyToken, employeeController.getAdd);
+router.get("/add", verifyToken, getAdd);
 
-router.get("/:id", employeeController.getById);
+router.get("/:id", getById);
 
 router.post(
     "/add",
@@ -18,7 +22,7 @@ router.post(
     authorize(createEmployeePolicy, (req) => ({
         house_id: req.body.house_id,
     })),
-    employeeController.postAdd,
+    postAdd,
 );
 
 module.exports = router;
