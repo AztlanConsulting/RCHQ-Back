@@ -39,6 +39,10 @@ app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+if (require.main === module) {
+  app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-});
+  });
+}
+
+module.exports = app;

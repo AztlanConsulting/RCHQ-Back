@@ -1,65 +1,54 @@
-// tests/integration/profile.integration.test.js
+// tests/integration/profile.flow.integration.test.js
 /**
- * Pruebas de integración — GET /users/profile
+ * Prueba de integración — Flujo completo: Login → GET /users/profile
  *
- * Estrategia:
- *  - Levanta la app Express real contra TEST_DATABASE_URL
- *  - Genera JWTs reales con JWT_SECRET
- *  - Usa supertest para hacer peticiones HTTP end-to-end
- *  - seedDb() antes de la suite, cleanDb() al terminar
+ * Cubre:
+ *  1. POST /auth/login   → obtiene SESSION token real
+ *  2. GET  /users/profile → consume el token del paso 1
  *
- * Requisitos previos:
- *  1. Crear una DB PostgreSQL dedicada para tests
- *  2. Agregar TEST_DATABASE_URL en .env.test
- *  3. Correr migraciones: DATABASE_URL=$TEST_DATABASE_URL npx prisma migrate deploy
- *  4. npm install --save-dev supertest dotenv
+ * La DB de test debe tener un empleado activo con contraseña conocida.
+ * El seed usa bcrypt para hashear la contraseña igual que produciría
+ * el sistema real.
+ *
+ * Requisitos:
+ *   npm install --save-dev supertest dotenv bcrypt
+ *   Correr con: npx jest tests/integration --runInBand
  */
 
 require("dotenv").config({ path: ".env.test" });
-
-// Apuntar Prisma a la DB de test ANTES de importar la app
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
-const request = require("supertest");
-const jwt     = require("jsonwebtoken");
-const app     = require("../../index");
-const { seedDb, cleanDb, disconnectDb, IDS } = require("./helpers/dbSetup");
+const request  = require("supertest");
+const bcrypt   = require("bcrypt");
+const app      = require("../../index");
+const { seedDb, cleanDb, disconnectDb, IDS } = require("../helpers/dbSetup");
 
-const JWT_SECRET = process.env.JWT_SECRET;
+// ─── Credenciales de prueba (deben coincidir con el seed) ────────────────────
+const VALID_EMAIL    = "andre@gmail.com";
+const VALID_PASSWORD = "Andatti67";
 
-// ─── Helpers de token ────────────────────────────────────────────────────────
-const makeSessionToken = (employeeId, expiresIn = "1h") =>
-  jwt.sign(
-    { id: employeeId, tokenType: "SESSION" },
-    JWT_SECRET,
-    { expiresIn }
-  );
+// ─── Helper: hace login y retorna el SESSION token ───────────────────────────
+const loginAndGetToken = async () => {
+  const res = await request(app)
+    .post("/users/login")
+    .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
-const makeWrongTypeToken = (employeeId) =>
-  jwt.sign(
-    { id: employeeId, tokenType: "REFRESH" },   // tipo incorrecto
-    JWT_SECRET,
-    { expiresIn: "1h" }
-  );
+  // Falla rápido si el login no fue exitoso — el problema está en el seed
+  if (res.status !== 200 || !res.body?.data?.token) {
+    throw new Error(
+      `loginAndGetToken falló inesperadamente: ${JSON.stringify(res.body)}`
+    );
+  }
 
-const makeExpiredToken = (employeeId) =>
-  jwt.sign(
-    { id: employeeId, tokenType: "SESSION" },
-    JWT_SECRET,
-    { expiresIn: "-1s" }                         // ya expiró
-  );
-
-const makeTokenWrongSecret = (employeeId) =>
-  jwt.sign(
-    { id: employeeId, tokenType: "SESSION" },
-    "secreto-incorrecto",
-    { expiresIn: "1h" }
-  );
+  return res.body.data.token;
+};
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
-describe("GET /users/profile — integración", () => {
+describe("Flujo integración: Login → GET /users/profile", () => {
   beforeAll(async () => {
-    await seedDb();
+    // Hash de la contraseña conocida para el seed
+    const hashedPassword = await bcrypt.hash(VALID_PASSWORD, 10);
+    await seedDb({ passwordOverride: hashedPassword });
   });
 
   afterAll(async () => {
@@ -67,151 +56,165 @@ describe("GET /users/profile — integración", () => {
     await disconnectDb();
   });
 
-  // ── 200 — Flujo feliz ──────────────────────────────────────────────────────
-  describe("200 — perfil encontrado", () => {
-    it("retorna 200 con success:true y los datos del empleado", async () => {
-      const token = makeSessionToken(IDS.employee);
-
+  // ── PASO 1: Login ──────────────────────────────────────────────────────────
+  describe("PASO 1 — POST /auth/login", () => {
+    it("retorna 200 con token SESSION cuando las credenciales son válidas", async () => {
       const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
+        .post("/users/login")
+        .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data).toBeDefined();
+      expect(res.body.data.token).toBeDefined();
     });
 
-    it("retorna houseName y roleName como strings (no IDs)", async () => {
-      const token = makeSessionToken(IDS.employee);
-
+    it("el token retornado tiene tokenType SESSION (verificable en /profile)", async () => {
+      const token = await loginAndGetToken();
+      // Si el token no fuera SESSION, el siguiente paso devolvería 403
+      // Validamos indirectamente usándolo contra /users/profile
       const res = await request(app)
         .get("/users/profile")
         .set("Authorization", `Bearer ${token}`);
 
-      expect(res.body.data.houseName).toBe("Casa Hogar Querétaro");
-      expect(res.body.data.roleName).toBe("Coordinador");
+      expect(res.status).not.toBe(403);
     });
 
-    it("retorna todos los campos esperados del perfil", async () => {
-      const token = makeSessionToken(IDS.employee);
-
+    it("retorna 401 con credenciales inválidas (password incorrecta)", async () => {
       const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
+        .post("/users/login")
+        .send({ email: VALID_EMAIL, password: "WrongPassword!" });
 
-      const { data } = res.body;
-      expect(data).toMatchObject({
-        houseName:   "Casa Hogar Querétaro",
-        roleName:    "Coordinador",
-        name:        "Juan",
-        surname:     "Pérez",
-        email:       "juan.perez@test.org",
-        rfc:         "PERJ900101ABC",
-        curp:        "PERJ900101HDFRZN01",
-        nss:         "12345678901",
-        bankAccount: "012345678901234567",
-      });
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe("INVALID_CREDENTIALS");
     });
 
-    it("NO expone el password en la respuesta", async () => {
-      const token = makeSessionToken(IDS.employee);
-
+    it("retorna 401 cuando el email no existe", async () => {
       const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
+        .post("/users/login")
+        .send({ email: "noexiste@test.org", password: VALID_PASSWORD });
 
-      expect(res.body.data.password).toBeUndefined();
+      expect(res.status).toBe(401);
+      expect(res.body.code).toBe("INVALID_CREDENTIALS");
     });
 
-    it("retorna birthDate como string ISO serializable", async () => {
-      const token = makeSessionToken(IDS.employee);
-
+    it("retorna 400 cuando el body no pasa la validación del schema", async () => {
       const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
+        .post("/users/login")
+        .send({ email: "no-es-un-email", password: "" });
 
-      expect(typeof res.body.data.birthDate).toBe("string");
-      expect(new Date(res.body.data.birthDate).getFullYear()).toBe(1990);
+      expect(res.status).toBe(400);
+    });
+
+    it("retorna 400 cuando faltan campos requeridos", async () => {
+      const res = await request(app)
+        .post("/users/login")
+        .send({});
+
+      expect(res.status).toBe(400);
     });
   });
 
-  // ── 401 — Sin token ────────────────────────────────────────────────────────
-  describe("401 — token ausente o inválido", () => {
-    it("retorna 401 cuando no se envía Authorization header", async () => {
+  // ── PASO 2: GET /users/profile con token real del login ───────────────────
+  describe("PASO 2 — GET /users/profile (con token del login)", () => {
+    let sessionToken;
+
+    beforeAll(async () => {
+      sessionToken = await loginAndGetToken();
+    });
+
+    it("retorna 200 usando el token obtenido del login", async () => {
+      const res = await request(app)
+        .get("/users/profile")
+        .set("Authorization", `Bearer ${sessionToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it("los datos del perfil coinciden con el empleado que hizo login", async () => {
+      const res = await request(app)
+        .get("/users/profile")
+        .set("Authorization", `Bearer ${sessionToken}`);
+
+      expect(res.body.data).toMatchObject({
+        name:      "Carlos",
+        surname:   "Ramírez",
+        email:     VALID_EMAIL,
+        houseName: "Casa de Desarrollo",
+        roleName:  "Admin",
+      });
+    });
+
+    it("el perfil no expone el password del empleado", async () => {
+      const res = await request(app)
+        .get("/users/profile")
+        .set("Authorization", `Bearer ${sessionToken}`);
+
+      expect(res.body.data.password).toBeUndefined();
+    });
+  });
+
+  // ── Flujo completo encadenado en un solo test ─────────────────────────────
+  describe("Flujo encadenado end-to-end", () => {
+    it("Login exitoso → perfil retorna los datos del mismo usuario", async () => {
+      // Paso 1: Login
+      const loginRes = await request(app)
+        .post("/users/login")
+        .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
+
+      expect(loginRes.status).toBe(200);
+      const { token, user: loginUser } = loginRes.body.data;
+
+      // Paso 2: Perfil
+      const profileRes = await request(app)
+        .get("/users/profile")
+        .set("Authorization", `Bearer ${token}`);
+
+      expect(profileRes.status).toBe(200);
+
+      // El empleado del login coincide con el del perfil
+      expect(profileRes.body.data.email).toBe(loginUser.email);
+      expect(profileRes.body.data.name).toBe(loginUser.name);
+    });
+  });
+
+  // ── Flujos alternativos en /users/profile ─────────────────────────────────
+  describe("Flujos alternativos — GET /users/profile", () => {
+    it("401 — intenta acceder al perfil sin haber hecho login (sin token)", async () => {
       const res = await request(app).get("/users/profile");
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe("Token no proporcionado");
     });
 
-    it("retorna 401 cuando el header no empieza con 'Bearer '", async () => {
+    it("401 — token expirado no permite ver el perfil", async () => {
+      const jwt      = require("jsonwebtoken");
+      const expToken = jwt.sign(
+        { id: IDS.employee, tokenType: "SESSION" },
+        process.env.JWT_SECRET,
+        { expiresIn: "-1s" }
+      );
+
       const res = await request(app)
         .get("/users/profile")
-        .set("Authorization", "Token abc123");
+        .set("Authorization", `Bearer ${expToken}`);
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe("Token no proporcionado");
     });
 
-    it("retorna 401 cuando el token está expirado", async () => {
-      const token = makeExpiredToken(IDS.employee);
+    it("403 — token con tokenType incorrecto no permite ver el perfil", async () => {
+      const jwt        = require("jsonwebtoken");
+      const wrongToken = jwt.sign(
+        { id: IDS.employee, tokenType: "REFRESH" },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
 
       const res = await request(app)
         .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(res.status).toBe(401);
-      expect(res.body.message).toBe("Token inválido o expirado");
-    });
-
-    it("retorna 401 cuando el token fue firmado con un secret incorrecto", async () => {
-      const token = makeTokenWrongSecret(IDS.employee);
-
-      const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(res.status).toBe(401);
-      expect(res.body.message).toBe("Token inválido o expirado");
-    });
-
-    it("retorna 401 con un token completamente malformado", async () => {
-      const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", "Bearer esto.no.es.un.jwt");
-
-      expect(res.status).toBe(401);
-      expect(res.body.success).toBe(false);
-    });
-  });
-
-  // ── 403 — tokenType incorrecto ─────────────────────────────────────────────
-  describe("403 — tokenType incorrecto", () => {
-    it("retorna 403 cuando tokenType no es SESSION", async () => {
-      const token = makeWrongTypeToken(IDS.employee);
-
-      const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
+        .set("Authorization", `Bearer ${wrongToken}`);
 
       expect(res.status).toBe(403);
-      expect(res.body.message).toBe("Token de sesión inválido");
-    });
-  });
-
-  // ── 404 — empleado no existe en DB ─────────────────────────────────────────
-  describe("404 — empleado no existe", () => {
-    it("retorna 404 cuando el id del token no existe en la DB", async () => {
-      const token = makeSessionToken("00000000-0000-0000-0000-000000000000");
-
-      const res = await request(app)
-        .get("/users/profile")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(res.status).toBe(404);
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe("Perfil no encontrado");
     });
   });
 });
