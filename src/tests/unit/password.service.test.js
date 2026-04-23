@@ -330,7 +330,7 @@ describe("password.service", () => {
             expect(createLog).toHaveBeenCalledTimes(2);
             expect(buildSessionToken).toHaveBeenCalled();
             expect(result.status).toBe(200);
-            expect(result.body.nextStep).toBe("SETUP_2FA_OPTIONAL");
+            expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
             expect(result.body.data.token).toBe("fake-session-token");
         });
     });
