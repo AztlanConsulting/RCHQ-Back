@@ -6,11 +6,11 @@ const {
   validateTwoFactorAuth,
   getStatus2FA,
   disableTwoFactorAuth,
-} = require("../../service/auth.service");
+} = require("../../service/auth/auth.service");
 
 // ─── Mocks ────────────────────────────────────────────────
 
-jest.mock("../../model/user.model");
+jest.mock("../../model/auth/auth.model");
 jest.mock("../../utils/password");
 jest.mock("../../model/log.model");
 jest.mock("../../utils/ip");
@@ -24,7 +24,7 @@ jest.mock("../../prisma", () => ({
 jest.mock("speakeasy");
 jest.mock("qrcode");
 
-const User = require("../../model/user.model");
+const User = require("../../model/auth/auth.model");
 const { verifyPassword } = require("../../utils/password");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");

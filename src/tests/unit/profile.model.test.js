@@ -1,5 +1,5 @@
 // tests/backend/profile.model.test.js
-const { findEmployeeProfile } = require("../../model/profile.model");
+const { findEmployeeProfile } = require("../../model/user/profile.model");
 
 // Mock de Prisma
 jest.mock("../../prisma", () => ({
