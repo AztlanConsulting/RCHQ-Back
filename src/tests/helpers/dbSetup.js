@@ -76,7 +76,7 @@ role: {
     rfc:             "PERJ900101ABC",
     birth_date:      new Date("1990-01-01"),
     start_date:      new Date("2022-01-01"),
-    nss:             "12345678901",
+    nss:             "99999999901",
     bank_account:    "012345678901234567",
     picture:         "https://cdn.example.com/foto.jpg",
   },
@@ -127,11 +127,14 @@ async function seedDb({ passwordOverride } = {}) {
 }
 
 async function cleanDb() {
-  await prisma.logs.deleteMany({     where: { employee_id: IDS.employee } });
-  await prisma.employee.deleteMany({ where: { employee_id: IDS.employee } });
-  await prisma.role.deleteMany({     where: { role_id:     IDS.role     } });
-  await prisma.house.deleteMany({    where: { house_id:    IDS.house    } });
-  // Las actions no se limpian — son catálogo compartido entre suites
+  await prisma.logs.deleteMany({     where: { employee_id: IDS.employee           } });
+  await prisma.employee.deleteMany({ where: { employee_id: IDS.employee           } });
+  await prisma.role.deleteMany({     where: { role_id:     IDS.role               } });
+  await prisma.house.deleteMany({    where: { house_id:    IDS.house              } });
+  await prisma.house.deleteMany({    where: { name:        SEED.house.name        } });
+  await prisma.role.deleteMany({     where: { name:        SEED.role.name         } });
+  await prisma.employee.deleteMany({ where: { email:       SEED.employee.email    } });
+  await prisma.employee.deleteMany({ where: { curp:        SEED.employee.curp     } });
 }
 
 async function disconnectDb() {

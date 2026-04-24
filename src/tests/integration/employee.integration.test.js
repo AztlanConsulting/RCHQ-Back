@@ -3,7 +3,7 @@ const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
-const app = require("../../app");
+const app = require("../../index");
 
 const prisma = new PrismaClient();
 
@@ -32,6 +32,21 @@ let baseEmployeePayload = {
 
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
+
+    const REQUIRED_ACTIONS = [
+        { action_id: "empl-001", description: "Empleado creado", important: true  },
+        { action_id: "auth-001", description: "Login fallido",   important: false },
+        { action_id: "auth-003", description: "Login exitoso",   important: false },
+    ];
+
+    for (const action of REQUIRED_ACTIONS) {
+        await prisma.action.upsert({
+        where:  { action_id: action.action_id },
+        update: {},
+        create: action,
+        });
+    }
+
     let adminRole = await prisma.role.findUnique({
         where: { name: "Administrador" },
     });
@@ -98,9 +113,26 @@ const generateAdminToken = () => {
 };
 
 const cleanDb = async () => {
-    await prisma.logs.deleteMany({});
-    await prisma.employee.deleteMany({ where: { curp: TEST_CURP } });
-    await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
+    const employeesToDelete = await prisma.employee.findMany({
+        where: {
+        OR: [
+            { curp:  TEST_CURP   },
+            { email: TEST_EMAIL  },
+            { nss:   "12345678901" },
+        ],
+        },
+        select: { employee_id: true },
+    });
+
+    const ids = employeesToDelete.map(e => e.employee_id);
+
+    if (ids.length > 0) {
+        await prisma.logs.deleteMany({ where: { employee_id: { in: ids } } });
+    }
+
+    await prisma.employee.deleteMany({ where: { curp:  TEST_CURP      } });
+    await prisma.employee.deleteMany({ where: { email: TEST_EMAIL     } });
+    await prisma.employee.deleteMany({ where: { nss:   "12345678901"  } });
 };
 
 // ─── Hooks ────────────────────────────────────────────────
@@ -112,6 +144,7 @@ afterEach(async () => {
     await cleanDb();
 });
 afterAll(async () => {
+    await prisma.logs.deleteMany({ where: { employee_id: TEST_ADMIN_ID } });
     await prisma.employee.deleteMany({ where: { curp: TEST_ADMIN_CURP } });
     await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
     await prisma.$disconnect();
