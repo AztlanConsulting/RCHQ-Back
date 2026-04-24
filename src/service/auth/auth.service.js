@@ -1,21 +1,21 @@
-const User = require("../model/user.model");
-const { verifyPassword } = require("../utils/password");
-const { getClientIp } = require("../utils/ip");
-const { createLog } = require("../model/log.model");
+const { verifyPassword } = require("../../utils/password");
+const { getClientIp } = require("../../utils/ip");
+const { createLog } = require("../../model/log.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const { LOG_ACTIONS } = require("../utils/logActions");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const User = require("../../model/auth/auth.model");
 const {
   buildSessionToken,
   // buildFirstLoginJwt,
   buildPre2faJwt,
-} = require("../utils/auth/authTokens");
+} = require("../../utils/auth/authTokens");
 const {
   isBlockedUntil,
   clearExpiredLoginBlock,
   clearExpired2FABlock,
-} = require("../utils/auth/authGuards");
-const prisma = require("../prisma");
+} = require("../../utils/auth/authGuards");
+const prisma = require("../../prisma");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;

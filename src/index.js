@@ -3,8 +3,8 @@ const app = express();
 const cors = require("cors");
 const { PrismaClient } = require('@prisma/client');
 const { getClientIp } = require("./utils/ip");
-const profileRouter = require("./router/profile.route");
-
+const userRouter = require("./router/user.route");
+const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 
 const prisma = new PrismaClient();
@@ -29,12 +29,10 @@ app.use(
     }),
 );
 
-//const xd = require("./utils/mail");
+app.use("/auth", authRouter);
 
-const userRouter = require("./router/user.route");
-app.use("/users", userRouter);
+app.use("/user", userRouter);
 
-app.use("/users", profileRouter);
 app.use("/employee", employeeRouter);
 
 app.use(errorHandler);

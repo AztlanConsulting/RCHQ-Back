@@ -2,7 +2,7 @@
 // const { canAccess } = require("../middleware/abac");
 // const { adminPolicy } = require("../policies/user.policies");
 // const {verifyPassword, hashPassword} = require("../utils/password");
-const authService = require("../service/auth.service");
+const authService = require("../../service/auth/auth.service");
 
 exports.loginFunction = async (req, res) => {
   try {
