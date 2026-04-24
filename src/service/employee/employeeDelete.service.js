@@ -45,7 +45,9 @@ exports.deleteDocument = async (employeeId, documentField, user, req) => {
   if (currentUrl) {
     try {
       fs.unlinkSync(currentUrl);
-    } catch (_) {}
+    } catch (err) {
+      console.error("delete error: ", err)
+    }
   }
 
   await clearDocumentField(docRow.document_id, employeeId, documentField);
