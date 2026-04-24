@@ -9,7 +9,7 @@ const {
     buildPre2faJwt,
 } = require("../utils/auth/authTokens");
 
-async function changePassword(req) {
+exports.changePassword = async (req) => {
     const { currentPassword, newPassword } = req.body || {};
     const employeeId = req.user?.id || req.user?.employeeId;
     const ipAddress = getClientIp(req);
@@ -121,7 +121,7 @@ async function changePassword(req) {
     };
 }
 
-async function changePasswordFirstLogin(req) {
+exports.changePasswordFirstLogin = async (req) => {
     const { newPassword } = req.body || {};
     const employeeId = req.user?.id || req.user?.employeeId;
     const ipAddress = getClientIp(req);
@@ -263,8 +263,3 @@ async function changePasswordFirstLogin(req) {
         },
     };
 }
-
-module.exports = {
-    changePassword,
-    changePasswordFirstLogin,
-};
