@@ -153,22 +153,3 @@ Extrae la IP real del cliente desde los headers de la request.
 Registra acciones de empleados en la base de datos (empleado, acción, IP).
 
 ---
-
-## Diagramas PlantUML
-
-### Instrucciones para diagrama de secuencia
-
-- Participantes: Usuario, router, auth middleware, controller, service, model, BD.
-- Nombrar cada participante con su archivo y función: `"user.route.js"`, `"auth.js\nverifyToken()"`, etc.
-- Usar `->` para llamadas síncronas y `->>` para llamadas asíncronas (await).
-- Usar `-->` para retornos.
-- Basado exactamente en el código real: funciones reales, queries de Prisma, mapeos, nombres de variables.
-- Incluir: extracción del token, `jwt.verify()`, `req.user`, `try/catch`, `res.status().json()`, `mapProfile()`, etc.
-- Cubrir todos los casos: 401 (middleware), 404 (service), 500 (catch), 200 (éxito).
-
-### Instrucciones para diagrama de actividades
-
-- Usar swimlanes por actor.
-- Actores: Usuario, Frontend, API.
-- Usar `if/elseif/else/endif` — NO usar `switch/case` (tiene bugs con swimlanes).
-- Incluir flujo principal y flujos alternativos por status HTTP (401, 404, 500, 200).
