@@ -30,10 +30,10 @@ alt Error de contraseña actual/temporal o token
 AuthService --> FirstLoginPage : Error
 FirstLoginPage --> Usuario : Mostrar error
 else Cambio exitoso
-alt Debe pasar a 2FA
+alt Debe pasar a autenticación en dos pasos
 AuthService --> FirstLoginPage : nextStep=SETUP_2FA_OPTIONAL o VERIFY_2FA
-FirstLoginPage -> NextView : Redirigir a flujo 2FA
-else No pasa a 2FA
+FirstLoginPage -> NextView : Redirigir a flujo autenticación en dos pasos
+else No pasa a autenticación en dos pasos
 AuthService --> FirstLoginPage : Éxito
 FirstLoginPage -> NextView : Redirigir a dashboard
 end
@@ -42,7 +42,7 @@ end
 
 else hasFirstLogin = false
 AuthService --> LoginPage : Flujo normal de login
-LoginPage -> NextView : Ir a 2FA o dashboard
+LoginPage -> NextView : Ir a autenticación en dos pasos o dashboard
 end
 end
 

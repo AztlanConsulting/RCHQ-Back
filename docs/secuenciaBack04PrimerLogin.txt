@@ -2,14 +2,14 @@
 title US04 back - user cambia contraseña en primer login
 
 actor Usuario
-boundary "user.route.js" as Route
+boundary "auth.route.js" as Route
 control "validate(loginSchema)" as ValidateLogin
-control "user.controller.js" as Controller
+control "auth.controller.js" as Controller
 control "auth.service.js" as AuthService
 control "verifyFirstLoginToken" as FirstLoginAuth
 control "validate(firstLoginChangePasswordSchema)" as ValidateFirstChange
 control "password.service.js" as PasswordService
-entity "user.model.js" as UserModel
+entity "auth.model.js" as AuthModel
 collections "authTokens.js / password utils" as AuthUtil
 entity "log.model.js" as LogModel
 database "BD" as DB

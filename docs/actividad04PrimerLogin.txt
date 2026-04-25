@@ -56,8 +56,8 @@ endif
 :Guardar log de cambio de contraseña de primer login;
 :Guardar log de primer login completado;
 
-if (¿Debe ofrecer/configurar 2FA después?) then (Sí)
-:Continuar al flujo de 2FA;
+if (¿Debe ofrecer/configurar autenticación en dos pasos después?) then (Sí)
+:Continuar al flujo de autenticación en dos pasos;
 else (No)
 :Permitir acceso a la app;
 endif

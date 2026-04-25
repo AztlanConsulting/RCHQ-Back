@@ -2,12 +2,12 @@
 title US04 back - user cambia contraseña
 
 actor Usuario
-boundary "user.route.js" as Route
+boundary "auth.route.js" as Route
 control "verifyToken" as Auth
 control "validate(changePasswordSchema)" as Validate
-control "user.controller.js" as Controller
+control "auth.controller.js" as Controller
 control "password.service.js" as Service
-entity "user.model.js" as UserModel
+entity "auth.model.js" as AuthModel
 collections "password utils" as PasswordUtil
 entity "log.model.js" as LogModel
 database "BD" as DB
