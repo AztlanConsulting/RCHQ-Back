@@ -75,7 +75,7 @@ describe("password.service", () => {
 
             expect(result.status).toBe(401);
             expect(result.body.success).toBe(false);
-            expect(result.body.message).toBe("User not authenticated");
+            expect(result.body.message).toBe("Usuario no autenticado");
         });
 
         it("retorna 404 si el empleado no existe", async () => {
@@ -93,7 +93,7 @@ describe("password.service", () => {
 
             expect(User.getEmployeeById).toHaveBeenCalledWith("emp-123");
             expect(result.status).toBe(404);
-            expect(result.body.message).toBe("Employee not found");
+            expect(result.body.message).toBe("Empleado no encontrado");
         });
 
         it("retorna 403 si el usuario está inactivo", async () => {
@@ -114,7 +114,7 @@ describe("password.service", () => {
 
             expect(createLog).toHaveBeenCalled();
             expect(result.status).toBe(403);
-            expect(result.body.message).toBe("Access not allowed");
+            expect(result.body.message).toBe("Acceso no permitido");
         });
 
         it("retorna 401 si la contraseña actual es incorrecta", async () => {
@@ -141,7 +141,7 @@ describe("password.service", () => {
             );
             expect(createLog).toHaveBeenCalled();
             expect(result.status).toBe(401);
-            expect(result.body.message).toBe("Invalid credentials");
+            expect(result.body.message).toBe("Credenciales inválidas");
         });
 
         it("retorna 400 si la nueva contraseña es igual a la actual", async () => {
@@ -166,7 +166,7 @@ describe("password.service", () => {
 
             expect(result.status).toBe(400);
             expect(result.body.message).toBe(
-                "New password must be different from current password",
+                "La nueva contraseña debe ser diferente a la actual",
             );
         });
 
@@ -220,7 +220,7 @@ describe("password.service", () => {
             );
 
             expect(result.status).toBe(401);
-            expect(result.body.message).toBe("User not authenticated");
+            expect(result.body.message).toBe("Usuario no autenticado");
         });
 
         it("retorna 404 si el empleado no existe", async () => {
@@ -236,7 +236,7 @@ describe("password.service", () => {
             );
 
             expect(result.status).toBe(404);
-            expect(result.body.message).toBe("Employee not found");
+            expect(result.body.message).toBe("Empleado no encontrado");
         });
 
         it("retorna 403 si el usuario está inactivo", async () => {
@@ -256,7 +256,7 @@ describe("password.service", () => {
 
             expect(createLog).toHaveBeenCalled();
             expect(result.status).toBe(403);
-            expect(result.body.message).toBe("Access not allowed");
+            expect(result.body.message).toBe("Acceso no permitido");
         });
 
         it("retorna 409 si ya no requiere cambio de primer login", async () => {
@@ -276,7 +276,7 @@ describe("password.service", () => {
 
             expect(result.status).toBe(409);
             expect(result.body.message).toBe(
-                "First login password change is no longer required",
+                "Cambio de contraseña en primer inicio de sesión ya completado",
             );
         });
 
@@ -295,7 +295,7 @@ describe("password.service", () => {
 
             expect(result.status).toBe(400);
             expect(result.body.message).toBe(
-                "New password must be different from current password",
+                "La nueva contraseña debe ser diferente a la actual",
             );
         });
 
