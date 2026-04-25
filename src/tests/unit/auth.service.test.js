@@ -79,8 +79,6 @@ const {
   disableTwoFactorAuth,
 } = require("../../service/auth.service");
 
-// ─── Fixtures ─────────────────────────────────────────────
-
 const mockEmployee = {
   employeeId: "abc-123",
   email: "test@gmail.com",
@@ -116,8 +114,6 @@ beforeEach(() => {
   buildFirstLoginJwt.mockReturnValue("fake-first-login-token");
   buildPre2faJwt.mockReturnValue("fake-pre2fa-token");
 });
-
-// ─── LOGIN ────────────────────────────────────────────────
 
 describe("login", () => {
   it("retorna 401 si el usuario no existe", async () => {
@@ -265,18 +261,23 @@ describe("login", () => {
   });
 });
 
-// ─── SETUP 2FA ────────────────────────────────────────────
-
 describe("setupTwoFactorAuth", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
-    const result = await setupTwoFactorAuth(makeReq({}, { id: null }));
+    const result = await setupTwoFactorAuth({
+      employeeId: null,
+      ipAddress: "127.0.0.1",
+    });
+
     expect(result.status).toBe(401);
   });
 
   it("retorna 404 si el empleado no existe en la BD", async () => {
     User.getEmployeeById.mockResolvedValue(null);
 
-    const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
+    const result = await setupTwoFactorAuth({
+      employeeId: "abc-123",
+      ipAddress: "127.0.0.1",
+    });
 
     expect(result.status).toBe(404);
   });
@@ -287,7 +288,10 @@ describe("setupTwoFactorAuth", () => {
       isActive: false,
     });
 
-    const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
+    const result = await setupTwoFactorAuth({
+      employeeId: "abc-123",
+      ipAddress: "127.0.0.1",
+    });
 
     expect(result.status).toBe(403);
     expect(createLog).toHaveBeenCalled();
@@ -299,7 +303,10 @@ describe("setupTwoFactorAuth", () => {
       totpSecret: "EXISTINGSECRET",
     });
 
-    const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
+    const result = await setupTwoFactorAuth({
+      employeeId: "abc-123",
+      ipAddress: "127.0.0.1",
+    });
 
     expect(result.status).toBe(409);
   });
@@ -313,7 +320,10 @@ describe("setupTwoFactorAuth", () => {
     });
     QRCode.toDataURL.mockResolvedValue("data:image/png;base64,fake");
 
-    const result = await setupTwoFactorAuth(makeReq({}, { id: "abc-123" }));
+    const result = await setupTwoFactorAuth({
+      employeeId: "abc-123",
+      ipAddress: "127.0.0.1",
+    });
 
     expect(result.status).toBe(200);
     expect(result.body.data).toHaveProperty(
@@ -327,8 +337,6 @@ describe("setupTwoFactorAuth", () => {
     );
   });
 });
-
-// ─── VERIFY 2FA SETUP ─────────────────────────────────────
 
 describe("verifyTwoFactorSetup", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
@@ -422,8 +430,6 @@ describe("verifyTwoFactorSetup", () => {
     expect(result.body.nextStep).toBe("2FA_SETUP_COMPLETE");
   });
 });
-
-// ─── VALIDATE 2FA AUTH ────────────────────────────────────
 
 describe("validateTwoFactorAuth", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
@@ -526,8 +532,6 @@ describe("validateTwoFactorAuth", () => {
   });
 });
 
-// ─── GET STATUS 2FA ───────────────────────────────────────
-
 describe("getStatus2FA", () => {
   it("retorna 404 si no hay employeeId en el token", async () => {
     const result = await getStatus2FA(makeReq({}, null));
@@ -578,8 +582,6 @@ describe("getStatus2FA", () => {
     expect(result.body.Status2FA).toBe(true);
   });
 });
-
-// ─── DISABLE 2FA ──────────────────────────────────────────
 
 describe("disableTwoFactorAuth", () => {
   it("retorna 401 si no hay employeeId en el token", async () => {
