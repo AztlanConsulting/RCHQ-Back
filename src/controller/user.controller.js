@@ -76,7 +76,14 @@ exports.changePassword = async (req, res) => {
 
 exports.setupTwoFactorAuth = async (req, res) => {
   try {
-    const result = await authService.setupTwoFactorAuth(req);
+    const employeeId = req.user?.id || req.user?.employeeId;
+    const ipAddress = getClientIp(req);
+
+    const result = await authService.setupTwoFactorAuth({
+      employeeId,
+      ipAddress,
+    });
+    
     return res.status(result.status).json(result.body);
   } catch (error) {
     console.error("Error in 2FA setup:", error);

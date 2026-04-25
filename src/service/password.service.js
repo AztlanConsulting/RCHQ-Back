@@ -21,7 +21,7 @@ exports.changePassword = async ({
             body: {
                 success: false,
                 code: "USER_NOT_AUTHENTICATED",
-                message: "User not authenticated",
+                message: "Usuario no autenticado",
             },
         };
     }
@@ -34,7 +34,7 @@ exports.changePassword = async ({
             body: {
                 success: false,
                 code: "EMPLOYEE_NOT_FOUND",
-                message: "Employee not found",
+                message: "Empleado no encontrado",
             },
         };
     }
@@ -51,7 +51,7 @@ exports.changePassword = async ({
             body: {
                 success: false,
                 code: "ACCESS_NOT_ALLOWED",
-                message: "Access not allowed",
+                message: "Acceso no permitido",
             },
         };
     }
@@ -73,7 +73,7 @@ exports.changePassword = async ({
             body: {
                 success: false,
                 code: "INVALID_CURRENT_PASSWORD",
-                message: "Invalid credentials",
+                message: "Credenciales inválidas",
             },
         };
     }
@@ -86,7 +86,7 @@ exports.changePassword = async ({
             body: {
                 success: false,
                 code: "PASSWORD_REUSE",
-                message: "New password must be different from current password",
+                message: "La nueva contraseña debe ser diferente a la actual",
             },
         };
     }
@@ -133,7 +133,7 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: false,
                 code: "USER_NOT_AUTHENTICATED",
-                message: "User not authenticated",
+                message: "Usuario no autenticado",
             },
         };
     }
@@ -146,7 +146,7 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: false,
                 code: "EMPLOYEE_NOT_FOUND",
-                message: "Employee not found",
+                message: "Empleado no encontrado",
             },
         };
     }
@@ -163,7 +163,7 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: false,
                 code: "ACCESS_NOT_ALLOWED",
-                message: "Access not allowed",
+                message: "Acceso no permitido",
             },
         };
     }
@@ -174,7 +174,7 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: false,
                 code: "FIRST_LOGIN_ALREADY_COMPLETED",
-                message: "First login password change is no longer required",
+                message: "Cambio de contraseña en primer inicio de sesión ya completado",
             },
         };
     }
@@ -187,7 +187,7 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: false,
                 code: "PASSWORD_REUSE",
-                message: "New password must be different from current password",
+                message: "La nueva contraseña debe ser diferente a la actual",
             },
         };
     }
@@ -228,7 +228,7 @@ exports.changePasswordFirstLogin = async ({
             status: 200,
             body: {
                 success: true,
-                message: "Password changed successfully",
+                message: "Contraseña cambiada exitosamente",
                 nextStep: "VERIFY_2FA",
                 data: {
                     pre2FAToken,
@@ -250,7 +250,7 @@ exports.changePasswordFirstLogin = async ({
         status: 200,
         body: {
             success: true,
-            message: "Password changed successfully",
+            message: "Contraseña cambiada exitosamente",
             nextStep: "LOGIN_COMPLETE",
             data: {
                 token,

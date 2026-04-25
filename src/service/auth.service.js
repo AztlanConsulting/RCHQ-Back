@@ -174,10 +174,10 @@ async function login(req) {
   };
 }
 
-async function setupTwoFactorAuth(req) {
-  const employeeId = req.user?.id || req.user?.employeeId;
-  const ipAddress = getClientIp(req);
-
+async function setupTwoFactorAuth({
+  employeeId,
+  ipAddress,
+}) {
   if (!employeeId) {
     return {
       status: 401,
