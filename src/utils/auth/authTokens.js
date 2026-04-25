@@ -4,7 +4,7 @@ const {
   generatePre2faToken,
 } = require("../jwt");
 
-exports.buildUserPayload = (employee) => {
+function buildUserPayload(employee) {
     return {
         id: employee.employeeId,
         email: employee.email,
