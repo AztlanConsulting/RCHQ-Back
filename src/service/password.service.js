@@ -9,11 +9,12 @@ const {
     buildPre2faJwt,
 } = require("../utils/auth/authTokens");
 
-exports.changePassword = async (req) => {
-    const { currentPassword, newPassword } = req.body || {};
-    const employeeId = req.user?.id || req.user?.employeeId;
-    const ipAddress = getClientIp(req);
-
+exports.changePassword = async ({
+    employeeId,
+    currentPassword,
+    newPassword,
+    ipAddress,
+}) => {
     if (!employeeId) {
         return {
             status: 401,
@@ -121,11 +122,11 @@ exports.changePassword = async (req) => {
     };
 }
 
-exports.changePasswordFirstLogin = async (req) => {
-    const { newPassword } = req.body || {};
-    const employeeId = req.user?.id || req.user?.employeeId;
-    const ipAddress = getClientIp(req);
-
+exports.changePasswordFirstLogin = async ({
+    employeeId,
+    newPassword,
+    ipAddress,
+}) => {
     if (!employeeId) {
         return {
             status: 401,

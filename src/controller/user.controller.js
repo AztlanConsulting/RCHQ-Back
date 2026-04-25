@@ -1,5 +1,6 @@
 const authService = require("../service/auth.service");
 const passwordService = require("../service/password.service");
+const { getClientIp } = require("../utils/ip");
 
 exports.loginFunction = async (req, res) => {
   try {
@@ -30,7 +31,16 @@ exports.getProfile = (req, res) => {
 
 exports.changePasswordFirstLogin = async (req, res) => {
   try {
-    const result = await passwordService.changePasswordFirstLogin(req);
+    const employeeId = req.user?.id || req.user?.employeeId;
+    const { newPassword } = req.body || {};
+    const ipAddress = getClientIp(req);
+
+    const result = await passwordService.changePasswordFirstLogin({
+      employeeId,
+      newPassword,
+      ipAddress,
+    });
+
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("First login password change error:", err);
@@ -43,7 +53,17 @@ exports.changePasswordFirstLogin = async (req, res) => {
 
 exports.changePassword = async (req, res) => {
   try {
-    const result = await passwordService.changePassword(req);
+    const employeeId = req.user?.id || req.user?.employeeId;
+    const { currentPassword, newPassword } = req.body || {};
+    const ipAddress = getClientIp(req);
+
+    const result = await passwordService.changePassword({
+      employeeId,
+      currentPassword,
+      newPassword,
+      ipAddress,
+    });
+
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("Change password error:", err);
