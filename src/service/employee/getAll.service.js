@@ -1,21 +1,43 @@
 const { getEmployees } = require("../../model/employee/getAll.model");
 
-const getEmployeesService = async (houseId, activeQuery) => {
-    let active = true;
+const getEmployeesService = async (
+    houseId,
+    activeQuery,
+    pageQuery,
+    limitQuery,
+) => {
+    const active = activeQuery === "false" ? false : true;
 
-    if (activeQuery !== undefined) {
-        active = activeQuery === "true";
-    }
+    const page = Number(pageQuery) > 0 ? Number(pageQuery) : 1;
+    const limit = Number(limitQuery) > 0 ? Number(limitQuery) : 6;
 
-    const employees = await getEmployees(houseId, active);
+    const skip = (page - 1) * limit;
+    const take = limit;
 
-    return employees.map((employee) => ({
-        employeeId: employee.employeeId,
-        fullName: `${employee.name} ${employee.surname}`,
-        role: employee.roleName,
-        picture: employee.picture,
-        status: employee.isActive,
-    }));
+    const { employees, total } = await getEmployees(
+        houseId,
+        active,
+        skip,
+        take,
+    );
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+        data: employees.map((employee) => ({
+            employeeId: employee.employeeId,
+            fullName: `${employee.name} ${employee.surname}`,
+            role: employee.roleName,
+            picture: employee.picture,
+            status: employee.isActive,
+        })),
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+        },
+    };
 };
 
 module.exports = {
