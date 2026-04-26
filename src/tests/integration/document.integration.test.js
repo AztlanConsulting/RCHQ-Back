@@ -12,32 +12,37 @@ const prisma = new PrismaClient();
 const TEST_HOUSE_ID = randomUUID();
 const TEST_ROLE_ID = randomUUID();
 const TEST_EMPLOYEE_ID = randomUUID();
-const TEST_EMAIL = "docs_integration@test.com";
+const TEST_EMAIL = "doctest@test.com";  // corto y fijo, sin UUID en el email
+const TEST_HOUSE_NAME = `Casa Docs Test ${TEST_HOUSE_ID}`;
 
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
   await prisma.house.upsert({
     where: { house_id: TEST_HOUSE_ID },
-    update: {},
+    update: { name: TEST_HOUSE_NAME },
     create: {
       house_id: TEST_HOUSE_ID,
-      name: "Casa Docs Test",
+      name: TEST_HOUSE_NAME,
       location: "Test Location",
       phone_number: "442503720481",
       description: "Casa usada solo para tests de documentos",
-      image: "test-image.jpg",      
+      image: "test-image.jpg",
     },
   });
+
   await prisma.role.upsert({
     where: { role_id: TEST_ROLE_ID },
-    update: { name: "administrador" }, 
+    update: { name: "administrador" },
     create: {
       role_id: TEST_ROLE_ID,
-      name: "administrador", 
+      name: "administrador",
     },
   });
-  await prisma.employee.create({
-    data: {
+
+  await prisma.employee.upsert({
+    where: { employee_id: TEST_EMPLOYEE_ID },
+    update: {},
+    create: {
       employee_id: TEST_EMPLOYEE_ID,
       house_id: TEST_HOUSE_ID,
       role_id: TEST_ROLE_ID,
@@ -45,10 +50,10 @@ const seedDependencies = async () => {
       password: "hashed",
       name: "Test",
       surname: "User",
-      curp: "TESTDOCS12345678",
+      curp: "TESTDOCS12345678AB",
       start_date: new Date(),
       is_active: true,
-      has_first_login: true, 
+      has_first_login: true,
     },
   });
 };
@@ -60,8 +65,8 @@ const generateToken = () => {
       id: TEST_EMPLOYEE_ID,
       employee_id: TEST_EMPLOYEE_ID,
       email: TEST_EMAIL,
-      role: "administrador",
-      privileges: ["modifyDocuments", "viewDocuments"], 
+      role: "Administrador",
+      privileges: ["modifyDocuments", "viewDocuments"],
       tokenType: "SESSION",
     },
     process.env.JWT_SECRET,
@@ -70,11 +75,9 @@ const generateToken = () => {
 };
 
 const cleanDb = async () => {
-  // Limpiamos todo el rastro para evitar choques de llaves foráneas
   await prisma.employee_documents.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
   await prisma.documents.deleteMany();
   await prisma.logs.deleteMany();
-  // Borramos a TODOS los empleados que usen este rol de prueba (incluyendo huérfanos)
   await prisma.employee.deleteMany({ where: { role_id: TEST_ROLE_ID } });
 };
 
@@ -82,8 +85,7 @@ const cleanDb = async () => {
 beforeAll(async () => {
   await cleanDb();
   await seedDependencies();
-  
-  // Crear directorio si no existe para evitar error de Multer
+
   const uploadDir = path.join(__dirname, "../../uploads/documents");
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -136,9 +138,8 @@ describe("POST /employee/:id/documents - integration", () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.success).toBe(true);
 
-    // Verificar en BD
     const docRow = await prisma.employee_documents.findFirst({
-      where: { employee_id: TEST_EMPLOYEE_ID }
+      where: { employee_id: TEST_EMPLOYEE_ID },
     });
     expect(docRow).not.toBeNull();
   });
@@ -177,22 +178,21 @@ describe("GET /employee/:id/documents - integration", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.body.documents).toHaveProperty("cv"); 
+    expect(res.body.body.documents).toHaveProperty("cv");
   });
 
   it("retorna 200 con mensaje de no tener documentos para otro empleado válido", async () => {
-    // Generar empleado limpio
     const OTHER_EMP_ID = randomUUID();
     await prisma.employee.create({
       data: {
         employee_id: OTHER_EMP_ID,
         house_id: TEST_HOUSE_ID,
         role_id: TEST_ROLE_ID,
-        email: "other@test.com",
+        email: "doctest2@test.com",
         password: "hashed",
         name: "Test",
         surname: "User",
-        curp: "TESTOTHER123",
+        curp: "OTHEMP9876543210AB",
         start_date: new Date(),
         is_active: true,
         has_first_login: true,
@@ -207,7 +207,6 @@ describe("GET /employee/:id/documents - integration", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toMatch(/no tiene documentos/i);
 
-    // Si el test pasa, borramos. Si falla, el cleanDb lo limpiará en el afterAll
     await prisma.employee.delete({ where: { employee_id: OTHER_EMP_ID } });
   });
 });
@@ -223,10 +222,9 @@ describe("DELETE /employee/:id/documents/:field - integration", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
 
-    // Verificar en BD que el campo se blanqueó
     const docRow = await prisma.employee_documents.findFirst({
       where: { employee_id: TEST_EMPLOYEE_ID },
-      include: { documents: true }
+      include: { documents: true },
     });
     expect(docRow.documents.cv).toBeNull();
   });
