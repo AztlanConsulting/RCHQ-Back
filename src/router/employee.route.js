@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { authorize } = require("../middleware/abac");
-const { createEmployeePolicy } = require("../policies/employeeAdd.policies");
+const { employeePolicy } = require("../policies/employee.policies");
 const upload = require("../middleware/upload");
 
 const {
@@ -11,7 +11,11 @@ const {
     postAdd,
 } = require("../controller/employee/employeeAdd.controller");
 
+const { getAll } = require("../controller/employee/getAll.controller");
+
 router.get("/add", verifyToken, getAdd);
+
+router.get("/getAll", verifyToken, authorize(employeePolicy), getAll);
 
 router.get("/:id", getById);
 
@@ -19,7 +23,7 @@ router.post(
     "/add",
     verifyToken,
     upload.single("picture"),
-    authorize(createEmployeePolicy, (req) => ({
+    authorize(employeePolicy, (req) => ({
         house_id: req.body.house_id,
     })),
     postAdd,

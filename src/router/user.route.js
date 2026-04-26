@@ -4,7 +4,6 @@ const { requireRole } = require("../middleware/rbac");
 const userController = require("../controller/user.controller");
 const userModel = require("../model/user.model");
 const { authorize } = require("../middleware/abac");
-const { adminPolicy } = require("../policies/employeeAdd.policies");
 // const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
 const verifyPre2faToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");

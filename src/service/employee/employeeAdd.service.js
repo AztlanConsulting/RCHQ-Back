@@ -12,7 +12,7 @@ const {
 } = require("../../schemas/employee/employeeAdd.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
-const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
+const { employeePolicy } = require("../../policies/employee.policies");
 
 async function getById(id) {
     return await findById(id);
@@ -40,7 +40,7 @@ async function createEmployee(data, user, req) {
     const validatedData = result.data;
     const resource = { house_id: validatedData.house_id };
 
-    if (!createEmployeePolicy(user, resource)) {
+    if (!employeePolicy(user, resource)) {
         return {
             status: 403,
             body: { message: "Acceso Denegado" },
