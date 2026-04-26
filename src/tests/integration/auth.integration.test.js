@@ -4,6 +4,7 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
+const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient();
 
@@ -78,7 +79,7 @@ const generateSessionToken = () => {
 };
 
 const cleanDb = async () => {
-  await prisma.logs.deleteMany();
+  await prisma.logs.deleteMany({where: {employee_id: TEST_EMPLOYEE_ID,},});
   await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
 };
 
@@ -86,6 +87,7 @@ const cleanDb = async () => {
 beforeAll(async () => {
   await cleanDb();
   await seedDependencies();
+  await seedActions();
 });
 afterEach(async () => {
   await cleanDb();

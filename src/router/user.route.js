@@ -5,27 +5,34 @@ const userController = require("../controller/user.controller");
 const userModel = require("../model/user.model");
 const { authorize } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/employeeAdd.policies");
-// const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
+const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
 const verifyPre2faToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");
 const {
-    loginSchema,
-    //firstLoginChangePasswordSchema,
-    twoFactorTokenSchema,
-    disableTwoFactorSchema,
+  loginSchema,
+  firstLoginChangePasswordSchema,
+  changePasswordSchema,
+  twoFactorTokenSchema,
+  disableTwoFactorSchema,
 } = require("../schemas/auth.schemas");
 
 const router = express.Router();
 
 router.post("/login", validate(loginSchema), userController.loginFunction);
-//router.post("/first-login/change-password", verifyFirstLoginToken, userController.changePasswordFirstLogin);
 
-// router.post(
-//   "/first-login/change-password",
-//   verifyFirstLoginToken,
-//   validate(firstLoginChangePasswordSchema),
-//   userController.changePasswordFirstLogin
-// );
+router.post(
+  "/first-login/change-password",
+  verifyFirstLoginToken,
+  validate(firstLoginChangePasswordSchema),
+  userController.changePasswordFirstLogin,
+);
+
+router.post(
+  "/change-password",
+  verifyToken,
+  validate(changePasswordSchema),
+  userController.changePassword,
+);
 
 router.post("/2fa/setup", verifyToken, userController.setupTwoFactorAuth);
 
