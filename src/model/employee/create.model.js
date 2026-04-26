@@ -33,10 +33,10 @@ exports.createDocumentRowWithUrl = async (employeeId, field, fileUrl) => {
       data: { document_id: uuidv4() },
     });
     await tx.employee_documents.create({
-      data: { 
-        document_id: newDoc.document_id, 
+      data: {
+        document_id: newDoc.document_id,
         employee_id: employeeId,
-        [field]: fileUrl  // ← ya con la URL
+        [field]: fileUrl, // ← ya con la URL
       },
     });
     return newDoc;

@@ -7,6 +7,7 @@ const RESPONSE = {
   DOCUMENTS: {
     NOT_FOUND: "Documento no encontrado",
     OK: "Documento obtenido",
+    DELETE: "Documento borrado",
     EMPTY: "No hay documentos",
     NOT_ALLOW: "Tipo de documento invalido",
     UPLOAD: "Se subió correctamente",

@@ -5,7 +5,11 @@ const {
   createDocumentRowWithUrl,
   updateDocumentField,
 } = require("../../model/employee/create.model");
-const { findById, findByCurp, findDocumentRowByEmployee } = require("../../model/employee/read.model");
+const {
+  findById,
+  findByCurp,
+  findDocumentRowByEmployee,
+} = require("../../model/employee/read.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
@@ -119,7 +123,6 @@ exports.createEmployee = async (data, user, req) => {
 };
 
 exports.uploadDocument = async (employeeId, file, documentField) => {
-  
   if (!validateField(documentField)) {
     return {
       type: RESPONSE.DOCUMENTS.NOT_ALLOW,
@@ -151,7 +154,11 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
       fileUrl,
     );
   } else {
-    resultDoc = await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
+    resultDoc = await createDocumentRowWithUrl(
+      employeeId,
+      documentField,
+      fileUrl,
+    );
   }
 
   return {
@@ -164,7 +171,10 @@ exports.updateDocument = async (employeeId, documentField, file) => {
   if (!validateField(documentField)) {
     return {
       type: RESPONSE.DOCUMENTS.NOT_ALLOW,
-      body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
+      body: {
+        success: false,
+        message: `Tipo de documento inválido: ${documentField}`,
+      },
     };
   }
 
@@ -182,7 +192,10 @@ exports.updateDocument = async (employeeId, documentField, file) => {
   if (!existingRow) {
     return {
       type: RESPONSE.DOCUMENTS.NOT_FOUND,
-      body: { success: false, message: "No se encontró documento del empleado" },
+      body: {
+        success: false,
+        message: "No se encontró documento del empleado",
+      },
     };
   }
 

@@ -4,7 +4,7 @@ const {
   uploadDocument,
   updateDocument,
 } = require("../../service/employee/create.service");
-const {RESPONSE} = require("../../utils/response");
+const { RESPONSE } = require("../../utils/response");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
@@ -40,28 +40,27 @@ exports.uploadDocument = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Faltan campos requeridos" });
     }
-    
-    
+
     const result = await uploadDocument(id, file, documentField);
-    if(result.type === RESPONSE.DOCUMENTS.UPLOAD){
+    if (result.type === RESPONSE.DOCUMENTS.UPLOAD) {
       try {
         await createLog(
           req.user.id,
           LOG_ACTIONS.DOCUMENT_UPLOADED,
           id,
           getClientIp(req),
-      );
+        );
       } catch (err) {
-          console.error("Error creando log:", err);
+        console.error("Error creando log:", err);
       }
       return res.status(201).json(result.body);
     }
 
-    if(result.type === RESPONSE.DOCUMENTS.NOT_ALLOW){
+    if (result.type === RESPONSE.DOCUMENTS.NOT_ALLOW) {
       return res.status(400).json(result.body);
     }
 
-    if(result.type === RESPONSE.USER.NOT_FOUND){
+    if (result.type === RESPONSE.USER.NOT_FOUND) {
       return res.status(404).json(result.body);
     }
   } catch (err) {
@@ -78,7 +77,9 @@ exports.updateDocument = async (req, res) => {
     const file = req.file;
 
     if (!id || !field || !file) {
-      return res.status(400).json({ success: false, message: "Faltan campos requeridos" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Faltan campos requeridos" });
     }
 
     const result = await updateDocument(id, field, file);
@@ -108,9 +109,10 @@ exports.updateDocument = async (req, res) => {
     if (result.type === RESPONSE.DOCUMENTS.NOT_FOUND) {
       return res.status(404).json(result.body);
     }
-
   } catch (err) {
     console.error("updateDocument error:", err);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
   }
 };
