@@ -1,7 +1,7 @@
 const {
-    generateToken,
-    // generateFirstLoginToken,
-    generatePre2faToken,
+  generateToken,
+  generateFirstLoginToken,
+  generatePre2faToken,
 } = require("../jwt");
 
 function buildUserPayload(employee) {
@@ -15,27 +15,21 @@ function buildUserPayload(employee) {
     };
 }
 
-function buildSessionToken(employee) {
+exports.buildSessionToken = (employee) => {
     return generateToken(buildUserPayload(employee));
 }
 
-// function buildFirstLoginJwt(employee) {
-//     return generateFirstLoginToken({
-//         id: employee.employeeId,
-//         email: employee.email,
-//     });
-// }
+exports.buildFirstLoginJwt = (employee) => {
+  return generateFirstLoginToken({
+    id: employee.employeeId,
+    email: employee.email,
+  });
+}
 
-function buildPre2faJwt(employee) {
+exports.buildPre2faJwt = (employee) => {
     return generatePre2faToken({
         id: employee.employeeId,
         email: employee.email,
     });
 }
 
-module.exports = {
-    buildUserPayload,
-    buildSessionToken,
-    // buildFirstLoginJwt,
-    buildPre2faJwt,
-};

@@ -1,0 +1,32 @@
+@startuml
+title US04 front - user cambia contraseña
+
+actor Usuario
+boundary "ChangePassword.jsx" as ChangePasswordPage
+control "AuthService.jsx" as AuthService
+boundary "Modal" as UI
+
+Usuario -> ChangePasswordPage : Captura actual, nueva y confirmación
+ChangePasswordPage -> ChangePasswordPage : Validar formato y confirmación
+
+alt Datos inválidos
+    ChangePasswordPage --> Usuario : Mostrar error de validación
+else Datos válidos
+    ChangePasswordPage -> AuthService : changePasswordService(data, sessionToken)
+
+    alt Token inválido/expirado
+        AuthService --> ChangePasswordPage : 401 Unauthorized
+        ChangePasswordPage -> UI : Mostrar sesión expirada
+    else Contraseña actual incorrecta
+        AuthService --> ChangePasswordPage : 401 Invalid credentials
+        ChangePasswordPage -> UI : Mostrar error
+    else Nueva igual a la actual
+        AuthService --> ChangePasswordPage : 400 New password must be different
+        ChangePasswordPage -> UI : Mostrar error
+    else Cambio exitoso
+        AuthService --> ChangePasswordPage : 200 Password changed successfully
+        ChangePasswordPage -> UI : Mostrar confirmación
+    end
+end
+
+@enduml
