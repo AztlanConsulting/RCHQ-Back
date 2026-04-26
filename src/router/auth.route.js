@@ -1,8 +1,8 @@
 const express = require("express");
 const verifyToken = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");
-const userController = require("../controller/user.controller");
-const userModel = require("../model/user.model");
+const userController = require("../controller/auth.controller");
+const userModel = require("../model/auth.model");
 const { authorize } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/employeeAdd.policies");
 // const verifyFirstLoginToken = require("../middleware/firstLoginAuth");

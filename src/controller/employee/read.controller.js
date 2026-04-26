@@ -3,7 +3,8 @@ const {
   getRoles,
   getById,
   getDocumentsByEmployee,
-} = require("../../service/employee/employeeGet.service");
+} = require("../../service/employee/read.service");
+const RESPONSE = require("../../utils/response");
 
 exports.getAdd = async (req, res) => {
   try {
@@ -47,7 +48,10 @@ exports.getDocumentsByEmployee = async (req, res) => {
       return res.status(400).json({ success: false, message: "Bad Request" });
 
     const result = await getDocumentsByEmployee(id);
-    return res.status(result.status).json(result.body);
+
+    if (result.response === RESPONSE.DOCUMENTS.OK) {
+      return res.status(200).json(result.body);
+    }
   } catch (err) {
     console.error("getDocumentsByEmployee error:", err);
     return res

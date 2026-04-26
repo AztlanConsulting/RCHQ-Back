@@ -1,8 +1,6 @@
 // controller/employee/employeeDelete.controller.js
 
-const {
-  deleteDocument,
-} = require("../../service/employee/employeeDelete.service");
+const { deleteDocument } = require("../../service/employee/delete.service");
 
 exports.deleteDocument = async (req, res) => {
   try {

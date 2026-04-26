@@ -1,13 +1,10 @@
-//service/employee/employeeGet.service.js
-
 const {
   findById,
-  findByCurp,
   getAllRoles,
-  getDocumentsByEmployee,
   findDocumentRowByEmployee,
 } = require("../../model/employee/read.model");
 const { createDocumentRow } = require("../../model/employee/create.model");
+const { RESPONSE } = require("../../utils/response");
 
 exports.getById = async (id) => {
   return await findById(id);
@@ -19,19 +16,27 @@ exports.getRoles = async () => {
 
 exports.getDocumentsByEmployee = async (employeeId) => {
   const employee = await findById(employeeId);
+
   if (!employee) {
     return {
-      status: 404,
-      body: { success: false, message: "Employee not found" },
+      type: RESPONSE.USER.NOT_FOUND,
+      data: null,
     };
   }
 
   const docRow = await findDocumentRowByEmployee(employeeId);
+
   if (!docRow) {
-    return { status: 200, body: { success: true, data: null } };
+    return {
+      type: RESPONSE.DOCUMENT.NOT_FOUND,
+      data: null,
+    };
   }
 
-  return { status: 200, body: { success: true, data: docRow } };
+  return {
+    type: RESPONSE.DOCUMENT.OK,
+    data: docRow,
+  };
 };
 
 exports.getOrCreateDocRow = async (employeeId) => {

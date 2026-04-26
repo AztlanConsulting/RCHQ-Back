@@ -2,15 +2,10 @@
 
 const {
   create,
-  createDocumentRow,
   updateDocumentField,
 } = require("../../model/employee/create.model");
-const { getOrCreateDocRow } = require("./employeeGet.service");
-const {
-  findById,
-  findByCurp,
-  getAllRoles,
-} = require("../../model/employee/read.model");
+const { getOrCreateDocRow } = require("./read.service");
+const { findById, findByCurp } = require("../../model/employee/read.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
@@ -21,7 +16,6 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
 const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
-const fs = require("fs");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
 

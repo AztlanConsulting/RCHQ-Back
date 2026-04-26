@@ -1,4 +1,4 @@
-const User = require("../model/user.model");
+const User = require("../model/auth.model");
 const { verifyPassword } = require("../utils/password");
 const { getClientIp } = require("../utils/ip");
 const { createLog } = require("../model/log.model");
@@ -369,7 +369,8 @@ async function verifyTwoFactorSetup(req) {
 
   const createdAt = new Date(employee.tempTotpSecretCreatedAt);
   const expiresAt = new Date(
-    createdAt.getTime() + TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES * 60 * 1000,
+    createdAt.getTime() +
+      TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES * 60 * 1000,
   );
 
   if (expiresAt <= new Date()) {
@@ -490,7 +491,10 @@ async function validateTwoFactorAuth(req) {
   if (!employee.totpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "TwoFactorAuth is not enabled for this account" },
+      body: {
+        success: false,
+        message: "TwoFactorAuth is not enabled for this account",
+      },
     };
   }
 
@@ -516,7 +520,9 @@ async function validateTwoFactorAuth(req) {
   });
 
   if (!isValid) {
-    const attempts = await User.incrementFailedTwoFactorAuthAttempts(employee.employeeId);
+    const attempts = await User.incrementFailedTwoFactorAuthAttempts(
+      employee.employeeId,
+    );
 
     await createLog(
       employee.employeeId,
@@ -527,7 +533,10 @@ async function validateTwoFactorAuth(req) {
     if (attempts >= 3) {
       const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
 
-      await User.setTwoFactorAuthBlockedUntil(employee.employeeId, blockedUntil);
+      await User.setTwoFactorAuthBlockedUntil(
+        employee.employeeId,
+        blockedUntil,
+      );
 
       await createLog(
         employee.employeeId,
@@ -635,7 +644,10 @@ async function disableTwoFactorAuth(req) {
   if (!password) {
     return {
       status: 400,
-      body: { success: false, message: "Password is required to disable TwoFactorAuth" },
+      body: {
+        success: false,
+        message: "Password is required to disable TwoFactorAuth",
+      },
     };
   }
 
@@ -664,7 +676,10 @@ async function disableTwoFactorAuth(req) {
   if (!employee.totpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "TwoFactorAuth is not enabled for this account" },
+      body: {
+        success: false,
+        message: "TwoFactorAuth is not enabled for this account",
+      },
     };
   }
 

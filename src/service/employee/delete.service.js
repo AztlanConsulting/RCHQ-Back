@@ -1,7 +1,5 @@
 //service/employee/employeeDelete.service.js
-const {
-  clearDocumentField,
-} = require("../../model/employee/delete.model");
+const { clearDocumentField } = require("../../model/employee/delete.model");
 const {
   findById,
   findDocumentRowByEmployee,
@@ -46,7 +44,7 @@ exports.deleteDocument = async (employeeId, documentField, user, req) => {
     try {
       fs.unlinkSync(currentUrl);
     } catch (err) {
-      console.error("delete error: ", err)
+      console.error("delete error: ", err);
     }
   }
 

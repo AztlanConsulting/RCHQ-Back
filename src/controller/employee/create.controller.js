@@ -3,7 +3,7 @@ const {
   createEmployee,
   uploadDocument,
   updateDocument,
-} = require("../../service/employee/employeeAdd.service");
+} = require("../../service/employee/create.service");
 
 exports.postAdd = async (req, res) => {
   try {

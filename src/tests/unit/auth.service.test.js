@@ -24,7 +24,7 @@ jest.mock("../../prisma", () => ({
 jest.mock("speakeasy");
 jest.mock("qrcode");
 
-const User = require("../../model/user.model");
+const User = require("../../model/auth.model");
 const { verifyPassword } = require("../../utils/password");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
@@ -203,7 +203,10 @@ describe("login", () => {
 
     // Assert
     expect(result.status).toBe(200);
-    expect(result.body).toHaveProperty("preTwoFactorAuthToken", "fake-preTwoFactorAuth-token");
+    expect(result.body).toHaveProperty(
+      "preTwoFactorAuthToken",
+      "fake-preTwoFactorAuth-token",
+    );
     expect(result.body.isActiveTwoFactorAuth).toBe(true);
     expect(result.body.data).toBeUndefined();
   });

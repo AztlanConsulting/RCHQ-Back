@@ -371,7 +371,10 @@ describe("POST /users/2fa/disable - integration", () => {
 
   it("retorna 409 si TwoFactorAuth no está activo en BD", async () => {
     // Arrange
-    await createTestEmployee({ is_active_two_factor_auth: false, totp_secret: null });
+    await createTestEmployee({
+      is_active_two_factor_auth: false,
+      totp_secret: null,
+    });
     const token = generateSessionToken();
 
     // Act

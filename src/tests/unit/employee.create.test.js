@@ -24,9 +24,7 @@ jest.mock("../../utils/IP", () => ({
   getClientIp: jest.fn(() => "127.0.0.1"),
 }));
 
-const {
-  createEmployee,
-} = require("../../service/employee/employeeAdd.service");
+const { createEmployee } = require("../../service/employee/create.service");
 
 // =====================================================
 // TEST SUITE

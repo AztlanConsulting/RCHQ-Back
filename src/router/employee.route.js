@@ -4,12 +4,16 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { authorize } = require("../middleware/abac");
-const { createEmployeePolicy } = require("../policies/employeeAdd.policies");
+const {
+  createEmployeePolicy,
+  viewDocuments,
+  modifyDocuments,
+} = require("../policies/employeeAdd.policies");
 const upload = require("../middleware/upload");
 const { uploadDocs } = require("../middleware/uploadDocs");
-const employeeGetController = require("../controller/employee/employeeGet.controller");
-const employeeAddController = require("../controller/employee/employeeAdd.controller");
-const employeeDeleteController = require("../controller/employee/employeeDelete.controller");
+const employeeGetController = require("../controller/employee/read.controller");
+const employeeAddController = require("../controller/employee/create.controller");
+const employeeDeleteController = require("../controller/employee/delete.controller");
 
 router.get("/add", verifyToken, employeeGetController.getAdd);
 router.get("/:id", employeeGetController.getById);
@@ -22,16 +26,17 @@ router.post(
   employeeAddController.postAdd,
 );
 
-// Documentos
 router.get(
   "/:id/documents",
   verifyToken,
+  authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
   employeeGetController.getDocumentsByEmployee,
 );
 
 router.post(
   "/:id/documents",
   verifyToken,
+  authorize(modifyDocuments),
   uploadDocs.single("file"),
   employeeAddController.uploadDocument,
 );
@@ -39,6 +44,7 @@ router.post(
 router.put(
   "/:id/documents/:field",
   verifyToken,
+  authorize(modifyDocuments),
   uploadDocs.single("file"),
   employeeAddController.updateDocument,
 );
@@ -46,6 +52,7 @@ router.put(
 router.delete(
   "/:id/documents/:field",
   verifyToken,
+  authorize(modifyDocuments),
   employeeDeleteController.deleteDocument,
 );
 
