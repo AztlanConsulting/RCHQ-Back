@@ -10,7 +10,7 @@ const {
 
 // ─── Mocks ────────────────────────────────────────────────
 
-jest.mock("../../model/user.model");
+jest.mock("../../model/auth.model");
 jest.mock("../../utils/password");
 jest.mock("../../model/log.model");
 jest.mock("../../utils/ip");

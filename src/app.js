@@ -20,7 +20,7 @@ app.use(
 //const xd = require("./utils/mail");
 
 const userRouter = require("./router/auth.route");
-app.use("/users", userRouter);
+app.use("/auth", userRouter);
 
 const employeeRouter = require("./router/employee.route");
 app.use("/employee", employeeRouter);
