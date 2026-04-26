@@ -9,6 +9,8 @@ jest.mock("../../model/user.model", () => ({
   incrementFailed2FAAttempts: jest.fn(),
   set2FABlockedUntil: jest.fn(),
   clear2FASecurityState: jest.fn(),
+  activateTwoFactorFromTempSecret: jest.fn(),
+  disableTwoFactor: jest.fn(),
 }));
 
 jest.mock("../../utils/password", () => ({
@@ -406,14 +408,9 @@ describe("verifyTwoFactorSetup", () => {
 
   it("activa 2FA correctamente cuando el token es válido", async () => {
     const createdAt = new Date();
-    const mockUpdate = jest.fn().mockResolvedValue({});
-    const mockFindUnique = jest
-      .fn()
-      .mockResolvedValue({ temp_totp_secret: "SECRETBASE32" });
-
-    prisma.$transaction.mockImplementation((cb) =>
-      cb({ employee: { update: mockUpdate, findUnique: mockFindUnique } }),
-    );
+    const mockTx = {};
+    prisma.$transaction.mockImplementation((cb) => cb(mockTx));
+    User.activateTwoFactorFromTempSecret.mockResolvedValue();
 
     User.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
@@ -426,6 +423,10 @@ describe("verifyTwoFactorSetup", () => {
       makeReq({ token: "123456" }, { id: "abc-123" }),
     );
 
+    expect(User.activateTwoFactorFromTempSecret).toHaveBeenCalledWith(
+      "abc-123",
+      mockTx,
+    );
     expect(result.status).toBe(200);
     expect(result.body.nextStep).toBe("2FA_SETUP_COMPLETE");
   });
@@ -651,11 +652,10 @@ describe("disableTwoFactorAuth", () => {
   });
 
   it("desactiva 2FA correctamente y limpia los secrets", async () => {
-    const mockUpdate = jest.fn().mockResolvedValue({});
-    prisma.$transaction.mockImplementation((cb) =>
-      cb({ employee: { update: mockUpdate } }),
-    );
-
+    const mockTx = {};
+    prisma.$transaction.mockImplementation((cb) => cb(mockTx));
+    User.disableTwoFactor.mockResolvedValue();
+    
     User.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "SECRET",
@@ -666,6 +666,7 @@ describe("disableTwoFactorAuth", () => {
       makeReq({ password: "correct" }, { id: "abc-123" }),
     );
 
+    expect(User.disableTwoFactor).toHaveBeenCalledWith("abc-123", mockTx);
     expect(result.status).toBe(200);
     expect(result.body.nextStep).toBe("2FA_DISABLED");
     expect(result.body.data.twoFactorEnabled).toBe(false);

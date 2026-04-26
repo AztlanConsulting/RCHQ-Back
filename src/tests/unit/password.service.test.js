@@ -4,6 +4,7 @@ jest.mock("../../prisma", () => ({
 
 jest.mock("../../model/user.model", () => ({
     getEmployeeById: jest.fn(),
+    updatePassword: jest.fn(),
     updatePasswordAndClearFirstLogin: jest.fn(),
 }));
 
@@ -158,11 +159,7 @@ describe("password.service", () => {
                 .mockResolvedValueOnce(true)
                 .mockResolvedValueOnce(false);
 
-            const mockTx = {
-                employee: {
-                    update: jest.fn().mockResolvedValue({}),
-                },
-            };
+            const mockTx = {};
 
             prisma.$transaction.mockImplementation(async (cb) => cb(mockTx));
 
@@ -174,12 +171,11 @@ describe("password.service", () => {
             });
 
             expect(hashPassword).toHaveBeenCalledWith("Nueva123A");
-            expect(mockTx.employee.update).toHaveBeenCalledWith({
-                where: { employee_id: "emp-123" },
-                data: {
-                    password: "new-hashed-password",
-                },
-            });
+            expect(User.updatePassword).toHaveBeenCalledWith(
+                "emp-123",
+                "new-hashed-password",
+                mockTx,
+            );
             expect(createLog).toHaveBeenCalled();
             expect(result.status).toBe(200);
             expect(result.body.success).toBe(true);
