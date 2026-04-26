@@ -1,12 +1,31 @@
 const prisma = require("../../prisma");
 
-const getEmployees = async (houseId, active, skip, take) => {
+const getEmployees = async (houseId, active, search, skip, take) => {
+    const where = {
+        house_id: houseId,
+        is_active: active,
+    };
+
+    if (search) {
+        where.OR = [
+            {
+                name: {
+                    contains: search,
+                    mode: "insensitive",
+                },
+            },
+            {
+                surname: {
+                    contains: search,
+                    mode: "insensitive",
+                },
+            },
+        ];
+    }
+
     const [employees, total] = await Promise.all([
         prisma.employee.findMany({
-            where: {
-                house_id: houseId,
-                is_active: active,
-            },
+            where,
             select: {
                 employee_id: true,
                 name: true,
@@ -26,12 +45,7 @@ const getEmployees = async (houseId, active, skip, take) => {
             take,
         }),
 
-        prisma.employee.count({
-            where: {
-                house_id: houseId,
-                is_active: active,
-            },
-        }),
+        prisma.employee.count({ where }),
     ]);
 
     return {

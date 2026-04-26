@@ -5,6 +5,7 @@ const getEmployeesService = async (
     activeQuery,
     pageQuery,
     limitQuery,
+    searchQuery,
 ) => {
     const active = activeQuery === "false" ? false : true;
 
@@ -12,13 +13,14 @@ const getEmployeesService = async (
     const limit = Number(limitQuery) > 0 ? Number(limitQuery) : 6;
 
     const skip = (page - 1) * limit;
-    const take = limit;
+    const search = searchQuery?.trim() || "";
 
     const { employees, total } = await getEmployees(
         houseId,
         active,
+        search,
         skip,
-        take,
+        limit,
     );
 
     const totalPages = Math.ceil(total / limit);

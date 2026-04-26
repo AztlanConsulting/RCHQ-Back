@@ -5,9 +5,15 @@ const {
 const getAll = async (req, res) => {
     try {
         const { houseId } = req.user;
-        const { active, page, limit } = req.query;
+        const { active, page, limit, search } = req.query;
 
-        const result = await getEmployeesService(houseId, active, page, limit);
+        const result = await getEmployeesService(
+            houseId,
+            active,
+            page,
+            limit,
+            search,
+        );
 
         return res.status(200).json({
             success: true,
