@@ -5,13 +5,14 @@ const {
 const getAll = async (req, res) => {
     try {
         const { houseId } = req.user;
-        const { active } = req.query;
+        const { active, page, limit } = req.query;
 
-        const employees = await getEmployeesService(houseId, active);
+        const result = await getEmployeesService(houseId, active, page, limit);
 
         return res.status(200).json({
             success: true,
-            data: employees,
+            data: result.data,
+            pagination: result.pagination,
         });
     } catch (error) {
         console.error("Error obteniendo a los empleados: ", error);
