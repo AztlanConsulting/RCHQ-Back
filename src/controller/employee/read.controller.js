@@ -1,10 +1,9 @@
-// controller/employee/employeeGet.controller.js
 const {
   getRoles,
   getById,
   getDocumentsByEmployee,
 } = require("../../service/employee/read.service");
-const RESPONSE = require("../../utils/response");
+const { RESPONSE } = require("../../utils/response");
 
 exports.getAdd = async (req, res) => {
   try {
@@ -49,8 +48,18 @@ exports.getDocumentsByEmployee = async (req, res) => {
 
     const result = await getDocumentsByEmployee(id);
 
-    if (result.response === RESPONSE.DOCUMENTS.OK) {
-      return res.status(200).json(result.body);
+    if (result.type === RESPONSE.DOCUMENTS.OK) {
+      return res.status(200).json({ success: true, body: result.body });
+    }
+    if (result.type === RESPONSE.DOCUMENTS.NOT_FOUND) {
+      return res
+        .status(200)
+        .json({ success: true, message: "El empleado no tiene documentos" });
+    }
+    if (result.type === RESPONSE.USER.NOT_FOUND) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Empleado no encontrado" });
     }
   } catch (err) {
     console.error("getDocumentsByEmployee error:", err);

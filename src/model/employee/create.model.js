@@ -30,15 +30,20 @@ exports.create = async (employeeData) => {
 exports.createDocumentRowWithUrl = async (employeeId, field, fileUrl) => {
   return await prisma.$transaction(async (tx) => {
     const newDoc = await tx.documents.create({
-      data: { document_id: uuidv4() },
+      data: {
+        document_id: uuidv4(),
+        [field]: fileUrl,
+      },
     });
+
     await tx.employee_documents.create({
       data: {
         document_id: newDoc.document_id,
         employee_id: employeeId,
-        [field]: fileUrl, // ← ya con la URL
+        url: fileUrl,
       },
     });
+
     return newDoc;
   });
 };

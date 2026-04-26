@@ -19,7 +19,7 @@ exports.getDocumentsByEmployee = async (employeeId) => {
   if (!employee) {
     return {
       type: RESPONSE.USER.NOT_FOUND,
-      data: null,
+      body: null,
     };
   }
 
@@ -27,13 +27,13 @@ exports.getDocumentsByEmployee = async (employeeId) => {
 
   if (!docRow) {
     return {
-      type: RESPONSE.DOCUMENT.NOT_FOUND,
-      data: null,
+      type: RESPONSE.DOCUMENTS.NOT_FOUND,
+      body: null,
     };
   }
 
   return {
-    type: RESPONSE.DOCUMENT.OK,
-    data: docRow,
+    type: RESPONSE.DOCUMENTS.OK,
+    body: docRow,
   };
 };

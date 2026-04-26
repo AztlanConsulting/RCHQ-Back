@@ -9,14 +9,13 @@ const createEmployeePolicy = (user) => {
 };
 
 const viewDocuments = (user, resource) => {
-  if (user.role === "Administradora" || user.role === "Coordinadora")
-    return true;
-  if (resource?.employeeId == user.userId) return true;
+  if (user.role === "Administrador" || user.role === "Coordinador") return true;
+  if (resource?.employeeId == user.id) return true;
   return false;
 };
 
 const modifyDocuments = (user) => {
-  return user.role === "Administradora" || user.role === "Coordinadora";
+  return user.role === "Administrador" || user.role === "Coordinador";
 };
 
 module.exports = {
