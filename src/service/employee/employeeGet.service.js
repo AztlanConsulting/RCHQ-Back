@@ -6,8 +6,8 @@ const {
   getAllRoles,
   getDocumentsByEmployee,
   findDocumentRowByEmployee,
-} = require("../../model/employee/employeeGet.model");
-const { createDocumentRow } = require("../../model/employee/employeeAdd.model");
+} = require("../../model/employee/read.model");
+const { createDocumentRow } = require("../../model/employee/create.model");
 
 exports.getById = async (id) => {
   return await findById(id);

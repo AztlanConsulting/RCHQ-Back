@@ -4,13 +4,13 @@ const {
   create,
   createDocumentRow,
   updateDocumentField,
-} = require("../../model/employee/employeeAdd.model");
+} = require("../../model/employee/create.model");
 const { getOrCreateDocRow } = require("./employeeGet.service");
 const {
   findById,
   findByCurp,
   getAllRoles,
-} = require("../../model/employee/employeeGet.model");
+} = require("../../model/employee/read.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");

@@ -54,7 +54,7 @@ const createTestEmployee = async (overrides = {}) => {
       start_date: new Date("2024-01-01"),
       has_first_login: false,
       is_active: true,
-      is_active_2fa: false,
+      is_active_two_factor_auth: false,
       failed_login_attempts: 0,
       ...overrides,
     },
@@ -190,10 +190,10 @@ describe("POST /users/login - integration", () => {
     expect(emp.blocked_until).not.toBeNull();
   });
 
-  it("retorna pre2FAToken cuando el usuario tiene 2FA activo", async () => {
+  it("retorna preTwoFactorAuthToken cuando el usuario tiene TwoFactorAuth activo", async () => {
     // Arrange
     await createTestEmployee({
-      is_active_2fa: true,
+      is_active_two_factor_auth: true,
       totp_secret: "FAKESECRET",
     });
 
@@ -204,8 +204,8 @@ describe("POST /users/login - integration", () => {
 
     // Assert
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("pre2FAToken");
-    expect(res.body.isActive2FA).toBe(true);
+    expect(res.body).toHaveProperty("preTwoFactorAuthToken");
+    expect(res.body.isActiveTwoFactorAuth).toBe(true);
   });
 
   it("limpia el estado de seguridad en BD tras login exitoso", async () => {
@@ -245,15 +245,15 @@ describe("POST /users/2fa/setup - integration", () => {
     // Assert
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toHaveProperty("qrImage");
-    expect(res.body.nextStep).toBe("VERIFY_2FA_SETUP");
+    expect(res.body.nextStep).toBe("VERIFY_TwoFactorAuth_SETUP");
     expect(emp.temp_totp_secret).not.toBeNull();
   });
 
-  it("retorna 409 si 2FA ya está configurado en BD", async () => {
+  it("retorna 409 si TwoFactorAuth ya está configurado en BD", async () => {
     // Arrange
     await createTestEmployee({
       totp_secret: "EXISTINGSECRET",
-      is_active_2fa: true,
+      is_active_two_factor_auth: true,
     });
     const token = generateSessionToken();
 
@@ -322,10 +322,10 @@ describe("POST /users/2fa/verify - integration", () => {
 
 // ─── DISABLE 2FA ──────────────────────────────────────────
 describe("POST /users/2fa/disable - integration", () => {
-  it("desactiva 2FA y limpia secrets en BD con contraseña correcta", async () => {
+  it("desactiva TwoFactorAuth y limpia secrets en BD con contraseña correcta", async () => {
     // Arrange
     await createTestEmployee({
-      is_active_2fa: true,
+      is_active_two_factor_auth: true,
       totp_secret: "FAKESECRET",
     });
     const token = generateSessionToken();
@@ -341,15 +341,15 @@ describe("POST /users/2fa/disable - integration", () => {
 
     // Assert
     expect(res.statusCode).toBe(200);
-    expect(res.body.nextStep).toBe("2FA_DISABLED");
+    expect(res.body.nextStep).toBe("TwoFactorAuth_DISABLED");
     expect(emp.totp_secret).toBeNull();
-    expect(emp.is_active_2fa).toBe(false);
+    expect(emp.is_active_two_factor_auth).toBe(false);
   });
 
   it("retorna 401 con contraseña incorrecta y NO modifica la BD", async () => {
     // Arrange
     await createTestEmployee({
-      is_active_2fa: true,
+      is_active_two_factor_auth: true,
       totp_secret: "FAKESECRET",
     });
     const token = generateSessionToken();
@@ -366,12 +366,12 @@ describe("POST /users/2fa/disable - integration", () => {
     // Assert
     expect(res.statusCode).toBe(401);
     expect(emp.totp_secret).toBe("FAKESECRET");
-    expect(emp.is_active_2fa).toBe(true);
+    expect(emp.is_active_two_factor_auth).toBe(true);
   });
 
-  it("retorna 409 si 2FA no está activo en BD", async () => {
+  it("retorna 409 si TwoFactorAuth no está activo en BD", async () => {
     // Arrange
-    await createTestEmployee({ is_active_2fa: false, totp_secret: null });
+    await createTestEmployee({ is_active_two_factor_auth: false, totp_secret: null });
     const token = generateSessionToken();
 
     // Act
@@ -387,9 +387,9 @@ describe("POST /users/2fa/disable - integration", () => {
 
 // ─── GET STATUS 2FA ───────────────────────────────────────
 describe("GET /users/status/2FA - integration", () => {
-  it("retorna false si 2FA no está activo en BD", async () => {
+  it("retorna false si TwoFactorAuth no está activo en BD", async () => {
     // Arrange
-    await createTestEmployee({ is_active_2fa: false });
+    await createTestEmployee({ is_active_two_factor_auth: false });
     const token = generateSessionToken();
 
     // Act
@@ -399,13 +399,13 @@ describe("GET /users/status/2FA - integration", () => {
 
     // Assert
     expect(res.statusCode).toBe(200);
-    expect(res.body.Status2FA).toBe(false);
+    expect(res.body.StatusTwoFactorAuth).toBe(false);
   });
 
-  it("retorna true si 2FA está activo en BD", async () => {
+  it("retorna true si TwoFactorAuth está activo en BD", async () => {
     // Arrange
     await createTestEmployee({
-      is_active_2fa: true,
+      is_active_two_factor_auth: true,
       totp_secret: "FAKESECRET",
     });
     const token = generateSessionToken();
@@ -417,7 +417,7 @@ describe("GET /users/status/2FA - integration", () => {
 
     // Assert
     expect(res.statusCode).toBe(200);
-    expect(res.body.Status2FA).toBe(true);
+    expect(res.body.StatusTwoFactorAuth).toBe(true);
   });
 
   it("retorna 401 sin token de sesión", async () => {

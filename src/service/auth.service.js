@@ -8,16 +8,16 @@ const { LOG_ACTIONS } = require("../utils/logActions");
 const {
   buildSessionToken,
   // buildFirstLoginJwt,
-  buildPre2faJwt,
+  buildPreTwoFactorAuthJwt,
 } = require("../utils/auth/authTokens");
 const {
   isBlockedUntil,
   clearExpiredLoginBlock,
-  clearExpired2FABlock,
+  clearExpiredTwoFactorAuthBlock,
 } = require("../utils/auth/authGuards");
 const prisma = require("../prisma");
 
-const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
+const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
 const MAX_LOGIN_ATTEMPTS = 3;
 
@@ -113,15 +113,15 @@ async function login(req) {
 
   await User.clearLoginSecurityState(employee.employeeId);
 
-  if (employee.isActive2FA) {
-    const pre2FAToken = buildPre2faJwt(employee);
+  if (employee.isActiveTwoFactorAuth) {
+    const preTwoFactorAuthToken = buildPreTwoFactorAuthJwt(employee);
     return {
       status: 200,
       body: {
         success: true,
         message: "Inicio de sesión exitoso",
-        isActive2FA: employee.isActive2FA,
-        pre2FAToken,
+        isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
+        preTwoFactorAuthToken,
       },
     };
   }
@@ -135,7 +135,7 @@ async function login(req) {
     body: {
       success: true,
       message: "Inicio de sesión exitoso",
-      isActive2FA: employee.isActive2FA,
+      isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
       data: {
         token,
         user: {
@@ -234,14 +234,14 @@ async function login(req) {
 //         body: {
 //             success: true,
 //             message: "Password changed successfully",
-//             nextStep: "SETUP_2FA_OPTIONAL",
+//             nextStep: "SETUP_TwoFactorAuth_OPTIONAL",
 //             token,
 //             data: {
 //                 employeeId: employee.employeeId,
 //                 email: employee.email,
 //                 name: employee.name,
 //                 role: employee.role,
-//                 shouldPrompt2FASetup: true,
+//                 shouldPromptTwoFactorAuthSetup: true,
 //             },
 //         },
 //     };
@@ -285,7 +285,7 @@ async function setupTwoFactorAuth(req) {
       status: 409,
       body: {
         success: false,
-        message: "2FA is already enabled for this account",
+        message: "TwoFactorAuth is already enabled for this account",
       },
     };
   }
@@ -304,8 +304,8 @@ async function setupTwoFactorAuth(req) {
     status: 200,
     body: {
       success: true,
-      message: "2FA setup started",
-      nextStep: "VERIFY_2FA_SETUP",
+      message: "TwoFactorAuth setup started",
+      nextStep: "VERIFY_TwoFactorAuth_SETUP",
       data: {
         employeeId: employee.employeeId,
         qrImage,
@@ -352,7 +352,7 @@ async function verifyTwoFactorSetup(req) {
   if (!employee.tempTotpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "No pending 2FA setup found" },
+      body: { success: false, message: "No pending TwoFactorAuth setup found" },
     };
   }
 
@@ -362,14 +362,14 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "Invalid pending 2FA setup state",
+        message: "Invalid pending TwoFactorAuth setup state",
       },
     };
   }
 
   const createdAt = new Date(employee.tempTotpSecretCreatedAt);
   const expiresAt = new Date(
-    createdAt.getTime() + TEMP_2FA_SETUP_EXPIRATION_MINUTES * 60 * 1000,
+    createdAt.getTime() + TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES * 60 * 1000,
   );
 
   if (expiresAt <= new Date()) {
@@ -379,7 +379,7 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "Pending 2FA setup has expired. Please start again.",
+        message: "Pending TwoFactorAuth setup has expired. Please start again.",
       },
     };
   }
@@ -402,8 +402,8 @@ async function verifyTwoFactorSetup(req) {
       status: 400,
       body: {
         success: false,
-        message: "Invalid 2FA code. Setup could not be completed.",
-        nextStep: "2FA_SETUP_FAILED",
+        message: "Invalid TwoFactorAuth code. Setup could not be completed.",
+        nextStep: "TwoFactorAuth_SETUP_FAILED",
         data: {
           employeeId: employee.employeeId,
           canRetryInSettings: true,
@@ -426,7 +426,7 @@ async function verifyTwoFactorSetup(req) {
         totp_secret: employeeInTx?.temp_totp_secret ?? null,
         temp_totp_secret: null,
         temp_totp_secret_created_at: null,
-        is_active_2fa: true,
+        is_active_two_factor_auth: true,
       },
     });
 
@@ -443,8 +443,8 @@ async function verifyTwoFactorSetup(req) {
     status: 200,
     body: {
       success: true,
-      message: "2FA activated successfully",
-      nextStep: "2FA_SETUP_COMPLETE",
+      message: "TwoFactorAuth activated successfully",
+      nextStep: "TwoFactorAuth_SETUP_COMPLETE",
       data: {
         employeeId: employee.employeeId,
         twoFactorEnabled: true,
@@ -490,7 +490,7 @@ async function validateTwoFactorAuth(req) {
   if (!employee.totpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "2FA is not enabled for this account" },
+      body: { success: false, message: "TwoFactorAuth is not enabled for this account" },
     };
   }
 
@@ -499,14 +499,14 @@ async function validateTwoFactorAuth(req) {
       status: 423,
       body: {
         success: false,
-        message: "2FA temporarily blocked",
-        nextStep: "WAIT_2FA_BLOCK",
+        message: "TwoFactorAuth temporarily blocked",
+        nextStep: "WAIT_TwoFactorAuth_BLOCK",
         blockedUntil: employee.twoFaBlockedUntil,
       },
     };
   }
 
-  await clearExpired2FABlock(employee);
+  await clearExpiredTwoFactorAuthBlock(employee);
 
   const isValid = speakeasy.totp.verify({
     secret: employee.totpSecret,
@@ -516,7 +516,7 @@ async function validateTwoFactorAuth(req) {
   });
 
   if (!isValid) {
-    const attempts = await User.incrementFailed2FAAttempts(employee.employeeId);
+    const attempts = await User.incrementFailedTwoFactorAuthAttempts(employee.employeeId);
 
     await createLog(
       employee.employeeId,
@@ -527,7 +527,7 @@ async function validateTwoFactorAuth(req) {
     if (attempts >= 3) {
       const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
 
-      await User.set2FABlockedUntil(employee.employeeId, blockedUntil);
+      await User.setTwoFactorAuthBlockedUntil(employee.employeeId, blockedUntil);
 
       await createLog(
         employee.employeeId,
@@ -539,8 +539,8 @@ async function validateTwoFactorAuth(req) {
         status: 423,
         body: {
           success: false,
-          message: "2FA temporarily blocked",
-          nextStep: "WAIT_2FA_BLOCK",
+          message: "TwoFactorAuth temporarily blocked",
+          nextStep: "WAIT_TwoFactorAuth_BLOCK",
           blockedUntil,
         },
       };
@@ -548,11 +548,11 @@ async function validateTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid 2FA token" },
+      body: { success: false, message: "Invalid TwoFactorAuth token" },
     };
   }
 
-  await User.clear2FASecurityState(employee.employeeId);
+  await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
   const tokenJwt = buildSessionToken(employee);
 
@@ -566,7 +566,7 @@ async function validateTwoFactorAuth(req) {
     status: 200,
     body: {
       success: true,
-      message: "2FA validation successful",
+      message: "TwoFactorAuth validation successful",
       nextStep: "LOGIN_COMPLETE",
       token: tokenJwt,
       data: {
@@ -579,7 +579,7 @@ async function validateTwoFactorAuth(req) {
   };
 }
 
-async function getStatus2FA(req) {
+async function getTwoFactorAuthStatus(req) {
   const employeeId = req.user?.id;
   const ipAddress = getClientIp(req);
 
@@ -615,7 +615,7 @@ async function getStatus2FA(req) {
     status: 200,
     body: {
       success: true,
-      Status2FA: employee.isActive2FA,
+      StatusTwoFactorAuth: employee.isActiveTwoFactorAuth,
     },
   };
 }
@@ -635,7 +635,7 @@ async function disableTwoFactorAuth(req) {
   if (!password) {
     return {
       status: 400,
-      body: { success: false, message: "Password is required to disable 2FA" },
+      body: { success: false, message: "Password is required to disable TwoFactorAuth" },
     };
   }
 
@@ -664,7 +664,7 @@ async function disableTwoFactorAuth(req) {
   if (!employee.totpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "2FA is not enabled for this account" },
+      body: { success: false, message: "TwoFactorAuth is not enabled for this account" },
     };
   }
 
@@ -690,7 +690,7 @@ async function disableTwoFactorAuth(req) {
         totp_secret: null,
         temp_totp_secret: null,
         temp_totp_secret_created_at: null,
-        is_active_2fa: false,
+        is_active_two_factor_auth: false,
       },
     });
 
@@ -707,12 +707,12 @@ async function disableTwoFactorAuth(req) {
     status: 200,
     body: {
       success: true,
-      message: "2FA disabled successfully",
-      nextStep: "2FA_DISABLED",
+      message: "TwoFactorAuth disabled successfully",
+      nextStep: "TwoFactorAuth_DISABLED",
       data: {
         employeeId: employee.employeeId,
         twoFactorEnabled: false,
-        isActive2FA: false,
+        isActiveTwoFactorAuth: false,
       },
     },
   };
@@ -724,6 +724,6 @@ module.exports = {
   setupTwoFactorAuth,
   verifyTwoFactorSetup,
   validateTwoFactorAuth,
-  getStatus2FA,
+  getTwoFactorAuthStatus,
   disableTwoFactorAuth,
 };

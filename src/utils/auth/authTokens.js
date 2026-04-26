@@ -1,7 +1,7 @@
 const {
   generateToken,
   // generateFirstLoginToken,
-  generatePre2faToken,
+  generatePreTwoFactorAuthToken,
 } = require("../jwt");
 
 function buildUserPayload(employee) {
@@ -26,8 +26,8 @@ function buildSessionToken(employee) {
 //     });
 // }
 
-function buildPre2faJwt(employee) {
-  return generatePre2faToken({
+function buildPreTwoFactorAuthJwt(employee) {
+  return generatePreTwoFactorAuthToken({
     id: employee.employeeId,
     email: employee.email,
   });
@@ -37,5 +37,5 @@ module.exports = {
   buildUserPayload,
   buildSessionToken,
   // buildFirstLoginJwt,
-  buildPre2faJwt,
+  buildPreTwoFactorAuthJwt,
 };

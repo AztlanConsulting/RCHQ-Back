@@ -1,11 +1,11 @@
 //service/employee/employeeDelete.service.js
 const {
   clearDocumentField,
-} = require("../../model/employee/employeeDelete.model");
+} = require("../../model/employee/delete.model");
 const {
   findById,
   findDocumentRowByEmployee,
-} = require("../../model/employee/employeeGet.model");
+} = require("../../model/employee/read.model");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");

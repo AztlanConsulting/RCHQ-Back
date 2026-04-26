@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const verifyPre2faToken = (req, res, next) => {
+const verifyPreTwoFactorAuthToken = (req, res, next) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -17,10 +17,10 @@ const verifyPre2faToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (decoded.tokenType !== "PRE_2FA") {
+    if (decoded.tokenType !== "PRE_TwoFactorAuth") {
       return res.status(403).json({
         success: false,
-        message: "Invalid pre-2FA token",
+        message: "Invalid pre-TwoFactorAuth token",
       });
     }
 
@@ -34,4 +34,4 @@ const verifyPre2faToken = (req, res, next) => {
   }
 };
 
-module.exports = verifyPre2faToken;
+module.exports = verifyPreTwoFactorAuthToken;

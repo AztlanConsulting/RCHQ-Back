@@ -12,7 +12,7 @@ function mapEmployee(employee) {
     roleId: employee.role_id,
     isActive: employee.is_active,
     hasFirstLogin: employee.has_first_login,
-    isActive2FA: employee.is_active_2fa,
+    isActiveTwoFactorAuth: employee.is_active_two_factor_auth,
     totpSecret: employee.totp_secret,
     curp: employee.curp,
     birthDate: employee.birth_date,
@@ -22,7 +22,7 @@ function mapEmployee(employee) {
     bankAccount: employee.bank_account,
     houseId: employee.house_id,
     failedLoginAttempts: employee.failed_login_attempts,
-    failed2faAttempts: employee.failed_2fa_attempts,
+    failedTwoFactorAuthAttempts: employee.failed_two_factor_auth_attempts,
     blockedUntil: employee.blocked_until,
     twoFaBlockedUntil: employee.two_fa_blocked_until,
     tempTotpSecret: employee.temp_totp_secret,
@@ -161,23 +161,23 @@ async function clearTempTotpSecret(employeeId) {
   });
 }
 
-async function incrementFailed2FAAttempts(employeeId) {
+async function incrementFailedTwoFactorAuthAttempts(employeeId) {
   const employee = await prisma.employee.update({
     where: { employee_id: employeeId },
     data: {
-      failed_2fa_attempts: {
+      failed_two_factor_auth_attempts: {
         increment: 1,
       },
     },
     select: {
-      failed_2fa_attempts: true,
+      failed_two_factor_auth_attempts: true,
     },
   });
 
-  return employee.failed_2fa_attempts ?? 0;
+  return employee.failed_two_factor_auth_attempts ?? 0;
 }
 
-async function set2FABlockedUntil(employeeId, blockedUntil) {
+async function setTwoFactorAuthBlockedUntil(employeeId, blockedUntil) {
   return prisma.employee.update({
     where: { employee_id: employeeId },
     data: {
@@ -190,11 +190,11 @@ async function set2FABlockedUntil(employeeId, blockedUntil) {
   });
 }
 
-async function clear2FASecurityState(employeeId) {
+async function clearTwoFactorAuthSecurityState(employeeId) {
   await prisma.employee.update({
     where: { employee_id: employeeId },
     data: {
-      failed_2fa_attempts: 0,
+      failed_two_factor_auth_attempts: 0,
       two_fa_blocked_until: null,
     },
   });
@@ -212,7 +212,7 @@ module.exports = {
   saveTempTotpSecret,
   clearTempTotpSecret,
   clearBlockedUntil,
-  incrementFailed2FAAttempts,
-  set2FABlockedUntil,
-  clear2FASecurityState,
+  incrementFailedTwoFactorAuthAttempts,
+  setTwoFactorAuthBlockedUntil,
+  clearTwoFactorAuthSecurityState,
 };

@@ -6,7 +6,7 @@ const userModel = require("../model/user.model");
 const { authorize } = require("../middleware/abac");
 const { adminPolicy } = require("../policies/employeeAdd.policies");
 // const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
-const verifyPre2faToken = require("../middleware/pre2faAuth");
+const verifyPreTwoFactorAuthToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");
 const {
   loginSchema,
@@ -38,7 +38,7 @@ router.post(
 
 router.post(
   "/2fa/validate",
-  verifyPre2faToken,
+  verifyPreTwoFactorAuthToken,
   validate(twoFactorTokenSchema),
   userController.validateTwoFactorAuth,
 );
@@ -50,7 +50,7 @@ router.post(
   userController.disableTwoFactorAuth,
 );
 
-router.get("/status/2FA", verifyToken, userController.getStatus2FA);
+router.get("/status/2FA", verifyToken, userController.getTwoFactorAuthStatus);
 // Protected route example with ABAC and RBAC
 router.get(
   "/profile",
