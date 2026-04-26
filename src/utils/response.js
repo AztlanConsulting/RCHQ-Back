@@ -8,6 +8,8 @@ const RESPONSE = {
     NOT_FOUND: "Documento no encontrado",
     OK: "Documento obtenido",
     EMPTY: "No hay documentos",
+    NOT_ALLOW: "Tipo de documento invalido",
+    UPLOAD: "Se subió correctamente",
   },
   USER: {
     NOT_FOUND: "Usuario no encontrado",

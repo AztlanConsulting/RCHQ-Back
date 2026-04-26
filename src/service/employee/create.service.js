@@ -2,10 +2,10 @@
 
 const {
   create,
+  createDocumentRowWithUrl,
   updateDocumentField,
 } = require("../../model/employee/create.model");
-const { getOrCreateDocRow } = require("./read.service");
-const { findById, findByCurp } = require("../../model/employee/read.model");
+const { findById, findByCurp, findDocumentRowByEmployee } = require("../../model/employee/read.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
@@ -16,6 +16,7 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { v4: uuidv4 } = require("uuid");
 const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
+const { RESPONSE } = require("../../utils/response");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
 
@@ -117,10 +118,11 @@ exports.createEmployee = async (data, user, req) => {
   };
 };
 
-exports.uploadDocument = async (employeeId, file, documentField, user, req) => {
+exports.uploadDocument = async (employeeId, file, documentField) => {
+  
   if (!validateField(documentField)) {
     return {
-      status: 400,
+      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
       body: {
         success: false,
         message: `Tipo de documento inválido: ${documentField}`,
@@ -131,74 +133,68 @@ exports.uploadDocument = async (employeeId, file, documentField, user, req) => {
   const employee = await findById(employeeId);
   if (!employee) {
     return {
-      status: 404,
-      body: { success: false, message: "Employee not found" },
+      type: RESPONSE.USER.NOT_FOUND,
+      body: { success: false, message: "Usuario no encontrado" },
     };
   }
 
   const fileUrl = `uploads/documents/${file.filename}`;
-  const { document_id } = await getOrCreateDocRow(employeeId);
+  const existingRow = await findDocumentRowByEmployee(employeeId);
 
-  const updatedDoc = await updateDocumentField(
-    document_id,
-    employeeId,
-    documentField,
-    fileUrl,
-  );
+  let resultDoc;
 
-  try {
-    await createLog(
-      user.id,
-      LOG_ACTIONS.DOCUMENT_UPLOADED,
+  if (existingRow) {
+    resultDoc = await updateDocumentField(
+      existingRow.document_id,
       employeeId,
-      getClientIp(req),
+      documentField,
+      fileUrl,
     );
-  } catch (err) {
-    console.error("Error creando log:", err);
+  } else {
+    resultDoc = await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
   }
 
-  return { status: 201, body: { success: true, data: updatedDoc } };
+  return {
+    type: RESPONSE.DOCUMENTS.UPLOAD,
+    body: { success: true, data: resultDoc },
+  };
 };
 
-exports.updateDocument = async (employeeId, documentField, file, user, req) => {
+exports.updateDocument = async (employeeId, documentField, file) => {
   if (!validateField(documentField)) {
     return {
-      status: 400,
-      body: {
-        success: false,
-        message: `Tipo de documento inválido: ${documentField}`,
-      },
+      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
+      body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
     };
   }
 
   const employee = await findById(employeeId);
   if (!employee) {
     return {
-      status: 404,
-      body: { success: false, message: "Employee not found" },
+      type: RESPONSE.USER.NOT_FOUND,
+      body: { success: false, message: "Usuario no encontrado" },
     };
   }
 
   const fileUrl = `uploads/documents/${file.filename}`;
-  const { document_id } = await getOrCreateDocRow(employeeId);
+  const existingRow = await findDocumentRowByEmployee(employeeId);
+
+  if (!existingRow) {
+    return {
+      type: RESPONSE.DOCUMENTS.NOT_FOUND,
+      body: { success: false, message: "No se encontró documento del empleado" },
+    };
+  }
 
   const updatedDoc = await updateDocumentField(
-    document_id,
+    existingRow.document_id,
     employeeId,
     documentField,
     fileUrl,
   );
 
-  try {
-    await createLog(
-      user.id,
-      LOG_ACTIONS.DOCUMENT_UPDATED,
-      employeeId,
-      getClientIp(req),
-    );
-  } catch (err) {
-    console.error("Error creando log:", err);
-  }
-
-  return { status: 200, body: { success: true, data: updatedDoc } };
+  return {
+    type: RESPONSE.DOCUMENTS.UPLOAD,
+    body: { success: true, data: updatedDoc },
+  };
 };

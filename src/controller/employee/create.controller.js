@@ -4,6 +4,10 @@ const {
   uploadDocument,
   updateDocument,
 } = require("../../service/employee/create.service");
+const {RESPONSE} = require("../../utils/response");
+const { createLog } = require("../../model/log.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { getClientIp } = require("../../utils/ip");
 
 exports.postAdd = async (req, res) => {
   try {
@@ -36,9 +40,30 @@ exports.uploadDocument = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Faltan campos requeridos" });
     }
+    
+    
+    const result = await uploadDocument(id, file, documentField);
+    if(result.type === RESPONSE.DOCUMENTS.UPLOAD){
+      try {
+        await createLog(
+          req.user.id,
+          LOG_ACTIONS.DOCUMENT_UPLOADED,
+          id,
+          getClientIp(req),
+      );
+      } catch (err) {
+          console.error("Error creando log:", err);
+      }
+      return res.status(201).json(result.body);
+    }
 
-    const result = await uploadDocument(id, file, documentField, req.user, req);
-    return res.status(result.status).json(result.body);
+    if(result.type === RESPONSE.DOCUMENTS.NOT_ALLOW){
+      return res.status(400).json(result.body);
+    }
+
+    if(result.type === RESPONSE.USER.NOT_FOUND){
+      return res.status(404).json(result.body);
+    }
   } catch (err) {
     console.error("uploadDocument error:", err);
     return res
@@ -53,17 +78,39 @@ exports.updateDocument = async (req, res) => {
     const file = req.file;
 
     if (!id || !field || !file) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Faltan campos requeridos" });
+      return res.status(400).json({ success: false, message: "Faltan campos requeridos" });
     }
 
-    const result = await updateDocument(id, field, file, req.user, req);
-    return res.status(result.status).json(result.body);
+    const result = await updateDocument(id, field, file);
+
+    if (result.type === RESPONSE.DOCUMENTS.UPLOAD) {
+      try {
+        await createLog(
+          req.user.id,
+          LOG_ACTIONS.DOCUMENT_UPDATED,
+          id,
+          getClientIp(req),
+        );
+      } catch (err) {
+        console.error("Error creando log:", err);
+      }
+      return res.status(200).json(result.body);
+    }
+
+    if (result.type === RESPONSE.DOCUMENTS.NOT_ALLOW) {
+      return res.status(400).json(result.body);
+    }
+
+    if (result.type === RESPONSE.USER.NOT_FOUND) {
+      return res.status(404).json(result.body);
+    }
+
+    if (result.type === RESPONSE.DOCUMENTS.NOT_FOUND) {
+      return res.status(404).json(result.body);
+    }
+
   } catch (err) {
     console.error("updateDocument error:", err);
-    return res
-      .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };
