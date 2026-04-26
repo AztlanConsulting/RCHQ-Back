@@ -340,22 +340,7 @@ async function verifyTwoFactorSetup(req) {
   }
 
   await prisma.$transaction(async (tx) => {
-    const employeeInTx = await tx.employee.findUnique({
-      where: { employee_id: employee.employeeId },
-      select: {
-        temp_totp_secret: true,
-      },
-    });
-
-    await tx.employee.update({
-      where: { employee_id: employee.employeeId },
-      data: {
-        totp_secret: employeeInTx?.temp_totp_secret ?? null,
-        temp_totp_secret: null,
-        temp_totp_secret_created_at: null,
-        is_active_2fa: true,
-      },
-    });
+    await User.activateTwoFactorFromTempSecret(employee.employeeId, tx);
 
     await createLog(
       employee.employeeId,
@@ -611,15 +596,7 @@ async function disableTwoFactorAuth(req) {
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.employee.update({
-      where: { employee_id: employee.employeeId },
-      data: {
-        totp_secret: null,
-        temp_totp_secret: null,
-        temp_totp_secret_created_at: null,
-        is_active_2fa: false,
-      },
-    });
+    await User.disableTwoFactor(employee.employeeId, tx);
 
     await createLog(
       employee.employeeId,

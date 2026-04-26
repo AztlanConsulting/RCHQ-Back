@@ -2,7 +2,6 @@ const prisma = require("../prisma");
 const User = require("../model/user.model");
 const { createLog } = require("../model/log.model");
 const { LOG_ACTIONS } = require("../utils/logActions");
-const { getClientIp } = require("../utils/ip");
 const { verifyPassword, hashPassword } = require("../utils/password");
 const {
     buildSessionToken,
@@ -94,12 +93,7 @@ exports.changePassword = async ({
     const hashedPassword = await hashPassword(newPassword);
 
     await prisma.$transaction(async (tx) => {
-        await tx.employee.update({
-            where: { employee_id: employee.employeeId },
-            data: {
-                password: hashedPassword,
-            },
-        });
+        await User.updatePassword(employee.employeeId, hashedPassword, tx);
 
         await createLog(
             employee.employeeId,
@@ -120,7 +114,7 @@ exports.changePassword = async ({
             },
         },
     };
-}
+};
 
 exports.changePasswordFirstLogin = async ({
     employeeId,
@@ -263,4 +257,4 @@ exports.changePasswordFirstLogin = async ({
             },
         },
     };
-}
+};
