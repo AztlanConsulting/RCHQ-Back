@@ -1,8 +1,9 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require('@prisma/client');
 const { getClientIp } = require("./utils/ip");
+const profileRouter = require("./router/profile.route");
 
 const employeeRouter = require("./router/employee.route");
 
@@ -33,10 +34,15 @@ app.use(
 const userRouter = require("./router/user.route");
 app.use("/users", userRouter);
 
+app.use("/users", profileRouter);
 app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+if (require.main === module) {
+  app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-});
+  });
+}
+
+module.exports = app;

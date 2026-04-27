@@ -289,7 +289,7 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "Invalid pending 2FA setup state",
+        message: "Estado de configuración de 2FA pendiente inválido",
       },
     };
   }
@@ -329,7 +329,7 @@ async function verifyTwoFactorSetup(req) {
       status: 400,
       body: {
         success: false,
-        message: "Invalid 2FA code. Setup could not be completed.",
+        message: "Code de 2FA inválido, no se pudo completar la acción",
         nextStep: "2FA_SETUP_FAILED",
         data: {
           employeeId: employee.employeeId,
@@ -460,7 +460,7 @@ async function validateTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid 2FA token" },
+      body: { success: false, message: "Token de 2FA inválido" },
     };
   }
 
@@ -591,7 +591,7 @@ async function disableTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid credentials" },
+      body: { success: false, message: "Credenciales inválidas" },
     };
   }
 

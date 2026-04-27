@@ -9,7 +9,7 @@ const {
     getAdd,
     getById,
     postAdd,
-} = require("../controller/employee/employeeAdd.controller");
+} = require("../controller/employee/create.controller");
 
 const { getAll } = require("../controller/employee/getAll.controller");
 
