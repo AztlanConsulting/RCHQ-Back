@@ -20,17 +20,9 @@ const {
     postAdd,
 } = require("../controller/employee/create.controller");
 
+const { getAll } = require("../controller/employee/getAll.controller");
+
 router.get("/add", verifyToken, getAdd);
-router.get("/:id", getById);
-
-router.post(
-  "/add",
-  verifyToken,
-  upload.single("picture"),
-  authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
-  postAdd,
-);
-
 router.get(
   "/:id/documents",
   verifyToken,
@@ -59,6 +51,20 @@ router.delete(
   verifyToken,
   authorize(modifyDocuments),
   employeeDeleteController.deleteDocument,
+);
+
+router.get("/getAll", verifyToken, authorize(employeePolicy), getAll);
+
+router.get("/:id", getById);
+
+router.post(
+    "/add",
+    verifyToken,
+    upload.single("picture"),
+    authorize(employeePolicy, (req) => ({
+        house_id: req.body.house_id,
+    })),
+    postAdd,
 );
 
 module.exports = router;

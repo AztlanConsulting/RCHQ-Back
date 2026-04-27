@@ -14,7 +14,12 @@ exports.findById = async (employee_id) => {
 };
 
 exports.getAllRoles = async () => {
-  return await prisma.role.findMany();
+    const roles = await prisma.role.findMany();
+
+    return roles.map((role) => ({
+        roleId: role.role_id,
+        name: role.name,
+    }));
 };
 
 exports.getDocumentsByEmployee = async (employeeId) => {

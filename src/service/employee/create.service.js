@@ -14,10 +14,10 @@ const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
 const {
   employeeCreateSchema,
-} = require("../../schemas/employee/employee.schemas");
+} = require("../../schemas/employee/create.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
-const { v4: uuidv4 } = require("uuid");
 const { employeePolicy } = require("../../policies/employee.policies");
+const { v4: uuidv4 } = require("uuid");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
 const { RESPONSE } = require("../../utils/response");
 
