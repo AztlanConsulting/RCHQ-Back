@@ -1,4 +1,4 @@
-// src/router/user.route.js
+// src/router/auth.route.js
 const express = require("express");
 const verifyToken = require("../middleware/auth");
 const { requireRole } = require("../middleware/rbac");

@@ -19,20 +19,6 @@ exports.loginFunction = async (req, res) => {
   }
 };
 
-exports.getProfile = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Profile retrieved successfully",
-    data: {
-      employeeId: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
-      role: req.user.role,
-      privileges: req.user.privileges || [],
-    },
-  });
-};
-
 exports.changePasswordFirstLogin = async (req, res) => {
   try {
     const employeeId = req.user?.id || req.user?.employeeId;

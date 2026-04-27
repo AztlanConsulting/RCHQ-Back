@@ -2,7 +2,7 @@ jest.mock("../../prisma", () => ({
     $transaction: jest.fn(),
 }));
 
-jest.mock("../../model/user.model", () => ({
+jest.mock("../../model/auth/auth.model", () => ({
     getEmployeeById: jest.fn(),
     updatePassword: jest.fn(),
     updatePasswordAndClearFirstLogin: jest.fn(),
@@ -23,7 +23,7 @@ jest.mock("../../utils/auth/authTokens", () => ({
 }));
 
 const prisma = require("../../prisma");
-const User = require("../../model/user.model");
+const auth = require("../../model/auth/auth.model");
 const { createLog } = require("../../model/log.model");
 const { verifyPassword, hashPassword } = require("../../utils/password");
 const {
@@ -70,7 +70,7 @@ describe("password.service", () => {
         });
 
         it("retorna 404 si el empleado no existe", async () => {
-            User.getEmployeeById.mockResolvedValue(null);
+            auth.getEmployeeById.mockResolvedValue(null);
 
             const result = await changePassword({
                 employeeId: "emp-123",
@@ -79,13 +79,13 @@ describe("password.service", () => {
                 ipAddress: "127.0.0.1",
             });
 
-            expect(User.getEmployeeById).toHaveBeenCalledWith("emp-123");
+            expect(auth.getEmployeeById).toHaveBeenCalledWith("emp-123");
             expect(result.status).toBe(404);
             expect(result.body.message).toBe("Empleado no encontrado");
         });
 
         it("retorna 403 si el usuario está inactivo", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 isActive: false,
             });
@@ -103,7 +103,7 @@ describe("password.service", () => {
         });
 
         it("retorna 401 si la contraseña actual es incorrecta", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 hasFirstLogin: false,
             });
@@ -127,7 +127,7 @@ describe("password.service", () => {
         });
 
         it("retorna 400 si la nueva contraseña es igual a la actual", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 hasFirstLogin: false,
             });
@@ -150,7 +150,7 @@ describe("password.service", () => {
         });
 
         it("cambia la contraseña correctamente", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 hasFirstLogin: false,
             });
@@ -171,7 +171,7 @@ describe("password.service", () => {
             });
 
             expect(hashPassword).toHaveBeenCalledWith("Nueva123A");
-            expect(User.updatePassword).toHaveBeenCalledWith(
+            expect(auth.updatePassword).toHaveBeenCalledWith(
                 "emp-123",
                 "new-hashed-password",
                 mockTx,
@@ -194,7 +194,7 @@ describe("password.service", () => {
         });
 
         it("retorna 404 si el empleado no existe", async () => {
-            User.getEmployeeById.mockResolvedValue(null);
+            auth.getEmployeeById.mockResolvedValue(null);
 
             const result = await changePasswordFirstLogin({
                 employeeId: "emp-123",
@@ -207,7 +207,7 @@ describe("password.service", () => {
         });
 
         it("retorna 403 si el usuario está inactivo", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 isActive: false,
             });
@@ -224,7 +224,7 @@ describe("password.service", () => {
         });
 
         it("retorna 409 si ya no requiere cambio de primer login", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 hasFirstLogin: false,
             });
@@ -242,7 +242,7 @@ describe("password.service", () => {
         });
 
         it("retorna 400 si la nueva contraseña es igual a la actual", async () => {
-            User.getEmployeeById.mockResolvedValue(mockEmployee);
+            auth.getEmployeeById.mockResolvedValue(mockEmployee);
             verifyPassword.mockResolvedValueOnce(true);
 
             const result = await changePasswordFirstLogin({
@@ -258,7 +258,7 @@ describe("password.service", () => {
         });
 
         it("completa el primer login y retorna token de sesión", async () => {
-            User.getEmployeeById.mockResolvedValue(mockEmployee);
+            auth.getEmployeeById.mockResolvedValue(mockEmployee);
             verifyPassword.mockResolvedValueOnce(false);
 
             const mockTx = {
@@ -276,7 +276,7 @@ describe("password.service", () => {
             });
 
             expect(hashPassword).toHaveBeenCalledWith("Nueva123A");
-            expect(User.updatePasswordAndClearFirstLogin).toHaveBeenCalledWith(
+            expect(auth.updatePasswordAndClearFirstLogin).toHaveBeenCalledWith(
                 "emp-123",
                 "new-hashed-password",
                 mockTx,
@@ -289,7 +289,7 @@ describe("password.service", () => {
         });
 
         it("retorna pre2FAToken si el usuario tiene 2FA activo", async () => {
-            User.getEmployeeById.mockResolvedValue({
+            auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 isActive2FA: true,
             });

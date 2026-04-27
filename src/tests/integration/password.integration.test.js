@@ -162,13 +162,13 @@ afterAll(async () => {
 });
 
 // ─── CHANGE PASSWORD ──────────────────────────────────────
-describe("POST /users/change-password - integration", () => {
+describe("POST /auth/change-password - integration", () => {
     it("retorna 200 y actualiza la contraseña en BD", async () => {
         await createTestEmployee();
         const token = generateSessionToken();
 
         const res = await request(app)
-            .post("/users/change-password")
+            .post("/auth/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 currentPassword: TEST_PASSWORD,
@@ -194,7 +194,7 @@ describe("POST /users/change-password - integration", () => {
         await createTestEmployee();
 
         const res = await request(app)
-            .post("/users/change-password")
+            .post("/auth/change-password")
             .send({
                 currentPassword: TEST_PASSWORD,
                 newPassword: TEST_NEW_PASSWORD,
@@ -209,7 +209,7 @@ describe("POST /users/change-password - integration", () => {
         const token = generateSessionToken();
 
         const res = await request(app)
-            .post("/users/change-password")
+            .post("/auth/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 currentPassword: TEST_PASSWORD,
@@ -226,7 +226,7 @@ describe("POST /users/change-password - integration", () => {
         const token = generateSessionToken();
 
         const res = await request(app)
-            .post("/users/change-password")
+            .post("/auth/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 currentPassword: "Incorrecta123A",
@@ -242,7 +242,7 @@ describe("POST /users/change-password - integration", () => {
         const token = generateSessionToken();
 
         const res = await request(app)
-            .post("/users/change-password")
+            .post("/auth/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 currentPassword: TEST_PASSWORD,
@@ -255,13 +255,13 @@ describe("POST /users/change-password - integration", () => {
 });
 
 // ─── FIRST LOGIN CHANGE PASSWORD ──────────────────────────
-describe("POST /users/first-login/change-password - integration", () => {
+describe("POST /auth/first-login/change-password - integration", () => {
     it("retorna 200, actualiza password y pone has_first_login en false", async () => {
         await createFirstLoginEmployee();
         const token = generateFirstLoginToken();
 
         const res = await request(app)
-            .post("/users/first-login/change-password")
+            .post("/auth/first-login/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 newPassword: TEST_FIRST_LOGIN_NEW_PASSWORD,
@@ -288,7 +288,7 @@ describe("POST /users/first-login/change-password - integration", () => {
         await createFirstLoginEmployee();
 
         const res = await request(app)
-            .post("/users/first-login/change-password")
+            .post("/auth/first-login/change-password")
             .send({
                 newPassword: TEST_FIRST_LOGIN_NEW_PASSWORD,
                 confirmPassword: TEST_FIRST_LOGIN_NEW_PASSWORD,
@@ -311,7 +311,7 @@ describe("POST /users/first-login/change-password - integration", () => {
         );
 
         const res = await request(app)
-            .post("/users/first-login/change-password")
+            .post("/auth/first-login/change-password")
             .set("Authorization", `Bearer ${wrongToken}`)
             .send({
                 newPassword: TEST_FIRST_LOGIN_NEW_PASSWORD,
@@ -326,7 +326,7 @@ describe("POST /users/first-login/change-password - integration", () => {
         const token = generateFirstLoginToken();
 
         const res = await request(app)
-            .post("/users/first-login/change-password")
+            .post("/auth/first-login/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 newPassword: TEST_FIRST_LOGIN_NEW_PASSWORD,
@@ -341,7 +341,7 @@ describe("POST /users/first-login/change-password - integration", () => {
         const token = generateFirstLoginToken();
 
         const res = await request(app)
-            .post("/users/first-login/change-password")
+            .post("/auth/first-login/change-password")
             .set("Authorization", `Bearer ${token}`)
             .send({
                 newPassword: TEST_TEMP_PASSWORD,

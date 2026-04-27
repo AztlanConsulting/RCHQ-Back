@@ -99,7 +99,7 @@ afterAll(async () => {
 });
 
 // ─── LOGIN ────────────────────────────────────────────────
-describe("POST /users/login - integration", () => {
+describe("POST /auth/login - integration", () => {
   it("retorna 200 y token con credenciales válidas", async () => {
     // Arrange
     await createTestEmployee();
@@ -229,7 +229,7 @@ describe("POST /users/login - integration", () => {
 });
 
 // ─── SETUP 2FA ────────────────────────────────────────────
-describe("POST /users/2fa/setup - integration", () => {
+describe("POST /auth/2fa/setup - integration", () => {
   it("guarda temp_totp_secret en BD y retorna QR", async () => {
     // Arrange
     await createTestEmployee();
