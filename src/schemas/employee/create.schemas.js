@@ -10,7 +10,7 @@ const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._/-]+$/;
 const emptyToNull = (val) => (val === "" ? null : val);
 
 const employeeCreateSchema = z.object({
-  role_id: z.string().uuid("El role_id debe ser un UUID válido"),
+    roleId: z.string().uuid("El roleId debe ser un UUID válido"),
 
   name: z
     .string()
@@ -72,30 +72,30 @@ const employeeCreateSchema = z.object({
     })
     .optional(),
 
-  bank_account: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || val.length === 18, {
-      message: "La CLABE debe tener exactamente 18 dígitos",
-    })
-    .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
-      message: "La cuenta CLABE solo debe contener números",
-    })
-    .optional(),
+    bankAccount: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || val.length === 18, {
+            message: "La CLABE debe tener exactamente 18 dígitos",
+        })
+        .refine((val) => val === null || ONLY_NUMBERS_REGEX.test(val), {
+            message: "La cuenta CLABE solo debe contener números",
+        })
+        .optional(),
 
-  birth_date: z
-    .string()
-    .trim()
-    .transform(emptyToNull)
-    .nullable()
-    .refine((val) => val === null || DATE_REGEX.test(val), {
-      message: "Formato de fecha inválido (YYYY-MM-DD)",
-    })
-    .refine(
-      (val) => {
-        if (val === null) return true;
+    birthDate: z
+        .string()
+        .trim()
+        .transform(emptyToNull)
+        .nullable()
+        .refine((val) => val === null || DATE_REGEX.test(val), {
+            message: "Formato de fecha inválido (YYYY-MM-DD)",
+        })
+        .refine(
+            (val) => {
+                if (val === null) return true;
 
         const birthDate = new Date(val);
 

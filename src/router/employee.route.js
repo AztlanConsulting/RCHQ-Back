@@ -5,25 +5,30 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { authorize } = require("../middleware/abac");
 const {
-  createEmployeePolicy,
+  employeePolicy,
   viewDocuments,
   modifyDocuments,
-} = require("../policies/employeeAdd.policies");
+} = require("../policies/employee.policies");
 const upload = require("../middleware/upload");
 const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
+const {
+    getAdd,
+    getById,
+    postAdd,
+} = require("../controller/employee/create.controller");
 
-router.get("/add", verifyToken, employeeGetController.getAdd);
-router.get("/:id", employeeGetController.getById);
+router.get("/add", verifyToken, getAdd);
+router.get("/:id", getById);
 
 router.post(
   "/add",
   verifyToken,
   upload.single("picture"),
-  authorize(createEmployeePolicy, (req) => ({ house_id: req.body.house_id })),
-  employeeAddController.postAdd,
+  authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
+  postAdd,
 );
 
 router.get(

@@ -606,7 +606,7 @@ async function disableTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid credentials" },
+      body: { success: false, message: "Credenciales inválidas" },
     };
   }
 

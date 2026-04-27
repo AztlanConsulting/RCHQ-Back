@@ -1,12 +1,13 @@
-const createEmployeePolicy = (user) => {
-  if (!user) return false;
+const employeePolicy = (user) => {
+    if (!user) return false;
 
-  if (user.role === "Administrador") return true;
+    if (user.role === "Administrador") return true;
 
-  if (user.role === "Coordinador") return true;
+    if (user.role === "Coordinador") return true;
 
-  return false;
+    return false;
 };
+
 
 const viewDocuments = (user, resource) => {
   if (user.role === "Administrador" || user.role === "Coordinador") return true;
@@ -19,7 +20,7 @@ const modifyDocuments = (user) => {
 };
 
 module.exports = {
-  createEmployeePolicy,
+  employeePolicy,
   viewDocuments,
   modifyDocuments,
 };
