@@ -1,67 +1,11 @@
 const prisma = require("../prisma");
+const {
+  mapEmployee,
+  mapEmployeeAddress,
+  mapHouse,
+} = require("../utils/mappers/personnel.map");
 
-function mapEmployee(employee) {
-  if (!employee) return undefined;
-
-  return {
-    employeeId: employee.employee_id,
-    email: employee.email,
-    pwd: employee.password,
-    name: employee.name,
-    surname: employee.surname,
-    role: employee.role?.name,
-    roleId: employee.role_id,
-    type: employee.type,
-    isActive: employee.is_active,
-    hasFirstLogin: employee.has_first_login,
-    isActive2FA: employee.is_active_2fa,
-    totpSecret: employee.totp_secret,
-    curp: employee.curp,
-    birthDate: employee.birth_date,
-    picture: employee.picture,
-    startDate: employee.start_date,
-    endDate: employee.end_date,
-    phoneNumber: employee.phone_number,
-    nss: employee.nss,
-    bankAccount: employee.bank_account,
-    salary: employee.salary,
-    failedLoginAttempts: employee.failed_login_attempts,
-    failed2faAttempts: employee.failed_2fa_attempts,
-    blockedUntil: employee.blocked_until,
-    twoFaBlockedUntil: employee.two_fa_blocked_until,
-    tempTotpSecret: employee.temp_totp_secret,
-    tempTotpSecretCreatedAt: employee.temp_totp_secret_created_at,
-  };
-}
-
-function mapEmployeeAddress(employeeAddress) {
-  if (!employeeAddress) return undefined;
-
-  return {
-    employeeAddressId: employeeAddress.employee_address_id,
-    url: employeeAddress.url,
-    date: employeeAddress.date,
-    street: employeeAddress.street,
-    municipio: employeeAddress.municipio,
-    city: employeeAddress.city,
-    postal_code: employeeAddress.postal_code,
-  };
-}
-
-function mapHouse(house) {
-  if (!house) return undefined;
-
-  return {
-    houseId: house.house_id,
-    name: house.name,
-    location: house.location,
-    phoneNumber: house.phone_number,
-    description: house.description,
-    image: house.image,
-  };
-}
-
-async function findEmployeeByEmail(email) {
+exports.findEmployeeByEmail = async (email) => {
   const employee = await prisma.employee.findFirst({
     where: {
       email: {
@@ -78,9 +22,9 @@ async function findEmployeeByEmail(email) {
     },
   });
   return mapEmployee(employee);
-}
+};
 
-async function getEmployeeById(employeeId) {
+exports.getEmployeeById = async (employeeId) => {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
     include: {
@@ -92,17 +36,17 @@ async function getEmployeeById(employeeId) {
     },
   });
   return mapEmployee(employee);
-}
+};
 
-async function getEmployeeAddress(employeeId) {
+exports.getEmployeeAddress = async (employeeId) => {
   const employeeAddress = await prisma.employee_address.findFirst({
     where: { employee_id: employeeId },
   });
 
   return mapEmployeeAddress(employeeAddress);
-}
+};
 
-async function getHouseByEmployeeId(employeeId) {
+exports.getHouseByEmployeeId = async (employeeId) => {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
     select: { house_id: true },
@@ -113,7 +57,7 @@ async function getHouseByEmployeeId(employeeId) {
     where: { house_id: employee.house_id },
   });
   return mapHouse(house);
-}
+};
 
 // return information about the employee's schedule,
 // vacations, faults, and other cyclic employee data
@@ -121,7 +65,7 @@ async function getHouseByEmployeeId(employeeId) {
 // employee_faults -> faults
 // employee_workday
 // employee_vacation_requests
-async function getAdminEmployeeInfoById(employeeId) {
+exports.getAdminEmployeeInfoById = async (employeeId) => {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
     select: {
@@ -183,14 +127,14 @@ async function getAdminEmployeeInfoById(employeeId) {
       feedback: v.feedback,
     })),
   };
-}
+};
 
 // return urls and other metadata of the employee's record:
 // employee_documents -> collections of urls to important employee docs
 // employee_inside_certification
 // employee_outside_certification
 // employee_psychological_evaluation
-async function getEmployeeRecord(employeeId) {
+exports.getEmployeeRecord = async (employeeId) => {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
     select: {
@@ -276,13 +220,4 @@ async function getEmployeeRecord(employeeId) {
       date: p.date,
     })),
   };
-}
-
-module.exports = {
-  findEmployeeByEmail,
-  getEmployeeById,
-  getEmployeeAddress,
-  getHouseByEmployeeId,
-  getAdminEmployeeInfoById,
-  getEmployeeRecord,
 };

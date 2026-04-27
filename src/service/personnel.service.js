@@ -3,7 +3,7 @@ const { getClientIp } = require("../utils/ip");
 const { createLog } = require("../model/log.model");
 const { LOG_ACTIONS } = require("../utils/logActions");
 
-async function getEmployeeDetail(req) {
+exports.getEmployeeDetail = async (req) => {
   const userID = req.user.id;
   const { employeeID } = req.params;
   const ipAddress = getClientIp(req);
@@ -14,7 +14,7 @@ async function getEmployeeDetail(req) {
       status: 400,
       body: {
         success: false,
-        code: "Bad Request",
+        code: "Request Mala",
         message: "Incomplete body for this request",
       },
     };
@@ -73,8 +73,4 @@ async function getEmployeeDetail(req) {
       },
     },
   };
-}
-
-module.exports = {
-  getEmployeeDetail,
 };
