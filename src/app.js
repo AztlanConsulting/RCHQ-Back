@@ -1,10 +1,16 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const path = require("path");
+const employeeRouter = require("./router/employee.route");
+
 const errorHandler = require("./middleware/ErrorHandler");
+
+const path = require("path");
+
 // Loads the variables in the enviorment file
 require("dotenv").config();
+
+const port = Number(process.env.RUNNING_PORT || 3000);
 
 app.use(express.json());
 
@@ -17,14 +23,20 @@ app.use(
   }),
 );
 
-//const xd = require("./utils/mail");
+const authRouter = require("./router/auth.route");
+app.use("/auth", authRouter);
 
-const userRouter = require("./router/auth.route");
-app.use("/auth", userRouter);
+const userRouter = require("./router/user.route")
+app.use("/user", userRouter);
 
-const employeeRouter = require("./router/employee.route");
 app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
+
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
 
 module.exports = app;

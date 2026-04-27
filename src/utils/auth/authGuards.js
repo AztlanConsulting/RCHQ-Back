@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const User = require("../../model/auth.model");
+=======
+const User = require("../../model/auth/auth.model");
+>>>>>>> bbc32809240b515763a0473ff4127a3586a47d4c
 
 function isBlockedUntil(dateValue) {
   return dateValue && new Date(dateValue) > new Date();

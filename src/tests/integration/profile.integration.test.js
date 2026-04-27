@@ -1,10 +1,10 @@
 // tests/integration/profile.flow.integration.test.js
 /**
- * Prueba de integración — Flujo completo: Login → GET /users/profile
+ * Prueba de integración — Flujo completo: Login → GET /user/profile
  *
  * Cubre:
  *  1. POST /auth/login   → obtiene SESSION token real
- *  2. GET  /users/profile → consume el token del paso 1
+ *  2. GET  /user/profile → consume el token del paso 1
  *
  * La DB de test debe tener un empleado activo con contraseña conocida.
  * El seed usa bcrypt para hashear la contraseña igual que produciría
@@ -30,7 +30,7 @@ const VALID_PASSWORD = "Andatti67";
 // ─── Helper: hace login y retorna el SESSION token ───────────────────────────
 const loginAndGetToken = async () => {
   const res = await request(app)
-    .post("/users/login")
+    .post("/auth/login")
     .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
   // Falla rápido si el login no fue exitoso — el problema está en el seed
@@ -44,7 +44,7 @@ const loginAndGetToken = async () => {
 };
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
-describe("Flujo integración: Login → GET /users/profile", () => {
+describe("Flujo integración: Login → GET /user/profile", () => {
   beforeAll(async () => {
     // Hash de la contraseña conocida para el seed
     const hashedPassword = await bcrypt.hash(VALID_PASSWORD, 10);
@@ -60,7 +60,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
   describe("PASO 1 — POST /auth/login", () => {
     it("retorna 200 con token SESSION cuando las credenciales son válidas", async () => {
       const res = await request(app)
-        .post("/users/login")
+        .post("/auth/login")
         .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
       expect(res.status).toBe(200);
@@ -71,9 +71,9 @@ describe("Flujo integración: Login → GET /users/profile", () => {
     it("el token retornado tiene tokenType SESSION (verificable en /profile)", async () => {
       const token = await loginAndGetToken();
       // Si el token no fuera SESSION, el siguiente paso devolvería 403
-      // Validamos indirectamente usándolo contra /users/profile
+      // Validamos indirectamente usándolo contra /user/profile
       const res = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${token}`);
 
       expect(res.status).not.toBe(403);
@@ -81,7 +81,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("retorna 401 con credenciales inválidas (password incorrecta)", async () => {
       const res = await request(app)
-        .post("/users/login")
+        .post("/auth/login")
         .send({ email: VALID_EMAIL, password: "WrongPassword!" });
 
       expect(res.status).toBe(401);
@@ -90,7 +90,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("retorna 401 cuando el email no existe", async () => {
       const res = await request(app)
-        .post("/users/login")
+        .post("/auth/login")
         .send({ email: "noexiste@test.org", password: VALID_PASSWORD });
 
       expect(res.status).toBe(401);
@@ -99,7 +99,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("retorna 400 cuando el body no pasa la validación del schema", async () => {
       const res = await request(app)
-        .post("/users/login")
+        .post("/auth/login")
         .send({ email: "no-es-un-email", password: "" });
 
       expect(res.status).toBe(400);
@@ -107,15 +107,15 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("retorna 400 cuando faltan campos requeridos", async () => {
       const res = await request(app)
-        .post("/users/login")
+        .post("/auth/login")
         .send({});
 
       expect(res.status).toBe(400);
     });
   });
 
-  // ── PASO 2: GET /users/profile con token real del login ───────────────────
-  describe("PASO 2 — GET /users/profile (con token del login)", () => {
+  // ── PASO 2: GET /auth/profile con token real del login ───────────────────
+  describe("PASO 2 — GET /user/profile (con token del login)", () => {
     let sessionToken;
 
     beforeAll(async () => {
@@ -124,7 +124,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("retorna 200 usando el token obtenido del login", async () => {
       const res = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${sessionToken}`);
 
       expect(res.status).toBe(200);
@@ -133,7 +133,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("los datos del perfil coinciden con el empleado que hizo login", async () => {
       const res = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${sessionToken}`);
 
       expect(res.body.data).toMatchObject({
@@ -147,7 +147,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
     it("el perfil no expone el password del empleado", async () => {
       const res = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${sessionToken}`);
 
       expect(res.body.data.password).toBeUndefined();
@@ -159,7 +159,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
     it("Login exitoso → perfil retorna los datos del mismo usuario", async () => {
       // Paso 1: Login
       const loginRes = await request(app)
-        .post("/users/login")
+        .post("/auth/login")
         .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
       expect(loginRes.status).toBe(200);
@@ -167,7 +167,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
 
       // Paso 2: Perfil
       const profileRes = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${token}`);
 
       expect(profileRes.status).toBe(200);
@@ -178,10 +178,10 @@ describe("Flujo integración: Login → GET /users/profile", () => {
     });
   });
 
-  // ── Flujos alternativos en /users/profile ─────────────────────────────────
-  describe("Flujos alternativos — GET /users/profile", () => {
+  // ── Flujos alternativos en /user/profile ─────────────────────────────────
+  describe("Flujos alternativos — GET /user/profile", () => {
     it("401 — intenta acceder al perfil sin haber hecho login (sin token)", async () => {
-      const res = await request(app).get("/users/profile");
+      const res = await request(app).get("/user/profile");
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
@@ -196,7 +196,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
       );
 
       const res = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${expToken}`);
 
       expect(res.status).toBe(401);
@@ -211,7 +211,7 @@ describe("Flujo integración: Login → GET /users/profile", () => {
       );
 
       const res = await request(app)
-        .get("/users/profile")
+        .get("/user/profile")
         .set("Authorization", `Bearer ${wrongToken}`);
 
       expect(res.status).toBe(403);

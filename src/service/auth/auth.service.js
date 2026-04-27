@@ -4,7 +4,7 @@ const { getClientIp } = require("../utils/ip");
 const { createLog } = require("../model/log.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const { LOG_ACTIONS } = require("../utils/logActions");
+const { LOG_ACTIONS } = require("../../utils/logActions");
 const {
   buildSessionToken,
   buildFirstLoginJwt,

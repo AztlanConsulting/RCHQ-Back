@@ -79,7 +79,7 @@ const generateSessionToken = () => {
 };
 
 const cleanDb = async () => {
-  await prisma.logs.deleteMany({where: {employee_id: TEST_EMPLOYEE_ID,},});
+  await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
   await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
 };
 
