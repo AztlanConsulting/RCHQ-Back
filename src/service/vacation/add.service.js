@@ -13,7 +13,7 @@ exports.getRemainingVacations = async (employeeId) => {
     const currentDate = new Date();
     const currentDay = currentDate.getDate();
     const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getUTCFullYear();
+    const currentYear = currentDate.getFullYear();
     
     let anniversaryAlreadyPassed = false;
     
@@ -21,7 +21,7 @@ exports.getRemainingVacations = async (employeeId) => {
         anniversaryAlreadyPassed = true;
     }
     
-    let startYear = currentDate.getFullYear() + anniversaryAlreadyPassed;
+    let startYear = currentDate.getFullYear();
     let endYear = startYear + 1;
     
     const startDate = new Date(Date.UTC(startYear, baseMonth, baseDay));
@@ -29,6 +29,7 @@ exports.getRemainingVacations = async (employeeId) => {
 
     let usedDays = 0;
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
+
     vacations.forEach(vacation => {
         usedDays += vacation.used_days;
     });

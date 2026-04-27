@@ -2,7 +2,7 @@ const { getRemainingVacations } = require("../../service/vacation/add.service")
 
 exports.getRemainingVacations = async (req, res) => {
     try {
-        const employeeId = req.user.id;
+        const employeeId = req.params.id;
         const remainingVacations = await getRemainingVacations(employeeId);
         return res.status(200).json({
             success: true,
