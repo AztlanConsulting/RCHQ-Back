@@ -45,15 +45,12 @@ async function getEmployeeDetail(req) {
     if (house) {
         employeeBasicInfo.house = house;
     }
-    console.log("basic info: ", employeeBasicInfo);
 
     // get administrativeEmployeeInfo
     const employeeAdminInfo = await Personnel.getAdminEmployeeInfoById(employeeID);
-    console.log("admin info: ", employeeAdminInfo);
 
     // get employee record
     const employeeRecord = await Personnel.getEmployeeRecord(employeeID);
-    console.log("record: ", employeeRecord);
 
     // create log of get-employee-detail
     // deberiamos wrappear esto en un try/catch??
