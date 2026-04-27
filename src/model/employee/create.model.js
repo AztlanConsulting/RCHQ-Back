@@ -1,6 +1,6 @@
 const prisma = require("../../prisma");
 
-async function create(employeeData) {
+exports.create = async (employeeData) => {
     const data = {
         employee_id: employeeData.employeeId,
         house_id: employeeData.houseId,
@@ -41,8 +41,4 @@ async function create(employeeData) {
         picture: employee.picture,
         startDate: employee.start_date,
     };
-}
-
-module.exports = {
-    create,
 };

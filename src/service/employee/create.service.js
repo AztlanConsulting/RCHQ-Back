@@ -19,15 +19,15 @@ const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
 
 const { v4: uuidv4 } = require("uuid");
 
-async function getById(id) {
+exports.getById = async (id) => {
     return await findById(id);
-}
+};
 
-async function getRoles() {
+exports.getRoles = async () => {
     return await getAllRoles();
-}
+};
 
-async function createEmployee(employee, user, req) {
+exports.createEmployee = async (employee, user, req) => {
     const validation = employeeCreateSchema.safeParse(employee);
 
     if (!validation.success) {
@@ -99,7 +99,6 @@ async function createEmployee(employee, user, req) {
         );
     } catch (error) {
         console.error("Error creando log:", error);
-
         warning = "Empleado creado pero el log falló";
     }
 
@@ -108,10 +107,4 @@ async function createEmployee(employee, user, req) {
         employeeId: newEmployee.employeeId,
         warning,
     };
-}
-
-module.exports = {
-    getById,
-    getRoles,
-    createEmployee,
 };
