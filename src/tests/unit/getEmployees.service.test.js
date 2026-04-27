@@ -10,13 +10,13 @@ jest.mock("../../model/employee/get.model", () => ({
     getEmployees: jest.fn(),
 }));
 
-const { getEmployeesService } = require("../../service/employee/get.service");
+const { getEmployees } = require("../../service/employee/get.service");
 
 // =====================================================
 // TEST SUITE
 // =====================================================
 
-describe("Employee Service - getEmployeesService", () => {
+describe("Employee Service - getEmployees", () => {
     const houseId = "house-123";
 
     beforeEach(() => {
@@ -44,7 +44,7 @@ describe("Employee Service - getEmployeesService", () => {
         });
 
         // Act
-        const result = await getEmployeesService(houseId);
+        const result = await getEmployees(houseId);
 
         // Assert
         expect(employeeModel.getEmployees).toHaveBeenCalledWith(
@@ -79,7 +79,7 @@ describe("Employee Service - getEmployeesService", () => {
         });
 
         // Act
-        await getEmployeesService(houseId, "false");
+        await getEmployees(houseId, "false");
 
         // Assert
         expect(employeeModel.getEmployees).toHaveBeenCalledWith(
@@ -103,7 +103,7 @@ describe("Employee Service - getEmployeesService", () => {
         });
 
         // Act
-        const result = await getEmployeesService(houseId, "true", "3", "6");
+        const result = await getEmployees(houseId, "true", "3", "6");
 
         // Assert
         expect(employeeModel.getEmployees).toHaveBeenCalledWith(
@@ -134,7 +134,7 @@ describe("Employee Service - getEmployeesService", () => {
         });
 
         // Act
-        await getEmployeesService(houseId, "true", "1", "6", "juan");
+        await getEmployees(houseId, "true", "1", "6", "juan");
 
         // Assert
         expect(employeeModel.getEmployees).toHaveBeenCalledWith(
@@ -154,7 +154,7 @@ describe("Employee Service - getEmployeesService", () => {
         });
 
         // Act
-        await getEmployeesService(houseId, "true", "1", "6", "   juan   ");
+        await getEmployees(houseId, "true", "1", "6", "   juan   ");
 
         // Assert
         expect(employeeModel.getEmployees).toHaveBeenCalledWith(
@@ -178,7 +178,7 @@ describe("Employee Service - getEmployeesService", () => {
         });
 
         // Act
-        await getEmployeesService(houseId, "true", "-1", "abc");
+        await getEmployees(houseId, "true", "-1", "abc");
 
         // Assert
         expect(employeeModel.getEmployees).toHaveBeenCalledWith(
