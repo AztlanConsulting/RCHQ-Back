@@ -1,6 +1,6 @@
 const { getEmployees } = require("../../model/employee/getAll.model");
 
-const getEmployeesService = async (
+exports.getEmployeesService = async (
     houseId,
     activeQuery,
     pageQuery,
@@ -40,8 +40,4 @@ const getEmployeesService = async (
             totalPages,
         },
     };
-};
-
-module.exports = {
-    getEmployeesService,
 };

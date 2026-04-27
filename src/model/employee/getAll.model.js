@@ -1,6 +1,6 @@
 const prisma = require("../../prisma");
 
-const getEmployees = async (houseId, active, search, skip, take) => {
+exports.getEmployees = async (houseId, active, search, skip, take) => {
     const where = {
         house_id: houseId,
         is_active: active,
@@ -59,8 +59,4 @@ const getEmployees = async (houseId, active, search, skip, take) => {
         })),
         total,
     };
-};
-
-module.exports = {
-    getEmployees,
 };

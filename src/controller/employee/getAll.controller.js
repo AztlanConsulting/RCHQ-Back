@@ -2,7 +2,7 @@ const {
     getEmployeesService,
 } = require("../../service/employee/getAll.service");
 
-const getAll = async (req, res) => {
+exports.getAll = async (req, res) => {
     try {
         const { houseId } = req.user;
         const { active, page, limit, search } = req.query;
@@ -28,8 +28,4 @@ const getAll = async (req, res) => {
             message: "Error interno del servidor",
         });
     }
-};
-
-module.exports = {
-    getAll,
 };
