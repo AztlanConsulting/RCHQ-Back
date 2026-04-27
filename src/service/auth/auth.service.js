@@ -1,21 +1,21 @@
-const User = require("../model/user.model");
-const { verifyPassword } = require("../utils/password");
-const { getClientIp } = require("../utils/ip");
-const { createLog } = require("../model/log.model");
+const { verifyPassword } = require("../../utils/password");
+const { getClientIp } = require("../../utils/ip");
+const { createLog } = require("../../model/log.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const { LOG_ACTIONS } = require("../utils/logActions");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const User = require("../../model/auth/auth.model");
 const {
   buildSessionToken,
   buildFirstLoginJwt,
   buildPre2faJwt,
-} = require("../utils/auth/authTokens");
+} = require("../../utils/auth/authTokens");
 const {
   isBlockedUntil,
   clearExpiredLoginBlock,
   clearExpired2FABlock,
-} = require("../utils/auth/authGuards");
-const prisma = require("../prisma");
+} = require("../../utils/auth/authGuards");
+const prisma = require("../../prisma");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
@@ -289,7 +289,7 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "Invalid pending 2FA setup state",
+        message: "Estado de configuración de 2FA pendiente inválido",
       },
     };
   }
@@ -329,7 +329,7 @@ async function verifyTwoFactorSetup(req) {
       status: 400,
       body: {
         success: false,
-        message: "Invalid 2FA code. Setup could not be completed.",
+        message: "Code de 2FA inválido, no se pudo completar la acción",
         nextStep: "2FA_SETUP_FAILED",
         data: {
           employeeId: employee.employeeId,
@@ -460,7 +460,7 @@ async function validateTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid 2FA token" },
+      body: { success: false, message: "Token de 2FA inválido" },
     };
   }
 
@@ -591,7 +591,7 @@ async function disableTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid credentials" },
+      body: { success: false, message: "Credenciales inválidas" },
     };
   }
 

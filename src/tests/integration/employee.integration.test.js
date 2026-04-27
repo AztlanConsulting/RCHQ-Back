@@ -1,188 +1,544 @@
-// tests/integration/employee.integration.test.js
-const request = require("supertest");
-const { PrismaClient } = require("@prisma/client");
-const { randomUUID } = require("crypto");
-const jwt = require("jsonwebtoken");
-const app = require("../../app");
+const employee = require("../../model/employee/create.model");
+const { createLog } = require("../../model/log.model");
+const consult = require("../../model/employee/consult.model");
 
-const prisma = new PrismaClient();
+// =====================================================
+// MOCKS
+// =====================================================
 
-// ─── Constantes de prueba ─────────────────────────────────
-const TEST_HOUSE_ID = randomUUID();
-let TEST_ROLE_ID; // Se asigna dinámicamente consultando tu BD
-const TEST_EMAIL = "maria.lopez.integracion@test.com";
-const TEST_CURP = "LOMM900512HDFRRN01";
-const TEST_ADMIN_ID = randomUUID();
-const TEST_ADMIN_EMAIL = "admin.master.test@test.com";
-const TEST_ADMIN_CURP = "ADMN999999HDFRRN01";
+jest.mock("../../model/employee/consult.model", () => ({
+    findByCurp: jest.fn(),
+    findById: jest.fn(),
+    getAllRoles: jest.fn(),
+}));
 
-const API_ROUTE = "/employee/add";
+jest.mock("../../model/employee/create.model", () => ({
+    create: jest.fn(),
+}));
 
-let baseEmployeePayload = {
-    name: "María",
-    surname: "López",
-    email: TEST_EMAIL,
-    curp: TEST_CURP,
-    rfc: "LOMM900512A12",
-    nss: "12345678901",
-    bank_account: "012345678901234567",
-    house_id: TEST_HOUSE_ID,
-    birth_date: "1990-05-12",
-};
+jest.mock("../../model/log.model", () => ({
+    createLog: jest.fn(),
+}));
 
-// ─── Helpers ──────────────────────────────────────────────
-const seedDependencies = async () => {
-    let adminRole = await prisma.role.findUnique({
-        where: { name: "Administrador" },
-    });
+jest.mock("../../utils/IP", () => ({
+    getClientIp: jest.fn(() => "127.0.0.1"),
+}));
 
-    if (!adminRole) {
-        adminRole = await prisma.role.create({
-            data: {
-                role_id: randomUUID(),
-                name: "Administrador",
-            },
-        });
-    }
+const { createEmployee } = require("../../service/employee/create.service");
 
-    TEST_ROLE_ID = adminRole.role_id;
-    baseEmployeePayload.role_id = TEST_ROLE_ID;
+// =====================================================
+// TEST SUITE
+// =====================================================
 
-    await prisma.house.upsert({
-        where: { house_id: TEST_HOUSE_ID },
-        update: {},
-        create: {
-            house_id: TEST_HOUSE_ID,
-            name: "Casa de Prueba Integration Employee",
-            location: "Test Location",
-            phone_number: "4421234567",
-            description: "Casa usada solo para tests de integración",
-            image: "test-image.jpg",
+describe("Employee Service - createEmployee", () => {
+    // Variables globales para las pruebas
+    const mockUserAdmin = {
+        id: "user-1",
+        role: "Administrador",
+        houseId: "a0000001-0000-4000-8000-000000000001",
+    };
+
+    const mockUserCoordinatorSameHouse = {
+        id: "user-2",
+        role: "Coordinador",
+        houseId: "a0000001-0000-4000-8000-000000000001",
+    };
+
+    const mockUserCoordinatorOtherHouse = {
+        id: "user-3",
+        role: "Coordinador",
+        houseId: "a0000001-0000-4000-8000-000000000002",
+    };
+
+    const mockUserUnauthorized = {
+        id: "user-4",
+        role: "Empleado",
+        houseId: "a0000001-0000-4000-8000-000000000001",
+    };
+
+    const mockReq = {
+        headers: {
+            "cf-connecting-ip": "127.0.0.1",
+            "x-forwarded-for": "127.0.0.1",
         },
+    };
+
+    const baseEmployee = {
+        name: "Juan",
+        surname: "Perez",
+        email: "test@mail.com",
+        curp: "PEPJ800101HDFRRN09",
+        houseId: "a0000001-0000-4000-8000-000000000001",
+        roleId: "a0000002-0000-4000-8000-000000000002",
+        birthDate: "1990-01-01",
+    };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        employee.create.mockResolvedValue({ employeeId: "emp-1" });
+        createLog.mockResolvedValue();
+        consult.findByCurp.mockResolvedValue(null);
+
+        // Lo dejamos comentado por si necesitas ver errores de Zod en consola mientras depuras
+        // jest.spyOn(console, "error").mockImplementation(() => {});
     });
 
-    await prisma.employee.upsert({
-        where: { curp: TEST_ADMIN_CURP },
-        update: {},
-        create: {
-            employee_id: TEST_ADMIN_ID,
-            name: "Admin",
-            surname: "Master",
-            email: TEST_ADMIN_EMAIL,
-            curp: TEST_ADMIN_CURP,
-            password: "dummy_password",
-            house_id: TEST_HOUSE_ID,
-            role_id: TEST_ROLE_ID,
-            birth_date: new Date("1980-01-01"),
-            start_date: new Date(),
-            is_active: true,
-            has_first_login: false,
-            is_active_2fa: false,
-            failed_login_attempts: 0,
-        },
+    afterEach(() => {
+        jest.restoreAllMocks();
     });
-};
 
-const generateAdminToken = () => {
-    return jwt.sign(
-        {
-            id: TEST_ADMIN_ID,
-            email: TEST_ADMIN_EMAIL,
-            role: "Administrador",
-            houseId: TEST_HOUSE_ID,
-            tokenType: "SESSION",
-        },
-        process.env.JWT_SECRET || "test_secret",
-        { expiresIn: "1h" },
-    );
-};
+    // =====================================================
+    // ÉXITO Y LÓGICA DE NEGOCIO
+    // =====================================================
 
-const cleanDb = async () => {
-    await prisma.logs.deleteMany({});
-    await prisma.employee.deleteMany({ where: { curp: TEST_CURP } });
-    await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
-};
+    it("debería crear empleado como admin", async () => {
+        // Arrange (Estado base en beforeEach)
 
-// ─── Hooks ────────────────────────────────────────────────
-beforeAll(async () => {
-    await cleanDb();
-    await seedDependencies();
-});
-afterEach(async () => {
-    await cleanDb();
-});
-afterAll(async () => {
-    await prisma.employee.deleteMany({ where: { curp: TEST_ADMIN_CURP } });
-    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
-    await prisma.$disconnect();
-});
+        // Act
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserAdmin,
+            mockReq,
+        );
 
-// ─── CREATE EMPLOYEE ──────────────────────────────────────
-describe(`POST ${API_ROUTE} - integration`, () => {
-    it("retorna 201 y guarda el empleado en BD con datos válidos", async () => {
-        const token = generateAdminToken();
+        // ACTUALIZADO a la nueva respuesta del servicio
+        expect(result.success).toBe(true);
+        expect(result.employeeId).toBeDefined();
+        expect(employee.create).toHaveBeenCalled();
+    });
 
-        const res = await request(app)
-            .post(API_ROUTE)
-            .set("Authorization", `Bearer ${token}`)
-            .set("cf-connecting-ip", "127.0.0.1")
-            .send(baseEmployeePayload);
+    it("coordinator puede crear en su misma casa", async () => {
+        // Arrange (Estado base en beforeEach)
 
-        expect(res.statusCode).toBe(201);
-        expect(res.body).toHaveProperty("message");
-        expect(res.body).toHaveProperty("redirect");
+        // Act
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserCoordinatorSameHouse,
+            mockReq,
+        );
 
-        const emp = await prisma.employee.findUnique({
-            where: { curp: TEST_CURP },
+        expect(result.success).toBe(true);
+    });
+
+    it("coordinator usa su houseId aunque mande otra casa", async () => {
+        const data = {
+            ...baseEmployee,
+            houseId: "a0000001-0000-4000-8000-000000000999",
+        };
+
+        // Act
+        const result = await createEmployee(
+            data,
+            mockUserCoordinatorOtherHouse,
+            mockReq,
+        );
+
+        expect(result.success).toBe(true);
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                houseId: mockUserCoordinatorOtherHouse.houseId, // Fuerza su propia casa
+            }),
+        );
+    });
+
+    it("debería permitir nombres con acentos y ñ", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: "Ángel", surname: "Muñoz" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(true);
+    });
+
+    // =====================================================
+    // VALIDACIONES BÁSICAS (ZOD SCHEMA)
+    // =====================================================
+
+    it("debería fallar si falta name", async () => {
+        // Arrange
+        const { name, ...data } = baseEmployee;
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+
+        // ACTUALIZADO para mapear a tipo de error VALIDATION_ERROR
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("email inválido", async () => {
+        // Arrange
+        const data = { ...baseEmployee, email: "correo-mal" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("CURP inválido", async () => {
+        // Arrange
+        const data = { ...baseEmployee, curp: "123" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("roleId inválido", async () => {
+        const data = { ...baseEmployee, roleId: "no-uuid" };
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("RFC inválido", async () => {
+        // Arrange
+        const data = { ...baseEmployee, rfc: "123" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("NSS inválido", async () => {
+        // Arrange
+        const data = { ...baseEmployee, nss: "123" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("CLABE inválida", async () => {
+        const data = { ...baseEmployee, bankAccount: "123" };
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    // =====================================================
+    // SEGURIDAD Y PERMISOS
+    // =====================================================
+
+    it("nombre con números", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: "Juan123" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("nombre con emojis", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: "Juan😀" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("nombre con caracteres especiales", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: "Juan@#" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("apellido con números", async () => {
+        // Arrange
+        const data = { ...baseEmployee, surname: "Perez123" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("debería fallar si el rol no está autorizado", async () => {
+        // Arrange (Usando el mockUserUnauthorized configurado arriba)
+
+        // Act
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserUnauthorized,
+            mockReq,
+        );
+
+        // ACTUALIZADO: Evalúa el error del Policy
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("FORBIDDEN");
+    });
+
+    it("debería rechazar intentos de SQL Injection", async () => {
+        // Arrange
+        const data = {
+            ...baseEmployee,
+            name: "Juan'; DROP TABLE employees;--",
+        };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("debería rechazar scripts XSS", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: "<script>alert('xss')</script>" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    // =====================================================
+    // NORMALIZACIÓN E INTEGRIDAD (LONGITUDES)
+    // =====================================================
+
+    it("nombre demasiado largo", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: "A".repeat(60) };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("email demasiado largo", async () => {
+        // Arrange
+        const data = { ...baseEmployee, email: `${"a".repeat(70)}@mail.com` };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("debería aplicar trim a nombre y email con espacios extra", async () => {
+        // Arrange
+        const data = {
+            ...baseEmployee,
+            name: "  Juan  ",
+            email: " test@mail.com  ",
+        };
+
+        // Act
+        await createEmployee(data, mockUserAdmin, mockReq);
+
+        // Assert
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({ name: "Juan", email: "test@mail.com" }),
+        );
+    });
+
+    it("debería convertir el email a minúsculas antes de guardarlo", async () => {
+        // Arrange
+        const data = { ...baseEmployee, email: "JUAN.PEREZ@MAIL.COM" };
+
+        // Act
+        await createEmployee(data, mockUserAdmin, mockReq);
+
+        // Assert
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({ email: "juan.perez@mail.com" }),
+        );
+    });
+
+    // =====================================================
+    // TIPOS Y NUMÉRICOS
+    // =====================================================
+
+    it("name no string", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: 12345 };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("NSS con letras", async () => {
+        // Arrange
+        const data = { ...baseEmployee, nss: "123ABC45678" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("CLABE con letras", async () => {
+        const data = { ...baseEmployee, bankAccount: "123ABC456789012345" };
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    // =====================================================
+    // VALIDACIONES DE FECHAS AVANZADAS
+    // =====================================================
+
+    it("fecha inválida", async () => {
+        const data = { ...baseEmployee, birthDate: "2020-13-40" };
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("debería rechazar fechas de nacimiento imposibles en el pasado", async () => {
+        const data = { ...baseEmployee, birthDate: "1850-01-01" };
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("debería rechazar fechas de nacimiento en el futuro", async () => {
+        const data = { ...baseEmployee, birthDate: "2050-01-01" };
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("debería rechazar el registro si el empleado es un niño", async () => {
+        // Arrange
+        const today = new Date();
+        const tenYearsAgo = `${today.getFullYear() - 10}-01-01`;
+        const data = { ...baseEmployee, birthDate: tenYearsAgo };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    // =====================================================
+    // IMAGEN Y MULTI ERROR
+    // =====================================================
+
+    it("formato inválido imagen", async () => {
+        // Arrange
+        const data = { ...baseEmployee, picture: "foto.exe" };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("múltiples errores", async () => {
+        // Arrange
+        const data = {
+            name: "123",
+            surname: "!!!",
+            email: "mal",
+            curp: "123",
+            roleId: "no-uuid",
+        };
+
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+        // Extra: Podemos verificar que Zod arroje más de un error
+        expect(result.errors.length).toBeGreaterThan(1);
+    });
+
+    // =====================================================
+    // INFRAESTRUCTURA Y CONFLICTOS
+    // =====================================================
+
+    it("debería retornar error si el empleado ya está registrado (Duplicado)", async () => {
+        const idExistente = "19c23934-e20a-42f4-b963-fab77caf1a1c";
+        consult.findByCurp.mockResolvedValue({
+            employee_id: idExistente,
+            curp: baseEmployee.curp,
         });
 
-        expect(emp).not.toBeNull();
-        expect(emp.email).toBe(TEST_EMAIL);
-        expect(emp.house_id).toBe(TEST_HOUSE_ID);
+        // Act
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserAdmin,
+            mockReq,
+        );
+
+        // Assert
+        expect(employee.create).not.toHaveBeenCalled();
+
+        // ACTUALIZADO: Evalúa la lógica de CONFLICTO
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("CONFLICT");
+        expect(result.employeeId).toBe(idExistente);
     });
 
-    it("retorna 400 si faltan campos obligatorios", async () => {
-        const token = generateAdminToken();
-        const { name, ...invalidPayload } = baseEmployeePayload;
+    it("debería continuar (o retornar error controlado) si el Logger falla", async () => {
+        // Arrange
+        createLog.mockRejectedValue(new Error("Logger error"));
 
-        const res = await request(app)
-            .post(API_ROUTE)
-            .set("Authorization", `Bearer ${token}`)
-            .send(invalidPayload);
+        // Act
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserAdmin,
+            mockReq,
+        );
 
-        expect(res.statusCode).toBe(400);
+        // ACTUALIZADO: Evalúa el estado exitoso pero con warning
+        expect(result.success).toBe(true);
+        expect(result.warning).toBeDefined();
+        expect(result.warning).toContain("el log falló");
     });
 
-    it("retorna 409 si el empleado ya existe (CURP duplicado)", async () => {
-        const token = generateAdminToken();
+    it("debería normalizar CURP a mayúsculas", async () => {
+        // Arrange
+        const data = { ...baseEmployee, curp: "pepj800101hdfrrn09" };
 
-        await prisma.employee.create({
-            data: {
-                ...baseEmployeePayload,
-                birth_date: new Date(baseEmployeePayload.birth_date),
-                employee_id: randomUUID(),
-                start_date: new Date(),
-                password: "dummy_password",
-                is_active: true,
-                has_first_login: false,
-                is_active_2fa: false,
-                failed_login_attempts: 0,
-            },
-        });
+        // Act
+        await createEmployee(data, mockUserAdmin, mockReq);
 
-        const res = await request(app)
-            .post(API_ROUTE)
-            .set("Authorization", `Bearer ${token}`)
-            .send(baseEmployeePayload);
-
-        expect(res.statusCode).toBe(409);
+        // Assert
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                curp: "PEPJ800101HDFRRN09",
+            }),
+        );
     });
 
-    it("retorna 401 si no se envía token de autorización", async () => {
-        const res = await request(app)
-            .post(API_ROUTE)
-            .send(baseEmployeePayload);
+    it("debería fallar si campos obligatorios son null", async () => {
+        // Arrange
+        const data = { ...baseEmployee, name: null, email: null };
 
-        expect(res.statusCode).toBe(401);
+        // Act
+        const result = await createEmployee(data, mockUserAdmin, mockReq);
+
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+    });
+
+    it("coordinator no puede forzar house_id externo", async () => {
+        // Arrange
+        const data = { ...baseEmployee, house_id: "FAKE-HOUSE-ID" };
+
+        // Act
+        await createEmployee(data, mockUserCoordinatorOtherHouse, mockReq);
+
+        // Assert
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                houseId: mockUserCoordinatorOtherHouse.houseId,
+            }),
+        );
     });
 });

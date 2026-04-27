@@ -1,14 +1,15 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient } = require('@prisma/client');
 const { getClientIp } = require("./utils/ip");
-
+const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const vacationRouter = require("./router/vacation.route");
 const eventRouter = require("./router/event.route");
 
 
+const userRouter = require("./router/user.route");
 const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
@@ -31,10 +32,9 @@ app.use(
     }),
 );
 
-//const xd = require("./utils/mail");
+app.use("/auth", authRouter);
 
-const userRouter = require("./router/user.route");
-app.use("/users", userRouter);
+app.use("/user", userRouter);
 
 app.use("/employee", employeeRouter);
 app.use("/vacation", vacationRouter);
@@ -42,6 +42,10 @@ app.use("/event", eventRouter);
 
 app.use(errorHandler);
 
-app.listen(port, () => {
+if (require.main === module) {
+  app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-});
+  });
+}
+
+module.exports = app;
