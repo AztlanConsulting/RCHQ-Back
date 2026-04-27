@@ -1,4 +1,4 @@
-const employeePolicy = (user) => {
+exports.employeePolicy = (user) => {
     if (!user) return false;
 
     if (user.role === "Administrador") return true;
@@ -6,8 +6,4 @@ const employeePolicy = (user) => {
     if (user.role === "Coordinador") return true;
 
     return false;
-};
-
-module.exports = {
-    employeePolicy,
 };
