@@ -3,9 +3,8 @@
 // const { adminPolicy } = require("../policies/user.policies");
 // const {verifyPassword, hashPassword} = require("../utils/password");
 const authService = require("../../service/auth/auth.service");
-const authService = require("../service/auth.service");
-const passwordService = require("../service/password.service");
-const { getClientIp } = require("../utils/ip");
+const passwordService = require("../../service/password.service");
+const { getClientIp } = require("../../utils/ip");
 
 exports.loginFunction = async (req, res) => {
   try {

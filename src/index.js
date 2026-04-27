@@ -3,10 +3,9 @@ const app = express();
 const cors = require("cors");
 const { PrismaClient } = require('@prisma/client');
 const { getClientIp } = require("./utils/ip");
-const userRouter = require("./router/user.route");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
-
+const userRouter = require("./router/user.route");
 const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
