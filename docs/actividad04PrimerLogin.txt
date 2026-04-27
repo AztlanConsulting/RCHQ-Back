@@ -1,0 +1,69 @@
+@startuml
+
+|Usuario|
+start
+:Ingresar correo y contraseña temporal;
+
+|Sistema|
+:Validar credenciales de acceso;
+if (¿Credenciales válidas?) then (Sí)
+else (No)
+:Mostrar credenciales inválidas;
+stop
+endif
+
+if (¿Usuario existe y está activo?) then (Sí)
+else (No)
+:Mostrar acceso no permitido;
+stop
+endif
+
+if (El usuario debe cambiar su contraseña por primer acceso?) then (Sí)
+:Generar token temporal de primer login;
+:Obligar al usuario a cambiar contraseña;
+else (No)
+:Continuar flujo normal de login;
+stop
+endif
+
+|Usuario|
+:Ingresar nueva contraseña y confirmación;
+
+|Sistema|
+:Validar formato de nueva contraseña;
+if (¿Datos válidos?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+if (¿Confirmación coincide?) then (Sí)
+else (No)
+:Mostrar error de confirmación;
+stop
+endif
+
+:Comparar nueva contraseña con la actual;
+if (¿Nueva contraseña es diferente?) then (Sí)
+else (No)
+:Mostrar error: nueva contraseña debe ser diferente;
+stop
+endif
+
+:Hashear nueva contraseña;
+:Actualizar contraseña en BD;
+:Marcar has_first_login = false;
+:Guardar log de cambio de contraseña de primer login;
+:Guardar log de primer login completado;
+
+if (¿Debe ofrecer/configurar autenticación en dos pasos después?) then (Sí)
+:Continuar al flujo de autenticación en dos pasos;
+else (No)
+:Permitir acceso a la app;
+endif
+
+|Usuario|
+:Continuar con el sistema;
+stop
+
+@enduml

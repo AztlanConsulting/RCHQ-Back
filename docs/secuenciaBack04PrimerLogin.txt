@@ -1,0 +1,112 @@
+@startuml
+title US04 back - user cambia contraseña en primer login
+
+actor Usuario
+boundary "auth.route.js" as Route
+control "validate(loginSchema)" as ValidateLogin
+control "auth.controller.js" as Controller
+control "auth.service.js" as AuthService
+control "verifyFirstLoginToken" as FirstLoginAuth
+control "validate(firstLoginChangePasswordSchema)" as ValidateFirstChange
+control "password.service.js" as PasswordService
+entity "auth.model.js" as AuthModel
+collections "authTokens.js / password utils" as AuthUtil
+entity "log.model.js" as LogModel
+database "BD" as DB
+
+Usuario -> Route : POST /login\nemail, password temporal
+Route -> ValidateLogin : Validar datos
+
+alt Datos inválidos
+ValidateLogin --> Usuario : 400 Error de validación
+else Datos válidos
+ValidateLogin -> Controller : loginFunction(req)
+Controller -> AuthService : login(req)
+
+AuthService -> UserModel : findEmployeeByEmail(email)
+UserModel -> DB : Consultar usuario
+DB --> UserModel : Usuario / no encontrado
+UserModel --> AuthService : Usuario / no encontrado
+
+alt Credenciales inválidas / cuenta inactiva
+AuthService --> Controller : Error
+Controller --> Usuario : Error
+else Usuario válido
+AuthService -> AuthUtil : verifyPassword(passwordTemporal, employee.pwd)
+AuthUtil --> AuthService : true / false
+
+alt Password temporal incorrecta
+AuthService -> LogModel : Guardar login fallido
+LogModel -> DB : Insertar log
+DB --> LogModel : Confirmación
+AuthService --> Controller : 401/423 según reglas
+Controller --> Usuario : Error
+else Password temporal correcta
+alt hasFirstLogin = true
+AuthService -> AuthUtil : Generar firstLoginToken
+AuthUtil --> AuthService : JWT temporal
+AuthService --> Controller : 200 nextStep=CHANGE_PASSWORD_FIRST_LOGIN
+Controller --> Usuario : Token temporal + siguiente paso
+
+Usuario -> Route : POST /first-login/change-password\nnewPassword, confirmPassword
+Route -> FirstLoginAuth : Validar token temporal
+
+alt Token inválido
+FirstLoginAuth --> Usuario : 401 Unauthorized
+else Token válido
+FirstLoginAuth -> ValidateFirstChange : Validar datos
+
+alt Datos inválidos
+ValidateFirstChange --> Usuario : 400 Error de validación
+else Datos válidos
+ValidateFirstChange -> Controller : changePasswordFirstLogin(req)
+Controller -> PasswordService : changePasswordFirstLogin(req)
+
+PasswordService -> UserModel : getEmployeeById(req.user.id)
+UserModel -> DB : Consultar usuario
+DB --> UserModel : Usuario
+UserModel --> PasswordService : Usuario
+
+alt Usuario no existe / inactivo
+PasswordService -> LogModel : Guardar intento inválido
+LogModel -> DB : Insertar log
+DB --> LogModel : Confirmación
+PasswordService --> Controller : 403/404
+Controller --> Usuario : Error
+else Usuario válido
+PasswordService -> AuthUtil : verifyPassword(newPassword, employee.pwd)
+AuthUtil --> PasswordService : true / false
+
+alt Nueva igual a la actual
+PasswordService --> Controller : 400 New password must be different
+Controller --> Usuario : Error
+else Nueva distinta
+PasswordService -> AuthUtil : hashPassword(newPassword)
+AuthUtil --> PasswordService : hashedPassword
+
+PasswordService -> DB : Actualizar password y has_first_login=false
+DB --> PasswordService : Confirmación
+
+PasswordService -> LogModel : Guardar FIRST_LOGIN_PASSWORD_CHANGED
+LogModel -> DB : Insertar log
+DB --> LogModel : Confirmación
+
+PasswordService -> LogModel : Guardar FIRST_LOGIN_COMPLETED
+LogModel -> DB : Insertar log
+DB --> LogModel : Confirmación
+
+PasswordService --> Controller : 200 Éxito + nextStep 2FA/dashboard
+Controller --> Usuario : Respuesta de éxito
+end
+end
+end
+end
+else hasFirstLogin = false
+AuthService --> Controller : Continuar login normal
+Controller --> Usuario : Flujo normal
+end
+end
+end
+end
+
+@enduml

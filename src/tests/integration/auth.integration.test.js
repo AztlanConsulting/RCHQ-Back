@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
 const { LOG_ACTIONS } = require("../../utils/logActions");
+const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient();
 
@@ -104,6 +105,7 @@ const cleanDb = async () => {
 beforeAll(async () => {
   await cleanDb();
   await seedDependencies();
+  await seedActions();
 });
 afterEach(async () => {
   await cleanDb();
