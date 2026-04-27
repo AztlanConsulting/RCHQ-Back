@@ -11,7 +11,7 @@ const RESPONSE = {
     EMPTY: "No hay documentos",
     NOT_ALLOW: "Tipo de documento invalido",
     UPLOAD: "Se subió correctamente",
-    ALREADY_EXIST:"El documento ya existe",
+    ALREADY_EXIST: "El documento ya existe",
   },
   USER: {
     NOT_FOUND: "Usuario no encontrado",

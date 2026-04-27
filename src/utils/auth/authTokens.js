@@ -16,20 +16,19 @@ function buildUserPayload(employee) {
 }
 
 exports.buildSessionToken = (employee) => {
-    return generateToken(buildUserPayload(employee));
-}
+  return generateToken(buildUserPayload(employee));
+};
 
 exports.buildFirstLoginJwt = (employee) => {
   return generateFirstLoginToken({
     id: employee.employeeId,
     email: employee.email,
   });
-}
+};
 
 exports.buildPreTwoFactorAuthJwt = (employee) => {
-    return generatePreTwoFactorAuthToken({
-        id: employee.employeeId,
-        email: employee.email,
-    });
-}
-
+  return generatePreTwoFactorAuthToken({
+    id: employee.employeeId,
+    email: employee.email,
+  });
+};

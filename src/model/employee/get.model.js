@@ -1,4 +1,3 @@
-//model/employee/employeeGet.model.js
 const prisma = require("../../prisma");
 
 exports.findByCurp = async (curp) => {
@@ -14,15 +13,17 @@ exports.findById = async (employee_id) => {
 };
 
 exports.getAllRoles = async () => {
-  return await prisma.role.findMany();
+  const roles = await prisma.role.findMany();
+  return roles.map((role) => ({
+    roleId: role.role_id,
+    name: role.name,
+  }));
 };
 
 exports.getDocumentsByEmployee = async (employeeId) => {
   return await prisma.employee_documents.findMany({
     where: { employee_id: employeeId },
-    include: {
-      documents: true,
-    },
+    include: { documents: true },
   });
 };
 
@@ -31,4 +32,48 @@ exports.findDocumentRowByEmployee = async (employee_id) => {
     where: { employee_id },
     include: { documents: true },
   });
+};
+
+exports.getEmployees = async (houseId, active, search, skip, take) => {
+  const where = {
+    house_id: houseId,
+    is_active: active,
+  };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { surname: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  const [employees, total] = await Promise.all([
+    prisma.employee.findMany({
+      where,
+      select: {
+        employee_id: true,
+        name: true,
+        surname: true,
+        picture: true,
+        is_active: true,
+        role: { select: { name: true } },
+      },
+      orderBy: { name: "asc" },
+      skip,
+      take,
+    }),
+    prisma.employee.count({ where }),
+  ]);
+
+  return {
+    employees: employees.map((e) => ({
+      employeeId: e.employee_id,
+      name: e.name,
+      surname: e.surname,
+      picture: e.picture,
+      isActive: e.is_active,
+      roleName: e.role.name,
+    })),
+    total,
+  };
 };

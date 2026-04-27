@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyToken = require("../middleware/auth");
-const userController = require("../controller/auth.controller");
+const authController = require("../controller/auth/auth.controller");
 const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
 const verifyPreTwoFactorAuthToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");
@@ -14,46 +14,45 @@ const {
 
 const router = express.Router();
 
-router.post("/login", validate(loginSchema), userController.loginFunction);
+router.post("/login", validate(loginSchema), authController.loginFunction);
 
 router.post(
   "/first-login/change-password",
   verifyFirstLoginToken,
   validate(firstLoginChangePasswordSchema),
-  userController.changePasswordFirstLogin,
+  authController.changePasswordFirstLogin,
 );
 
 router.post(
   "/change-password",
   verifyToken,
   validate(changePasswordSchema),
-  userController.changePassword,
+  authController.changePassword,
 );
 
-router.post("/2fa/setup", verifyToken, userController.setupTwoFactorAuth);
+router.post("/2fa/setup", verifyToken, authController.setupTwoFactorAuth);
 
 router.post(
   "/2fa/verify",
   verifyToken,
   validate(twoFactorTokenSchema),
-  userController.verifyTwoFactorSetup,
+  authController.verifyTwoFactorSetup,
 );
 
 router.post(
   "/2fa/validate",
   verifyPreTwoFactorAuthToken,
   validate(twoFactorTokenSchema),
-  userController.validateTwoFactorAuth,
+  authController.validateTwoFactorAuth,
 );
 
 router.post(
   "/2fa/disable",
   verifyToken,
   validate(disableTwoFactorSchema),
-  userController.disableTwoFactorAuth,
+  authController.disableTwoFactorAuth,
 );
 
-router.get("/status/2FA", verifyToken, userController.getTwoFactorAuthStatus);
-
+router.get("/status/2FA", verifyToken, authController.getTwoFactorAuthStatus);
 
 module.exports = router;

@@ -67,12 +67,14 @@ const generateToken = () => {
       tokenType: "SESSION",
     },
     process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
 };
 
 const cleanDb = async () => {
-  await prisma.employee_documents.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
+  await prisma.employee_documents.deleteMany({
+    where: { employee_id: TEST_EMPLOYEE_ID },
+  });
   await prisma.documents.deleteMany();
   await prisma.logs.deleteMany();
   await prisma.employee.deleteMany({ where: { role_id: TEST_ROLE_ID } });

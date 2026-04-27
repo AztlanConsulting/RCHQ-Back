@@ -1,21 +1,21 @@
-const User = require("../model/auth.model");
-const { verifyPassword } = require("../utils/password");
-const { getClientIp } = require("../utils/ip");
-const { createLog } = require("../model/log.model");
+const { verifyPassword } = require("../../utils/password");
+const { getClientIp } = require("../../utils/ip");
+const { createLog } = require("../../model/log.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const { LOG_ACTIONS } = require("../utils/logActions");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const User = require("../../model/auth/auth.model");
 const {
   buildSessionToken,
   buildFirstLoginJwt,
   buildPreTwoFactorAuthJwt,
-} = require("../utils/auth/authTokens");
+} = require("../../utils/auth/authTokens");
 const {
   isBlockedUntil,
   clearExpiredLoginBlock,
   clearExpiredTwoFactorAuthBlock,
-} = require("../utils/auth/authGuards");
-const prisma = require("../prisma");
+} = require("../../utils/auth/authGuards");
+const prisma = require("../../prisma");
 
 const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
@@ -174,10 +174,7 @@ async function login(req) {
   };
 }
 
-async function setupTwoFactorAuth({
-  employeeId,
-  ipAddress,
-}) {
+async function setupTwoFactorAuth({ employeeId, ipAddress }) {
   if (!employeeId) {
     return {
       status: 401,
@@ -606,7 +603,7 @@ async function disableTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid credentials" },
+      body: { success: false, message: "Credenciales inválidas" },
     };
   }
 

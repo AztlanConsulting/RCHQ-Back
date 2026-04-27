@@ -1,6 +1,10 @@
-const authService = require("../service/auth.service");
-const passwordService = require("../service/password.service");
-const { getClientIp } = require("../utils/ip");
+// const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
+// const { canAccess } = require("../middleware/abac");
+// const { adminPolicy } = require("../policies/user.policies");
+// const {verifyPassword, hashPassword} = require("../utils/password");
+const authService = require("../../service/auth/auth.service");
+const passwordService = require("../../service/auth/password.service");
+const { getClientIp } = require("../../utils/ip");
 
 exports.loginFunction = async (req, res) => {
   try {
@@ -13,20 +17,6 @@ exports.loginFunction = async (req, res) => {
       message: "Internal Server Error",
     });
   }
-};
-
-exports.getProfile = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Profile retrieved successfully",
-    data: {
-      employeeId: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
-      role: req.user.role,
-      privileges: req.user.privileges || [],
-    },
-  });
 };
 
 exports.changePasswordFirstLogin = async (req, res) => {
@@ -83,7 +73,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
       employeeId,
       ipAddress,
     });
-    
+
     return res.status(result.status).json(result.body);
   } catch (error) {
     console.error("Error in Two Factor Auth setup:", error);

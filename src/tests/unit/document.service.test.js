@@ -3,7 +3,9 @@ const {
   updateDocument,
 } = require("../../service/employee/create.service");
 const { deleteDocument } = require("../../service/employee/delete.service");
-const { getDocumentsByEmployee } = require("../../service/employee/get.service");
+const {
+  getDocumentsByEmployee,
+} = require("../../service/employee/get.service");
 const { RESPONSE } = require("../../utils/response");
 
 // ─── Mocks ────────────────────────────────────────────────
@@ -32,14 +34,22 @@ beforeEach(() => {
 // ─── UPLOAD DOCUMENT ──────────────────────────────────────
 describe("uploadDocument service", () => {
   it("retorna NOT_ALLOW si el tipo de documento es inválido", async () => {
-    const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, INVALID_FIELD);
+    const result = await uploadDocument(
+      TEST_EMPLOYEE_ID,
+      MOCK_FILE,
+      INVALID_FIELD,
+    );
     expect(result.type).toBe(RESPONSE.DOCUMENTS.NOT_ALLOW);
     expect(result.body.success).toBe(false);
   });
 
   it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
     readModel.findById.mockResolvedValue(null);
-    const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, VALID_FIELD);
+    const result = await uploadDocument(
+      TEST_EMPLOYEE_ID,
+      MOCK_FILE,
+      VALID_FIELD,
+    );
     expect(result.type).toBe(RESPONSE.USER.NOT_FOUND);
     expect(readModel.findById).toHaveBeenCalledWith(TEST_EMPLOYEE_ID);
   });
@@ -50,12 +60,16 @@ describe("uploadDocument service", () => {
     readModel.findDocumentRowByEmployee.mockResolvedValue({
       document_id: "doc-1",
       documents: {
-      [VALID_FIELD]: "uploads/documents/existing.pdf",
+        [VALID_FIELD]: "uploads/documents/existing.pdf",
       },
     });
 
     // Act
-    const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, VALID_FIELD);
+    const result = await uploadDocument(
+      TEST_EMPLOYEE_ID,
+      MOCK_FILE,
+      VALID_FIELD,
+    );
 
     // Assert
     expect(result.type).toBe(RESPONSE.DOCUMENTS.ALREADY_EXIST);
@@ -72,14 +86,18 @@ describe("uploadDocument service", () => {
     createModel.createDocumentRowWithUrl.mockResolvedValue({ id: "doc-1" });
 
     // Act
-    const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, VALID_FIELD);
+    const result = await uploadDocument(
+      TEST_EMPLOYEE_ID,
+      MOCK_FILE,
+      VALID_FIELD,
+    );
 
     // Assert
     expect(result.type).toBe(RESPONSE.DOCUMENTS.UPLOAD);
     expect(createModel.createDocumentRowWithUrl).toHaveBeenCalledWith(
       TEST_EMPLOYEE_ID,
       VALID_FIELD,
-      FILE_URL
+      FILE_URL,
     );
   });
 
@@ -88,14 +106,18 @@ describe("uploadDocument service", () => {
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
     readModel.findDocumentRowByEmployee.mockResolvedValue({
       document_id: "doc-1",
-      documents:{
-      [VALID_FIELD]: null,
-      }
+      documents: {
+        [VALID_FIELD]: null,
+      },
     });
     createModel.updateDocumentField.mockResolvedValue({ id: "doc-1" });
 
     // Act
-    const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, VALID_FIELD);
+    const result = await uploadDocument(
+      TEST_EMPLOYEE_ID,
+      MOCK_FILE,
+      VALID_FIELD,
+    );
 
     // Assert
     expect(result.type).toBe(RESPONSE.DOCUMENTS.UPLOAD);
@@ -103,7 +125,7 @@ describe("uploadDocument service", () => {
       "doc-1",
       TEST_EMPLOYEE_ID,
       VALID_FIELD,
-      FILE_URL
+      FILE_URL,
     );
     expect(createModel.createDocumentRowWithUrl).not.toHaveBeenCalled();
   });
@@ -112,36 +134,57 @@ describe("uploadDocument service", () => {
 // ─── UPDATE DOCUMENT ──────────────────────────────────────
 describe("updateDocument service", () => {
   it("retorna NOT_ALLOW si el tipo de documento es inválido", async () => {
-    const result = await updateDocument(TEST_EMPLOYEE_ID, INVALID_FIELD, MOCK_FILE);
+    const result = await updateDocument(
+      TEST_EMPLOYEE_ID,
+      INVALID_FIELD,
+      MOCK_FILE,
+    );
     expect(result.type).toBe(RESPONSE.DOCUMENTS.NOT_ALLOW);
   });
 
   it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
     readModel.findById.mockResolvedValue(null);
-    const result = await updateDocument(TEST_EMPLOYEE_ID, VALID_FIELD, MOCK_FILE);
+    const result = await updateDocument(
+      TEST_EMPLOYEE_ID,
+      VALID_FIELD,
+      MOCK_FILE,
+    );
     expect(result.type).toBe(RESPONSE.USER.NOT_FOUND);
   });
 
   it("retorna DOCUMENTS.NOT_FOUND si no existe fila de documentos", async () => {
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
     readModel.findDocumentRowByEmployee.mockResolvedValue(null);
-    const result = await updateDocument(TEST_EMPLOYEE_ID, VALID_FIELD, MOCK_FILE);
+    const result = await updateDocument(
+      TEST_EMPLOYEE_ID,
+      VALID_FIELD,
+      MOCK_FILE,
+    );
     expect(result.type).toBe(RESPONSE.DOCUMENTS.NOT_FOUND);
   });
 
   it("actualiza el documento exitosamente", async () => {
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-    readModel.findDocumentRowByEmployee.mockResolvedValue({ document_id: "doc-1" });
-    createModel.updateDocumentField.mockResolvedValue({ id: "doc-1", [VALID_FIELD]: FILE_URL });
+    readModel.findDocumentRowByEmployee.mockResolvedValue({
+      document_id: "doc-1",
+    });
+    createModel.updateDocumentField.mockResolvedValue({
+      id: "doc-1",
+      [VALID_FIELD]: FILE_URL,
+    });
 
-    const result = await updateDocument(TEST_EMPLOYEE_ID, VALID_FIELD, MOCK_FILE);
+    const result = await updateDocument(
+      TEST_EMPLOYEE_ID,
+      VALID_FIELD,
+      MOCK_FILE,
+    );
 
     expect(result.type).toBe(RESPONSE.DOCUMENTS.UPLOAD);
     expect(createModel.updateDocumentField).toHaveBeenCalledWith(
       "doc-1",
       TEST_EMPLOYEE_ID,
       VALID_FIELD,
-      FILE_URL
+      FILE_URL,
     );
   });
 });
@@ -182,7 +225,7 @@ describe("deleteDocument service", () => {
     expect(deleteModel.clearDocumentField).toHaveBeenCalledWith(
       "doc-1",
       TEST_EMPLOYEE_ID,
-      VALID_FIELD
+      VALID_FIELD,
     );
     expect(result.type).toBe(RESPONSE.DOCUMENTS.DELETE);
   });

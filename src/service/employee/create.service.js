@@ -1,5 +1,3 @@
-//service/employee/employeeAdd.service.js
-
 const {
   create,
   createDocumentRowWithUrl,
@@ -8,6 +6,7 @@ const {
 const {
   findById,
   findByCurp,
+  getAllRoles,
   findDocumentRowByEmployee,
 } = require("../../model/employee/get.model");
 const { createLog } = require("../../model/log.model");
@@ -15,110 +14,100 @@ const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
 const {
   employeeCreateSchema,
-} = require("../../schemas/employee/employeeAdd.schemas");
+} = require("../../schemas/employee/create.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
+const { employeePolicy } = require("../../policies/employee.policies");
 const { v4: uuidv4 } = require("uuid");
-const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
 const { RESPONSE } = require("../../utils/response");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
 
-exports.createEmployee = async (data, user, req) => {
-  const result = employeeCreateSchema.safeParse(data);
+exports.getById = async (id) => {
+  return await findById(id);
+};
 
-  if (!result.success) {
+exports.getRoles = async () => {
+  return await getAllRoles();
+};
+
+exports.createEmployee = async (employee, user, req) => {
+  const validation = employeeCreateSchema.safeParse(employee);
+
+  if (!validation.success) {
     return {
-      status: 400,
-      body: {
-        errors: result.error.issues.map((e) => ({
-          campo: e.path[0],
-          mensaje: e.message,
-        })),
-      },
+      success: false,
+      type: "VALIDATION_ERROR",
+      errors: validation.error.issues.map((error) => ({
+        campo: error.path[0],
+        mensaje: error.message,
+      })),
     };
   }
 
-  const validatedData = result.data;
-  const resource = { house_id: validatedData.house_id };
+  const data = validation.data;
 
-  if (!createEmployeePolicy(user, resource)) {
+  const canCreate = employeePolicy(user, { houseId: data.houseId });
+
+  if (!canCreate) {
     return {
-      status: 403,
-      body: { message: "Acceso Denegado" },
+      success: false,
+      type: "FORBIDDEN",
+      message: "Acceso denegado",
     };
   }
 
-  const {
-    role_id,
-    name,
-    surname,
-    email,
-    curp,
-    rfc,
-    nss,
-    bank_account,
-    birth_date,
-    picture,
-  } = validatedData;
+  const existingEmployee = await findByCurp(data.curp);
 
-  const existing = await findByCurp(curp);
-
-  if (existing) {
+  if (existingEmployee) {
     return {
-      status: 409,
-      body: {
-        error: "Empleado ya existente",
-        redirect: `/employee/${existing.employee_id}`,
-      },
+      success: false,
+      type: "CONFLICT",
+      message: "Empleado ya existente",
+      employeeId: existingEmployee.employee_id,
     };
   }
 
-  const password = "red_de_casas_hogar";
-  const hashedPassword = await hashPassword(password);
+  const hashedPassword = await hashPassword("red_de_casas_hogar");
 
   const newEmployee = await create({
-    employee_id: uuidv4(),
-    house_id: user.houseId,
-    role_id,
-    name,
-    surname,
-    is_active: true,
-    email,
+    employeeId: uuidv4(),
+    houseId: user.houseId,
+    roleId: data.roleId,
+    name: data.name,
+    surname: data.surname,
+    isActive: true,
+    email: data.email,
     password: hashedPassword,
-    has_first_login: true,
-    totp_secret: null,
-    curp,
-    rfc,
-    nss,
-    bank_account,
-    birth_date: birth_date ? new Date(birth_date) : null,
-    picture: picture || null,
-    start_date: new Date(),
+    hasFirstLogin: true,
+    totpSecret: null,
+    curp: data.curp,
+    rfc: data.rfc,
+    nss: data.nss,
+    bankAccount: data.bankAccount,
+    birthDate: data.birthDate ? new Date(data.birthDate) : null,
+    picture: data.picture,
+    startDate: new Date(),
   });
 
-  const actorId = user?.id;
-  let logError = null;
+  let warning = null;
 
   try {
     await createLog(
-      actorId,
+      user.id,
       LOG_ACTIONS.EMPLOYEE_CREATED,
-      newEmployee.employee_id,
+      newEmployee.employeeId,
       getClientIp(req),
     );
   } catch (error) {
     console.error("Error creando log:", error);
-    logError = error;
+    warning = "Empleado creado pero el log falló";
   }
 
   return {
-    status: 201,
-    body: {
-      message: "Empleado creado con éxito.",
-      redirect: `/employee/${newEmployee.employee_id}`,
-      warning: logError ? "Empleado creado pero el log falló" : null,
-    },
+    success: true,
+    employeeId: newEmployee.employeeId,
+    warning,
   };
 };
 
@@ -147,18 +136,22 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
     return {
       type: RESPONSE.DOCUMENTS.ALREADY_EXIST,
       body: {
-        success:false,
+        success: false,
         message: "Este documento ya existe",
-        field:documentField,
+        field: documentField,
       },
     };
-  }  
-    const fileUrl = `uploads/documents/${file.filename}`;
+  }
 
-    const resultDoc = existingRow
-       ? await updateDocumentField(existingRow.document_id, employeeId, documentField, fileUrl)
-       : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
-  
+  const fileUrl = `uploads/documents/${file.filename}`;
+  const resultDoc = existingRow
+    ? await updateDocumentField(
+        existingRow.document_id,
+        employeeId,
+        documentField,
+        fileUrl,
+      )
+    : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
 
   return {
     type: RESPONSE.DOCUMENTS.UPLOAD,

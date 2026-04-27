@@ -8,7 +8,7 @@ const verifyPreTwoFactorAuthToken = (req, res, next) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
       success: false,
-      message: "No token provided",
+      message: "Token no proporcionado",
     });
   }
 
@@ -29,7 +29,7 @@ const verifyPreTwoFactorAuthToken = (req, res, next) => {
   } catch {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token",
+      message: "Token inválido o expirado",
     });
   }
 };
