@@ -18,6 +18,8 @@ function mapEmployee(employee) {
     birthDate: employee.birth_date,
     picture: employee.picture,
     startDate: employee.start_date,
+    endDate: employee.end_date,
+    phoneNumber: employee.phone_number,
     nss: employee.nss,
     bankAccount: employee.bank_account,
     failedLoginAttempts: employee.failed_login_attempts,
@@ -114,6 +116,10 @@ async function getAdminEmployeeInfoById(employeeId) {
         select: {
           employee_address_id: true,
           url: true,
+          street: true,
+          municipio: true,
+          city: true,
+          postal_code: true,
           date: true,
         },
         orderBy: { date: "desc" },
@@ -154,6 +160,10 @@ async function getAdminEmployeeInfoById(employeeId) {
     addresses: employee.employee_address.map((a) => ({
       employeeAddressId: a.employee_address_id,
       url: a.url,
+      street: a.street,
+      municipio: a.municipio,
+      city: a.city,
+      postalCode: a.postal_code,
       date: a.date,
     })),
     workdays: employee.employee_workday.map((w) => ({

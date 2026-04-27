@@ -22,7 +22,6 @@ async function getEmployeeDetail(req) {
 
     // get basic employee info
     const employeeBasicInfo = await Personnel.getEmployeeById(employeeID);
-    console.log("basic info: ", employeeBasicInfo);
 
     // If the employee whose detail we want to see doesn't exist,
     // return 404 Not Found
@@ -41,6 +40,7 @@ async function getEmployeeDetail(req) {
     if (house) {
         employeeBasicInfo.house = house;
     }
+    console.log("basic info: ", employeeBasicInfo);
 
     // get administrativeEmployeeInfo
     const employeeAdminInfo = await Personnel.getAdminEmployeeInfoById(employeeID);

@@ -81,6 +81,8 @@ model employee {
   birth_date                    DateTime?                       @db.Date
   picture                       String?                         @db.VarChar(150)
   start_date                    DateTime                        @db.Date
+  end_date                      DateTime?                       @db.Date
+  phone_number                  String?                         @db.VarChar(20)
   nss                           String?                         @unique @db.VarChar(11)
   bank_account                  String?                         @db.VarChar(18)
   blocked_until                 DateTime?                       @db.Timestamp(6)
@@ -105,7 +107,11 @@ model employee {
 model employee_address {
   employee_address_id String   @id(map: "employee_address_pk") @db.Uuid
   employee_id         String   @db.Uuid
-  url                 String   @db.VarChar(100)
+  url                 String   @db.VarChar(200)
+  street              String?  @db.VarChar(200)
+  municipio           String?  @db.VarChar(120)
+  city                String?  @db.VarChar(100)
+  postal_code         String?  @db.VarChar(10)
   date                DateTime @db.Timestamp(6)
   employee            employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_address_employee_fk")
 }
