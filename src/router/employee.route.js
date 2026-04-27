@@ -15,14 +15,12 @@ const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 const {
-    getAdd,
     getById,
     postAdd,
 } = require("../controller/employee/create.controller");
 
-const { getAll } = require("../controller/employee/getAll.controller");
 
-router.get("/add", verifyToken, getAdd);
+router.get("/add", verifyToken, employeeGetController.getAdd);
 router.get(
   "/:id/documents",
   verifyToken,
@@ -53,7 +51,7 @@ router.delete(
   employeeDeleteController.deleteDocument,
 );
 
-router.get("/getAll", verifyToken, authorize(employeePolicy), getAll);
+router.get("/getAll", verifyToken, authorize(employeePolicy), employeeGetController.getAll);
 
 router.get("/:id", getById);
 

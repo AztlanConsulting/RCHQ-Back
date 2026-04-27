@@ -73,7 +73,7 @@ exports.updateDocumentField = async (
 ) => {
   return await prisma.$transaction(async (tx) => {
     const updatedDoc = await tx.documents.update({
-      where: { documentId },
+      where: { document_id: documentId },
       data: { [field]: fileUrl },
     });
     await tx.employee_documents.update({

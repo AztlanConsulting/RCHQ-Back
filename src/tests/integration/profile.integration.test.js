@@ -19,8 +19,8 @@ require("dotenv").config({ path: ".env.test" });
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 const request  = require("supertest");
-const bcrypt   = require("bcrypt");
-const app      = require("../../index");
+const bcrypt = require("bcryptjs");
+const app = require("../../index");
 const { seedDb, cleanDb, disconnectDb, IDS } = require("../helpers/dbSetup");
 
 // ─── Credenciales de prueba (deben coincidir con el seed) ────────────────────

@@ -2,6 +2,7 @@ const {
   getRoles,
   getById,
   getDocumentsByEmployee,
+  getEmployeesService,
 } = require("../../service/employee/get.service");
 const { RESPONSE } = require("../../utils/response");
 
@@ -67,4 +68,32 @@ exports.getDocumentsByEmployee = async (req, res) => {
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
   }
+};
+
+exports.getAll = async (req, res) => {
+    try {
+        const { houseId } = req.user;
+        const { active, page, limit, search } = req.query;
+
+        const result = await getEmployeesService(
+            houseId,
+            active,
+            page,
+            limit,
+            search,
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: result.data,
+            pagination: result.pagination,
+        });
+    } catch (error) {
+        console.error("Error obteniendo a los empleados: ", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor",
+        });
+    }
 };
