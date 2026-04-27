@@ -32,6 +32,20 @@ function mapEmployee(employee) {
   };
 }
 
+function mapEmployeeAddress(employeeAddress) {
+  if (!employeeAddress) return undefined;
+
+  return {
+    employeeAddressId: employeeAddress.employee_address_id,
+    url: employeeAddress.url,
+    date: employeeAddress.date,
+    street: employeeAddress.street,
+    municipio: employeeAddress.municipio,
+    city: employeeAddress.city,
+    postal_code: employeeAddress.postal_code,
+  };
+}
+
 function mapHouse(house) {
   if (!house) return undefined;
 
@@ -78,6 +92,14 @@ async function getEmployeeById(employeeId) {
   return mapEmployee(employee);
 }
 
+async function getEmployeeAddress(employeeId) {
+  const employeeAddress = await prisma.employee_address.findFirst({
+    where: { employee_id: employeeId },
+  });
+
+  return mapEmployeeAddress(employeeAddress);
+}
+
 async function getHouseByEmployeeId(employeeId) {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
@@ -95,7 +117,6 @@ async function getHouseByEmployeeId(employeeId) {
 // vacations, faults, and other cyclic employee data
 // aggregate data from:
 // employee_faults -> faults
-// employee_address
 // employee_workday
 // employee_vacation_requests
 async function getAdminEmployeeInfoById(employeeId) {
@@ -112,18 +133,6 @@ async function getAdminEmployeeInfoById(employeeId) {
             },
           },
         },
-      },
-      employee_address: {
-        select: {
-          employee_address_id: true,
-          url: true,
-          street: true,
-          municipio: true,
-          city: true,
-          postal_code: true,
-          date: true,
-        },
-        orderBy: { date: "desc" },
       },
       employee_workday: {
         select: {
@@ -157,15 +166,6 @@ async function getAdminEmployeeInfoById(employeeId) {
       faultId: ef.fault.fault_id,
       date: ef.fault.date,
       description: ef.fault.description,
-    })),
-    addresses: employee.employee_address.map((a) => ({
-      employeeAddressId: a.employee_address_id,
-      url: a.url,
-      street: a.street,
-      municipio: a.municipio,
-      city: a.city,
-      postalCode: a.postal_code,
-      date: a.date,
     })),
     workdays: employee.employee_workday.map((w) => ({
       workdayId: w.workday.workday_id,
@@ -277,6 +277,7 @@ async function getEmployeeRecord(employeeId) {
 module.exports = {
   findEmployeeByEmail,
   getEmployeeById,
+  getEmployeeAddress,
   getHouseByEmployeeId,
   getAdminEmployeeInfoById,
   getEmployeeRecord

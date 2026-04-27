@@ -36,6 +36,11 @@ async function getEmployeeDetail(req) {
         }
     }
 
+    const employeeAddress = await Personnel.getEmployeeAddress(employeeID);
+    if (employeeAddress) {
+        employeeBasicInfo.address = employeeAddress;
+    }
+
     const house = await Personnel.getHouseByEmployeeId(employeeID);
     if (house) {
         employeeBasicInfo.house = house;
