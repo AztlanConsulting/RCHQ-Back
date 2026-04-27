@@ -9,3 +9,7 @@ exports.combineDateAndTime = (date, time) => {
     
     return combined;
 }
+
+exports.toUTC = (date) => {
+    return new Date(date.toISOString());
+}

@@ -1,6 +1,7 @@
 const { getStartDate } = require("../../model/employee/consult.model");
 const { getVacationsInRange } = require("../../model/vacation/consult.model")
 const { getVacationDays } = require("../../utils/vacationDays")
+const { toUTC } = require("../../utils/dates")
 
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
@@ -11,9 +12,9 @@ exports.getRemainingVacations = async (employeeId) => {
     const baseYear = baseDate.getUTCFullYear();
 
     const currentDate = new Date();
-    const currentDay = currentDate.getDate();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+    const currentDay = currentDate.getUTCDate();
+    const currentMonth = currentDate.getUTCMonth();
+    const currentYear = currentDate.getUTCFullYear();
     
     let anniversaryAlreadyPassed = false;
     
@@ -21,7 +22,7 @@ exports.getRemainingVacations = async (employeeId) => {
         anniversaryAlreadyPassed = true;
     }
     
-    let startYear = currentDate.getFullYear();
+    let startYear = currentDate.getUTCFullYear();
     let endYear = startYear + 1;
     
     const startDate = new Date(Date.UTC(startYear, baseMonth, baseDay));
