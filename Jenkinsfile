@@ -1,6 +1,9 @@
 pipeline {
   agent any
   options { timestamps() }
+  tools {
+    nodejs 'NodeJS'
+  }
   stages {
     stage('Install dependencies') {
       steps {
