@@ -1,0 +1,118 @@
+@startuml
+title US28 - Registrar vacaciones de un empleado
+
+|Usuario|
+start
+:Administrador/Coordinador entra a registrar vacaciones;
+
+|Sistema|
+:Obtener usuario autenticado;
+if (¿Usuario autenticado?) then (Sí)
+else (No)
+  :Mostrar error "Usuario no autenticado";
+  stop
+endif
+
+:Validar rol del usuario;
+if (¿Rol es Administrador o Coordinador?) then (Sí)
+else (No)
+  :Mostrar error "No tienes permisos para registrar vacaciones";
+  stop
+endif
+
+|Usuario|
+:Seleccionar empleado;
+:Seleccionar fecha de inicio;
+:Seleccionar fecha final;
+
+|Sistema|
+:Validar que el empleado exista;
+if (¿Empleado existe?) then (Sí)
+else (No)
+  :Mostrar error "Empleado no encontrado";
+  stop
+endif
+
+if (¿Usuario es Coordinador?) then (Sí)
+  :Validar que el empleado pertenezca a la misma casa hogar;
+  if (¿Empleado pertenece a la casa hogar del Coordinador?) then (Sí)
+  else (No)
+    :Mostrar error "No puedes registrar vacaciones para empleados fuera de tu casa hogar";
+    stop
+  endif
+else (No)
+endif
+
+:Validar fechas;
+if (¿Fecha inicial es anterior a hoy?) then (Sí)
+  :Mostrar error "No se pueden registrar vacaciones en fechas pasadas";
+  stop
+else (No)
+endif
+
+if (¿Fecha final es anterior a fecha inicial?) then (Sí)
+  :Mostrar error "La fecha final no puede ser anterior a la fecha inicial";
+  stop
+else (No)
+endif
+
+:Obtener días laborales del empleado;
+if (¿Empleado tiene días laborales registrados?) then (Sí)
+else (No)
+  :Mostrar error "El empleado debe tener días de trabajo registrados";
+  stop
+endif
+
+:Calcular días laborales dentro del rango solicitado;
+if (¿El rango consume al menos un día laboral?) then (Sí)
+else (No)
+  :Mostrar error "El rango seleccionado no contiene días laborales del empleado";
+  stop
+endif
+
+:Obtener vacaciones PENDING y APPROVED del empleado;
+:Ignorar vacaciones REJECTED;
+
+:Validar traslapes con vacaciones PENDING y APPROVED;
+if (¿Existe traslape?) then (Sí)
+  :Mostrar error "Ya existe una solicitud de vacaciones dentro del rango solicitado";
+  stop
+else (No)
+endif
+
+:Calcular días comprometidos;
+note right
+Los días comprometidos incluyen:
+- vacaciones pendientes
+- vacaciones aprobadas
+
+No incluyen:
+- vacaciones rechazadas
+end note
+
+:Calcular días disponibles;
+if (¿Días solicitados <= días disponibles?) then (Sí)
+else (No)
+  :Mostrar error "El empleado no tiene días de vacaciones suficientes";
+  stop
+endif
+
+:Registrar vacaciones con estado APPROVED;
+
+:Crear log de auditoría;
+note right
+El log debe registrar:
+- usuario que hizo la acción
+- empleado afectado
+- acción realizada
+- IP
+- fecha/hora
+end note
+
+:Mostrar confirmación "Vacaciones registradas correctamente";
+
+|Usuario|
+:Visualizar confirmación en pantalla;
+stop
+
+@enduml

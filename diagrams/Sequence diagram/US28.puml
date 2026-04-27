@@ -1,0 +1,166 @@
+@startuml
+title US28 - Administrador/Coordinador registra vacaciones de un empleado
+
+actor navegador
+boundary vacation.routes
+control vacation.controller
+control vacation.service
+entity employee.model
+entity vacation.model
+entity logs.model
+database PostgreSQL
+
+autonumber
+
+navegador -> vacation.routes : POST /vacation/employees/:employeeId/register
+activate navegador
+activate vacation.routes
+
+vacation.routes -> vacation.controller : registerEmployeeVacation(req, res)
+deactivate vacation.routes
+activate vacation.controller
+
+vacation.controller ->> vacation.service : registerEmployeeVacation({\n  actorEmployeeId,\n  targetEmployeeId,\n  startDate,\n  endDate,\n  ipAddress\n})
+activate vacation.service
+
+alt actorEmployeeId no existe
+    vacation.service -->> vacation.controller : Error USER_NOT_AUTHENTICATED
+    vacation.controller -> navegador : 401 Unauthorized {\n  success: false,\n  code: "USER_NOT_AUTHENTICATED",\n  message: "Usuario no autenticado"\n}
+end
+
+vacation.service ->> employee.model : getEmployeeById(actorEmployeeId)
+activate employee.model
+employee.model ->> PostgreSQL : prisma.employee.findUnique({\n  where: { employee_id: actorEmployeeId },\n  include: { role: true, house: true }\n})
+activate PostgreSQL
+PostgreSQL -->> employee.model : actorEmployee
+deactivate PostgreSQL
+employee.model -->> vacation.service : actorEmployee
+deactivate employee.model
+
+alt actorEmployee no existe
+    vacation.service -->> vacation.controller : Error USER_NOT_AUTHENTICATED
+    vacation.controller -> navegador : 401 Unauthorized {\n  success: false,\n  code: "USER_NOT_AUTHENTICATED",\n  message: "Usuario no autenticado"\n}
+end
+
+alt actorEmployee no es Administrador ni Coordinador
+    vacation.service -->> vacation.controller : Error INSUFFICIENT_PERMISSIONS
+    vacation.controller -> navegador : 403 Forbidden {\n  success: false,\n  code: "INSUFFICIENT_PERMISSIONS",\n  message: "No tienes permisos para registrar vacaciones de otros empleados"\n}
+end
+
+vacation.service ->> employee.model : getEmployeeById(targetEmployeeId)
+activate employee.model
+employee.model ->> PostgreSQL : prisma.employee.findUnique({\n  where: { employee_id: targetEmployeeId },\n  include: { house: true }\n})
+activate PostgreSQL
+PostgreSQL -->> employee.model : targetEmployee
+deactivate PostgreSQL
+employee.model -->> vacation.service : targetEmployee
+deactivate employee.model
+
+alt targetEmployee no existe
+    vacation.service -->> vacation.controller : Error EMPLOYEE_NOT_FOUND
+    vacation.controller -> navegador : 404 Not Found {\n  success: false,\n  code: "EMPLOYEE_NOT_FOUND",\n  message: "Empleado no encontrado"\n}
+end
+
+alt actorEmployee es Coordinador y targetEmployee.house_id != actorEmployee.house_id
+    vacation.service -->> vacation.controller : Error EMPLOYEE_OUT_OF_SCOPE
+    vacation.controller -> navegador : 403 Forbidden {\n  success: false,\n  code: "EMPLOYEE_OUT_OF_SCOPE",\n  message: "No puedes registrar vacaciones para empleados fuera de tu casa hogar"\n}
+end
+
+alt startDate < today
+    vacation.service -->> vacation.controller : Error PAST_DATE_NOT_ALLOWED
+    vacation.controller -> navegador : 406 Not Acceptable {\n  success: false,\n  code: "PAST_DATE_NOT_ALLOWED",\n  message: "No se pueden registrar vacaciones en fechas pasadas"\n}
+end
+
+alt endDate < startDate
+    vacation.service -->> vacation.controller : Error INVALID_DATE_RANGE
+    vacation.controller -> navegador : 406 Not Acceptable {\n  success: false,\n  code: "INVALID_DATE_RANGE",\n  message: "La fecha final no puede ser anterior a la fecha inicial"\n}
+end
+
+vacation.service ->> employee.model : getWorkDays(targetEmployeeId)
+activate employee.model
+employee.model ->> PostgreSQL : prisma.employee_workday.findMany({\n  where: { employee_id: targetEmployeeId },\n  include: { workday: true }\n})
+activate PostgreSQL
+PostgreSQL -->> employee.model : workDays
+deactivate PostgreSQL
+employee.model -->> vacation.service : workDays
+deactivate employee.model
+
+alt workDays.length == 0
+    vacation.service -->> vacation.controller : Error WORKDAYS_NOT_REGISTERED
+    vacation.controller -> navegador : 406 Not Acceptable {\n  success: false,\n  code: "WORKDAYS_NOT_REGISTERED",\n  message: "El empleado debe tener días de trabajo registrados"\n}
+end
+
+vacation.service ->> vacation.service : calculateVacationDays(startDate, endDate, workDays)
+
+alt vacationDays == 0
+    vacation.service -->> vacation.controller : Error NO_WORKDAYS_IN_RANGE
+    vacation.controller -> navegador : 406 Not Acceptable {\n  success: false,\n  code: "NO_WORKDAYS_IN_RANGE",\n  message: "El rango seleccionado no contiene días laborales del empleado"\n}
+end
+
+vacation.service ->> vacation.model : getActiveVacationsInRange(targetEmployeeId, startDate, endDate)
+activate vacation.model
+vacation.model ->> PostgreSQL : prisma.vacation_requests.findMany({\n  where: {\n    employee_id: targetEmployeeId,\n    status: { in: ["PENDING", "APPROVED"] },\n    start_date: { lte: endDate },\n    end_date: { gte: startDate }\n  }\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.model : overlappingVacations
+deactivate PostgreSQL
+vacation.model -->> vacation.service : overlappingVacations
+deactivate vacation.model
+
+alt overlappingVacations.length > 0
+    vacation.service -->> vacation.controller : Error VACATION_OVERLAP
+    vacation.controller -> navegador : 406 Not Acceptable {\n  success: false,\n  code: "VACATION_OVERLAP",\n  message: "Ya existe una solicitud de vacaciones dentro del rango solicitado"\n}
+end
+
+vacation.service ->> employee.model : getStartDate(targetEmployeeId)
+activate employee.model
+employee.model ->> PostgreSQL : prisma.employee.findUnique({\n  where: { employee_id: targetEmployeeId },\n  select: { start_date: true }\n})
+activate PostgreSQL
+PostgreSQL -->> employee.model : startDate
+deactivate PostgreSQL
+employee.model -->> vacation.service : employeeStartDate
+deactivate employee.model
+
+vacation.service ->> vacation.service : calculateCurrentWorkYear(employeeStartDate)
+
+vacation.service ->> vacation.model : getCommittedVacationsInRange(targetEmployeeId, workYearStart, workYearEnd)
+activate vacation.model
+vacation.model ->> PostgreSQL : prisma.vacation_requests.findMany({\n  where: {\n    employee_id: targetEmployeeId,\n    status: { in: ["PENDING", "APPROVED"] },\n    start_date: { gte: workYearStart },\n    end_date: { lte: workYearEnd }\n  }\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.model : committedVacations
+deactivate PostgreSQL
+vacation.model -->> vacation.service : committedVacations
+deactivate vacation.model
+
+vacation.service ->> vacation.service : calculateRemainingVacationDays(employeeStartDate, committedVacations, workDays)
+
+alt vacationDays > remainingDays
+    vacation.service -->> vacation.controller : Error INSUFFICIENT_VACATION_DAYS
+    vacation.controller -> navegador : 406 Not Acceptable {\n  success: false,\n  code: "INSUFFICIENT_VACATION_DAYS",\n  message: "El empleado no tiene días de vacaciones suficientes"\n}
+end
+
+vacation.service ->> vacation.model : createVacationRequest({\n  employeeId: targetEmployeeId,\n  startDate,\n  endDate,\n  status: "APPROVED",\n  requestedByEmployeeId: actorEmployeeId,\n  approvedByEmployeeId: actorEmployeeId,\n  source: "HR_REGISTERED"\n})
+activate vacation.model
+vacation.model ->> PostgreSQL : prisma.vacation_requests.create({ data })
+activate PostgreSQL
+PostgreSQL -->> vacation.model : vacationRequest
+deactivate PostgreSQL
+vacation.model -->> vacation.service : vacationRequest
+deactivate vacation.model
+
+vacation.service ->> logs.model : createLog({\n  employeeId: actorEmployeeId,\n  action: "REGISTER_EMPLOYEE_VACATION",\n  affected: targetEmployeeId,\n  ipAddress\n})
+activate logs.model
+logs.model ->> PostgreSQL : prisma.logs.create({ data })
+activate PostgreSQL
+PostgreSQL -->> logs.model : log
+deactivate PostgreSQL
+logs.model -->> vacation.service : log
+deactivate logs.model
+
+vacation.service -->> vacation.controller : vacationRequest
+deactivate vacation.service
+
+vacation.controller -> navegador : 201 Created {\n  success: true,\n  message: "Vacaciones registradas correctamente",\n  data: { vacationRequest }\n}
+deactivate vacation.controller
+deactivate navegador
+
+@enduml
