@@ -1,11 +1,20 @@
 pipeline {
   agent any
   options { timestamps() }
-
   stages {
-    stage('Test Jenkinsfile') {
+    stage('Install dependencies') {
       steps {
-        echo 'Jenkins está funcionando correctamente'
+        sh 'npm install'
+      }
+    }
+    stage('Run tests') {
+      steps {
+        sh 'npm test'
+      }
+    }
+    stage('Build') {
+      steps {
+        sh 'npm run build'
       }
     }
   }
