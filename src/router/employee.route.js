@@ -11,7 +11,7 @@ const {
     postAdd,
 } = require("../controller/employee/create.controller");
 
-const { getAll } = require("../controller/employee/getAll.controller");
+const { getAll } = require("../controller/employee/get.controller");
 
 router.get("/add", verifyToken, getAdd);
 

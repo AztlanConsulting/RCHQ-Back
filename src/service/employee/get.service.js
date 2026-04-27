@@ -1,4 +1,4 @@
-const { getEmployees } = require("../../model/employee/getAll.model");
+const { getEmployees } = require("../../model/employee/get.model");
 
 exports.getEmployeesService = async (
     houseId,

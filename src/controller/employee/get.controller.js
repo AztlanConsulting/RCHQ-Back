@@ -1,6 +1,4 @@
-const {
-    getEmployeesService,
-} = require("../../service/employee/getAll.service");
+const { getEmployeesService } = require("../../service/employee/get.service");
 
 exports.getAll = async (req, res) => {
     try {

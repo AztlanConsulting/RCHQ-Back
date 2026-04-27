@@ -1,18 +1,16 @@
 // tests/unit/employeeGetAll.service.test.js
 
-const employeeModel = require("../../model/employee/getAll.model");
+const employeeModel = require("../../model/employee/get.model");
 
 // =====================================================
 // MOCKS
 // =====================================================
 
-jest.mock("../../model/employee/getAll.model", () => ({
+jest.mock("../../model/employee/get.model", () => ({
     getEmployees: jest.fn(),
 }));
 
-const {
-    getEmployeesService,
-} = require("../../service/employee/getAll.service");
+const { getEmployeesService } = require("../../service/employee/get.service");
 
 // =====================================================
 // TEST SUITE
