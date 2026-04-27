@@ -13,7 +13,12 @@ async function findById(employee_id) {
 }
 
 async function getAllRoles() {
-    return await prisma.role.findMany();
+    const roles = await prisma.role.findMany();
+
+    return roles.map((role) => ({
+        roleId: role.role_id,
+        name: role.name,
+    }));
 }
 
 module.exports = {
