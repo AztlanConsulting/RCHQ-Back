@@ -6,11 +6,11 @@ const employeeController = require("../controller/employee.controller");
 const router = express.Router();
 
 router.get(
-    "/employee-detail/:employeeID",
-    verifyToken,
-    requireRole("admin"),
-    // authorize(),
-    employeeController.getEmployeeDetail,
+  "/employee-detail/:employeeID",
+  verifyToken,
+  requireRole("admin"),
+  // authorize(),
+  employeeController.getEmployeeDetail,
 );
 
 module.exports = router;

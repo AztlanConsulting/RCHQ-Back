@@ -230,29 +230,57 @@ const seedSubjectEmployeeWithRelations = async () => {
 // Borrado respetando FKs (hijos primero) — solo filas creadas en estos tests
 const cleanSubjectGraph = async () => {
   await prisma.logs.deleteMany({
-    where: { employee_id: { in: [TEST_ADMIN_EMPLOYEE_ID, TEST_SUBJECT_EMPLOYEE_ID] } },
+    where: {
+      employee_id: { in: [TEST_ADMIN_EMPLOYEE_ID, TEST_SUBJECT_EMPLOYEE_ID] },
+    },
   });
-  await prisma.vacations_request.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.employee_address.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.employee_workday.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.employee_fault.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.employee_documents.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.employee_inside_certification.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.outside_certification.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.psychological_evaluation.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
-  await prisma.employee.deleteMany({ where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID } });
+  await prisma.vacations_request.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.employee_address.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.employee_workday.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.employee_fault.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.employee_documents.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.employee_inside_certification.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.outside_certification.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.psychological_evaluation.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
+  await prisma.employee.deleteMany({
+    where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
+  });
   await prisma.fault.deleteMany({ where: { fault_id: TEST_FAULT_ID } });
   await prisma.workday.deleteMany({ where: { workday_id: TEST_WORKDAY_ID } });
-  await prisma.documents.deleteMany({ where: { document_id: TEST_DOCUMENTS_ID } });
-  await prisma.inside_certifications.deleteMany({ where: { inside_certification_id: TEST_INSIDE_CERT_ID } });
+  await prisma.documents.deleteMany({
+    where: { document_id: TEST_DOCUMENTS_ID },
+  });
+  await prisma.inside_certifications.deleteMany({
+    where: { inside_certification_id: TEST_INSIDE_CERT_ID },
+  });
 };
 
 const cleanAllSeeded = async () => {
   await prisma.logs.deleteMany({
-    where: { employee_id: { in: [TEST_ADMIN_EMPLOYEE_ID, TEST_SUBJECT_EMPLOYEE_ID] } },
+    where: {
+      employee_id: { in: [TEST_ADMIN_EMPLOYEE_ID, TEST_SUBJECT_EMPLOYEE_ID] },
+    },
   });
   await cleanSubjectGraph();
-  await prisma.employee.deleteMany({ where: { employee_id: TEST_ADMIN_EMPLOYEE_ID } });
+  await prisma.employee.deleteMany({
+    where: { employee_id: TEST_ADMIN_EMPLOYEE_ID },
+  });
   await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
   await prisma.role.deleteMany({ where: { role_id: TEST_ROLE_ID } });
 };
@@ -260,7 +288,9 @@ const cleanAllSeeded = async () => {
 // ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
   await cleanSubjectGraph();
-  await prisma.employee.deleteMany({ where: { employee_id: TEST_ADMIN_EMPLOYEE_ID } });
+  await prisma.employee.deleteMany({
+    where: { employee_id: TEST_ADMIN_EMPLOYEE_ID },
+  });
   await seedDependencies();
 });
 afterEach(async () => {
@@ -307,15 +337,29 @@ describe("GET /employee/employee-detail/:employeeID - integration", () => {
     expect(basicInfo).toMatchObject({ email: TEST_SUBJECT_EMAIL });
     expect(basicInfo.address).toMatchObject({ street: "Calle 1" });
     expect(adminInfo).toMatchObject({
-      faults: [expect.objectContaining({ description: "Falta de prueba (integration)" })],
+      faults: [
+        expect.objectContaining({
+          description: "Falta de prueba (integration)",
+        }),
+      ],
       workdays: [expect.objectContaining({ name: expect.any(String) })],
-      vacationRequests: [expect.objectContaining({ status: 1, feedback: "ok" })],
+      vacationRequests: [
+        expect.objectContaining({ status: 1, feedback: "ok" }),
+      ],
     });
     expect(record).toMatchObject({
-      documents: [expect.objectContaining({ url: "https://docs.example/bundle1" })],
-      insideCertifications: [expect.objectContaining({ name: "Cert interna integration" })],
-      outsideCertifications: [expect.objectContaining({ name: "Cert externa" })],
-      psychologicalEvaluations: [expect.objectContaining({ file: "psych.pdf" })],
+      documents: [
+        expect.objectContaining({ url: "https://docs.example/bundle1" }),
+      ],
+      insideCertifications: [
+        expect.objectContaining({ name: "Cert interna integration" }),
+      ],
+      outsideCertifications: [
+        expect.objectContaining({ name: "Cert externa" }),
+      ],
+      psychologicalEvaluations: [
+        expect.objectContaining({ file: "psych.pdf" }),
+      ],
     });
   });
 });

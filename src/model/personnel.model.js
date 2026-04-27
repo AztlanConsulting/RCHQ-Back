@@ -245,8 +245,10 @@ async function getEmployeeRecord(employeeId) {
         professionalId: d.documents.professional_id,
         educationCertificate: d.documents.education_certificate,
         medicalCertificate: d.documents.medical_certificate,
-        stateCriminalRecordCertificate: d.documents.state_criminal_record_certificate,
-        federalCriminalRecordCertificate: d.documents.federal_criminal_record_certificate,
+        stateCriminalRecordCertificate:
+          d.documents.state_criminal_record_certificate,
+        federalCriminalRecordCertificate:
+          d.documents.federal_criminal_record_certificate,
         firstRecommendationLetter: d.documents.first_recommendation_letter,
         secondRecommendationLetter: d.documents.second_recommendation_letter,
         driverLicense: d.documents.driver_license,
@@ -282,5 +284,5 @@ module.exports = {
   getEmployeeAddress,
   getHouseByEmployeeId,
   getAdminEmployeeInfoById,
-  getEmployeeRecord
+  getEmployeeRecord,
 };

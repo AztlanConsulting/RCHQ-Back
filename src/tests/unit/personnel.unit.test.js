@@ -3,6 +3,8 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 
 jest.mock("../../model/personnel.model", () => ({
   getEmployeeById: jest.fn(),
+  getEmployeeAddress: jest.fn(),
+  getHouseByEmployeeId: jest.fn(),
   getAdminEmployeeInfoById: jest.fn(),
   getEmployeeRecord: jest.fn(),
 }));
@@ -113,8 +115,14 @@ const mockEmployeeRecord = {
   ],
 };
 
-const makeReq = (body = {}, user = { userID: "viewer-user-id" }) => ({
+// Mirrors Express: route `/employee-detail/:employeeID` → req.params.employeeID; verifyToken → req.user.id
+const makeReq = ({
+  body = {},
+  params = {},
+  user = { id: "viewer-user-id" },
+} = {}) => ({
   body,
+  params,
   ip: "127.0.0.1",
   headers: {},
   socket: { remoteAddress: "127.0.0.1" },
@@ -132,7 +140,9 @@ describe("getEmployeeDetail", () => {
     // Arrange
 
     // Act
-    const result = await getEmployeeDetail(makeReq({}, { userID: "u1" }));
+    const result = await getEmployeeDetail(
+      makeReq({ user: { id: "u1" }, params: {} }),
+    );
 
     // Assert
     expect(result.status).toBe(400);
@@ -146,7 +156,7 @@ describe("getEmployeeDetail", () => {
 
     // Act
     const result = await getEmployeeDetail(
-      makeReq({ employeeID: "missing-id" }),
+      makeReq({ params: { employeeID: "missing-id" } }),
     );
 
     // Assert
@@ -162,7 +172,10 @@ describe("getEmployeeDetail", () => {
     Personnel.getEmployeeRecord.mockResolvedValue(mockEmployeeRecord);
 
     const result = await getEmployeeDetail(
-      makeReq({ employeeID: "abc-123" }, { userID: "admin-viewer" }),
+      makeReq({
+        params: { employeeID: "abc-123" },
+        user: { id: "admin-viewer" },
+      }),
     );
 
     expect(result.status).toBe(200);

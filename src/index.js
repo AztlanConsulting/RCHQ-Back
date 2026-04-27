@@ -25,12 +25,11 @@ app.use("/users", userRouter);
 app.use("/employee", employeeRouter);
 
 app.use("/health", (req, res) => {
-  res.status(200)
-    .json({ 
-      success: true, 
-      message: "Aplicación bueno"
-    })
-})
+  res.status(200).json({
+    success: true,
+    message: "Aplicación bueno",
+  });
+});
 
 app.use(errorHandler);
 
