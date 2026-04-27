@@ -159,6 +159,7 @@ CREATE TABLE public.vacations_request (
 	"end" date NOT NULL,
 	status int NOT NULL,
 	feedback text NULL,
+	created_at timestamp NOT NULL,
 	CONSTRAINT vacations_request_pk PRIMARY KEY (vacations_request_id),
 	CONSTRAINT vacations_request_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );

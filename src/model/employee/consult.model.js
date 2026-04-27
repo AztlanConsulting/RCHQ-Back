@@ -16,8 +16,32 @@ async function getAllRoles() {
     return await prisma.role.findMany();
 }
 
+async function getWorkDays(employeeId) {
+    return await prisma.employee_workday.findMany({
+        where: {
+            employee_id: employeeId
+        },
+        include: {
+            workday: true
+        }
+    });
+}
+
+async function getHome(employeeId) {
+    return await prisma.employee.findUnique({
+        where: {
+            employee_id: employeeId
+        },
+        select: {
+            house_id: true
+        }
+    });
+}
+
 module.exports = {
     findByCurp,
     findById,
     getAllRoles,
+    getWorkDays,
+    getHome
 };

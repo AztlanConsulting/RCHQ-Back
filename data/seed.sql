@@ -109,4 +109,20 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
 ('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false);
 
+INSERT INTO public.workday (workday_id, name) VALUES
+('a0000003-0000-4000-8000-000580000000', 'Lunes'),
+('a0000003-0000-4000-8000-000000580001', 'Martes'),
+('a0000003-0000-4000-8000-000580000002', 'Miércoles'),
+('a0000003-0000-4000-8000-000000580003', 'Jueves'),
+('a0000003-0000-4000-8000-000580000004', 'Viernes'),
+('a0000003-0000-4000-8000-000005800005', 'Sábado'),
+('a0000003-0000-4000-8000-000058000006', 'Domingo');
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALUES
+('a0000003-0000-4000-8000-000580000000', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000000580001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000580000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000000580003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000580000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+
 COMMIT;
