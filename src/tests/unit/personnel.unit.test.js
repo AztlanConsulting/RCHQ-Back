@@ -136,7 +136,7 @@ beforeEach(() => {
 });
 
 describe("getEmployeeDetail", () => {
-  it("returns 400 when employeeID is missing", async () => {
+  it("retorna 400 cuando no hay employeeID", async () => {
     // Arrange
 
     // Act
@@ -146,11 +146,11 @@ describe("getEmployeeDetail", () => {
 
     // Assert
     expect(result.status).toBe(400);
-    expect(result.body.code).toBe("Bad Request");
+    expect(result.body.code).toBe("Request Mala");
     expect(Personnel.getEmployeeById).not.toHaveBeenCalled();
   });
 
-  it("returns 404 when employee does not exist", async () => {
+  it("retorna 404 cuando empleado no existe", async () => {
     // Arrange
     Personnel.getEmployeeById.mockResolvedValue(null);
 
@@ -166,7 +166,7 @@ describe("getEmployeeDetail", () => {
     expect(Personnel.getEmployeeRecord).not.toHaveBeenCalled();
   });
 
-  it("returns 200 with basicInfo, adminInfo, record and logs the read", async () => {
+  it("retorna 200 con basicInfo, adminInfo, record y loggea la acción", async () => {
     Personnel.getEmployeeById.mockResolvedValue({ ...mockEmployee });
     Personnel.getAdminEmployeeInfoById.mockResolvedValue(mockEmployeeAdminInfo);
     Personnel.getEmployeeRecord.mockResolvedValue(mockEmployeeRecord);
