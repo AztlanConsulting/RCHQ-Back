@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 // ─── Constantes de prueba ─────────────────────────────────
 const TEST_HOUSE_ID = randomUUID();
-let TEST_ROLE_ID; // Se asigna dinámicamente consultando tu BD
+let TEST_ROLE_ID;
 const TEST_EMAIL = "maria.lopez.integracion@test.com";
 const TEST_CURP = "LOMM900512HDFRRN01";
 const TEST_ADMIN_ID = randomUUID();
@@ -25,9 +25,9 @@ let baseEmployeePayload = {
     curp: TEST_CURP,
     rfc: "LOMM900512A12",
     nss: "12345678901",
-    bank_account: "012345678901234567",
-    house_id: TEST_HOUSE_ID,
-    birth_date: "1990-05-12",
+    bankAccount: "012345678901234567",
+    houseId: TEST_HOUSE_ID,
+    birthDate: "1990-05-12",
 };
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -61,7 +61,7 @@ const seedDependencies = async () => {
     }
 
     TEST_ROLE_ID = adminRole.role_id;
-    baseEmployeePayload.role_id = TEST_ROLE_ID;
+    baseEmployeePayload.roleId = TEST_ROLE_ID;
 
     await prisma.house.upsert({
         where: { house_id: TEST_HOUSE_ID },
@@ -140,13 +140,20 @@ beforeAll(async () => {
     await cleanDb();
     await seedDependencies();
 });
+
 afterEach(async () => {
     await cleanDb();
 });
+
 afterAll(async () => {
-    await prisma.logs.deleteMany({ where: { employee_id: TEST_ADMIN_ID } });
-    await prisma.employee.deleteMany({ where: { curp: TEST_ADMIN_CURP } });
-    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
+    await prisma.employee.deleteMany({
+        where: { curp: TEST_ADMIN_CURP },
+    });
+
+    await prisma.house.deleteMany({
+        where: { house_id: TEST_HOUSE_ID },
+    });
+
     await prisma.$disconnect();
 });
 
@@ -191,9 +198,17 @@ describe(`POST ${API_ROUTE} - integration`, () => {
 
         await prisma.employee.create({
             data: {
-                ...baseEmployeePayload,
-                birth_date: new Date(baseEmployeePayload.birth_date),
                 employee_id: randomUUID(),
+                name: baseEmployeePayload.name,
+                surname: baseEmployeePayload.surname,
+                email: baseEmployeePayload.email,
+                curp: baseEmployeePayload.curp,
+                rfc: baseEmployeePayload.rfc,
+                nss: baseEmployeePayload.nss,
+                bank_account: baseEmployeePayload.bankAccount,
+                house_id: baseEmployeePayload.houseId,
+                role_id: baseEmployeePayload.roleId,
+                birth_date: new Date(baseEmployeePayload.birthDate),
                 start_date: new Date(),
                 password: "dummy_password",
                 is_active: true,
