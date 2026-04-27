@@ -3,7 +3,7 @@
 // const { adminPolicy } = require("../policies/user.policies");
 // const {verifyPassword, hashPassword} = require("../utils/password");
 const authService = require("../../service/auth/auth.service");
-const passwordService = require("../../service/password.service");
+const passwordService = require("../../service/auth/password.service");
 const { getClientIp } = require("../../utils/ip");
 
 exports.loginFunction = async (req, res) => {

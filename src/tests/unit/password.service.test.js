@@ -34,7 +34,7 @@ const {
 const {
     changePassword,
     changePasswordFirstLogin,
-} = require("../../service/password.service");
+} = require("../../service/auth/password.service");
 
 const mockEmployee = {
     employeeId: "emp-123",

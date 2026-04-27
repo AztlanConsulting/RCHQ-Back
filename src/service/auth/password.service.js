@@ -1,12 +1,12 @@
-const prisma = require("../prisma");
-const auth = require("../model/auth/auth.model");
-const { createLog } = require("../model/log.model");
-const { LOG_ACTIONS } = require("../utils/logActions");
-const { verifyPassword, hashPassword } = require("../utils/password");
+const prisma = require("../../prisma");
+const auth = require("../../model/auth/auth.model");
+const { createLog } = require("../../model/log.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { verifyPassword, hashPassword } = require("../../utils/password");
 const {
     buildSessionToken,
     buildPre2faJwt,
-} = require("../utils/auth/authTokens");
+} = require("../../utils/auth/authTokens");
 
 exports.changePassword = async ({
     employeeId,
