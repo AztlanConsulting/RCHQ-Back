@@ -2,24 +2,9 @@ const Personnel = require("../model/personnel.model");
 const { getClientIp } = require("../utils/ip");
 const { createLog } = require("../model/log.model");
 const { LOG_ACTIONS } = require("../utils/logActions");
+const responses = require("../utils/responses");
 
-exports.getEmployeeDetail = async (req) => {
-  const userID = req.user.id;
-  const { employeeID } = req.params;
-  const ipAddress = getClientIp(req);
-
-  // Return 400 Bad request if there is no employee id to lookup
-  if (!employeeID) {
-    return {
-      status: 400,
-      body: {
-        success: false,
-        code: "Request Mala",
-        message: "Incomplete body for this request",
-      },
-    };
-  }
-
+exports.getEmployeeDetail = async (userID, employeeID) => {
   // get basic employee info
   const employeeBasicInfo = await Personnel.getEmployeeById(employeeID);
 
@@ -27,12 +12,7 @@ exports.getEmployeeDetail = async (req) => {
   // return 404 Not Found
   if (!employeeBasicInfo) {
     return {
-      status: 404,
-      body: {
-        success: false,
-        code: "Not Found",
-        message: "User with given ID not found",
-      },
+      code: responses.personnel.notFound,
     };
   }
 
@@ -53,24 +33,14 @@ exports.getEmployeeDetail = async (req) => {
   // get employee record
   const employeeRecord = await Personnel.getEmployeeRecord(employeeID);
 
-  // create log of get-employee-detail
-  // deberiamos wrappear esto en un try/catch??
-  await createLog(userID, LOG_ACTIONS.READ_EMPLOYEE_DETAIL, ipAddress);
-
-  // return data payload
   return {
-    status: 200,
-    body: {
-      success: true,
-      code: "",
-      message: "",
-      data: {
-        employee: {
-          basicInfo: employeeBasicInfo,
-          adminInfo: employeeAdminInfo,
-          record: employeeRecord,
-        },
+    code: responses.personnel.found,
+    data: {
+      employee: {
+        basicInfo: employeeBasicInfo,
+        adminInfo: employeeAdminInfo,
+        record: employeeRecord,
       },
     },
-  };
+  }
 };
