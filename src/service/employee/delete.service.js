@@ -3,7 +3,7 @@ const { clearDocumentField } = require("../../model/employee/delete.model");
 const {
   findById,
   findDocumentRowByEmployee,
-} = require("../../model/employee/read.model");
+} = require("../../model/employee/get.model");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
 const { RESPONSE } = require("../../utils/response");
 const fs = require("fs");

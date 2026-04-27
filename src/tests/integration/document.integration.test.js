@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 const TEST_HOUSE_ID = randomUUID();
 const TEST_ROLE_ID = randomUUID();
 const TEST_EMPLOYEE_ID = randomUUID();
-const TEST_EMAIL = "doctest@test.com";  // corto y fijo, sin UUID en el email
+const TEST_EMAIL = "doctest@test.com";
 const TEST_HOUSE_NAME = `Casa Docs Test ${TEST_HOUSE_ID}`;
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -33,10 +33,7 @@ const seedDependencies = async () => {
   await prisma.role.upsert({
     where: { role_id: TEST_ROLE_ID },
     update: { name: "administrador" },
-    create: {
-      role_id: TEST_ROLE_ID,
-      name: "administrador",
-    },
+    create: { role_id: TEST_ROLE_ID, name: "administrador" },
   });
 
   await prisma.employee.upsert({
@@ -81,15 +78,14 @@ const cleanDb = async () => {
   await prisma.employee.deleteMany({ where: { role_id: TEST_ROLE_ID } });
 };
 
+const dummyPdfBuffer = Buffer.from("%PDF-1.4 dummy content");
+
 // ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
   await cleanDb();
   await seedDependencies();
-
   const uploadDir = path.join(__dirname, "../../uploads/documents");
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 });
 
 afterAll(async () => {
@@ -99,12 +95,9 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-// Dummy Buffer for PDF
-const dummyPdfBuffer = Buffer.from("%PDF-1.4 dummy content");
-
 // ─── POST /employee/:id/documents ─────────────────────────
 describe("POST /employee/:id/documents - integration", () => {
-  it("retorna 400 si faltan campos (ej. sin archivo)", async () => {
+  it("retorna 400 si faltan campos (sin archivo)", async () => {
     const token = generateToken();
     const res = await request(app)
       .post(`/employee/${TEST_EMPLOYEE_ID}/documents`)
@@ -143,6 +136,33 @@ describe("POST /employee/:id/documents - integration", () => {
     });
     expect(docRow).not.toBeNull();
   });
+
+  it("retorna 409 si el documento ya existe para ese campo", async () => {
+    const token = generateToken();
+
+    // El test anterior ya subió cv, intentamos subirlo de nuevo
+    const res = await request(app)
+      .post(`/employee/${TEST_EMPLOYEE_ID}/documents`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("documentField", "cv")
+      .attach("file", dummyPdfBuffer, "duplicate.pdf");
+
+    expect(res.statusCode).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.field).toBe("cv");
+  });
+
+  it("sube un campo distinto sin problema aunque ya exista la fila", async () => {
+    const token = generateToken();
+    const res = await request(app)
+      .post(`/employee/${TEST_EMPLOYEE_ID}/documents`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("documentField", "nss")
+      .attach("file", dummyPdfBuffer, "nss.pdf");
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
 });
 
 // ─── PUT /employee/:id/documents/:field ───────────────────
@@ -158,11 +178,21 @@ describe("PUT /employee/:id/documents/:field - integration", () => {
     expect(res.body.success).toBe(true);
   });
 
-  it("retorna 400 si no se envia archivo", async () => {
+  it("retorna 400 si no se envía archivo", async () => {
     const token = generateToken();
     const res = await request(app)
       .put(`/employee/${TEST_EMPLOYEE_ID}/documents/cv`)
       .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("retorna 400 si el field es inválido", async () => {
+    const token = generateToken();
+    const res = await request(app)
+      .put(`/employee/${TEST_EMPLOYEE_ID}/documents/campo_invalido`)
+      .set("Authorization", `Bearer ${token}`)
+      .attach("file", dummyPdfBuffer, "update.pdf");
 
     expect(res.statusCode).toBe(400);
   });

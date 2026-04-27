@@ -1,18 +1,17 @@
-// tests/unit/document.service.test.js
 const {
   uploadDocument,
   updateDocument,
 } = require("../../service/employee/create.service");
 const { deleteDocument } = require("../../service/employee/delete.service");
-const { getDocumentsByEmployee } = require("../../service/employee/read.service");
+const { getDocumentsByEmployee } = require("../../service/employee/get.service");
 const { RESPONSE } = require("../../utils/response");
 
 // ─── Mocks ────────────────────────────────────────────────
-jest.mock("../../model/employee/read.model");
+jest.mock("../../model/employee/get.model");
 jest.mock("../../model/employee/create.model");
 jest.mock("../../model/employee/delete.model");
 
-const readModel = require("../../model/employee/read.model");
+const readModel = require("../../model/employee/get.model");
 const createModel = require("../../model/employee/create.model");
 const deleteModel = require("../../model/employee/delete.model");
 const fs = require("fs");
@@ -33,27 +32,40 @@ beforeEach(() => {
 // ─── UPLOAD DOCUMENT ──────────────────────────────────────
 describe("uploadDocument service", () => {
   it("retorna NOT_ALLOW si el tipo de documento es inválido", async () => {
-    // Act
     const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, INVALID_FIELD);
-
-    // Assert
     expect(result.type).toBe(RESPONSE.DOCUMENTS.NOT_ALLOW);
     expect(result.body.success).toBe(false);
   });
 
   it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
-    // Arrange
     readModel.findById.mockResolvedValue(null);
+    const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, VALID_FIELD);
+    expect(result.type).toBe(RESPONSE.USER.NOT_FOUND);
+    expect(readModel.findById).toHaveBeenCalledWith(TEST_EMPLOYEE_ID);
+  });
+
+  it("retorna ALREADY_EXIST si el campo ya tiene un documento", async () => {
+    // Arrange
+    readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
+    readModel.findDocumentRowByEmployee.mockResolvedValue({
+      document_id: "doc-1",
+      documents: {
+      [VALID_FIELD]: "uploads/documents/existing.pdf",
+      },
+    });
 
     // Act
     const result = await uploadDocument(TEST_EMPLOYEE_ID, MOCK_FILE, VALID_FIELD);
 
     // Assert
-    expect(result.type).toBe(RESPONSE.USER.NOT_FOUND);
-    expect(readModel.findById).toHaveBeenCalledWith(TEST_EMPLOYEE_ID);
+    expect(result.type).toBe(RESPONSE.DOCUMENTS.ALREADY_EXIST);
+    expect(result.body.success).toBe(false);
+    expect(result.body.field).toBe(VALID_FIELD);
+    expect(createModel.createDocumentRowWithUrl).not.toHaveBeenCalled();
+    expect(createModel.updateDocumentField).not.toHaveBeenCalled();
   });
 
-  it("crea un nuevo registro de documento si no existe previamente", async () => {
+  it("crea un nuevo registro si el empleado no tiene ningún documento previo", async () => {
     // Arrange
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
     readModel.findDocumentRowByEmployee.mockResolvedValue(null);
@@ -71,10 +83,15 @@ describe("uploadDocument service", () => {
     );
   });
 
-  it("actualiza el registro si el empleado ya tiene otros documentos", async () => {
+  it("actualiza la fila existente si el empleado tiene otros documentos pero ese campo está vacío", async () => {
     // Arrange
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-    readModel.findDocumentRowByEmployee.mockResolvedValue({ document_id: "doc-1" });
+    readModel.findDocumentRowByEmployee.mockResolvedValue({
+      document_id: "doc-1",
+      documents:{
+      [VALID_FIELD]: null,
+      }
+    });
     createModel.updateDocumentField.mockResolvedValue({ id: "doc-1" });
 
     // Act
@@ -88,6 +105,7 @@ describe("uploadDocument service", () => {
       VALID_FIELD,
       FILE_URL
     );
+    expect(createModel.createDocumentRowWithUrl).not.toHaveBeenCalled();
   });
 });
 
@@ -104,12 +122,10 @@ describe("updateDocument service", () => {
     expect(result.type).toBe(RESPONSE.USER.NOT_FOUND);
   });
 
-  it("retorna DOCUMENTS.NOT_FOUND si el registro no existe", async () => {
+  it("retorna DOCUMENTS.NOT_FOUND si no existe fila de documentos", async () => {
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
     readModel.findDocumentRowByEmployee.mockResolvedValue(null);
-
     const result = await updateDocument(TEST_EMPLOYEE_ID, VALID_FIELD, MOCK_FILE);
-
     expect(result.type).toBe(RESPONSE.DOCUMENTS.NOT_FOUND);
   });
 
@@ -151,7 +167,6 @@ describe("deleteDocument service", () => {
   });
 
   it("elimina el archivo y limpia la BD exitosamente", async () => {
-    // Arrange
     readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
     const mockDocRow = {
       document_id: "doc-1",
@@ -161,10 +176,8 @@ describe("deleteDocument service", () => {
     deleteModel.clearDocumentField.mockResolvedValue(true);
     fs.unlinkSync.mockImplementation(() => {});
 
-    // Act
     const result = await deleteDocument(TEST_EMPLOYEE_ID, VALID_FIELD);
 
-    // Assert
     expect(fs.unlinkSync).toHaveBeenCalledWith("uploads/test.pdf");
     expect(deleteModel.clearDocumentField).toHaveBeenCalledWith(
       "doc-1",

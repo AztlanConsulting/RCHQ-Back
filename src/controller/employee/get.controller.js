@@ -2,7 +2,7 @@ const {
   getRoles,
   getById,
   getDocumentsByEmployee,
-} = require("../../service/employee/read.service");
+} = require("../../service/employee/get.service");
 const { RESPONSE } = require("../../utils/response");
 
 exports.getAdd = async (req, res) => {

@@ -2,7 +2,7 @@ const {
   findById,
   getAllRoles,
   findDocumentRowByEmployee,
-} = require("../../model/employee/read.model");
+} = require("../../model/employee/get.model");
 const { RESPONSE } = require("../../utils/response");
 
 exports.getById = async (id) => {

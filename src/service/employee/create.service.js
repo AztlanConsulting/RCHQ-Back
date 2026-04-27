@@ -9,7 +9,7 @@ const {
   findById,
   findByCurp,
   findDocumentRowByEmployee,
-} = require("../../model/employee/read.model");
+} = require("../../model/employee/get.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
@@ -141,25 +141,24 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
     };
   }
 
-  const fileUrl = `uploads/documents/${file.filename}`;
   const existingRow = await findDocumentRowByEmployee(employeeId);
 
-  let resultDoc;
+  if (existingRow && existingRow.documents?.[documentField]) {
+    return {
+      type: RESPONSE.DOCUMENTS.ALREADY_EXIST,
+      body: {
+        success:false,
+        message: "Este documento ya existe",
+        field:documentField,
+      },
+    };
+  }  
+    const fileUrl = `uploads/documents/${file.filename}`;
 
-  if (existingRow) {
-    resultDoc = await updateDocumentField(
-      existingRow.document_id,
-      employeeId,
-      documentField,
-      fileUrl,
-    );
-  } else {
-    resultDoc = await createDocumentRowWithUrl(
-      employeeId,
-      documentField,
-      fileUrl,
-    );
-  }
+    const resultDoc = existingRow
+       ? await updateDocumentField(existingRow.document_id, employeeId, documentField, fileUrl)
+       : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
+  
 
   return {
     type: RESPONSE.DOCUMENTS.UPLOAD,

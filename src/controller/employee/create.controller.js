@@ -63,6 +63,11 @@ exports.uploadDocument = async (req, res) => {
     if (result.type === RESPONSE.USER.NOT_FOUND) {
       return res.status(404).json(result.body);
     }
+
+    if(result.type === RESPONSE.DOCUMENTS.ALREADY_EXIST){
+      return res.status(409).json(result.body);
+    }
+    
   } catch (err) {
     console.error("uploadDocument error:", err);
     return res
