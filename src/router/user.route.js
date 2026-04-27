@@ -58,13 +58,5 @@ router.post(
 );
 
 router.get("/status/2FA", verifyToken, userController.getStatus2FA);
-// Protected route example with ABAC and RBAC
-router.get(
-    "/profile",
-    verifyToken,
-    // requireRole("admin", "user"),
-    // authorize(adminPolicy, { coordinators: userModel.coordinators || [] }),
-    userController.getProfile,
-);
 
 module.exports = router;
