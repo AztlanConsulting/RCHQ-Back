@@ -38,10 +38,22 @@ async function getHome(employeeId) {
     });
 }
 
+async function getStartDate(employeeId) {
+    return await prisma.employee.findUnique({
+        where: {
+            employee_id: employeeId
+        },
+        select: {
+            start_date: true
+        }
+    });
+}
+
 module.exports = {
     findByCurp,
     findById,
     getAllRoles,
     getWorkDays,
-    getHome
+    getHome,
+    getStartDate
 };

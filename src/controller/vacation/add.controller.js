@@ -1,13 +1,13 @@
-const { getWorkDays } = require("../../service/employee/getOne.service");
+const { getRemainingVacations } = require("../../service/vacation/add.service")
 
-exports.getWorkDays = async (req, res) => {
+exports.getRemainingVacations = async (req, res) => {
     try {
         const employeeId = req.user.id;
-        const workDays = await getWorkDays(employeeId);
+        const remainingVacations = await getRemainingVacations(employeeId);
         return res.status(200).json({
             success: true,
             data: {
-                workDays
+                remainingVacations
             }
         });
     } catch {
