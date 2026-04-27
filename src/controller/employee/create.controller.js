@@ -1,8 +1,18 @@
+const fs = require("fs");
 const {
     getRoles,
     getById: getEmployeeById,
     createEmployee,
 } = require("../../service/employee/create.service");
+const deleteFileIfExists = (filePath) => {
+    if (!filePath) return;
+
+    fs.unlink(filePath, (err) => {
+        if (err) {
+            console.error("Error eliminando archivo:", err.message);
+        }
+    });
+};
 
 exports.getAdd = async (req, res) => {
     try {
@@ -49,6 +59,7 @@ exports.postAdd = async (req, res) => {
         const result = await createEmployee(employee, req.user, req);
 
         if (!result.success) {
+            deleteFileIfExists(req.file?.path);
             switch (result.type) {
                 case "VALIDATION_ERROR":
                     return res.status(400).json({
@@ -80,6 +91,7 @@ exports.postAdd = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
+        deleteFileIfExists(req.file?.path);
 
         return res.status(500).json({
             error: "No se pudo registrar correctamente el empleado",
