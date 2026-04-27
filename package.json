@@ -35,7 +35,7 @@
     "pg": "^8.13.1",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
-    "uuid": "^14.0.0",
+    "uuid": "9.0.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -58,5 +58,10 @@
     "*.{json,md}": [
       "prettier --write"
     ]
-  }
+  },
+  "jest": {
+  "transformIgnorePatterns": [
+    "/node_modules/(?!(uuid)/)"
+  ]
+}
 }
