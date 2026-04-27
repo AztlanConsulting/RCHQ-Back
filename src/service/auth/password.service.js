@@ -1,12 +1,12 @@
-const prisma = require("../prisma");
-const User = require("../model/user.model");
-const { createLog } = require("../model/log.model");
-const { LOG_ACTIONS } = require("../utils/logActions");
-const { verifyPassword, hashPassword } = require("../utils/password");
+const prisma = require("../../prisma");
+const auth = require("../../model/auth/auth.model");
+const { createLog } = require("../../model/log.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { verifyPassword, hashPassword } = require("../../utils/password");
 const {
     buildSessionToken,
     buildPre2faJwt,
-} = require("../utils/auth/authTokens");
+} = require("../../utils/auth/authTokens");
 
 exports.changePassword = async ({
     employeeId,
@@ -25,7 +25,7 @@ exports.changePassword = async ({
         };
     }
 
-    const employee = await User.getEmployeeById(employeeId);
+    const employee = await auth.getEmployeeById(employeeId);
 
     if (!employee) {
         return {
@@ -93,7 +93,7 @@ exports.changePassword = async ({
     const hashedPassword = await hashPassword(newPassword);
 
     await prisma.$transaction(async (tx) => {
-        await User.updatePassword(employee.employeeId, hashedPassword, tx);
+        await auth.updatePassword(employee.employeeId, hashedPassword, tx);
 
         await createLog(
             employee.employeeId,
@@ -132,7 +132,7 @@ exports.changePasswordFirstLogin = async ({
         };
     }
 
-    const employee = await User.getEmployeeById(employeeId);
+    const employee = await auth.getEmployeeById(employeeId);
 
     if (!employee) {
         return {
@@ -189,7 +189,7 @@ exports.changePasswordFirstLogin = async ({
     const hashedPassword = await hashPassword(newPassword);
 
     await prisma.$transaction(async (tx) => {
-        await User.updatePasswordAndClearFirstLogin(
+        await auth.updatePasswordAndClearFirstLogin(
             employee.employeeId,
             hashedPassword,
             tx,
