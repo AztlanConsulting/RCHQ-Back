@@ -15,7 +15,7 @@ const {
     employeeCreateSchema,
 } = require("../../schemas/employee/create.schemas");
 
-const { createEmployeePolicy } = require("../../policies/employeeAdd.policies");
+const { employeePolicy } = require("../../policies/employee.policies");
 
 const { v4: uuidv4 } = require("uuid");
 
@@ -43,7 +43,7 @@ exports.createEmployee = async (employee, user, req) => {
 
     const data = validation.data;
 
-    const canCreate = createEmployeePolicy(user, {
+    const canCreate = employeePolicy(user, {
         houseId: data.houseId,
     });
 
