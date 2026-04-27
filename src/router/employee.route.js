@@ -9,7 +9,7 @@ const {
     getAdd,
     getById,
     postAdd,
-} = require("../controller/employee/employeeAdd.controller");
+} = require("../controller/employee/create.controller");
 
 router.get("/add", verifyToken, getAdd);
 
