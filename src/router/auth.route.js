@@ -1,16 +1,13 @@
 const express = require("express");
 const verifyToken = require("../middleware/auth");
-const { requireRole } = require("../middleware/rbac");
 const userController = require("../controller/auth.controller");
-const userModel = require("../model/auth.model");
-const { authorize } = require("../middleware/abac");
-const { adminPolicy } = require("../policies/employeeAdd.policies");
-// const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
+const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
 const verifyPreTwoFactorAuthToken = require("../middleware/pre2faAuth");
 const validate = require("../middleware/validate");
 const {
   loginSchema,
-  //firstLoginChangePasswordSchema,
+  firstLoginChangePasswordSchema,
+  changePasswordSchema,
   twoFactorTokenSchema,
   disableTwoFactorSchema,
 } = require("../schemas/auth.schemas");
@@ -18,14 +15,20 @@ const {
 const router = express.Router();
 
 router.post("/login", validate(loginSchema), userController.loginFunction);
-//router.post("/first-login/change-password", verifyFirstLoginToken, userController.changePasswordFirstLogin);
 
-// router.post(
-//   "/first-login/change-password",
-//   verifyFirstLoginToken,
-//   validate(firstLoginChangePasswordSchema),
-//   userController.changePasswordFirstLogin
-// );
+router.post(
+  "/first-login/change-password",
+  verifyFirstLoginToken,
+  validate(firstLoginChangePasswordSchema),
+  userController.changePasswordFirstLogin,
+);
+
+router.post(
+  "/change-password",
+  verifyToken,
+  validate(changePasswordSchema),
+  userController.changePassword,
+);
 
 router.post("/2fa/setup", verifyToken, userController.setupTwoFactorAuth);
 
@@ -51,13 +54,6 @@ router.post(
 );
 
 router.get("/status/2FA", verifyToken, userController.getTwoFactorAuthStatus);
-// Protected route example with ABAC and RBAC
-router.get(
-  "/profile",
-  verifyToken,
-  // requireRole("admin", "user"),
-  // authorize(adminPolicy, { coordinators: userModel.coordinators || [] }),
-  userController.getProfile,
-);
+
 
 module.exports = router;

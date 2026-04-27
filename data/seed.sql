@@ -104,6 +104,9 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-017', 'Intento de desactivación de TwoFactorAuth para usuario inactivo', false),
 ('auth-018', 'Fallo de desactivación de TwoFactorAuth por contraseña incorrecta', false),
 ('auth-019', 'TwoFactorAuth bloqueado temporalmente por múltiples intentos fallidos', false),
-('empl-001', 'Empleado creado con exito', false);
+('empl-001', 'Empleado creado con exito', false),
+('auth-020', 'Cambio de contraseña exitoso', false),
+('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
+('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false);
 
 COMMIT;
