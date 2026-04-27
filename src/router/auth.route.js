@@ -46,6 +46,8 @@ router.post(
   authController.validateTwoFactorAuth,
 );
 
+router.post("/2fa/setup", verifyToken, authController.setupTwoFactorAuth);
+
 router.post(
   "/2fa/disable",
   verifyToken,

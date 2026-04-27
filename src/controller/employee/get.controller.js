@@ -2,7 +2,7 @@ const {
   getRoles,
   getById,
   getDocumentsByEmployee,
-  getEmployeesService,
+  getEmployees,
 } = require("../../service/employee/get.service");
 const { RESPONSE } = require("../../utils/response");
 
@@ -75,13 +75,7 @@ exports.getAll = async (req, res) => {
         const { houseId } = req.user;
         const { active, page, limit, search } = req.query;
 
-        const result = await getEmployeesService(
-            houseId,
-            active,
-            page,
-            limit,
-            search,
-        );
+        const result = await getEmployees(houseId, active, page, limit, search);
 
         return res.status(200).json({
             success: true,

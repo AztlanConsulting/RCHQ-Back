@@ -39,7 +39,7 @@ exports.getDocumentsByEmployee = async (employeeId) => {
   };
 };
 
-exports.getEmployeesService = async (
+exports.getEmployees = async (
     houseId,
     activeQuery,
     pageQuery,

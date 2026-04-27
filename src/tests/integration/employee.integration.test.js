@@ -6,7 +6,7 @@ const consult = require("../../model/employee/consult.model");
 // MOCKS
 // =====================================================
 
-jest.mock("../../model/employee/consult.model", () => ({
+jest.mock("../../model/employee/get.model", () => ({
     findByCurp: jest.fn(),
     findById: jest.fn(),
     getAllRoles: jest.fn(),

@@ -4,10 +4,6 @@ const profileController = require("../controller/user/profile.controller");
 
 const router = express.Router();
 
-router.get(
-    "/profile",
-    verifyToken,
-    profileController.getUserProfile
-);
+router.get("/profile", verifyToken, profileController.getUserProfile);
 
 module.exports = router;
