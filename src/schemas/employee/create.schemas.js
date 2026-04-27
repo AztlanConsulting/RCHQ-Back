@@ -10,7 +10,7 @@ const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._/-]+$/;
 const emptyToNull = (val) => (val === "" ? null : val);
 
 const employeeCreateSchema = z.object({
-    role_id: z.string().uuid("El role_id debe ser un UUID válido"),
+    roleId: z.string().uuid("El roleId debe ser un UUID válido"),
 
     name: z
         .string()
@@ -72,7 +72,7 @@ const employeeCreateSchema = z.object({
         })
         .optional(),
 
-    bank_account: z
+    bankAccount: z
         .string()
         .trim()
         .transform(emptyToNull)
@@ -85,7 +85,7 @@ const employeeCreateSchema = z.object({
         })
         .optional(),
 
-    birth_date: z
+    birthDate: z
         .string()
         .trim()
         .transform(emptyToNull)
