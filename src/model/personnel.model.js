@@ -8,6 +8,7 @@ function mapEmployee(employee) {
     email: employee.email,
     pwd: employee.password,
     name: employee.name,
+    surname: employee.surname,
     role: employee.role?.name,
     roleId: employee.role_id,
     isActive: employee.is_active,
