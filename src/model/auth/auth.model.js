@@ -63,23 +63,64 @@ async function getEmployeeById(employeeId) {
   return mapEmployee(employee);
 }
 
-// async function updatePassword(employeeId, newPassword) {
-//   await prisma.employee.update({
-//     where: { employee_id: employeeId },
-//     data: {
-//       password: newPassword,
-//     },
-//   });
-// }
+async function updatePassword(employeeId, hashedPassword, db = prisma) {
+  await db.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      password: hashedPassword,
+    },
+  });
+}
 
-// async function setFirstLogin(employeeId, hasFirstLogin) {
-//   await prisma.employee.update({
-//     where: { employee_id: employeeId },
-//     data: {
-//       has_first_login: hasFirstLogin,
-//     },
-//   });
-// }
+async function setFirstLogin(employeeId, hasFirstLogin, db = prisma) {
+  await db.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      has_first_login: hasFirstLogin,
+    },
+  });
+}
+
+async function updatePasswordAndClearFirstLogin(employeeId, hashedPassword, db = prisma) {
+  await db.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      password: hashedPassword,
+      has_first_login: false,
+    },
+  });
+}
+
+async function activateTwoFactorFromTempSecret(employeeId, db = prisma) {
+  const employee = await db.employee.findUnique({
+    where: { employee_id: employeeId },
+    select: {
+      temp_totp_secret: true,
+    },
+  });
+
+  await db.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      totp_secret: employee?.temp_totp_secret ?? null,
+      temp_totp_secret: null,
+      temp_totp_secret_created_at: null,
+      is_active_2fa: true,
+    },
+  });
+}
+
+async function disableTwoFactor(employeeId, db = prisma) {
+  await db.employee.update({
+    where: { employee_id: employeeId },
+    data: {
+      totp_secret: null,
+      temp_totp_secret: null,
+      temp_totp_secret_created_at: null,
+      is_active_2fa: false,
+    },
+  });
+}
 
 async function incrementFailedAttempts(employeeId) {
   const employee = await prisma.employee.update({
@@ -202,8 +243,11 @@ async function clear2FASecurityState(employeeId) {
 
 module.exports = {
   findEmployeeByEmail,
-  // updatePassword,
-  // setFirstLogin,
+  updatePassword,
+  setFirstLogin,
+  updatePasswordAndClearFirstLogin,
+  activateTwoFactorFromTempSecret,
+  disableTwoFactor,
   incrementFailedAttempts,
   resetFailedAttempts,
   setBlockedUntil,

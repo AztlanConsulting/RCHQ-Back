@@ -3,7 +3,8 @@ const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
-const app = require("../../index");
+const app = require("../../app");
+const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient();
 
@@ -86,6 +87,7 @@ const cleanDb = async () => {
 beforeAll(async () => {
   await cleanDb();
   await seedDependencies();
+  await seedActions();
 });
 afterEach(async () => {
   await cleanDb();
