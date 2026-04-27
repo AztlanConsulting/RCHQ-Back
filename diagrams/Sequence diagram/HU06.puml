@@ -1,0 +1,119 @@
+@startuml HU06 - Administrador visualiza empleados de una casa
+
+actor navegador
+boundary employee.routes
+boundary "React (employeeList.jsx)" as ReactView
+control employee.controller
+control employee.service
+entity employee.model
+database PostgreSQL
+
+autonumber
+
+navegador -> employee.routes : GET /employee/getAll
+activate employee.routes
+
+employee.routes -> employee.controller : getAll(request, response)
+deactivate employee.routes
+activate employee.controller
+
+employee.controller -> employee.service : getEmployees(house_id, active=true)
+activate employee.service
+
+employee.service -> employee.model : getEmployees(house_id, active=true)
+activate employee.model
+
+employee.model -> PostgreSQL : prisma.employee.findMany()
+activate PostgreSQL
+PostgreSQL -->> employee.model : empleados activos
+deactivate PostgreSQL
+
+employee.model -->> employee.service : empleados activos
+deactivate employee.model
+
+employee.service -->> employee.controller : empleados activos
+deactivate employee.service
+
+employee.controller -> ReactView : response.send(lista activos)
+deactivate employee.controller
+activate ReactView
+
+ReactView -> navegador : Mostrar empleados activos
+
+loop Mientras administrador use filtros
+
+alt Administrador selecciona "Inactivos"
+
+    navegador -> ReactView : Elegir filtro inactivos
+
+    ReactView -> employee.routes : GET /employee/getAll?active=false
+    deactivate ReactView
+    activate employee.routes
+
+    employee.routes -> employee.controller : getAll(request, response)
+    deactivate employee.routes
+    activate employee.controller
+
+    employee.controller -> employee.service : getEmployees(house_id, active=false)
+    activate employee.service
+
+    employee.service -> employee.model : getEmployees(house_id, active=false)
+    activate employee.model
+
+    employee.model -> PostgreSQL : prisma.employee.findMany()
+    activate PostgreSQL
+    PostgreSQL -->> employee.model : empleados inactivos
+    deactivate PostgreSQL
+
+    employee.model -->> employee.service : empleados inactivos
+    deactivate employee.model
+
+    employee.service -->> employee.controller : empleados inactivos
+    deactivate employee.service
+
+    employee.controller -> ReactView : response.send(lista inactivos)
+    deactivate employee.controller
+    activate ReactView
+
+    ReactView -> navegador : Mostrar empleados inactivos
+
+else Administrador selecciona "Activos"
+
+    navegador -> ReactView : Elegir filtro activos
+
+    ReactView -> employee.routes : GET /employee/getAll?active=true
+    deactivate ReactView
+    activate employee.routes
+
+    employee.routes -> employee.controller : getAll(request, response)
+    deactivate employee.routes
+    activate employee.controller
+
+    employee.controller -> employee.service : getEmployees(house_id, active=true)
+    activate employee.service
+
+    employee.service -> employee.model : getEmployees(house_id, active=true)
+    activate employee.model
+
+    employee.model -> PostgreSQL : prisma.employee.findMany()
+    activate PostgreSQL
+    PostgreSQL -->> employee.model : empleados activos
+    deactivate PostgreSQL
+
+    employee.model -->> employee.service : empleados activos
+    deactivate employee.model
+
+    employee.service -->> employee.controller : empleados activos
+    deactivate employee.service
+
+    employee.controller -> ReactView : response.send(lista activos)
+    deactivate employee.controller
+    activate ReactView
+
+    ReactView -> navegador : Mostrar empleados activos
+    deactivate ReactView
+
+end
+
+end
+@enduml

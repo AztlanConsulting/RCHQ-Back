@@ -3,10 +3,9 @@ const app = express();
 const cors = require("cors");
 const { PrismaClient } = require('@prisma/client');
 const { getClientIp } = require("./utils/ip");
-const profileRouter = require("./router/profile.route");
-
+const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
-
+const userRouter = require("./router/user.route");
 const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
@@ -29,12 +28,11 @@ app.use(
     }),
 );
 
-//const xd = require("./utils/mail");
+app.use("/auth", authRouter);
 
 const userRouter = require("./router/user.route");
 const employeeRouter = require("./router/employee.route");
 
-app.use("/users", userRouter);
 app.use("/employee", employeeRouter);
 
 app.use("/health", (req, res) => {
@@ -43,8 +41,8 @@ app.use("/health", (req, res) => {
     message: "Aplicación bueno",
   });
 });
+app.use("/user", userRouter);
 
-app.use("/users", profileRouter);
 app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
