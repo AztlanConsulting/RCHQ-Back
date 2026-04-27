@@ -58,7 +58,7 @@ async function getEmployeeDetail(req) {
   await createLog(userID, LOG_ACTIONS.READ_EMPLOYEE_DETAIL, ipAddress);
 
   // return data payload
-  return (result = {
+  return {
     status: 200,
     body: {
       success: true,
@@ -72,7 +72,7 @@ async function getEmployeeDetail(req) {
         },
       },
     },
-  });
+  };
 }
 
 module.exports = {

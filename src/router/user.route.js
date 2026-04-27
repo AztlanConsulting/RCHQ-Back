@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyToken = require("../middleware/auth");
-const { requireRole } = require("../middleware/rbac");
+// const { requireRole } = require("../middleware/rbac");
 const userController = require("../controller/user.controller");
 // const verifyFirstLoginToken = require("../middleware/firstLoginAuth");
 const verifyPre2faToken = require("../middleware/pre2faAuth");
