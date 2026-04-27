@@ -9,8 +9,27 @@ pipeline {
     }
     stage('Run tests') {
       steps {
-        sh 'npm test:unit'
+        sh 'npm run test:unit -- --ci'
       }
+    }
+    stage('Verify startup') {
+      steps {
+        sh '''
+          node src/index.js &
+          SERVER_PID=$!
+          sleep 5
+          kill -0 $SERVER_PID && echo "Servidor OK" || { echo "Servidor falló"; exit 1; }
+          kill $SERVER_PID
+        '''
+      }
+    }
+  }
+  post {
+    failure {
+      echo 'Pipeline falló'
+    }
+    success {
+      echo 'Pipeline completado correctamente'
     }
   }
 }
