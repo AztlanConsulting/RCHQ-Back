@@ -11,6 +11,10 @@ module.exports = {
     "<rootDir>/src/tests/integration/**/*.test.js",
   ],
 
+  transformIgnorePatterns: [
+    "node_modules/(?!(uuid)/)"
+  ],
+
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   testTimeout: 15000,
 };

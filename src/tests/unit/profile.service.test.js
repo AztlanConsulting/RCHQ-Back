@@ -1,12 +1,11 @@
-// tests/backend/profile.service.test.js
-const { getUserProfile } = require("../../service/profile.service");
+// src/tests/unit/profile.service.test.js
+const { getUserProfile } = require("../../service/user/profile.service");
 
-jest.mock("../../model/profile.model");
-const profileModel = require("../../model/profile.model");
+jest.mock("../../model/user/profile.model");
+const profileModel = require("../../model/user/profile.model");
+const responses    = require("../../utils/responses");
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
-const EMPLOYEE_ID = "uuid-empleado-001";
-
 const MOCK_PROFILE = {
   houseName:   "Casa Hogar Querétaro",
   roleName:    "Coordinador",
@@ -21,41 +20,37 @@ const MOCK_PROFILE = {
   picture:     "https://cdn.example.com/foto.jpg",
 };
 
-const buildReq = (id = EMPLOYEE_ID) => ({ user: { id } });
-
 // ─── Tests ───────────────────────────────────────────────────────────────────
 describe("profile.service — getUserProfile", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  describe("Flujo exitoso — 200", () => {
-    it("retorna status 200 y los datos del perfil", async () => {
+  describe("Flujo exitoso", () => {
+    it("retorna code profile.found y los datos del perfil", async () => {
       profileModel.findEmployeeProfile.mockResolvedValue(MOCK_PROFILE);
 
-      const result = await getUserProfile(buildReq());
+      const result = await getUserProfile("uuid-empleado-001");
 
-      expect(result.status).toBe(200);
-      expect(result.body.success).toBe(true);
-      expect(result.body.data).toEqual(MOCK_PROFILE);
+      expect(result.code).toBe(responses.profile.found);
+      expect(result.data).toEqual(MOCK_PROFILE);
     });
 
-    it("llama al model con el id extraído de req.user", async () => {
+    it("llama al model con el employeeId correcto", async () => {
       profileModel.findEmployeeProfile.mockResolvedValue(MOCK_PROFILE);
 
-      await getUserProfile(buildReq("otro-uuid"));
+      await getUserProfile("otro-uuid");
 
       expect(profileModel.findEmployeeProfile).toHaveBeenCalledWith("otro-uuid");
     });
   });
 
-  describe("Flujo - empleado no encontrado — 404", () => {
-    it("retorna status 404 cuando el model devuelve null", async () => {
+  describe("Flujo - empleado no encontrado", () => {
+    it("retorna code profile.notFound cuando el model devuelve null", async () => {
       profileModel.findEmployeeProfile.mockResolvedValue(null);
 
-      const result = await getUserProfile(buildReq());
+      const result = await getUserProfile("uuid-empleado-001");
 
-      expect(result.status).toBe(404);
-      expect(result.body.success).toBe(false);
-      expect(result.body.message).toBe("Perfil no encontrado");
+      expect(result.code).toBe(responses.profile.notFound);
+      expect(result).not.toHaveProperty("data");
     });
   });
 
@@ -63,7 +58,7 @@ describe("profile.service — getUserProfile", () => {
     it("propaga el error para que el controller lo capture", async () => {
       profileModel.findEmployeeProfile.mockRejectedValue(new Error("DB error"));
 
-      await expect(getUserProfile(buildReq())).rejects.toThrow("DB error");
+      await expect(getUserProfile("uuid-empleado-001")).rejects.toThrow("DB error");
     });
   });
 });

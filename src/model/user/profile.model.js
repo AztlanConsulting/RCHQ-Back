@@ -1,4 +1,5 @@
-const prisma = require("../prisma");
+// src/model/profile.model.js
+const prisma = require("../../prisma");
 
 async function findEmployeeProfile(employeeId) {
   const employee = await prisma.employee.findUnique({
