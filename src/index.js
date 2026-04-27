@@ -31,7 +31,6 @@ app.use(
 app.use("/auth", authRouter);
 
 const userRouter = require("./router/user.route");
-const employeeRouter = require("./router/employee.route");
 
 app.use("/employee", employeeRouter);
 
