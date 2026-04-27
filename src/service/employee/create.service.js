@@ -203,3 +203,96 @@ exports.updateDocument = async (employeeId, documentField, file) => {
     body: { success: true, data: updatedDoc },
   };
 };
+
+exports.uploadDocument = async (employeeId, file, documentField) => {
+  if (!validateField(documentField)) {
+    return {
+      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
+      body: {
+        success: false,
+        message: `Tipo de documento inválido: ${documentField}`,
+      },
+    };
+  }
+
+  const employee = await findById(employeeId);
+  if (!employee) {
+    return {
+      type: RESPONSE.USER.NOT_FOUND,
+      body: { success: false, message: "Usuario no encontrado" },
+    };
+  }
+
+  const existingRow = await findDocumentRowByEmployee(employeeId);
+
+  if (existingRow && existingRow.documents?.[documentField]) {
+    return {
+      type: RESPONSE.DOCUMENTS.ALREADY_EXIST,
+      body: {
+        success: false,
+        message: "Este documento ya existe",
+        field: documentField,
+      },
+    };
+  }
+  const fileUrl = `uploads/documents/${file.filename}`;
+
+  const resultDoc = existingRow
+    ? await updateDocumentField(
+        existingRow.document_id,
+        employeeId,
+        documentField,
+        fileUrl,
+      )
+    : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
+
+  return {
+    type: RESPONSE.DOCUMENTS.UPLOAD,
+    body: { success: true, data: resultDoc },
+  };
+};
+
+exports.updateDocument = async (employeeId, documentField, file) => {
+  if (!validateField(documentField)) {
+    return {
+      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
+      body: {
+        success: false,
+        message: `Tipo de documento inválido: ${documentField}`,
+      },
+    };
+  }
+
+  const employee = await findById(employeeId);
+  if (!employee) {
+    return {
+      type: RESPONSE.USER.NOT_FOUND,
+      body: { success: false, message: "Usuario no encontrado" },
+    };
+  }
+
+  const fileUrl = `uploads/documents/${file.filename}`;
+  const existingRow = await findDocumentRowByEmployee(employeeId);
+
+  if (!existingRow) {
+    return {
+      type: RESPONSE.DOCUMENTS.NOT_FOUND,
+      body: {
+        success: false,
+        message: "No se encontró documento del empleado",
+      },
+    };
+  }
+
+  const updatedDoc = await updateDocumentField(
+    existingRow.document_id,
+    employeeId,
+    documentField,
+    fileUrl,
+  );
+
+  return {
+    type: RESPONSE.DOCUMENTS.UPLOAD,
+    body: { success: true, data: updatedDoc },
+  };
+};

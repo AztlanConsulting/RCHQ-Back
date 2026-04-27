@@ -26,11 +26,9 @@ exports.getById = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({
-        error: "Error interno del servidor. Por favor intente más tarde.",
-      });
+    return res.status(500).json({
+      error: "Error interno del servidor. Por favor intente más tarde.",
+    });
   }
 };
 

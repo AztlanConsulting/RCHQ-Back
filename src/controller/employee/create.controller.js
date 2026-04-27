@@ -55,12 +55,10 @@ exports.postAdd = async (req, res) => {
         case "FORBIDDEN":
           return res.status(403).json({ error: result.message });
         case "CONFLICT":
-          return res
-            .status(409)
-            .json({
-              error: result.message,
-              redirect: `/employee/${result.employeeId}`,
-            });
+          return res.status(409).json({
+            error: result.message,
+            redirect: `/employee/${result.employeeId}`,
+          });
         default:
           return res.status(400).json({ error: result.message });
       }
@@ -93,7 +91,6 @@ exports.uploadDocument = async (req, res) => {
     }
 
     const result = await uploadDocument(id, file, documentField);
-
     if (result.type === RESPONSE.DOCUMENTS.UPLOAD) {
       try {
         await createLog(

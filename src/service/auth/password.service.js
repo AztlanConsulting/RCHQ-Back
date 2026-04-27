@@ -224,7 +224,7 @@ exports.changePasswordFirstLogin = async ({
       body: {
         success: true,
         message: "Contraseña cambiada exitosamente",
-        nextStep: "VERIFY_TwoFactorAuth",
+        nextStep: "LOGIN_COMPLETE",
         data: {
           preTwoFactorAuthToken,
           employeeId: employee.employeeId,

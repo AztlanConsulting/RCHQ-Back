@@ -16,7 +16,7 @@ jest.mock("../../model/log.model", () => ({
   createLog: jest.fn(),
 }));
 
-jest.mock("../../utils/ip", () => ({
+jest.mock("../../utils/IP", () => ({
   getClientIp: jest.fn(() => "127.0.0.1"),
 }));
 

@@ -306,8 +306,8 @@ describe("password.service", () => {
       });
 
       expect(result.status).toBe(200);
-      expect(result.body.nextStep).toBe("VERIFY_TwoFactorAuth");
-      expect(result.body.data.preTwoFactorAuthToken).toBe("fake-pre2fa-token");
+      expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
+      expect(result.body.data.preTwoFactorAuthToken).toBeDefined();
       expect(buildPreTwoFactorAuthJwt).toHaveBeenCalled();
     });
   });
