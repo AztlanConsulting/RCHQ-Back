@@ -58,10 +58,5 @@
     "*.{json,md}": [
       "prettier --write"
     ]
-  },
-  "jest": {
-  "transformIgnorePatterns": [
-    "/node_modules/(?!(uuid)/)"
-  ]
-}
+  }
 }
