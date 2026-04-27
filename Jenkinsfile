@@ -4,6 +4,9 @@ pipeline {
   tools {
     nodejs 'NodeJS'
   }
+    environment {
+    LOG_IP_HASH_SECRET = 'test-secret'
+  }
   stages {
     stage('Install dependencies') {
       steps {
