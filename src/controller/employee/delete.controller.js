@@ -44,6 +44,6 @@ exports.deleteDocument = async (req, res) => {
     console.error("deleteDocument error:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+      .json({ success: false, message: "Error del servidor" });
   }
 };
