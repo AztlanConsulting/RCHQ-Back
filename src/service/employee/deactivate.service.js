@@ -2,11 +2,11 @@ const {
   getEmployeeToDeactivate,
   deactivateEmployee,
   insertIntoBlacklist,
-} = require("../model/employee/deactivate.model");
-const { createLog } = require("../model/user/log.model");
-const { LOG_ACTIONS } = require("../utils/logActions");
-const { RESPONSES } = require("../utils/responses");
-const { getClientIp } = require("../utils/ip");
+} = require("../../model/employee/deactivate.model");
+const { createLog } = require("../../model/log.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const RESPONSES = require("../../utils/responses");
+const { getClientIp } = require("../../utils/ip");
 
 exports.deactivateEmployee = async (req) => {
   const { employeeId } = req.params;
@@ -27,7 +27,8 @@ exports.deactivateEmployee = async (req) => {
   try {
     await deactivateEmployee(employeeId);
     await createLog(actorId, LOG_ACTIONS.EMPLOYEE_DEACTIVATED, ip, employeeId);
-  } catch {
+  } catch (error){
+    console.error("Error al desactivar al empleado:", error);
     await createLog(actorId, LOG_ACTIONS.EMPLOYEE_DEACTIVATION_FAILED, ip, employeeId);
     return { code: RESPONSES.employee.deactivationFailed };
   }
@@ -37,7 +38,8 @@ exports.deactivateEmployee = async (req) => {
       await insertIntoBlacklist(employee.curp, employee.name, employee.surname, reason);
       await createLog(actorId, LOG_ACTIONS.EMPLOYEE_INTO_BLACKLIST, ip, employeeId);
       return { code: RESPONSES.employee.deactivatedAndBlacklisted };
-    } catch {
+    } catch (error) {
+      console.error("Error al agregar empleado a la lista negra:", error);
       await createLog(actorId, LOG_ACTIONS.EMPLOYEE_BLACKLIST_FAILED, ip, employeeId);
       return { code: RESPONSES.employee.deactivatedBlacklistFailed };
     }

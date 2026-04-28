@@ -1,5 +1,5 @@
-const { deactivateEmployee } = require("../service/employee/deactivate.service");
-const { RESPONSES } = require("../utils/responses");
+const { deactivateEmployee } = require("../../service/employee/deactivate.service");
+const RESPONSES = require("../../utils/responses");
 
 exports.deactivateEmployeeController = async (req, res) => {
   try {
@@ -27,7 +27,8 @@ exports.deactivateEmployeeController = async (req, res) => {
       default:
         return res.status(500).json({ message: "Error inesperado" });
     }
-  } catch {
+  } catch (error){
+    console.error("Error en el controlador de desactivación de empleado:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
 };

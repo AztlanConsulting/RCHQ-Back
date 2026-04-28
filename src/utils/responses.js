@@ -24,7 +24,7 @@ const responses = {
     deactivationFailed: "EMPLOYEE_DEACTIVATION_FAILED",
     deactivatedAndBlacklisted: "EMPLOYEE_DEACTIVATED_AND_BLACKLISTED",
     deactivatedBlacklistFailed: "EMPLOYEE_DEACTIVATED_BLACKLIST_FAILED",
-},
+  },
 };
 
 module.exports = responses;

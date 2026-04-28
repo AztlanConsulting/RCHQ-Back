@@ -108,5 +108,9 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-020', 'Cambio de contraseña exitoso', false),
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
 ('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false);
+('empl-002', 'Empleado dado de baja', true),
+('empl-003', 'Empleado agregado a lista negra', true),
+('empl-004', 'Baja de empleado fallida', false),
+('empl-005', 'Error al agregar empleado a lista negra', false);
 
 COMMIT;

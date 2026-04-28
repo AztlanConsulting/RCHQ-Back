@@ -3,7 +3,7 @@ const requirePrivileges = (...requiredPrivileges) => {
     try {
       // User should be attached by auth.middleware
       if (!req.user) {
-        return res.status(401).json({ message: "User not authenticated" });
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
       const userPrivileges = req.user.privileges || [];
@@ -14,7 +14,7 @@ const requirePrivileges = (...requiredPrivileges) => {
       );
 
       if (!hasAllPrivileges) {
-        return res.status(403).json({ message: "Insufficient privileges" });
+        return res.status(403).json({ message: "Privilegios insuficientes" });
       }
 
       next();
@@ -29,7 +29,7 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
   return (req, res, next) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ message: "User not authenticated" });
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
       const userPrivileges = req.user.privileges || [];
@@ -40,7 +40,7 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
       );
 
       if (!hasAnyPrivilege) {
-        return res.status(403).json({ message: "Insufficient privileges" });
+        return res.status(403).json({ message: "Privilegios insuficientes" });
       }
 
       next();
@@ -56,12 +56,12 @@ const requireRole = (...allowedRoles) => {
     try {
       if (!req.user) {
         console.log(req.user);
-        return res.status(401).json({ message: "User not authenticated" });
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
       if (!allowedRoles.includes(req.user.role)) {
         console.log(req.user.role);
-        return res.status(403).json({ message: "Role not allowed" });
+        return res.status(403).json({ message: "Rol no permitido" });
       }
       next();
     } catch (error) {

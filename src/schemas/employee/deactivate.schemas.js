@@ -8,4 +8,8 @@ const deactivateEmployeeSchema = z.object({
   intoBlacklist: z.boolean(),
 });
 
-module.exports = { deactivateEmployeeSchema };
+const deactivateEmployeeParamsSchema = z.object({
+  employeeId: z.uuidv4({ message: "El ID del empleado no es válido" }),
+});
+
+module.exports = { deactivateEmployeeSchema, deactivateEmployeeParamsSchema };

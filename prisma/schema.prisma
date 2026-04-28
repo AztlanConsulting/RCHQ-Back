@@ -81,6 +81,7 @@ model employee {
   birth_date                    DateTime?                       @db.Date
   picture                       String?                         @db.VarChar(150)
   start_date                    DateTime                        @db.Date
+  end_date                      DateTime?                       @db.Date
   nss                           String?                         @unique @db.VarChar(11)
   bank_account                  String?                         @db.VarChar(18)
   blocked_until                 DateTime?                       @db.Timestamp(6)
