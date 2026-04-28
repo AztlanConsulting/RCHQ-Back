@@ -286,6 +286,8 @@ model vacations_request {
   end                  DateTime @db.Date
   status               Int
   feedback             String?
+  created_at           DateTime @default(now()) @db.Timestamp(6)
+  used_days            Int      @default(0)
   employee             employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "vacations_request_employee_fk")
 }
 

@@ -107,6 +107,117 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-001', 'Empleado creado con exito', false),
 ('auth-020', 'Cambio de contraseña exitoso', false),
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
-('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false);
+('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false),
+('vac-001', 'Creación de solicitud de vacaciones exitosa', false);
+
+INSERT INTO public.workday (workday_id, name) VALUES
+('a0000003-0000-4000-8000-000580000000', 'Lunes'),
+('a0000003-0000-4000-8000-000000580001', 'Martes'),
+('a0000003-0000-4000-8000-000580000002', 'Miércoles'),
+('a0000003-0000-4000-8000-000000580003', 'Jueves'),
+('a0000003-0000-4000-8000-000580000004', 'Viernes'),
+('a0000003-0000-4000-8000-000005800005', 'Sábado'),
+('a0000003-0000-4000-8000-000058000006', 'Domingo');
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALUES
+('a0000003-0000-4000-8000-000580000000', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000000580001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000580000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000000580003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('a0000003-0000-4000-8000-000580000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+
+INSERT INTO public.event_type (event_type_id, name)
+VALUES
+('b1000000-0000-4000-8000-000000000001', 'General')
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO public.global_event (
+  global_event_id,
+  event_type_id,
+  date,
+  start,
+  "end",
+  name,
+  description,
+  is_free_day
+)
+VALUES (
+  'c1000000-0000-4000-8000-000000000001',
+  'b1000000-0000-4000-8000-000000000001',
+  '2026-05-01',
+  '09:00:00',
+  '17:00:00',
+  'Aniversario',
+  'Aniversario de la red de casas hogar',
+  false
+);
+
+INSERT INTO public.house_event (
+  house_event_id,
+  event_type_id,
+  house_id,
+  date,
+  start,
+  "end",
+  name,
+  description
+)
+VALUES (
+  'c2000000-0000-4000-8000-000000000002',
+  'b1000000-0000-4000-8000-000000000001',
+  (SELECT house_id FROM public.house WHERE name = 'Desarrollo'),
+  '2026-05-03',
+  '10:00:00',
+  '12:00:00',
+  'Visita DIF',
+  'Visita por parte del DIF para ver las instalaciones'
+);
+
+INSERT INTO public.personal_event (
+  personal_event_id,
+  event_type_id,
+  start,
+  "end",
+  name,
+  description
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000003',
+  'b1000000-0000-4000-8000-000000000001',
+  '2026-05-04 15:00:00',
+  '2026-05-04 16:00:00',
+  'Visita médica',
+  'Se tiene que llevar a Juan Pérez al doctor'
+);
+
+INSERT INTO public.employee_personal_event (
+  personal_event_id,
+  employee_id
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000003',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com')
+);
+
+INSERT INTO public.vacations_request (
+  vacations_request_id,
+  employee_id,
+  start,
+  "end",
+  status,
+  feedback,
+  created_at,
+  used_days
+)
+VALUES (
+  'c4000000-0000-4000-8000-000000000004',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
+  '2026-06-10',
+  '2026-06-15',
+  0,
+  NULL,
+  NOW(),
+  5
+);
 
 COMMIT;
