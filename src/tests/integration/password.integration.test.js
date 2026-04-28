@@ -7,7 +7,11 @@ const { randomUUID } = require("crypto");
 const app = require("../../app");
 const { seedActions } = require("../helpers/seedActions");
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: { url: process.env.TEST_DATABASE_URL },
+  },
+});
 
 // ─── Constantes de prueba ─────────────────────────────────
 const TEST_HOUSE_ID = randomUUID();

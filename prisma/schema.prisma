@@ -81,13 +81,13 @@ model employee {
   birth_date                    DateTime?                       @db.Date
   picture                       String?                         @db.VarChar(150)
   start_date                    DateTime                        @db.Date
-  end_date                      DateTime?                       @db.Date
   nss                           String?                         @unique @db.VarChar(11)
   bank_account                  String?                         @db.VarChar(18)
   blocked_until                 DateTime?                       @db.Timestamp(6)
   two_fa_blocked_until          DateTime?                       @db.Timestamp(6)
   temp_totp_secret              String?                         @db.VarChar
   temp_totp_secret_created_at   DateTime?                       @db.Timestamp(6)
+  end_date                      DateTime?                       @db.Date
   house                         house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                          role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address              employee_address[]
