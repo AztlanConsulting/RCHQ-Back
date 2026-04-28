@@ -76,7 +76,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
 
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Error in Two Factor Auth setup:", error);
+    console.error("Error en el setUp de TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -89,7 +89,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     const result = await authService.verifyTwoFactorSetup(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Two Factor Auth verify setup error:", error);
+    console.error("Error para verificar el TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -102,7 +102,7 @@ exports.validateTwoFactorAuth = async (req, res) => {
     const result = await authService.validateTwoFactorAuth(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Two Factor Auth validation error:", error);
+    console.error("Error para validar el TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -115,7 +115,7 @@ exports.getTwoFactorAuthStatus = async (req, res) => {
     const result = await authService.getTwoFactorAuthStatus(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Two Factor Auth validation error:", error);
+    console.error("Error al obtener estado del TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -128,7 +128,7 @@ exports.disableTwoFactorAuth = async (req, res) => {
     const result = await authService.disableTwoFactorAuth(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("TwoFactorAuth disable error:", error);
+    console.error("Error para quitar el TwoFactorAuth:", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });
