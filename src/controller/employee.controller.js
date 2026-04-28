@@ -23,7 +23,7 @@ exports.getEmployeeDetail = async (req, res) => {
     }
     if (result.code === responses.personnel.found) {
       return res.status(200).json({
-        success: false,
+        success: true,
         message: "Data del empleado encontrado con éxito",
         data: result.data,
       });
