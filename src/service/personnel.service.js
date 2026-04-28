@@ -1,5 +1,4 @@
 const personnel = require("../model/personnel.model");
-const { getClientIp } = require("../utils/ip");
 const responses = require("../utils/responses");
 const { decryptValue } = require("../utils/password");
 
