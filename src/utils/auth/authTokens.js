@@ -12,6 +12,7 @@ function buildUserPayload(employee) {
     role: employee.role,
     houseId: employee.houseId,
     privileges: ["read_profile"],
+    tokenType: "SESSION",
   };
 }
 
@@ -23,6 +24,7 @@ exports.buildFirstLoginJwt = (employee) => {
   return generateFirstLoginToken({
     id: employee.employeeId,
     email: employee.email,
+    tokenType: "FIRST_LOGIN",
   });
 };
 
@@ -30,5 +32,6 @@ exports.buildPreTwoFactorAuthJwt = (employee) => {
   return generatePreTwoFactorAuthToken({
     id: employee.employeeId,
     email: employee.email,
+    tokenType: "PRE_TwoFactorAuth",
   });
 };
