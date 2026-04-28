@@ -1,10 +1,21 @@
-const { getStartDate } = require("../../model/employee/consult.model");
+const { 
+    getStartDate, 
+    getWorkDays
+} = require("../../model/employee/consult.model");
 const { getVacationsInRange } = require("../../model/vacation/consult.model")
 const { getVacationDays } = require("../../utils/vacationDays")
-const { toUTC } = require("../../utils/dates")
+const { toUTC } = require("../../utils/dates");
+const responses = require("../../utils/responses");
+const { employee } = require("../../prisma");
 
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
+
+    if (!result) {
+        return {
+            code: responses.vacation.workDaysNotFound
+        }
+    }
     
     const baseDate = result.start_date;
     const baseDay = baseDate.getUTCDate();
@@ -38,5 +49,27 @@ exports.getRemainingVacations = async (employeeId) => {
     const yearsWorked = currentYear - baseYear - (!anniversaryAlreadyPassed ? 1 : 0);
     const maxDays = getVacationDays(yearsWorked);
     
-    return maxDays - usedDays;
+    return {
+        code: responses.vacation.workDaysFound,
+        data: {
+            remainingDays: maxDays - usedDays
+        }
+    }
+}
+
+exports.requestVacation = async (employeeId, startDate, endDate) => {
+    if (endDate < startDate) {
+        return {
+            code: responses.vacation.badDates
+        }
+    }
+
+    const workDays = await getWorkDays(employeeId);
+    if (workDays.length == 0) {
+        return {
+            code: responses.vacation.withoutDates
+        }
+    }
+
+
 }
