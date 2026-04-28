@@ -31,7 +31,7 @@ exports.getEmployeeDetail = async (req, res) => {
 
     return res.status(500).json({
       sucess: false,
-      message: "No deberia pasar esto en teoria",
+      message: "Error interno del servidor, resultado inesperado al fetch employee detail",
       data: {},
     });
   } catch (err) {

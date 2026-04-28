@@ -25,7 +25,7 @@ const { seedDb, cleanDb, disconnectDb, IDS } = require("../helpers/dbSetup");
 
 // ─── Credenciales de prueba (deben coincidir con el seed) ────────────────────
 const VALID_EMAIL = "andre@gmail.com";
-const VALID_PASSWORD = "Andatti11";
+const VALID_PASSWORD = "Andatti67";
 
 // ─── Helper: hace login y retorna el SESSION token ───────────────────────────
 const loginAndGetToken = async () => {
