@@ -7,14 +7,14 @@ exports.getRemainingVacations = async (req, res) => {
         const employeeId = req.params.id;
         const result = await getRemainingVacations(employeeId);
 
-        if (result === responses.vacation.workDaysNotFound) {
+        if (result.code === responses.vacation.workDaysNotFound) {
             return res.status(500).json({
                 success: false,
                 message: "Internal Server Error",
             });
         }
 
-        if (result === responses.vacation.workDaysFound) {
+        if (result.code === responses.vacation.workDaysFound) {
             return res.status(200).json({
                 success: true,
                 data: {

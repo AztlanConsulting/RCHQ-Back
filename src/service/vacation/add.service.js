@@ -2,9 +2,12 @@ const {
     getStartDate, 
     getWorkDays
 } = require("../../model/employee/consult.model");
+const { 
+    toUTC, 
+    calculateUsedDays
+} = require("../../utils/dates");
 const { getVacationsInRange } = require("../../model/vacation/consult.model")
 const { getVacationDays } = require("../../utils/vacationDays")
-const { toUTC } = require("../../utils/dates");
 const responses = require("../../utils/responses");
 const { employee } = require("../../prisma");
 
@@ -71,5 +74,26 @@ exports.requestVacation = async (employeeId, startDate, endDate) => {
         }
     }
 
+    const remainingVacationResult = await this.getRemainingVacations(employeeId);
+    const remaningVacations = remainingVacationResult.data.remainingDays;
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate);
+
+    if (usedDays > remainingVacations) {
+        return {
+            code: responses.vacation.insufficientDays
+        }
+    }
+
+    const vacationsInsideRequest = await getVacationsInRange(employeeId, startDate, endDate);
+    if (vacationsInsideRequest.length > 0) {
+        return {
+            code: responses.vacation.alreadyRequest
+        }
+    }
+
+    // Verificafr que no haya fuera de rango
+
+    // POST
 
 }

@@ -13,3 +13,27 @@ exports.combineDateAndTime = (date, time) => {
 exports.toUTC = (date) => {
     return new Date(date.toISOString());
 }
+
+exports.spanishToDay = (day) => {
+    switch (day) {
+        case "Domingo":
+            return 0;
+        case "Lunes":
+            return 1
+        case "Martes":
+            return 2
+        case "Miércoles":
+            return 3
+        case "Jueves":
+            return 4
+        case "Viernes":
+            return 5
+        case "Sábado":
+            return 6
+    }
+    return -1
+}
+
+exports.calculateUsedDays = (workDays, startDate, endDate) => {
+    
+}
