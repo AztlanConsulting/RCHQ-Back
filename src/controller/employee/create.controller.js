@@ -96,8 +96,8 @@ exports.uploadDocument = async (req, res) => {
         await createLog(
           req.user.id,
           LOG_ACTIONS.DOCUMENT_UPLOADED,
-          id,
           getClientIp(req),
+          id,
         );
       } catch (err) {
         console.error("Error creando log:", err);
@@ -136,8 +136,8 @@ exports.updateDocument = async (req, res) => {
         await createLog(
           req.user.id,
           LOG_ACTIONS.DOCUMENT_UPDATED,
-          id,
           getClientIp(req),
+          id,
         );
       } catch (err) {
         console.error("Error creando log:", err);

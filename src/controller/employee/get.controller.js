@@ -9,7 +9,7 @@ const { RESPONSE } = require("../../utils/response");
 exports.getAdd = async (req, res) => {
   try {
     const roles = await getRoles();
-    return res.status(200).json({ roles, house_id: req.user.houseId });
+    return res.status(200).json({ roles, houseId: req.user.houseId });
   } catch (error) {
     console.error(error);
     return res

@@ -12,16 +12,22 @@ const {
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
-const {
-  employeeCreateSchema,
-} = require("../../schemas/employee/create.schemas");
+const { employeeCreateSchema } = require("../../schemas/employee/create.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
 const { v4: uuidv4 } = require("uuid");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
 const { RESPONSE } = require("../../utils/response");
+const fs = require("fs");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
+
+const deleteFileIfExists = (filePath) => {
+  if (!filePath) return;
+  fs.unlink(filePath, (err) => {
+    if (err) console.error("Error eliminando archivo huérfano:", err.message);
+  });
+};
 
 exports.getById = async (id) => {
   return await findById(id);
@@ -50,11 +56,7 @@ exports.createEmployee = async (employee, user, req) => {
   const canCreate = employeePolicy(user, { houseId: data.houseId });
 
   if (!canCreate) {
-    return {
-      success: false,
-      type: "FORBIDDEN",
-      message: "Acceso denegado",
-    };
+    return { success: false, type: "FORBIDDEN", message: "Acceso denegado" };
   }
 
   const existingEmployee = await findByCurp(data.curp);
@@ -104,26 +106,21 @@ exports.createEmployee = async (employee, user, req) => {
     warning = "Empleado creado pero el log falló";
   }
 
-  return {
-    success: true,
-    employeeId: newEmployee.employeeId,
-    warning,
-  };
+  return { success: true, employeeId: newEmployee.employeeId, warning };
 };
 
 exports.uploadDocument = async (employeeId, file, documentField) => {
   if (!validateField(documentField)) {
+    deleteFileIfExists(file?.path);
     return {
       type: RESPONSE.DOCUMENTS.NOT_ALLOW,
-      body: {
-        success: false,
-        message: `Tipo de documento inválido: ${documentField}`,
-      },
+      body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
     };
   }
 
   const employee = await findById(employeeId);
   if (!employee) {
+    deleteFileIfExists(file?.path);
     return {
       type: RESPONSE.USER.NOT_FOUND,
       body: { success: false, message: "Usuario no encontrado" },
@@ -133,24 +130,16 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
   const existingRow = await findDocumentRowByEmployee(employeeId);
 
   if (existingRow && existingRow.documents?.[documentField]) {
+    deleteFileIfExists(file?.path);
     return {
       type: RESPONSE.DOCUMENTS.ALREADY_EXIST,
-      body: {
-        success: false,
-        message: "Este documento ya existe",
-        field: documentField,
-      },
+      body: { success: false, message: "Este documento ya existe", field: documentField },
     };
   }
 
   const fileUrl = `uploads/documents/${file.filename}`;
   const resultDoc = existingRow
-    ? await updateDocumentField(
-        existingRow.document_id,
-        employeeId,
-        documentField,
-        fileUrl,
-      )
+    ? await updateDocumentField(existingRow.document_id, employeeId, documentField, fileUrl)
     : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
 
   return {
@@ -161,129 +150,33 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
 
 exports.updateDocument = async (employeeId, documentField, file) => {
   if (!validateField(documentField)) {
+    deleteFileIfExists(file?.path);
     return {
       type: RESPONSE.DOCUMENTS.NOT_ALLOW,
-      body: {
-        success: false,
-        message: `Tipo de documento inválido: ${documentField}`,
-      },
+      body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
     };
   }
 
   const employee = await findById(employeeId);
   if (!employee) {
+    deleteFileIfExists(file?.path);
     return {
       type: RESPONSE.USER.NOT_FOUND,
       body: { success: false, message: "Usuario no encontrado" },
     };
   }
 
-  const fileUrl = `uploads/documents/${file.filename}`;
   const existingRow = await findDocumentRowByEmployee(employeeId);
 
   if (!existingRow) {
+    deleteFileIfExists(file?.path);
     return {
       type: RESPONSE.DOCUMENTS.NOT_FOUND,
-      body: {
-        success: false,
-        message: "No se encontró documento del empleado",
-      },
-    };
-  }
-
-  const updatedDoc = await updateDocumentField(
-    existingRow.document_id,
-    employeeId,
-    documentField,
-    fileUrl,
-  );
-
-  return {
-    type: RESPONSE.DOCUMENTS.UPLOAD,
-    body: { success: true, data: updatedDoc },
-  };
-};
-
-exports.uploadDocument = async (employeeId, file, documentField) => {
-  if (!validateField(documentField)) {
-    return {
-      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
-      body: {
-        success: false,
-        message: `Tipo de documento inválido: ${documentField}`,
-      },
-    };
-  }
-
-  const employee = await findById(employeeId);
-  if (!employee) {
-    return {
-      type: RESPONSE.USER.NOT_FOUND,
-      body: { success: false, message: "Usuario no encontrado" },
-    };
-  }
-
-  const existingRow = await findDocumentRowByEmployee(employeeId);
-
-  if (existingRow && existingRow.documents?.[documentField]) {
-    return {
-      type: RESPONSE.DOCUMENTS.ALREADY_EXIST,
-      body: {
-        success: false,
-        message: "Este documento ya existe",
-        field: documentField,
-      },
-    };
-  }
-  const fileUrl = `uploads/documents/${file.filename}`;
-
-  const resultDoc = existingRow
-    ? await updateDocumentField(
-        existingRow.document_id,
-        employeeId,
-        documentField,
-        fileUrl,
-      )
-    : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
-
-  return {
-    type: RESPONSE.DOCUMENTS.UPLOAD,
-    body: { success: true, data: resultDoc },
-  };
-};
-
-exports.updateDocument = async (employeeId, documentField, file) => {
-  if (!validateField(documentField)) {
-    return {
-      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
-      body: {
-        success: false,
-        message: `Tipo de documento inválido: ${documentField}`,
-      },
-    };
-  }
-
-  const employee = await findById(employeeId);
-  if (!employee) {
-    return {
-      type: RESPONSE.USER.NOT_FOUND,
-      body: { success: false, message: "Usuario no encontrado" },
+      body: { success: false, message: "No se encontró documento del empleado" },
     };
   }
 
   const fileUrl = `uploads/documents/${file.filename}`;
-  const existingRow = await findDocumentRowByEmployee(employeeId);
-
-  if (!existingRow) {
-    return {
-      type: RESPONSE.DOCUMENTS.NOT_FOUND,
-      body: {
-        success: false,
-        message: "No se encontró documento del empleado",
-      },
-    };
-  }
-
   const updatedDoc = await updateDocumentField(
     existingRow.document_id,
     employeeId,

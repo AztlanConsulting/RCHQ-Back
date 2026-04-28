@@ -20,8 +20,9 @@ exports.deleteDocument = async (req, res) => {
         await createLog(
           req.user.id,
           LOG_ACTIONS.DOCUMENT_DELETED,
-          id,
           getClientIp(req),
+          id,
+
         );
       } catch (err) {
         console.error("Error creando log:", err);
