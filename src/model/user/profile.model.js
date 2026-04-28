@@ -1,7 +1,8 @@
 // src/model/profile.model.js
 const prisma = require("../../prisma");
+const { mapProfile } = require("../../utils/users.map");
 
-async function findEmployeeProfile(employeeId) {
+exports.findEmployeeProfile = async (employeeId) => {
   const employee = await prisma.employee.findUnique({
     where: { employee_id: employeeId },
     select: {
@@ -27,23 +28,3 @@ async function findEmployeeProfile(employeeId) {
 
   return mapProfile(employee);
 }
-
-function mapProfile(e) {
-  return {
-    houseName:   e.house.name,
-    roleName:    e.role.name,
-    name:        e.name,
-    surname:     e.surname,
-    email:       e.email,
-    rfc:         e.rfc,
-    curp:        e.curp,
-    nss:         e.nss,
-    bankAccount: e.bank_account,
-    birthDate:   e.birth_date,
-    picture:     e.picture,
-  };
-}
-
-module.exports = {
-  findEmployeeProfile,
-};

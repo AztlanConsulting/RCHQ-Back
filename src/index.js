@@ -29,10 +29,8 @@ app.use(
 );
 
 app.use("/auth", authRouter);
-
-const userRouter = require("./router/user.route");
-
 app.use("/employee", employeeRouter);
+app.use("/user", userRouter);
 
 app.use("/health", (req, res) => {
   res.status(200).json({
@@ -40,9 +38,6 @@ app.use("/health", (req, res) => {
     message: "Aplicación bueno",
   });
 });
-app.use("/user", userRouter);
-
-app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
 
