@@ -2,7 +2,9 @@
 // const { canAccess } = require("../middleware/abac");
 // const { adminPolicy } = require("../policies/user.policies");
 // const {verifyPassword, hashPassword} = require("../utils/password");
-const authService = require("../service/auth.service");
+const authService = require("../../service/auth/auth.service");
+const passwordService = require("../../service/auth/password.service");
+const { getClientIp } = require("../../utils/ip");
 
 exports.loginFunction = async (req, res) => {
   try {
@@ -17,36 +19,61 @@ exports.loginFunction = async (req, res) => {
   }
 };
 
-exports.getProfile = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Profile retrieved successfully",
-    data: {
-      employeeId: req.user.id,
-      email: req.user.email,
-      name: req.user.name,
-      role: req.user.role,
-      privileges: req.user.privileges || [],
-    },
-  });
+exports.changePasswordFirstLogin = async (req, res) => {
+  try {
+    const employeeId = req.user?.id || req.user?.employeeId;
+    const { newPassword } = req.body || {};
+    const ipAddress = getClientIp(req);
+
+    const result = await passwordService.changePasswordFirstLogin({
+      employeeId,
+      newPassword,
+      ipAddress,
+    });
+
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("First login password change error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
 };
 
-// exports.changePasswordFirstLogin = async (req, res) => {
-//   try {
-//     const result = await authService.changePasswordFirstLogin(req);
-//     return res.status(result.status).json(result.body);
-//   } catch (err) {
-//     console.error("First login password change error:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal Server Error",
-//     });
-//   }
-// };
+exports.changePassword = async (req, res) => {
+  try {
+    const employeeId = req.user?.id || req.user?.employeeId;
+    const { currentPassword, newPassword } = req.body || {};
+    const ipAddress = getClientIp(req);
+
+    const result = await passwordService.changePassword({
+      employeeId,
+      currentPassword,
+      newPassword,
+      ipAddress,
+    });
+
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("Change password error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
 
 exports.setupTwoFactorAuth = async (req, res) => {
   try {
-    const result = await authService.setupTwoFactorAuth(req);
+    const employeeId = req.user?.id || req.user?.employeeId;
+    const ipAddress = getClientIp(req);
+
+    const result = await authService.setupTwoFactorAuth({
+      employeeId,
+      ipAddress,
+    });
+    
     return res.status(result.status).json(result.body);
   } catch (error) {
     console.error("Error in 2FA setup:", error);

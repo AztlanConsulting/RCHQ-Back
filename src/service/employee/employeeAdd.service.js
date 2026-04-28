@@ -1,3 +1,4 @@
+// src/service/employee/employeeAdd.service.js
 const { create } = require("../../model/employee/employeeAdd.model");
 const {
     findById,
@@ -102,8 +103,8 @@ async function createEmployee(data, user, req) {
         await createLog(
             actorId,
             LOG_ACTIONS.EMPLOYEE_CREATED,
-            newEmployee.employee_id,
             getClientIp(req),
+            newEmployee.employee_id,  
         );
     } catch (error) {
         console.error("Error creando log:", error);

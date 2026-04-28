@@ -1,4 +1,4 @@
-const employee = require("../../model/employee/employeeAdd.model");
+const employee = require("../../model/employee/create.model");
 const { createLog } = require("../../model/log.model");
 const consult = require("../../model/employee/consult.model");
 
@@ -12,7 +12,7 @@ jest.mock("../../model/employee/consult.model", () => ({
     getAllRoles: jest.fn(),
 }));
 
-jest.mock("../../model/employee/employeeAdd.model", () => ({
+jest.mock("../../model/employee/create.model", () => ({
     create: jest.fn(),
 }));
 
@@ -24,9 +24,7 @@ jest.mock("../../utils/IP", () => ({
     getClientIp: jest.fn(() => "127.0.0.1"),
 }));
 
-const {
-    createEmployee,
-} = require("../../service/employee/employeeAdd.service");
+const { createEmployee } = require("../../service/employee/create.service");
 
 // =====================================================
 // TEST SUITE
@@ -70,17 +68,19 @@ describe("Employee Service - createEmployee", () => {
         surname: "Perez",
         email: "test@mail.com",
         curp: "PEPJ800101HDFRRN09",
-        house_id: "a0000001-0000-4000-8000-000000000001",
-        role_id: "a0000002-0000-4000-8000-000000000002",
-        birth_date: "1990-01-01",
+        houseId: "a0000001-0000-4000-8000-000000000001",
+        roleId: "a0000002-0000-4000-8000-000000000002",
+        birthDate: "1990-01-01",
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
-        employee.create.mockResolvedValue({ employee_id: "emp-1" });
+        employee.create.mockResolvedValue({ employeeId: "emp-1" });
         createLog.mockResolvedValue();
         consult.findByCurp.mockResolvedValue(null);
-        jest.spyOn(console, "error").mockImplementation(() => {});
+
+        // Lo dejamos comentado por si necesitas ver errores de Zod en consola mientras depuras
+        // jest.spyOn(console, "error").mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -101,8 +101,9 @@ describe("Employee Service - createEmployee", () => {
             mockReq,
         );
 
-        // Assert
-        expect(result.status).toBe(201);
+        // ACTUALIZADO a la nueva respuesta del servicio
+        expect(result.success).toBe(true);
+        expect(result.employeeId).toBeDefined();
         expect(employee.create).toHaveBeenCalled();
     });
 
@@ -116,15 +117,13 @@ describe("Employee Service - createEmployee", () => {
             mockReq,
         );
 
-        // Assert
-        expect(result.status).toBe(201);
+        expect(result.success).toBe(true);
     });
 
-    it("coordinator usa su house_id aunque mande otra casa", async () => {
-        // Arrange
+    it("coordinator usa su houseId aunque mande otra casa", async () => {
         const data = {
             ...baseEmployee,
-            house_id: "a0000001-0000-4000-8000-000000000999",
+            houseId: "a0000001-0000-4000-8000-000000000999",
         };
 
         // Act
@@ -134,11 +133,10 @@ describe("Employee Service - createEmployee", () => {
             mockReq,
         );
 
-        // Assert
-        expect(result.status).toBe(201);
+        expect(result.success).toBe(true);
         expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({
-                house_id: mockUserCoordinatorOtherHouse.houseId,
+                houseId: mockUserCoordinatorOtherHouse.houseId, // Fuerza su propia casa
             }),
         );
     });
@@ -149,13 +147,11 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(201);
+        expect(result.success).toBe(true);
     });
 
     // =====================================================
-    // VALIDACIONES BÁSICAS
+    // VALIDACIONES BÁSICAS (ZOD SCHEMA)
     // =====================================================
 
     it("debería fallar si falta name", async () => {
@@ -165,8 +161,9 @@ describe("Employee Service - createEmployee", () => {
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
 
-        // Assert
-        expect(result.status).toBe(400);
+        // ACTUALIZADO para mapear a tipo de error VALIDATION_ERROR
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("email inválido", async () => {
@@ -175,9 +172,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("CURP inválido", async () => {
@@ -186,20 +182,15 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
-    it("role_id inválido", async () => {
-        // Arrange
-        const data = { ...baseEmployee, role_id: "no-uuid" };
-
-        // Act
+    it("roleId inválido", async () => {
+        const data = { ...baseEmployee, roleId: "no-uuid" };
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("RFC inválido", async () => {
@@ -208,9 +199,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("NSS inválido", async () => {
@@ -219,20 +209,15 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("CLABE inválida", async () => {
-        // Arrange
-        const data = { ...baseEmployee, bank_account: "123" };
-
-        // Act
+        const data = { ...baseEmployee, bankAccount: "123" };
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     // =====================================================
@@ -245,9 +230,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("nombre con emojis", async () => {
@@ -256,9 +240,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("nombre con caracteres especiales", async () => {
@@ -267,9 +250,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("apellido con números", async () => {
@@ -278,9 +260,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("debería fallar si el rol no está autorizado", async () => {
@@ -293,8 +274,9 @@ describe("Employee Service - createEmployee", () => {
             mockReq,
         );
 
-        // Assert
-        expect(result.status).toBe(403);
+        // ACTUALIZADO: Evalúa el error del Policy
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("FORBIDDEN");
     });
 
     it("debería rechazar intentos de SQL Injection", async () => {
@@ -306,9 +288,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("debería rechazar scripts XSS", async () => {
@@ -317,9 +298,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     // =====================================================
@@ -332,9 +312,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("email demasiado largo", async () => {
@@ -343,9 +322,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("debería aplicar trim a nombre y email con espacios extra", async () => {
@@ -388,9 +366,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("NSS con letras", async () => {
@@ -399,20 +376,15 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("CLABE con letras", async () => {
-        // Arrange
-        const data = { ...baseEmployee, bank_account: "123ABC456789012345" };
-
-        // Act
+        const data = { ...baseEmployee, bankAccount: "123ABC456789012345" };
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     // =====================================================
@@ -420,49 +392,37 @@ describe("Employee Service - createEmployee", () => {
     // =====================================================
 
     it("fecha inválida", async () => {
-        // Arrange
-        const data = { ...baseEmployee, birth_date: "2020-13-40" };
-
-        // Act
+        const data = { ...baseEmployee, birthDate: "2020-13-40" };
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("debería rechazar fechas de nacimiento imposibles en el pasado", async () => {
-        // Arrange
-        const data = { ...baseEmployee, birth_date: "1850-01-01" };
-
-        // Act
+        const data = { ...baseEmployee, birthDate: "1850-01-01" };
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("debería rechazar fechas de nacimiento en el futuro", async () => {
-        // Arrange
-        const data = { ...baseEmployee, birth_date: "2050-01-01" };
-
-        // Act
+        const data = { ...baseEmployee, birthDate: "2050-01-01" };
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("debería rechazar el registro si el empleado es un niño", async () => {
         // Arrange
         const today = new Date();
         const tenYearsAgo = `${today.getFullYear() - 10}-01-01`;
-        const data = { ...baseEmployee, birth_date: tenYearsAgo };
+        const data = { ...baseEmployee, birthDate: tenYearsAgo };
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
 
-        // Assert
-        expect([400, 422]).toContain(result.status);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     // =====================================================
@@ -475,9 +435,8 @@ describe("Employee Service - createEmployee", () => {
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("múltiples errores", async () => {
@@ -487,22 +446,22 @@ describe("Employee Service - createEmployee", () => {
             surname: "!!!",
             email: "mal",
             curp: "123",
-            role_id: "no-uuid",
+            roleId: "no-uuid",
         };
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
-
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
+        // Extra: Podemos verificar que Zod arroje más de un error
+        expect(result.errors.length).toBeGreaterThan(1);
     });
 
     // =====================================================
-    // INFRAESTRUCTURA Y CONFLICTOS (CORREGIDOS)
+    // INFRAESTRUCTURA Y CONFLICTOS
     // =====================================================
 
-    it("debería retornar error y redirect si el empleado ya está registrado (Duplicado)", async () => {
-        // Arrange
+    it("debería retornar error si el empleado ya está registrado (Duplicado)", async () => {
         const idExistente = "19c23934-e20a-42f4-b963-fab77caf1a1c";
         consult.findByCurp.mockResolvedValue({
             employee_id: idExistente,
@@ -518,11 +477,11 @@ describe("Employee Service - createEmployee", () => {
 
         // Assert
         expect(employee.create).not.toHaveBeenCalled();
-        expect(result.status).toBe(409);
-        expect(result.body).toEqual({
-            error: "Empleado ya existente",
-            redirect: `/employee/${idExistente}`,
-        });
+
+        // ACTUALIZADO: Evalúa la lógica de CONFLICTO
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("CONFLICT");
+        expect(result.employeeId).toBe(idExistente);
     });
 
     it("debería continuar (o retornar error controlado) si el Logger falla", async () => {
@@ -536,8 +495,10 @@ describe("Employee Service - createEmployee", () => {
             mockReq,
         );
 
-        // Assert
-        expect([201, 500]).toContain(result.status);
+        // ACTUALIZADO: Evalúa el estado exitoso pero con warning
+        expect(result.success).toBe(true);
+        expect(result.warning).toBeDefined();
+        expect(result.warning).toContain("el log falló");
     });
 
     it("debería normalizar CURP a mayúsculas", async () => {
@@ -562,8 +523,8 @@ describe("Employee Service - createEmployee", () => {
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);
 
-        // Assert
-        expect(result.status).toBe(400);
+        expect(result.success).toBe(false);
+        expect(result.type).toBe("VALIDATION_ERROR");
     });
 
     it("coordinator no puede forzar house_id externo", async () => {
@@ -576,7 +537,7 @@ describe("Employee Service - createEmployee", () => {
         // Assert
         expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({
-                house_id: mockUserCoordinatorOtherHouse.houseId,
+                houseId: mockUserCoordinatorOtherHouse.houseId,
             }),
         );
     });

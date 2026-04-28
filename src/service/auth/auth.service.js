@@ -1,21 +1,21 @@
-const User = require("../model/user.model");
-const { verifyPassword } = require("../utils/password");
-const { getClientIp } = require("../utils/ip");
-const { createLog } = require("../model/log.model");
+const { verifyPassword } = require("../../utils/password");
+const { getClientIp } = require("../../utils/ip");
+const { createLog } = require("../../model/log.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-const { LOG_ACTIONS } = require("../utils/logActions");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const User = require("../../model/auth/auth.model");
 const {
   buildSessionToken,
-  // buildFirstLoginJwt,
+  buildFirstLoginJwt,
   buildPre2faJwt,
-} = require("../utils/auth/authTokens");
+} = require("../../utils/auth/authTokens");
 const {
   isBlockedUntil,
   clearExpiredLoginBlock,
   clearExpired2FABlock,
-} = require("../utils/auth/authGuards");
-const prisma = require("../prisma");
+} = require("../../utils/auth/authGuards");
+const prisma = require("../../prisma");
 
 const TEMP_2FA_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
@@ -113,6 +113,31 @@ async function login(req) {
 
   await User.clearLoginSecurityState(employee.employeeId);
 
+  if (employee.hasFirstLogin) {
+    const firstLoginToken = buildFirstLoginJwt(employee);
+
+    await createLog(
+      employee.employeeId,
+      LOG_ACTIONS.FIRST_LOGIN_PENDING_PASSWORD_CHANGE,
+      ipAddress,
+    );
+
+    return {
+      status: 200,
+      body: {
+        success: true,
+        message: "First login requires password change",
+        nextStep: "CHANGE_PASSWORD_FIRST_LOGIN",
+        data: {
+          firstLoginToken,
+          employeeId: employee.employeeId,
+          email: employee.email,
+          name: employee.name,
+        },
+      },
+    };
+  }
+
   if (employee.isActive2FA) {
     const pre2FAToken = buildPre2faJwt(employee);
     return {
@@ -149,108 +174,10 @@ async function login(req) {
   };
 }
 
-// async function changePasswordFirstLogin(req) {
-//     const { newPassword, confirmPassword } = req.body;
-//     const employeeId = req.user?.id;
-//     const ipAddress = getClientIp(req);
-
-//     if (!employeeId) {
-//         return {
-//             status: 401,
-//             body: { success: false, message: "User not authenticated" },
-//         };
-//     }
-
-//     const employee = await User.getEmployeeById(employeeId);
-
-//     if (!employee) {
-//         return {
-//             status: 404,
-//             body: { success: false, message: "Employee not found" },
-//         };
-//     }
-
-//     if (!employee.isActive) {
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.FIRST_LOGIN_CHANGE_PASSWORD_INACTIVE,
-//             ipAddress
-//         );
-
-//         return {
-//             status: 403,
-//             body: { success: false, message: "Access not allowed" },
-//         };
-//     }
-
-//     if (!employee.hasFirstLogin) {
-//         return {
-//             status: 409,
-//             body: { success: false, message: "First login password change is no longer required" },
-//         };
-//     }
-
-//     const isSamePassword = await verifyPassword(newPassword, employee.pwd);
-
-//     if (isSamePassword) {
-//         return {
-//             status: 400,
-//             body: { success: false, message: "New password must be different from current password" },
-//         };
-//     }
-
-//     const hashedPassword = await hashPassword(newPassword);
-
-//     await prisma.$transaction(async (tx) => {
-//         await tx.employee.update({
-//             where: { employee_id: employee.employeeId },
-//             data: {
-//                 password: hashedPassword,
-//                 has_first_login: false,
-//             },
-//         });
-
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.FIRST_LOGIN_PASSWORD_CHANGED,
-//             ipAddress,
-//             null,
-//             tx
-//         );
-
-//         await createLog(
-//             employee.employeeId,
-//             LOG_ACTIONS.FIRST_LOGIN_COMPLETED,
-//             ipAddress,
-//             null,
-//             tx
-//         );
-//     });
-
-//     const token = buildSessionToken(employee);
-
-//     return {
-//         status: 200,
-//         body: {
-//             success: true,
-//             message: "Password changed successfully",
-//             nextStep: "SETUP_2FA_OPTIONAL",
-//             token,
-//             data: {
-//                 employeeId: employee.employeeId,
-//                 email: employee.email,
-//                 name: employee.name,
-//                 role: employee.role,
-//                 shouldPrompt2FASetup: true,
-//             },
-//         },
-//     };
-// }
-
-async function setupTwoFactorAuth(req) {
-  const employeeId = req.user?.id || req.user?.employeeId;
-  const ipAddress = getClientIp(req);
-
+async function setupTwoFactorAuth({
+  employeeId,
+  ipAddress,
+}) {
   if (!employeeId) {
     return {
       status: 401,
@@ -362,7 +289,7 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "Invalid pending 2FA setup state",
+        message: "Estado de configuración de 2FA pendiente inválido",
       },
     };
   }
@@ -402,7 +329,7 @@ async function verifyTwoFactorSetup(req) {
       status: 400,
       body: {
         success: false,
-        message: "Invalid 2FA code. Setup could not be completed.",
+        message: "Code de 2FA inválido, no se pudo completar la acción",
         nextStep: "2FA_SETUP_FAILED",
         data: {
           employeeId: employee.employeeId,
@@ -413,22 +340,7 @@ async function verifyTwoFactorSetup(req) {
   }
 
   await prisma.$transaction(async (tx) => {
-    const employeeInTx = await tx.employee.findUnique({
-      where: { employee_id: employee.employeeId },
-      select: {
-        temp_totp_secret: true,
-      },
-    });
-
-    await tx.employee.update({
-      where: { employee_id: employee.employeeId },
-      data: {
-        totp_secret: employeeInTx?.temp_totp_secret ?? null,
-        temp_totp_secret: null,
-        temp_totp_secret_created_at: null,
-        is_active_2fa: true,
-      },
-    });
+    await User.activateTwoFactorFromTempSecret(employee.employeeId, tx);
 
     await createLog(
       employee.employeeId,
@@ -548,7 +460,7 @@ async function validateTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid 2FA token" },
+      body: { success: false, message: "Token de 2FA inválido" },
     };
   }
 
@@ -679,20 +591,12 @@ async function disableTwoFactorAuth(req) {
 
     return {
       status: 401,
-      body: { success: false, message: "Invalid credentials" },
+      body: { success: false, message: "Credenciales inválidas" },
     };
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.employee.update({
-      where: { employee_id: employee.employeeId },
-      data: {
-        totp_secret: null,
-        temp_totp_secret: null,
-        temp_totp_secret_created_at: null,
-        is_active_2fa: false,
-      },
-    });
+    await User.disableTwoFactor(employee.employeeId, tx);
 
     await createLog(
       employee.employeeId,
@@ -720,7 +624,6 @@ async function disableTwoFactorAuth(req) {
 
 module.exports = {
   login,
-  // changePasswordFirstLogin,
   setupTwoFactorAuth,
   verifyTwoFactorSetup,
   validateTwoFactorAuth,

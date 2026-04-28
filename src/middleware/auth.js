@@ -7,7 +7,7 @@ const verifyToken = (req, res, next) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res
       .status(401)
-      .json({ success: false, message: "No token provided" });
+      .json({ success: false, message: "Token no proporcionado" });
   }
 
   const token = authHeader.split(" ")[1];
@@ -18,7 +18,7 @@ const verifyToken = (req, res, next) => {
     if (decoded.tokenType !== "SESSION") {
       return res
         .status(403)
-        .json({ success: false, message: "Invalid session token" });
+        .json({ success: false, message: "Token de sesión inválido" });
     }
 
     req.user = decoded;
@@ -26,7 +26,7 @@ const verifyToken = (req, res, next) => {
   } catch {
     return res
       .status(401)
-      .json({ success: false, message: "Invalid or expired token" });
+      .json({ success: false, message: "Token inválido o expirado" });
   }
 };
 

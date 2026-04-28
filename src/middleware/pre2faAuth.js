@@ -8,7 +8,7 @@ const verifyPre2faToken = (req, res, next) => {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
       success: false,
-      message: "No token provided",
+      message: "Token no proporcionado",
     });
   }
 
@@ -20,7 +20,7 @@ const verifyPre2faToken = (req, res, next) => {
     if (decoded.tokenType !== "PRE_2FA") {
       return res.status(403).json({
         success: false,
-        message: "Invalid pre-2FA token",
+        message: "Token de pre-2FA inválido",
       });
     }
 
@@ -29,7 +29,7 @@ const verifyPre2faToken = (req, res, next) => {
   } catch {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token",
+      message: "Token inválido o expirado",
     });
   }
 };

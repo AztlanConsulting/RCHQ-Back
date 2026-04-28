@@ -4,6 +4,7 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
+const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient();
 
@@ -78,7 +79,7 @@ const generateSessionToken = () => {
 };
 
 const cleanDb = async () => {
-  await prisma.logs.deleteMany();
+  await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
   await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
 };
 
@@ -86,6 +87,7 @@ const cleanDb = async () => {
 beforeAll(async () => {
   await cleanDb();
   await seedDependencies();
+  await seedActions();
 });
 afterEach(async () => {
   await cleanDb();
@@ -97,14 +99,14 @@ afterAll(async () => {
 });
 
 // ─── LOGIN ────────────────────────────────────────────────
-describe("POST /users/login - integration", () => {
+describe("POST /auth/login - integration", () => {
   it("retorna 200 y token con credenciales válidas", async () => {
     // Arrange
     await createTestEmployee();
 
     // Act
     const res = await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
     // Assert
@@ -119,7 +121,7 @@ describe("POST /users/login - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: "wrongpass" });
 
     // Assert
@@ -132,7 +134,7 @@ describe("POST /users/login - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: "noexiste@test.com", password: TEST_PASSWORD });
 
     // Assert
@@ -144,7 +146,7 @@ describe("POST /users/login - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: "notanemail", password: TEST_PASSWORD });
 
     // Assert
@@ -158,7 +160,7 @@ describe("POST /users/login - integration", () => {
 
     // Act
     await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: "wrongpass" });
     const emp = await prisma.employee.findUnique({
       where: { employee_id: TEST_EMPLOYEE_ID },
@@ -174,13 +176,13 @@ describe("POST /users/login - integration", () => {
 
     // Act
     await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: "wrong" });
     await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: "wrong" });
     await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: "wrong" });
     const emp = await prisma.employee.findUnique({
       where: { employee_id: TEST_EMPLOYEE_ID },
@@ -199,7 +201,7 @@ describe("POST /users/login - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
     // Assert
@@ -214,7 +216,7 @@ describe("POST /users/login - integration", () => {
 
     // Act
     await request(app)
-      .post("/users/login")
+      .post("/auth/login")
       .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
     const emp = await prisma.employee.findUnique({
       where: { employee_id: TEST_EMPLOYEE_ID },
@@ -227,7 +229,7 @@ describe("POST /users/login - integration", () => {
 });
 
 // ─── SETUP 2FA ────────────────────────────────────────────
-describe("POST /users/2fa/setup - integration", () => {
+describe("POST /auth/2fa/setup - integration", () => {
   it("guarda temp_totp_secret en BD y retorna QR", async () => {
     // Arrange
     await createTestEmployee();
@@ -235,7 +237,7 @@ describe("POST /users/2fa/setup - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/setup")
+      .post("/auth/2fa/setup")
       .set("Authorization", `Bearer ${token}`)
       .send({ id: TEST_EMPLOYEE_ID });
     const emp = await prisma.employee.findUnique({
@@ -259,7 +261,7 @@ describe("POST /users/2fa/setup - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/setup")
+      .post("/auth/2fa/setup")
       .set("Authorization", `Bearer ${token}`)
       .send({ id: TEST_EMPLOYEE_ID });
 
@@ -272,7 +274,7 @@ describe("POST /users/2fa/setup - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/setup")
+      .post("/auth/2fa/setup")
       .send({ id: TEST_EMPLOYEE_ID });
 
     // Assert
@@ -281,7 +283,7 @@ describe("POST /users/2fa/setup - integration", () => {
 });
 
 // ─── VERIFY 2FA SETUP ─────────────────────────────────────
-describe("POST /users/2fa/verify - integration", () => {
+describe("POST /auth/2fa/verify - integration", () => {
   it("retorna 409 si no hay setup pendiente en BD", async () => {
     // Arrange
     await createTestEmployee({ temp_totp_secret: null });
@@ -289,7 +291,7 @@ describe("POST /users/2fa/verify - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/verify")
+      .post("/auth/2fa/verify")
       .set("Authorization", `Bearer ${token}`)
       .send({ token: "123456" });
 
@@ -307,7 +309,7 @@ describe("POST /users/2fa/verify - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/verify")
+      .post("/auth/2fa/verify")
       .set("Authorization", `Bearer ${token}`)
       .send({ token: "123456" });
     const emp = await prisma.employee.findUnique({
@@ -321,7 +323,7 @@ describe("POST /users/2fa/verify - integration", () => {
 });
 
 // ─── DISABLE 2FA ──────────────────────────────────────────
-describe("POST /users/2fa/disable - integration", () => {
+describe("POST /auth/2fa/disable - integration", () => {
   it("desactiva 2FA y limpia secrets en BD con contraseña correcta", async () => {
     // Arrange
     await createTestEmployee({
@@ -332,7 +334,7 @@ describe("POST /users/2fa/disable - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/disable")
+      .post("/auth/2fa/disable")
       .set("Authorization", `Bearer ${token}`)
       .send({ password: TEST_PASSWORD });
     const emp = await prisma.employee.findUnique({
@@ -356,7 +358,7 @@ describe("POST /users/2fa/disable - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/disable")
+      .post("/auth/2fa/disable")
       .set("Authorization", `Bearer ${token}`)
       .send({ password: "wrongpass" });
     const emp = await prisma.employee.findUnique({
@@ -376,7 +378,7 @@ describe("POST /users/2fa/disable - integration", () => {
 
     // Act
     const res = await request(app)
-      .post("/users/2fa/disable")
+      .post("/auth/2fa/disable")
       .set("Authorization", `Bearer ${token}`)
       .send({ password: TEST_PASSWORD });
 
@@ -386,7 +388,7 @@ describe("POST /users/2fa/disable - integration", () => {
 });
 
 // ─── GET STATUS 2FA ───────────────────────────────────────
-describe("GET /users/status/2FA - integration", () => {
+describe("GET /auth/status/2FA - integration", () => {
   it("retorna false si 2FA no está activo en BD", async () => {
     // Arrange
     await createTestEmployee({ is_active_2fa: false });
@@ -394,7 +396,7 @@ describe("GET /users/status/2FA - integration", () => {
 
     // Act
     const res = await request(app)
-      .get("/users/status/2FA")
+      .get("/auth/status/2FA")
       .set("Authorization", `Bearer ${token}`);
 
     // Assert
@@ -412,7 +414,7 @@ describe("GET /users/status/2FA - integration", () => {
 
     // Act
     const res = await request(app)
-      .get("/users/status/2FA")
+      .get("/auth/status/2FA")
       .set("Authorization", `Bearer ${token}`);
 
     // Assert
@@ -424,7 +426,7 @@ describe("GET /users/status/2FA - integration", () => {
     // Arrange — no se manda Authorization header
 
     // Act
-    const res = await request(app).get("/users/status/2FA");
+    const res = await request(app).get("/auth/status/2FA");
 
     // Assert
     expect(res.statusCode).toBe(401);
