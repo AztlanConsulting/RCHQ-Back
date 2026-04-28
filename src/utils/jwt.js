@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
 const sessionExpiresIn = "1h";
 const firstLoginExpiresIn = "15m";
-const pre2faExpiresIn = "10m";
+const preTwoFactorAuthExpiresIn = "10m";
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -33,15 +33,15 @@ const generateFirstLoginToken = (user) => {
   );
 };
 
-const generatePre2faToken = (user) => {
+const generatePreTwoFactorAuthToken = (user) => {
   return jwt.sign(
     {
       id: user.id,
       email: user.email,
-      tokenType: "PRE_2FA",
+      tokenType: "preTwoFactorAuth",
     },
     jwtSecret,
-    { expiresIn: pre2faExpiresIn },
+    { expiresIn: preTwoFactorAuthExpiresIn },
   );
 };
 
@@ -60,5 +60,5 @@ module.exports = {
   generateToken,
   decodeToken,
   generateFirstLoginToken,
-  generatePre2faToken,
+  generatePreTwoFactorAuthToken,
 };
