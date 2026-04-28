@@ -7,12 +7,12 @@ async function getUserProfile(employeeId) {
 
   if (!employee) {
     return {
-      code: responses.profile.notFound
+      code: responses.profile.notFound,
     };
   }
   return {
     code: responses.profile.found,
-    data: employee
+    data: employee,
   };
 }
 

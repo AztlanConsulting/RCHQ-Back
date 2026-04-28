@@ -7,9 +7,9 @@ const upload = require("../middleware/upload");
 const employeeController = require("../controller/employee.controller");
 
 const {
-    getAdd,
-    getById,
-    postAdd,
+  getAdd,
+  getById,
+  postAdd,
 } = require("../controller/employee/create.controller");
 
 const { getAll } = require("../controller/employee/get.controller");
@@ -28,16 +28,16 @@ router.get(
   requireRole("admin"),
   // authorize(),
   employeeController.getEmployeeDetail,
-  );
+);
 
 router.post(
-    "/add",
-    verifyToken,
-    upload.single("picture"),
-    authorize(employeePolicy, (req) => ({
-        house_id: req.body.house_id,
-    })),
-    postAdd,
+  "/add",
+  verifyToken,
+  upload.single("picture"),
+  authorize(employeePolicy, (req) => ({
+    house_id: req.body.house_id,
+  })),
+  postAdd,
 );
 
 module.exports = router;

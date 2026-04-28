@@ -22,14 +22,14 @@ exports.getEmployeeDetail = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Empleado con ID dado no encontrado",
-      })
+      });
     }
     if (result.code === responses.personnel.found) {
       return res.status(200).json({
         success: false,
         message: "Data del empleado encontrado con éxito",
         data: result.data,
-      })
+      });
     }
 
     return res.status(500).json({

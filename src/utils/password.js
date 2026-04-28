@@ -91,7 +91,8 @@ exports.decryptValue = (storedValue) => {
   const ciphertext = buf.subarray(minLen);
   const decipher = crypto.createDecipheriv(ALGO, key, iv);
   decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString(
-    "utf8",
-  );
+  return Buffer.concat([
+    decipher.update(ciphertext),
+    decipher.final(),
+  ]).toString("utf8");
 };

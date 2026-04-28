@@ -13,17 +13,17 @@
     };
 */
 const responses = {
-    profile: {
-      found: 'PROFILE_FOUND',
-      notFound: 'PROFILE_NOT_FOUND',
-    },
-    personnel: {
-        notFound: 'EMPLOYEE_NOT_FOUND',
-        found: 'EMPLOYEE_DATA_FOUND',
-    },
-    servidor: {
-        internalError: 'INTERNAL_SERVER_ERROR',
-    },
-  };
-  
-  module.exports = responses;
+  profile: {
+    found: "PROFILE_FOUND",
+    notFound: "PROFILE_NOT_FOUND",
+  },
+  personnel: {
+    notFound: "EMPLOYEE_NOT_FOUND",
+    found: "EMPLOYEE_DATA_FOUND",
+  },
+  servidor: {
+    internalError: "INTERNAL_SERVER_ERROR",
+  },
+};
+
+module.exports = responses;

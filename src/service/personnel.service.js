@@ -46,5 +46,5 @@ exports.getEmployeeDetail = async (userID, employeeID) => {
         record: employeeRecord,
       },
     },
-  }
+  };
 };

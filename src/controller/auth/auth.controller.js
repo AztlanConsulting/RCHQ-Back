@@ -73,7 +73,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
       employeeId,
       ipAddress,
     });
-    
+
     return res.status(result.status).json(result.body);
   } catch (error) {
     console.error("Error in 2FA setup:", error);

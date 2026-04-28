@@ -54,7 +54,6 @@ jest.mock("qrcode", () => ({
   toDataURL: jest.fn(),
 }));
 
-
 const { verifyPassword } = require("../../utils/password");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
@@ -676,7 +675,7 @@ describe("disableTwoFactorAuth", () => {
     const mockTx = {};
     prisma.$transaction.mockImplementation((cb) => cb(mockTx));
     auth.disableTwoFactor.mockResolvedValue();
-    
+
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "SECRET",

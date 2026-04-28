@@ -81,7 +81,11 @@ async function setFirstLogin(employeeId, hasFirstLogin, db = prisma) {
   });
 }
 
-async function updatePasswordAndClearFirstLogin(employeeId, hashedPassword, db = prisma) {
+async function updatePasswordAndClearFirstLogin(
+  employeeId,
+  hashedPassword,
+  db = prisma,
+) {
   await db.employee.update({
     where: { employee_id: employeeId },
     data: {

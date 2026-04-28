@@ -174,10 +174,7 @@ async function login(req) {
   };
 }
 
-async function setupTwoFactorAuth({
-  employeeId,
-  ipAddress,
-}) {
+async function setupTwoFactorAuth({ employeeId, ipAddress }) {
   if (!employeeId) {
     return {
       status: 401,

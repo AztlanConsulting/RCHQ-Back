@@ -1,5 +1,7 @@
 // tests/backend/profile.controller.test.js
-const { getUserProfile: controllerFn } = require("../../controller/user/profile.controller");
+const {
+  getUserProfile: controllerFn,
+} = require("../../controller/user/profile.controller");
 
 jest.mock("../../service/user/profile.service");
 const profileService = require("../../service/user/profile.service");
@@ -9,22 +11,22 @@ const responses = require("../../utils/responses");
 const buildRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
-  res.json   = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
   return res;
 };
 
 const MOCK_EMPLOYEE_DATA = {
-  houseName:   "Casa Hogar Querétaro",
-  roleName:    "Coordinador",
-  name:        "Juan",
-  surname:     "Pérez",
-  email:       "juan@casa.org",
-  rfc:         "PEGJ900101XXX",
-  curp:        "PEGJ900101HQRRZN01",
-  nss:         "12345678901",
+  houseName: "Casa Hogar Querétaro",
+  roleName: "Coordinador",
+  name: "Juan",
+  surname: "Pérez",
+  email: "juan@casa.org",
+  rfc: "PEGJ900101XXX",
+  curp: "PEGJ900101HQRRZN01",
+  nss: "12345678901",
   bankAccount: "012345678901234567",
-  birthDate:   new Date("1990-01-01"),
-  picture:     null,
+  birthDate: new Date("1990-01-01"),
+  picture: null,
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -50,7 +52,7 @@ describe("profile.controller — getUserProfile", () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         message: "Perfil encontrado",
-        data:    MOCK_EMPLOYEE_DATA,
+        data: MOCK_EMPLOYEE_DATA,
       });
     });
 
@@ -62,7 +64,9 @@ describe("profile.controller — getUserProfile", () => {
 
       await controllerFn(req, res);
 
-      expect(profileService.getUserProfile).toHaveBeenCalledWith("uuid-empleado-001");
+      expect(profileService.getUserProfile).toHaveBeenCalledWith(
+        "uuid-empleado-001",
+      );
     });
   });
 

@@ -1,9 +1,9 @@
 exports.employeePolicy = (user) => {
-    if (!user) return false;
+  if (!user) return false;
 
-    if (user.role === "Administrador") return true;
+  if (user.role === "Administrador") return true;
 
-    if (user.role === "Coordinador") return true;
+  if (user.role === "Coordinador") return true;
 
-    return false;
+  return false;
 };
