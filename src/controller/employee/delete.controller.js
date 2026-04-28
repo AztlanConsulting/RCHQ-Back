@@ -2,7 +2,7 @@ const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
 const { deleteDocument } = require("../../service/employee/delete.service");
-const { RESPONSE } = require("../../utils/response");
+const responses = require("../../utils/responses");
 
 exports.deleteDocument = async (req, res) => {
   try {
@@ -15,7 +15,7 @@ exports.deleteDocument = async (req, res) => {
 
     const result = await deleteDocument(id, field);
 
-    if (result.type === RESPONSE.DOCUMENTS.DELETE) {
+    if (result.type === responses.DOCUMENTS.DELETE) {
       try {
         await createLog(
           req.user.id,
@@ -30,15 +30,15 @@ exports.deleteDocument = async (req, res) => {
       return res.status(200).json(result.body);
     }
 
-    if (result.type === RESPONSE.DOCUMENTS.NOT_ALLOW) {
+    if (result.type === responses.DOCUMENTS.NOT_ALLOW) {
       return res.status(400).json(result.body);
     }
 
-    if (result.type === RESPONSE.USER.NOT_FOUND) {
+    if (result.type === responses.USER.NOT_FOUND) {
       return res.status(404).json(result.body);
     }
 
-    if (result.type === RESPONSE.DOCUMENTS.NOT_FOUND) {
+    if (result.type === responses.DOCUMENTS.NOT_FOUND) {
       return res.status(404).json(result.body);
     }
   } catch (err) {

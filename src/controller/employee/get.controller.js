@@ -4,7 +4,7 @@ const {
   getDocumentsByEmployee,
   getEmployees,
 } = require("../../service/employee/get.service");
-const { RESPONSE } = require("../../utils/response");
+const responses = require("../../utils/responses");
 
 exports.getAdd = async (req, res) => {
   try {
@@ -40,13 +40,13 @@ exports.getDocumentsByEmployee = async (req, res) => {
 
     const result = await getDocumentsByEmployee(id);
 
-    if (result.type === RESPONSE.DOCUMENTS.OK)
+    if (result.type === responses.DOCUMENTS.OK)
       return res.status(200).json({ success: true, body: result.body });
-    if (result.type === RESPONSE.DOCUMENTS.NOT_FOUND)
+    if (result.type === responses.DOCUMENTS.NOT_FOUND)
       return res
         .status(200)
         .json({ success: true, message: "El empleado no tiene documentos" });
-    if (result.type === RESPONSE.USER.NOT_FOUND)
+    if (result.type === responses.USER.NOT_FOUND)
       return res
         .status(404)
         .json({ success: false, message: "Empleado no encontrado" });
@@ -54,7 +54,7 @@ exports.getDocumentsByEmployee = async (req, res) => {
     console.error("getDocumentsByEmployee error:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Internal Server Error" });
+      .json({ success: false, message: "Error interno del servidor" });
   }
 };
 
