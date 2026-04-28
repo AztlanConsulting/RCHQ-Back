@@ -53,6 +53,6 @@ router.post(
   authController.disableTwoFactorAuth,
 );
 
-router.get("/2fa/Status", verifyToken, authController.getTwoFactorAuthStatus);
+router.get("/2fa/status", verifyToken, authController.getTwoFactorAuthStatus);
 
 module.exports = router;

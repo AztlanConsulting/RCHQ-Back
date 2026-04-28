@@ -391,7 +391,7 @@ describe("POST /auth/2fa/disable - integration", () => {
 });
 
 // ─── GET STATUS 2FA ───────────────────────────────────────
-describe("GET /auth/2fa/Status - integration", () => {
+describe("GET /auth/2fa/status - integration", () => {
   it("retorna false si TwoFactorAuth no está activo en BD", async () => {
     // Arrange
     await createTestEmployee({ is_active_two_factor_auth: false });
@@ -399,7 +399,7 @@ describe("GET /auth/2fa/Status - integration", () => {
 
     // Act
     const res = await request(app)
-      .get("/auth/2fa/Status")
+      .get("/auth/2fa/status")
       .set("Authorization", `Bearer ${token}`);
 
     // Assert
@@ -417,7 +417,7 @@ describe("GET /auth/2fa/Status - integration", () => {
 
     // Act
     const res = await request(app)
-      .get("/auth/2fa/Status")
+      .get("/auth/2fa/status")
       .set("Authorization", `Bearer ${token}`);
 
     // Assert
@@ -429,7 +429,7 @@ describe("GET /auth/2fa/Status - integration", () => {
     // Arrange — no se manda Authorization header
 
     // Act
-    const res = await request(app).get("/auth/2fa/Status");
+    const res = await request(app).get("/auth/2fa/status");
 
     // Assert
     expect(res.statusCode).toBe(401);
