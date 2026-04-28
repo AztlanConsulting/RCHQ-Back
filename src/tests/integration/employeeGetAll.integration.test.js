@@ -69,7 +69,7 @@ const seedDependencies = async () => {
         surname: "Perez",
         email: `juan${i}@test.com`,
         password: "123456",
-        type: 'nomina',
+        type: "nomina",
         curp: `TEST900101HDFRR${String(i).padStart(2, "0")}`,
         birth_date: new Date("1990-01-01"),
         start_date: new Date(),
