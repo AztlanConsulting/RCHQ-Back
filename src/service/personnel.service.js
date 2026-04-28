@@ -1,11 +1,11 @@
-const Personnel = require("../model/personnel.model");
+const personnel = require("../model/personnel.model");
 const { getClientIp } = require("../utils/ip");
 const responses = require("../utils/responses");
 const { decryptValue } = require("../utils/password");
 
 exports.getEmployeeDetail = async (userID, employeeID) => {
   // get basic employee info
-  const employeeBasicInfo = await Personnel.getEmployeeById(employeeID);
+  const employeeBasicInfo = await personnel.getEmployeeById(employeeID);
 
   const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
 
@@ -21,22 +21,22 @@ exports.getEmployeeDetail = async (userID, employeeID) => {
     };
   }
 
-  const employeeAddress = await Personnel.getEmployeeAddress(employeeID);
+  const employeeAddress = await personnel.getEmployeeAddress(employeeID);
   if (employeeAddress) {
     employeeBasicInfo.address = employeeAddress;
   }
 
-  const house = await Personnel.getHouseByEmployeeId(employeeID);
+  const house = await personnel.getHouseByEmployeeId(employeeID);
   if (house) {
     employeeBasicInfo.house = house;
   }
 
   // get administrativeEmployeeInfo
   const employeeAdminInfo =
-    await Personnel.getAdminEmployeeInfoById(employeeID);
+    await personnel.getAdminEmployeeInfoById(employeeID);
 
   // get employee record
-  const employeeRecord = await Personnel.getEmployeeRecord(employeeID);
+  const employeeRecord = await personnel.getEmployeeRecord(employeeID);
 
   return {
     code: responses.personnel.found,

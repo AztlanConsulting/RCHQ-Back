@@ -9,14 +9,11 @@ exports.getEmployeeDetail = async (req, res) => {
 
     // Return 400 Bad request if there is no employee id to lookup
     if (!userID || !employeeID) {
-      return {
-        status: 400,
-        body: {
-          success: false,
-          code: "Request Mala",
-          message: "Body incompleto para este request",
-        },
-      };
+      return res.status(400).json({
+        success: false,
+        code: "Request Mala",
+        message: "Body incompleto para este request",
+      });
     }
 
     const result = await personnelService.getEmployeeDetail(userID, employeeID);
