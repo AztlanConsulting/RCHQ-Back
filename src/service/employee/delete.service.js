@@ -5,7 +5,7 @@ const {
   findDocumentRowByEmployee,
 } = require("../../model/employee/get.model");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
-const { RESPONSE } = require("../../utils/response");
+const RESPONSES  = require("../../utils/responses");
 const fs = require("fs");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
@@ -13,7 +13,7 @@ const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
 exports.deleteDocument = async (employeeId, documentField) => {
   if (!validateField(documentField)) {
     return {
-      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
+      type: RESPONSES.DOCUMENTS.NOT_ALLOW,
       body: {
         success: false,
         message: `Tipo de documento inválido: ${documentField}`,
@@ -24,7 +24,7 @@ exports.deleteDocument = async (employeeId, documentField) => {
   const employee = await findById(employeeId);
   if (!employee) {
     return {
-      type: RESPONSE.USER.NOT_FOUND,
+      type: RESPONSES.USER.NOT_FOUND,
       body: { success: false, message: "Empleado no encontrado" },
     };
   }
@@ -32,7 +32,7 @@ exports.deleteDocument = async (employeeId, documentField) => {
   const docRow = await findDocumentRowByEmployee(employeeId);
   if (!docRow) {
     return {
-      type: RESPONSE.DOCUMENTS.NOT_FOUND,
+      type: RESPONSES.DOCUMENTS.NOT_FOUND,
       body: { success: false, message: "El empleado no tiene documentos" },
     };
   }
@@ -49,7 +49,7 @@ exports.deleteDocument = async (employeeId, documentField) => {
   await clearDocumentField(docRow.document_id, employeeId, documentField);
 
   return {
-    type: RESPONSE.DOCUMENTS.DELETE,
+    type: RESPONSES.DOCUMENTS.DELETE,
     body: { success: true, message: "Documento eliminado correctamente" },
   };
 };

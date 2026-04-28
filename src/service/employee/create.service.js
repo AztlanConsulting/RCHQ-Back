@@ -17,7 +17,7 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
 const { v4: uuidv4 } = require("uuid");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
-const { RESPONSE } = require("../../utils/response");
+const RESPONSES = require("../../utils/responses");
 const fs = require("fs");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
@@ -113,7 +113,7 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
   if (!validateField(documentField)) {
     deleteFileIfExists(file?.path);
     return {
-      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
+      type: RESPONSES.DOCUMENTS.NOT_ALLOW,
       body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
     };
   }
@@ -122,7 +122,7 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
   if (!employee) {
     deleteFileIfExists(file?.path);
     return {
-      type: RESPONSE.USER.NOT_FOUND,
+      type: RESPONSES.USER.NOT_FOUND,
       body: { success: false, message: "Usuario no encontrado" },
     };
   }
@@ -132,7 +132,7 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
   if (existingRow && existingRow.documents?.[documentField]) {
     deleteFileIfExists(file?.path);
     return {
-      type: RESPONSE.DOCUMENTS.ALREADY_EXIST,
+      type: RESPONSES.DOCUMENTS.ALREADY_EXIST,
       body: { success: false, message: "Este documento ya existe", field: documentField },
     };
   }
@@ -143,7 +143,7 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
     : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
 
   return {
-    type: RESPONSE.DOCUMENTS.UPLOAD,
+    type: RESPONSES.DOCUMENTS.UPLOAD,
     body: { success: true, data: resultDoc },
   };
 };
@@ -152,7 +152,7 @@ exports.updateDocument = async (employeeId, documentField, file) => {
   if (!validateField(documentField)) {
     deleteFileIfExists(file?.path);
     return {
-      type: RESPONSE.DOCUMENTS.NOT_ALLOW,
+      type: RESPONSES.DOCUMENTS.NOT_ALLOW,
       body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
     };
   }
@@ -161,7 +161,7 @@ exports.updateDocument = async (employeeId, documentField, file) => {
   if (!employee) {
     deleteFileIfExists(file?.path);
     return {
-      type: RESPONSE.USER.NOT_FOUND,
+      type: RESPONSES.USER.NOT_FOUND,
       body: { success: false, message: "Usuario no encontrado" },
     };
   }
@@ -171,7 +171,7 @@ exports.updateDocument = async (employeeId, documentField, file) => {
   if (!existingRow) {
     deleteFileIfExists(file?.path);
     return {
-      type: RESPONSE.DOCUMENTS.NOT_FOUND,
+      type: RESPONSES.DOCUMENTS.NOT_FOUND,
       body: { success: false, message: "No se encontró documento del empleado" },
     };
   }
@@ -185,7 +185,7 @@ exports.updateDocument = async (employeeId, documentField, file) => {
   );
 
   return {
-    type: RESPONSE.DOCUMENTS.UPLOAD,
+    type: RESPONSES.DOCUMENTS.UPLOAD,
     body: { success: true, data: updatedDoc },
   };
 };

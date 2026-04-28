@@ -4,7 +4,7 @@ const {
   findDocumentRowByEmployee,
   getEmployees,
 } = require("../../model/employee/get.model");
-const { RESPONSE } = require("../../utils/response");
+const RESPONSES = require("../../utils/responses");
 
 exports.getEmployees = async (
   houseId,
@@ -60,14 +60,14 @@ exports.getDocumentsByEmployee = async (employeeId) => {
   const employee = await findById(employeeId);
 
   if (!employee) {
-    return { type: RESPONSE.USER.NOT_FOUND, body: null };
+    return { type: RESPONSES.USER.NOT_FOUND, body: null };
   }
 
   const docRow = await findDocumentRowByEmployee(employeeId);
 
   if (!docRow) {
-    return { type: RESPONSE.DOCUMENTS.NOT_FOUND, body: null };
+    return { type: RESPONSES.DOCUMENTS.NOT_FOUND, body: null };
   }
 
-  return { type: RESPONSE.DOCUMENTS.OK, body: docRow };
+  return { type: RESPONSES.DOCUMENTS.OK, body: docRow };
 };
