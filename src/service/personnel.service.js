@@ -6,6 +6,13 @@ exports.getEmployeeDetail = async (userID, employeeID) => {
   // get basic employee info
   const employeeBasicInfo = await personnel.getEmployeeById(employeeID);
 
+  // Return 400 Bad request if there is no employee id to lookup
+  if (!userID || !employeeID) {
+    return {
+      code: responses.personnel.badRequest,
+    };
+  }
+
   // If the employee whose detail we want to see doesn't exist,
   // return 404 Not Found
   if (!employeeBasicInfo) {

@@ -18,6 +18,7 @@ const responses = {
     notFound: "PROFILE_NOT_FOUND",
   },
   personnel: {
+    badRequest: "BAD_REQUEST",
     notFound: "EMPLOYEE_NOT_FOUND",
     found: "EMPLOYEE_DATA_FOUND",
   },
