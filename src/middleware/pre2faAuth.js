@@ -17,10 +17,10 @@ const verifyPreTwoFactorAuthToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (decoded.tokenType !== "PRE_TwoFactorAuth") {
+    if (decoded.tokenType !== "preTwoFactorAuth") {
       return res.status(403).json({
         success: false,
-        message: "Invalid pre-TwoFactorAuth token",
+        message: "Token inválido de preTwoFactorAuth",
       });
     }
 

@@ -32,6 +32,6 @@ exports.buildPreTwoFactorAuthJwt = (employee) => {
   return generatePreTwoFactorAuthToken({
     id: employee.employeeId,
     email: employee.email,
-    tokenType: "PRE_TwoFactorAuth",
+    tokenType: "preTwoFactorAuth",
   });
 };

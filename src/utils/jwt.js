@@ -38,7 +38,7 @@ const generatePreTwoFactorAuthToken = (user) => {
     {
       id: user.id,
       email: user.email,
-      tokenType: "PRE_TwoFactorAuth",
+      tokenType: "preTwoFactorAuth",
     },
     jwtSecret,
     { expiresIn: preTwoFactorAuthExpiresIn },
