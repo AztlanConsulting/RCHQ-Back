@@ -73,10 +73,10 @@ exports.setupTwoFactorAuth = async (req, res) => {
       employeeId,
       ipAddress,
     });
-    
+
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("Error in 2FA setup:", error);
+    console.error("Error en el setUp de TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -89,7 +89,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
     const result = await authService.verifyTwoFactorSetup(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("2FA verify setup error:", error);
+    console.error("Error para verificar el TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -102,7 +102,7 @@ exports.validateTwoFactorAuth = async (req, res) => {
     const result = await authService.validateTwoFactorAuth(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("2FA validation error:", error);
+    console.error("Error para validar el TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -110,12 +110,12 @@ exports.validateTwoFactorAuth = async (req, res) => {
   }
 };
 
-exports.getStatus2FA = async (req, res) => {
+exports.getTwoFactorAuthStatus = async (req, res) => {
   try {
-    const result = await authService.getStatus2FA(req);
+    const result = await authService.getTwoFactorAuthStatus(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("2FA validation error:", error);
+    console.error("Error al obtener estado del TwoFactorAuth:", error);
     return res.status(500).json({
       success: false,
       message: "Internal Server Error",
@@ -128,7 +128,7 @@ exports.disableTwoFactorAuth = async (req, res) => {
     const result = await authService.disableTwoFactorAuth(req);
     return res.status(result.status).json(result.body);
   } catch (error) {
-    console.error("2FA disable error:", error);
+    console.error("Error para quitar el TwoFactorAuth:", error);
     return res
       .status(500)
       .json({ success: false, message: "Internal Server Error" });

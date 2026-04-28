@@ -1,19 +1,14 @@
 module.exports = {
   testEnvironment: "node",
-
   verbose: true,
-
   collectCoverage: true,
   coverageDirectory: "coverage",
-
   testMatch: [
     "<rootDir>/src/tests/unit/**/*.test.js",
     "<rootDir>/src/tests/integration/**/*.test.js",
   ],
 
-  transformIgnorePatterns: [
-    "node_modules/(?!(uuid)/)"
-  ],
+  transformIgnorePatterns: ["node_modules/(?!(uuid)/)"],
 
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   testTimeout: 15000,

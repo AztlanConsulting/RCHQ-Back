@@ -6,9 +6,9 @@ jest.mock("../../model/auth/auth.model", () => ({
   clearLoginSecurityState: jest.fn(),
   saveTempTotpSecret: jest.fn(),
   clearTempTotpSecret: jest.fn(),
-  incrementFailed2FAAttempts: jest.fn(),
-  set2FABlockedUntil: jest.fn(),
-  clear2FASecurityState: jest.fn(),
+  incrementFailedTwoFactorAuthAttempts: jest.fn(),
+  setTwoFactorAuthBlockedUntil: jest.fn(),
+  clearTwoFactorAuthSecurityState: jest.fn(),
   activateTwoFactorFromTempSecret: jest.fn(),
   disableTwoFactor: jest.fn(),
 }));
@@ -28,13 +28,13 @@ jest.mock("../../utils/ip", () => ({
 jest.mock("../../utils/auth/authTokens", () => ({
   buildSessionToken: jest.fn(),
   buildFirstLoginJwt: jest.fn(),
-  buildPre2faJwt: jest.fn(),
+  buildPreTwoFactorAuthJwt: jest.fn(),
 }));
 
 jest.mock("../../utils/auth/authGuards", () => ({
   isBlockedUntil: jest.fn(),
   clearExpiredLoginBlock: jest.fn(),
-  clearExpired2FABlock: jest.fn(),
+  clearExpiredTwoFactorAuthBlock: jest.fn(),
 }));
 
 jest.mock("../../prisma", () => ({
@@ -54,16 +54,19 @@ jest.mock("qrcode", () => ({
   toDataURL: jest.fn(),
 }));
 
-
 const { verifyPassword } = require("../../utils/password");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const {
   buildSessionToken,
   buildFirstLoginJwt,
-  buildPre2faJwt,
+  buildPreTwoFactorAuthJwt,
 } = require("../../utils/auth/authTokens");
-
+const {
+  isBlockedUntil,
+  clearExpiredLoginBlock,
+  clearExpiredTwoFactorAuthBlock,
+} = require("../../utils/auth/authGuards");
 const prisma = require("../../prisma");
 
 const {
@@ -71,7 +74,7 @@ const {
   setupTwoFactorAuth,
   verifyTwoFactorSetup,
   validateTwoFactorAuth,
-  getStatus2FA,
+  getTwoFactorAuthStatus,
   disableTwoFactorAuth,
 } = require("../../service/auth/auth.service");
 
@@ -92,11 +95,6 @@ jest.mock("speakeasy");
 jest.mock("qrcode");
 
 const auth = require("../../model/auth/auth.model");
-const {
-  isBlockedUntil,
-  clearExpiredLoginBlock,
-  clearExpired2FABlock,
-} = require("../../utils/auth/authGuards");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 
@@ -109,7 +107,7 @@ const mockEmployee = {
   role: "admin",
   isActive: true,
   hasFirstLogin: false,
-  isActive2FA: false,
+  isActiveTwoFactorAuth: false,
   blockedUntil: null,
   twoFaBlockedUntil: null,
   pwd: "hashedPassword",
@@ -131,11 +129,11 @@ beforeEach(() => {
   getClientIp.mockReturnValue("127.0.0.1");
   isBlockedUntil.mockReturnValue(false);
   clearExpiredLoginBlock.mockResolvedValue();
-  clearExpired2FABlock.mockResolvedValue();
+  clearExpiredTwoFactorAuthBlock.mockResolvedValue();
   createLog.mockResolvedValue();
   buildSessionToken.mockReturnValue("fake-session-token");
   buildFirstLoginJwt.mockReturnValue("fake-first-login-token");
-  buildPre2faJwt.mockReturnValue("fake-pre2fa-token");
+  buildPreTwoFactorAuthJwt.mockReturnValue("fake-preTwoFactorAuth-token");
 });
 
 describe("login", () => {
@@ -234,11 +232,11 @@ describe("login", () => {
     expect(buildFirstLoginJwt).toHaveBeenCalled();
   });
 
-  it("retorna token de sesión con credenciales válidas y sin 2FA activo", async () => {
+  it("retorna token de sesión con credenciales válidas y sin TwoFactorAuth activo", async () => {
     auth.findEmployeeByEmail.mockResolvedValue({
       ...mockEmployee,
       hasFirstLogin: false,
-      isActive2FA: false,
+      isActiveTwoFactorAuth: false,
     });
     verifyPassword.mockResolvedValue(true);
     auth.clearLoginSecurityState.mockResolvedValue();
@@ -250,15 +248,15 @@ describe("login", () => {
     expect(result.status).toBe(200);
     expect(result.body.success).toBe(true);
     expect(result.body.data).toHaveProperty("token", "fake-session-token");
-    expect(result.body.isActive2FA).toBe(false);
+    expect(result.body.isActiveTwoFactorAuth).toBe(false);
     expect(createLog).toHaveBeenCalled();
   });
 
-  it("retorna pre2FAToken cuando el usuario tiene 2FA activo", async () => {
+  it("retorna preTwoFactorAuthToken cuando el usuario tiene TwoFactorAuth activo", async () => {
     auth.findEmployeeByEmail.mockResolvedValue({
       ...mockEmployee,
       hasFirstLogin: false,
-      isActive2FA: true,
+      isActiveTwoFactorAuth: true,
     });
     verifyPassword.mockResolvedValue(true);
     auth.clearLoginSecurityState.mockResolvedValue();
@@ -268,8 +266,11 @@ describe("login", () => {
     );
 
     expect(result.status).toBe(200);
-    expect(result.body).toHaveProperty("pre2FAToken", "fake-pre2fa-token");
-    expect(result.body.isActive2FA).toBe(true);
+    expect(result.body).toHaveProperty(
+      "preTwoFactorAuthToken",
+      "fake-preTwoFactorAuth-token",
+    );
+    expect(result.body.isActiveTwoFactorAuth).toBe(true);
     expect(result.body.data).toBeUndefined();
   });
 
@@ -320,7 +321,7 @@ describe("setupTwoFactorAuth", () => {
     expect(createLog).toHaveBeenCalled();
   });
 
-  it("retorna 409 si el 2FA ya está configurado (totpSecret existe)", async () => {
+  it("retorna 409 si el TwoFactorAuth ya está configurado (totpSecret existe)", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "EXISTINGSECRET",
@@ -353,7 +354,7 @@ describe("setupTwoFactorAuth", () => {
       "qrImage",
       "data:image/png;base64,fake",
     );
-    expect(result.body.nextStep).toBe("VERIFY_2FA_SETUP");
+    expect(result.body.nextStep).toBe("VERIFY_TWO_FACTOR_AUTH_SETUP");
     expect(auth.saveTempTotpSecret).toHaveBeenCalledWith(
       "abc-123",
       "SECRETBASE32",
@@ -380,7 +381,7 @@ describe("verifyTwoFactorSetup", () => {
     expect(result.status).toBe(404);
   });
 
-  it("retorna 409 si no hay setup de 2FA pendiente (sin tempTotpSecret)", async () => {
+  it("retorna 409 si no hay setup de TwoFactorAuth pendiente (sin tempTotpSecret)", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       tempTotpSecret: null,
@@ -393,8 +394,8 @@ describe("verifyTwoFactorSetup", () => {
     expect(result.status).toBe(409);
   });
 
-  it("retorna 409 si el setup de 2FA expiró", async () => {
-    const createdAt = new Date(Date.now() - 20 * 60 * 1000);
+  it("retorna 409 si el setup de TwoFactorAuth expiró", async () => {
+    const createdAt = new Date(Date.now() - 20 * 60 * 1000); // 20 minutos atrás
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       tempTotpSecret: "SECRETBASE32",
@@ -424,10 +425,10 @@ describe("verifyTwoFactorSetup", () => {
     );
 
     expect(result.status).toBe(400);
-    expect(result.body.nextStep).toBe("2FA_SETUP_FAILED");
+    expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_SETUP_FAILED");
   });
 
-  it("activa 2FA correctamente cuando el token es válido", async () => {
+  it("activa TwoFactorAuth correctamente cuando el token es válido", async () => {
     const createdAt = new Date();
     const mockTx = {};
     prisma.$transaction.mockImplementation((cb) => cb(mockTx));
@@ -449,7 +450,7 @@ describe("verifyTwoFactorSetup", () => {
       mockTx,
     );
     expect(result.status).toBe(200);
-    expect(result.body.nextStep).toBe("2FA_SETUP_COMPLETE");
+    expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_SETUP_COMPLETE");
   });
 });
 
@@ -472,7 +473,7 @@ describe("validateTwoFactorAuth", () => {
     expect(result.status).toBe(404);
   });
 
-  it("retorna 409 si el 2FA no está habilitado (sin totpSecret)", async () => {
+  it("retorna 409 si el TwoFactorAuth no está habilitado (sin totpSecret)", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: null,
@@ -485,7 +486,7 @@ describe("validateTwoFactorAuth", () => {
     expect(result.status).toBe(409);
   });
 
-  it("retorna 423 si el 2FA está bloqueado por intentos fallidos", async () => {
+  it("retorna 423 si el TwoFactorAuth está bloqueado por intentos fallidos", async () => {
     const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
@@ -499,49 +500,49 @@ describe("validateTwoFactorAuth", () => {
     );
 
     expect(result.status).toBe(423);
-    expect(result.body.nextStep).toBe("WAIT_2FA_BLOCK");
+    expect(result.body.nextStep).toBe("WAIT_TWO_FACTOR_AUTH_BLOCK");
   });
 
-  it("retorna 401 si el código 2FA es incorrecto", async () => {
+  it("retorna 401 si el código TwoFactorAuth es incorrecto", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "SECRET",
     });
     speakeasy.totp.verify.mockReturnValue(false);
-    auth.incrementFailed2FAAttempts.mockResolvedValue(1);
+    auth.incrementFailedTwoFactorAuthAttempts.mockResolvedValue(1);
 
     const result = await validateTwoFactorAuth(
       makeReq({ token: "000000" }, { id: "abc-123" }),
     );
 
     expect(result.status).toBe(401);
-    expect(auth.incrementFailed2FAAttempts).toHaveBeenCalled();
+    expect(auth.incrementFailedTwoFactorAuthAttempts).toHaveBeenCalled();
   });
 
-  it("bloquea el 2FA al llegar a 3 intentos fallidos", async () => {
+  it("bloquea el TwoFactorAuth al llegar a 3 intentos fallidos", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "SECRET",
     });
     speakeasy.totp.verify.mockReturnValue(false);
-    auth.incrementFailed2FAAttempts.mockResolvedValue(3);
-    auth.set2FABlockedUntil.mockResolvedValue();
+    auth.incrementFailedTwoFactorAuthAttempts.mockResolvedValue(3);
+    auth.setTwoFactorAuthBlockedUntil.mockResolvedValue();
 
     const result = await validateTwoFactorAuth(
       makeReq({ token: "000000" }, { id: "abc-123" }),
     );
 
     expect(result.status).toBe(423);
-    expect(auth.set2FABlockedUntil).toHaveBeenCalled();
+    expect(auth.setTwoFactorAuthBlockedUntil).toHaveBeenCalled();
   });
 
-  it("retorna token de sesión cuando el código 2FA es correcto", async () => {
+  it("retorna token de sesión cuando el código TwoFactorAuth es correcto", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "SECRET",
     });
     speakeasy.totp.verify.mockReturnValue(true);
-    auth.clear2FASecurityState.mockResolvedValue();
+    auth.clearTwoFactorAuthSecurityState.mockResolvedValue();
 
     const result = await validateTwoFactorAuth(
       makeReq({ token: "123456" }, { id: "abc-123" }),
@@ -550,20 +551,21 @@ describe("validateTwoFactorAuth", () => {
     expect(result.status).toBe(200);
     expect(result.body).toHaveProperty("token", "fake-session-token");
     expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
-    expect(auth.clear2FASecurityState).toHaveBeenCalled();
+    expect(auth.clearTwoFactorAuthSecurityState).toHaveBeenCalled();
   });
 });
 
-describe("getStatus2FA", () => {
+describe("getTwoFactorAuthStatus", () => {
   it("retorna 404 si no hay employeeId en el token", async () => {
-    const result = await getStatus2FA(makeReq({}, null));
+    const result = await getTwoFactorAuthStatus(makeReq({}, null));
+
     expect(result.status).toBe(404);
   });
 
   it("retorna 404 si el empleado no existe en la BD", async () => {
     auth.getEmployeeById.mockResolvedValue(null);
 
-    const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
+    const result = await getTwoFactorAuthStatus(makeReq({}, { id: "abc-123" }));
 
     expect(result.status).toBe(404);
   });
@@ -574,34 +576,34 @@ describe("getStatus2FA", () => {
       isActive: false,
     });
 
-    const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
+    const result = await getTwoFactorAuthStatus(makeReq({}, { id: "abc-123" }));
 
     expect(result.status).toBe(403);
   });
 
-  it("retorna false cuando el 2FA no está activo", async () => {
+  it("retorna false cuando el TwoFactorAuth no está activo", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
-      isActive2FA: false,
+      isActiveTwoFactorAuth: false,
     });
 
-    const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
+    const result = await getTwoFactorAuthStatus(makeReq({}, { id: "abc-123" }));
 
     expect(result.status).toBe(200);
-    expect(result.body.Status2FA).toBe(false);
+    expect(result.body.StatusTwoFactorAuth).toBe(false);
   });
 
-  it("retorna true cuando el 2FA está activo", async () => {
+  it("retorna true cuando el TwoFactorAuth está activo", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
-      isActive2FA: true,
+      isActiveTwoFactorAuth: true,
       totpSecret: "SECRET",
     });
 
-    const result = await getStatus2FA(makeReq({}, { id: "abc-123" }));
+    const result = await getTwoFactorAuthStatus(makeReq({}, { id: "abc-123" }));
 
     expect(result.status).toBe(200);
-    expect(result.body.Status2FA).toBe(true);
+    expect(result.body.StatusTwoFactorAuth).toBe(true);
   });
 });
 
@@ -644,7 +646,7 @@ describe("disableTwoFactorAuth", () => {
     expect(createLog).toHaveBeenCalled();
   });
 
-  it("retorna 409 si el 2FA no está activo", async () => {
+  it("retorna 409 si el TwoFactorAuth no está activo", async () => {
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: null,
@@ -672,11 +674,11 @@ describe("disableTwoFactorAuth", () => {
     expect(createLog).toHaveBeenCalled();
   });
 
-  it("desactiva 2FA correctamente y limpia los secrets", async () => {
+  it("desactiva TwoFactorAuth correctamente y limpia los secrets", async () => {
     const mockTx = {};
     prisma.$transaction.mockImplementation((cb) => cb(mockTx));
     auth.disableTwoFactor.mockResolvedValue();
-    
+
     auth.getEmployeeById.mockResolvedValue({
       ...mockEmployee,
       totpSecret: "SECRET",
@@ -689,7 +691,7 @@ describe("disableTwoFactorAuth", () => {
 
     expect(auth.disableTwoFactor).toHaveBeenCalledWith("abc-123", mockTx);
     expect(result.status).toBe(200);
-    expect(result.body.nextStep).toBe("2FA_DISABLED");
+    expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_DISABLED");
     expect(result.body.data.twoFactorEnabled).toBe(false);
   });
 });

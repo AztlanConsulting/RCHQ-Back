@@ -1,0 +1,50 @@
+@startuml
+|Administrador / Coordinador|
+start
+:Presiona el botón de Documentos;
+
+|#AntiqueWhite|Sistema|
+:Muestra sección de documentos del empleado;
+:Lista archivos existentes (si los hay);
+
+|Administrador / Coordinador|
+:Selecciona tipo de documento a subir\n(ej. INE, CURP, contrato, etc.);
+:Selecciona archivo desde su dispositivo;
+
+|Sistema|
+:Valida formato del archivo\n(PDF, JPG, PNG);
+:Valida tamaño máximo permitido;
+
+if (¿Archivo válido?) then (No)
+    :Muestra error\n"Formato o tamaño no permitido";
+
+    |Administrador / Coordinador|
+    :Selecciona otro archivo;
+
+    |Sistema|
+    :Valida nuevamente;
+endif
+
+|Sistema|
+:Sube archivo al servidor / storage;
+
+if (¿Subida exitosa?) then (No)
+    :Muestra error\n"Error al subir el archivo,\nintenta de nuevo";
+
+    |Administrador / Coordinador|
+    :Reintenta la subida;
+else (Sí)
+    |Sistema|
+    :Guarda referencia del archivo en BD\n(nombre, tipo, url, fecha, employeeId);
+    :Guarda log FILE_UPLOAD_SUCCESS;
+    :Muestra mensaje de éxito;
+
+    |Administrador / Coordinador|
+    :Ve confirmación\n"Archivo subido correctamente";
+
+    |Sistema|
+    :Actualiza lista de documentos del empleado;
+endif
+
+stop
+@enduml
