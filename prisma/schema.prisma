@@ -86,7 +86,7 @@ model employee {
   phone_number                  String?                         @db.VarChar(20)
   nss                           String?                         @unique @db.VarChar(11)
   bank_account                  String?                         @db.VarChar(18)
-  salary                        Int                             @default(0)
+  salary                        String?                         @db.VarChar(72)
   blocked_until                 DateTime?                       @db.Timestamp(6)
   two_fa_blocked_until          DateTime?                       @db.Timestamp(6)
   temp_totp_secret              String?                         @db.VarChar

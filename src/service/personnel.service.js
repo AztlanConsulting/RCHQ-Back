@@ -1,12 +1,17 @@
 const Personnel = require("../model/personnel.model");
 const { getClientIp } = require("../utils/ip");
-const { createLog } = require("../model/log.model");
-const { LOG_ACTIONS } = require("../utils/logActions");
 const responses = require("../utils/responses");
+const { decryptValue } = require("../utils/password");
 
 exports.getEmployeeDetail = async (userID, employeeID) => {
   // get basic employee info
   const employeeBasicInfo = await Personnel.getEmployeeById(employeeID);
+
+  const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
+
+  if (decryptedSalary) {
+    employeeBasicInfo.salary = decryptedSalary;
+  }
 
   // If the employee whose detail we want to see doesn't exist,
   // return 404 Not Found
