@@ -12,12 +12,12 @@
         },
     };
 */
-const responses = {
-  profile: {
-    found: "PROFILE_FOUND",
-    notFound: "PROFILE_NOT_FOUND",
+const RESPONSES = {
+  PROFILE: {
+    FOUND: "PROFILE_FOUND",
+    NOT_FOUND: "PROFILE_NOT_FOUND",
   },
-  documents: {
+  DOCUMENTS: {
     NOT_FOUND: "Documento no encontrado",
     OK: "Documento obtenido",
     DELETE: "Documento borrado",
@@ -32,4 +32,4 @@ const responses = {
   },
 };
 
-module.exports = responses;
+module.exports = RESPONSES;

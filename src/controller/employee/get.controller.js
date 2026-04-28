@@ -4,7 +4,7 @@ const {
   getDocumentsByEmployee,
   getEmployees,
 } = require("../../service/employee/get.service");
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 
 exports.getAdd = async (req, res) => {
   try {
@@ -40,13 +40,13 @@ exports.getDocumentsByEmployee = async (req, res) => {
 
     const result = await getDocumentsByEmployee(id);
 
-    if (result.type === responses.DOCUMENTS.OK)
+    if (result.type === RESPONSES.DOCUMENTS.OK)
       return res.status(200).json({ success: true, body: result.body });
-    if (result.type === responses.DOCUMENTS.NOT_FOUND)
+    if (result.type === RESPONSES.DOCUMENTS.NOT_FOUND)
       return res
         .status(200)
         .json({ success: true, message: "El empleado no tiene documentos" });
-    if (result.type === responses.USER.NOT_FOUND)
+    if (result.type === RESPONSES.USER.NOT_FOUND)
       return res
         .status(404)
         .json({ success: false, message: "Empleado no encontrado" });

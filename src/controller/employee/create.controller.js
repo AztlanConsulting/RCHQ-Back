@@ -6,7 +6,7 @@ const {
   uploadDocument,
   updateDocument,
 } = require("../../service/employee/create.service");
-const  responses = require("../../utils/responses");
+const  RESPONSES = require("../../utils/responses");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
@@ -91,7 +91,7 @@ exports.uploadDocument = async (req, res) => {
     }
 
     const result = await uploadDocument(id, file, documentField);
-    if (result.type === responses.DOCUMENTS.UPLOAD) {
+    if (result.type === RESPONSES.DOCUMENTS.UPLOAD) {
       try {
         await createLog(
           req.user.id,
@@ -104,11 +104,11 @@ exports.uploadDocument = async (req, res) => {
       }
       return res.status(201).json(result.body);
     }
-    if (result.type === responses.DOCUMENTS.NOT_ALLOW)
+    if (result.type === RESPONSES.DOCUMENTS.NOT_ALLOW)
       return res.status(400).json(result.body);
-    if (result.type === responses.USER.NOT_FOUND)
+    if (result.type === RESPONSES.USER.NOT_FOUND)
       return res.status(404).json(result.body);
-    if (result.type === responses.DOCUMENTS.ALREADY_EXIST)
+    if (result.type === RESPONSES.DOCUMENTS.ALREADY_EXIST)
       return res.status(409).json(result.body);
   } catch (err) {
     console.error("uploadDocument error:", err);
@@ -131,7 +131,7 @@ exports.updateDocument = async (req, res) => {
 
     const result = await updateDocument(id, field, file);
 
-    if (result.type === responses.DOCUMENTS.UPLOAD) {
+    if (result.type === RESPONSES.DOCUMENTS.UPLOAD) {
       try {
         await createLog(
           req.user.id,
@@ -144,11 +144,11 @@ exports.updateDocument = async (req, res) => {
       }
       return res.status(200).json(result.body);
     }
-    if (result.type === responses.DOCUMENTS.NOT_ALLOW)
+    if (result.type === RESPONSES.DOCUMENTS.NOT_ALLOW)
       return res.status(400).json(result.body);
-    if (result.type === responses.USER.NOT_FOUND)
+    if (result.type === RESPONSES.USER.NOT_FOUND)
       return res.status(404).json(result.body);
-    if (result.type === responses.DOCUMENTS.NOT_FOUND)
+    if (result.type === RESPONSES.DOCUMENTS.NOT_FOUND)
       return res.status(404).json(result.body);
   } catch (err) {
     console.error("updateDocument error:", err);
