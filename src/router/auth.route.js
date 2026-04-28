@@ -1,7 +1,7 @@
 // src/router/auth.route.js
 const express = require("express");
 const verifyToken = require("../middleware/auth");
-const { requireRole } = require("../middleware/rbac");
+// const { requireRole } = require("../middleware/rbac");
 const authController = require("../controller/auth/auth.controller");
 // const { authorize } = require("../middleware/abac");
 const verifyFirstLoginToken = require("../middleware/firstLoginAuth");

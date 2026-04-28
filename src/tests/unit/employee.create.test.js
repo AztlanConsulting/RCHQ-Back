@@ -152,7 +152,7 @@ describe("Employee Service - createEmployee", () => {
 
   it("debería fallar si falta name", async () => {
     // Arrange
-    const { name, ...data } = baseEmployee;
+    const { ...data } = baseEmployee;
 
     // Act
     const result = await createEmployee(data, mockUserAdmin, mockReq);

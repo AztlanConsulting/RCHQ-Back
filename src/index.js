@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { PrismaClient } = require("@prisma/client");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const userRouter = require("./router/user.route");
