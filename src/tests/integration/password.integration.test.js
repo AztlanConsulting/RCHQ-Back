@@ -25,6 +25,9 @@ const TEST_FIRST_LOGIN_CURP = "FLOG900101HDFABC02";
 const TEST_TEMP_PASSWORD = "Temporal123A";
 const TEST_FIRST_LOGIN_NEW_PASSWORD = "Definitiva123A";
 
+/** Placeholder ciphertext (VarChar 72); must be String, never numeric 0 */
+const TEST_SALARY_ENC_STUB = "enc-stub-password-it-salary-placeholder";
+
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
   await prisma.house.upsert({
@@ -70,6 +73,7 @@ const createTestEmployee = async (overrides = {}) => {
       failed_login_attempts: 0,
       failed_2fa_attempts: 0,
       type: "nomina",
+      salary: TEST_SALARY_ENC_STUB,
       ...overrides,
     },
   });
@@ -95,6 +99,7 @@ const createFirstLoginEmployee = async (overrides = {}) => {
       failed_login_attempts: 0,
       failed_2fa_attempts: 0,
       type: "nomina",
+      salary: TEST_SALARY_ENC_STUB,
       ...overrides,
     },
   });

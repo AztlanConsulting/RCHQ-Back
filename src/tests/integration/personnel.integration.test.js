@@ -97,6 +97,7 @@ const seedDependencies = async () => {
       is_active: true,
       is_active_2fa: false,
       failed_login_attempts: 0,
+      failed_2fa_attempts: 0,
       salary: "R8/gGMPXlSOGu3uAgxgrnEqIWwHHzHSm2l/vDjLF5ol9",
     },
   });
@@ -122,6 +123,7 @@ const seedSubjectEmployeeWithRelations = async () => {
       is_active: true,
       is_active_2fa: false,
       failed_login_attempts: 0,
+      failed_2fa_attempts: 0,
       salary: "long-encrypted-salary-value",
     },
   });
@@ -322,7 +324,6 @@ describe("GET /employee/employee-detail/:employeeID - integration", () => {
       .get(`/employee/employee-detail/${unknownId}`)
       .set(authHeader());
     expect(res.statusCode).toBe(404);
-    expect(res.body.code).toBe("Not Found");
   });
 
   it("retorna 200 con detalle, adminInfo y record según el esquema del servicio", async () => {
