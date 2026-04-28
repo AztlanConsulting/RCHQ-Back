@@ -229,7 +229,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
     body: {
       success: true,
       message: "TwoFactorAuth setup iniciado",
-      nextStep: "VERIFY_TwoFactorAuth_SETUP",
+      nextStep: "VERIFY_TWO_FACTOR_AUTH_SETUP",
       data: {
         employeeId: employee.employeeId,
         qrImage,
@@ -328,7 +328,7 @@ async function verifyTwoFactorSetup(req) {
       body: {
         success: false,
         message: "Código inválido de TwoFactorAuth. Falló el setup.",
-        nextStep: "TwoFactorAuth_SETUP_FAILED",
+        nextStep: "TWO_FACTOR_AUTH_SETUP_FAILED",
         data: {
           employeeId: employee.employeeId,
           canRetryInSettings: true,
@@ -354,7 +354,7 @@ async function verifyTwoFactorSetup(req) {
     body: {
       success: true,
       message: "TwoFactorAuth activated successfully",
-      nextStep: "TwoFactorAuth_SETUP_COMPLETE",
+      nextStep: "TWO_FACTOR_AUTH_SETUP_COMPLETE",
       data: {
         employeeId: employee.employeeId,
         twoFactorEnabled: true,
@@ -413,7 +413,7 @@ async function validateTwoFactorAuth(req) {
       body: {
         success: false,
         message: "TwoFactorAuth bloqueado temporalmente",
-        nextStep: "WAIT_TwoFactorAuth_BLOCK",
+        nextStep: "WAIT_TWO_FACTOR_AUTH_BLOCK",
         blockedUntil: employee.twoFaBlockedUntil,
       },
     };
@@ -458,7 +458,7 @@ async function validateTwoFactorAuth(req) {
         body: {
           success: false,
           message: "TwoFactorAuth bloqueado temporalmente",
-          nextStep: "WAIT_TwoFactorAuth_BLOCK",
+          nextStep: "WAIT_TWO_FACTOR_AUTH_BLOCK",
           blockedUntil,
         },
       };
@@ -624,7 +624,7 @@ async function disableTwoFactorAuth(req) {
     body: {
       success: true,
       message: "TwoFactorAuth deshabilitado correctamente",
-      nextStep: "TwoFactorAuth_DISABLED",
+      nextStep: "TWO_FACTOR_AUTH_DISABLED",
       data: {
         employeeId: employee.employeeId,
         twoFactorEnabled: false,

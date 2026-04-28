@@ -1,41 +1,53 @@
--- Minimal seed: one house, one role, one employee
+-- Minimal seed: houses, roles, one employee, and log actions
 -- Login: andre@gmail.com / Andatti67
 -- Re-run safe
+
 
 -- =========================
 -- CATÁLOGOS
 -- =========================
 
+INSERT INTO public.house (house_id, name, location, phone_number, description, image)
+VALUES 
+('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', 'boop'),
+('a0000001-0000-4000-8000-000000000002', 'Sonríe villa infantil', 'Querétaro, Qro.', '4420000001', 'Institución de asistencia infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'Querétaro, Qro.', '4420000002', 'Hogar para niños y niñas', 'default_house'),
+('a0000001-0000-4000-8000-000000000004', 'Casa Hogar Esperanza Para ti', 'Querétaro, Qro.', '4420000003', 'Apoyo integral a la infancia', 'default_house'),
+('a0000001-0000-4000-8000-000000000005', 'Hogar juvenil del santisimo rendentor I.A.P', 'Querétaro, Qro.', '4420000004', 'Hogar juvenil', 'default_house'),
+('a0000001-0000-4000-8000-000000000006', 'La Alegría de los niños', 'Querétaro, Qro.', '4420000005', 'I.A.P. dedicada al cuidado infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000007', 'Casa de Jesús', 'Querétaro, Qro.', '4420000006', 'Asistencia social infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000008', 'Ministerios Pan de Vida', 'Querétaro, Qro.', '4420000007', 'Apoyo y refugio infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000009', 'Hogares Providencia de Querétaro', 'Querétaro, Qro.', '4420000008', 'Protección a niños en situación de calle', 'default_house'),
+('a0000001-0000-4000-8000-000000000010', 'Proyecto de Vida I.A.P', 'Querétaro, Qro.', '4420000009', 'Desarrollo humano y social', 'default_house'),
+('a0000001-0000-4000-8000-000000000011', 'Puerta Abierta I.A.P', 'Querétaro, Qro.', '4420000010', 'Atención a niñas y adolescentes', 'default_house'),
+('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'Querétaro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house'),
+('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house');
 
-DELETE FROM public.employee WHERE employee_id = 'a0000003-0000-4000-8000-000000000003';
-DELETE FROM public.house WHERE house_id = 'a0000001-0000-4000-8000-000000000001';
-DELETE FROM public.role WHERE role_id = 'a0000002-0000-4000-8000-000000000002';
-
-INSERT INTO public.house (
-  house_id,
-  name,
-  location,
-  phone_number,
-  description,
-  image
-)
-VALUES (
-  'a0000001-0000-4000-8000-000000000001',
-  'Desarrollo',
-  'Tec de Monterrey',
-  '4424792232',
-  'Casa de desarrollo',
-  'boop'
-);
-
-INSERT INTO public.role (
-  role_id,
-  name
-)
-VALUES (
-  'a0000002-0000-4000-8000-000000000002',
-  'admin'
-);
+INSERT INTO public.role (role_id, name)
+VALUES 
+('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
+('a0000002-0000-4000-8000-000000000002', 'Admin'), -- Utilizo Admin/Administrador consolidado
+('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
+('a0000002-0000-4000-8000-000000000004', 'Lavandería'),
+('a0000002-0000-4000-8000-000000000005', 'Responsable del cuidado de NNA'),
+('a0000002-0000-4000-8000-000000000006', 'Psicóloga'),
+('a0000002-0000-4000-8000-000000000007', 'Psicólogo'),
+('a0000002-0000-4000-8000-000000000008', 'Trabajador Social'),
+('a0000002-0000-4000-8000-000000000009', 'Coordinador Operativo'),
+('a0000002-0000-4000-8000-000000000010', 'Coordinador Administrativo'),
+('a0000002-0000-4000-8000-000000000011', 'Coordinador de Programa'),
+('a0000002-0000-4000-8000-000000000012', 'Dirección Operativa'),
+('a0000002-0000-4000-8000-000000000013', 'Dirección Administrativa'),
+('a0000002-0000-4000-8000-000000000014', 'Dirección de Programa'),
+('a0000002-0000-4000-8000-000000000015', 'Procuración de Fondos'),
+('a0000002-0000-4000-8000-000000000016', 'Enfermera'),
+('a0000002-0000-4000-8000-000000000017', 'Terapeuta'),
+('a0000002-0000-4000-8000-000000000018', 'Asistente de Dirección'),
+('a0000002-0000-4000-8000-000000000019', 'Asistente de Finanzas'),
+('a0000002-0000-4000-8000-000000000020', 'Auxiliar de Limpieza'),
+('a0000002-0000-4000-8000-000000000021', 'Auxiliar de Lavandería'),
+('a0000002-0000-4000-8000-000000000022', 'Chofer'),
+('a0000002-0000-4000-8000-000000000023', 'Cocinera');
 
 INSERT INTO public.employee (
   employee_id,
@@ -61,15 +73,15 @@ INSERT INTO public.employee (
   temp_totp_secret_created_at
 )
 VALUES (
-  gen_random_uuid(),
-  (SELECT house_id FROM house LIMIT 1),
-  (SELECT role_id FROM role LIMIT 1),
+  'b8f54b14-701e-4e87-a019-caef53dcda99', -- UUID fijo para que sea Re-run safe y testeable
+  (SELECT house_id FROM house WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT role_id FROM role WHERE name = 'Admin' LIMIT 1),
   'Carlos',
   'Ramírez',
   true,
   'andre@gmail.com',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
-  true,
+  true, -- En true para evitar el modal de "cambio de contraseña" inicial
   0,
   NULL,
   'XAXX010101HDFXXX01',
@@ -104,9 +116,12 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-017', 'Intento de desactivación de TwoFactorAuth para usuario inactivo', false),
 ('auth-018', 'Fallo de desactivación de TwoFactorAuth por contraseña incorrecta', false),
 ('auth-019', 'TwoFactorAuth bloqueado temporalmente por múltiples intentos fallidos', false),
-('empl-001', 'Empleado creado con exito', false),
 ('auth-020', 'Cambio de contraseña exitoso', false),
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
-('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false);
+('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false),
+('empl-001', 'Empleado creado con éxito', false),
+('empl-002', 'Documento de empleado subido', false),
+('empl-003', 'Documento de empleado actualizado', false),
+('empl-004', 'Documento de empleado eliminado', false);
 
 COMMIT;

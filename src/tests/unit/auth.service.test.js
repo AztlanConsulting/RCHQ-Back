@@ -354,7 +354,7 @@ describe("setupTwoFactorAuth", () => {
       "qrImage",
       "data:image/png;base64,fake",
     );
-    expect(result.body.nextStep).toBe("VERIFY_TwoFactorAuth_SETUP");
+    expect(result.body.nextStep).toBe("VERIFY_TWO_FACTOR_AUTH_SETUP");
     expect(auth.saveTempTotpSecret).toHaveBeenCalledWith(
       "abc-123",
       "SECRETBASE32",
@@ -425,7 +425,7 @@ describe("verifyTwoFactorSetup", () => {
     );
 
     expect(result.status).toBe(400);
-    expect(result.body.nextStep).toBe("TwoFactorAuth_SETUP_FAILED");
+    expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_SETUP_FAILED");
   });
 
   it("activa TwoFactorAuth correctamente cuando el token es válido", async () => {
@@ -450,7 +450,7 @@ describe("verifyTwoFactorSetup", () => {
       mockTx,
     );
     expect(result.status).toBe(200);
-    expect(result.body.nextStep).toBe("TwoFactorAuth_SETUP_COMPLETE");
+    expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_SETUP_COMPLETE");
   });
 });
 
@@ -500,7 +500,7 @@ describe("validateTwoFactorAuth", () => {
     );
 
     expect(result.status).toBe(423);
-    expect(result.body.nextStep).toBe("WAIT_TwoFactorAuth_BLOCK");
+    expect(result.body.nextStep).toBe("WAIT_TWO_FACTOR_AUTH_BLOCK");
   });
 
   it("retorna 401 si el código TwoFactorAuth es incorrecto", async () => {
@@ -691,7 +691,7 @@ describe("disableTwoFactorAuth", () => {
 
     expect(auth.disableTwoFactor).toHaveBeenCalledWith("abc-123", mockTx);
     expect(result.status).toBe(200);
-    expect(result.body.nextStep).toBe("TwoFactorAuth_DISABLED");
+    expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_DISABLED");
     expect(result.body.data.twoFactorEnabled).toBe(false);
   });
 });

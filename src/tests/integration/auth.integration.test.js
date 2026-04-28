@@ -247,7 +247,7 @@ describe("POST /auth/2fa/setup - integration", () => {
     // Assert
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toHaveProperty("qrImage");
-    expect(res.body.nextStep).toBe("VERIFY_TwoFactorAuth_SETUP");
+    expect(res.body.nextStep).toBe("VERIFY_TWO_FACTOR_AUTH_SETUP");
     expect(emp.temp_totp_secret).not.toBeNull();
   });
 
@@ -343,7 +343,7 @@ describe("POST /auth/2fa/disable - integration", () => {
 
     // Assert
     expect(res.statusCode).toBe(200);
-    expect(res.body.nextStep).toBe("TwoFactorAuth_DISABLED");
+    expect(res.body.nextStep).toBe("TWO_FACTOR_AUTH_DISABLED");
     expect(emp.totp_secret).toBeNull();
     expect(emp.is_active_two_factor_auth).toBe(false);
   });
@@ -391,7 +391,7 @@ describe("POST /auth/2fa/disable - integration", () => {
 });
 
 // ─── GET STATUS 2FA ───────────────────────────────────────
-describe("GET /auth/status/2FA - integration", () => {
+describe("GET /auth/2fa/Status - integration", () => {
   it("retorna false si TwoFactorAuth no está activo en BD", async () => {
     // Arrange
     await createTestEmployee({ is_active_two_factor_auth: false });
@@ -399,7 +399,7 @@ describe("GET /auth/status/2FA - integration", () => {
 
     // Act
     const res = await request(app)
-      .get("/auth/status/2FA")
+      .get("/auth/2fa/Status")
       .set("Authorization", `Bearer ${token}`);
 
     // Assert
@@ -417,7 +417,7 @@ describe("GET /auth/status/2FA - integration", () => {
 
     // Act
     const res = await request(app)
-      .get("/auth/status/2FA")
+      .get("/auth/2fa/Status")
       .set("Authorization", `Bearer ${token}`);
 
     // Assert
@@ -429,7 +429,7 @@ describe("GET /auth/status/2FA - integration", () => {
     // Arrange — no se manda Authorization header
 
     // Act
-    const res = await request(app).get("/auth/status/2FA");
+    const res = await request(app).get("/auth/2fa/Status");
 
     // Assert
     expect(res.statusCode).toBe(401);

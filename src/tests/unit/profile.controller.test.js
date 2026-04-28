@@ -5,7 +5,7 @@ const {
 
 jest.mock("../../service/user/profile.service");
 const profileService = require("../../service/user/profile.service");
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const buildRes = () => {
@@ -40,9 +40,9 @@ describe("profile.controller — getUserProfile", () => {
   });
 
   describe("Flujo exitoso — 200", () => {
-    it("responde 200 con data cuando el service retorna profile.found", async () => {
+    it("responde 200 con data cuando el service retorna PROFILE.FOUND", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.found,
+        code: RESPONSES.PROFILE.FOUND,
         data: MOCK_EMPLOYEE_DATA,
       });
 
@@ -58,7 +58,7 @@ describe("profile.controller — getUserProfile", () => {
 
     it("pasa el employeeId correcto al service", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.found,
+        code: RESPONSES.PROFILE.FOUND,
         data: MOCK_EMPLOYEE_DATA,
       });
 
@@ -71,9 +71,9 @@ describe("profile.controller — getUserProfile", () => {
   });
 
   describe("Flujo - perfil no encontrado — 404", () => {
-    it("responde 404 cuando el service retorna profile.notFound", async () => {
+    it("responde 404 cuando el service retorna PROFILE.NOT_FOUND", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.notFound,
+        code: RESPONSES.PROFILE.NOT_FOUND,
       });
 
       await controllerFn(req, res);
@@ -87,7 +87,7 @@ describe("profile.controller — getUserProfile", () => {
 
     it("no incluye data en la respuesta 404", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.notFound,
+        code: RESPONSES.PROFILE.NOT_FOUND,
       });
 
       await controllerFn(req, res);

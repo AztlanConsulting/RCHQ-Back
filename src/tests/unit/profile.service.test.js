@@ -3,7 +3,7 @@ const { getUserProfile } = require("../../service/user/profile.service");
 
 jest.mock("../../model/user/profile.model");
 const profileModel = require("../../model/user/profile.model");
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 const MOCK_PROFILE = {
@@ -30,7 +30,7 @@ describe("profile.service — getUserProfile", () => {
 
       const result = await getUserProfile("uuid-empleado-001");
 
-      expect(result.code).toBe(responses.profile.found);
+      expect(result.code).toBe(RESPONSES.PROFILE.FOUND);
       expect(result.data).toEqual(MOCK_PROFILE);
     });
 
@@ -51,7 +51,7 @@ describe("profile.service — getUserProfile", () => {
 
       const result = await getUserProfile("uuid-empleado-001");
 
-      expect(result.code).toBe(responses.profile.notFound);
+      expect(result.code).toBe(RESPONSES.PROFILE.NOT_FOUND);
       expect(result).not.toHaveProperty("data");
     });
   });
