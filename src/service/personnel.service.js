@@ -6,18 +6,18 @@ exports.getEmployeeDetail = async (userID, employeeID) => {
   // get basic employee info
   const employeeBasicInfo = await personnel.getEmployeeById(employeeID);
 
-  const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
-
-  if (decryptedSalary) {
-    employeeBasicInfo.salary = decryptedSalary;
-  }
-
   // If the employee whose detail we want to see doesn't exist,
   // return 404 Not Found
   if (!employeeBasicInfo) {
     return {
       code: responses.personnel.notFound,
     };
+  }
+
+  const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
+
+  if (decryptedSalary) {
+    employeeBasicInfo.salary = decryptedSalary;
   }
 
   const employeeAddress = await personnel.getEmployeeAddress(employeeID);

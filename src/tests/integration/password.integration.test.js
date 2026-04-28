@@ -69,6 +69,7 @@ const createTestEmployee = async (overrides = {}) => {
       is_active_2fa: false,
       failed_login_attempts: 0,
       failed_2fa_attempts: 0,
+      type: "nomina",
       ...overrides,
     },
   });
@@ -93,6 +94,7 @@ const createFirstLoginEmployee = async (overrides = {}) => {
       is_active_2fa: false,
       failed_login_attempts: 0,
       failed_2fa_attempts: 0,
+      type: "nomina",
       ...overrides,
     },
   });

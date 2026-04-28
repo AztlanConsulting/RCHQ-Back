@@ -97,6 +97,7 @@ const seedDependencies = async () => {
       is_active: true,
       is_active_2fa: false,
       failed_login_attempts: 0,
+      salary: "R8/gGMPXlSOGu3uAgxgrnEqIWwHHzHSm2l/vDjLF5ol9",
     },
   });
 };
@@ -121,6 +122,7 @@ const seedSubjectEmployeeWithRelations = async () => {
       is_active: true,
       is_active_2fa: false,
       failed_login_attempts: 0,
+      salary: "long-encrypted-salary-value",
     },
   });
 

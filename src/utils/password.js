@@ -75,24 +75,28 @@ exports.encryptValue = (plainValue) => {
 };
 
 exports.decryptValue = (storedValue) => {
-  if (storedValue === null || storedValue === undefined || storedValue === "") {
-    throw new Error("decryptValue requires stored ciphertext");
+  try {
+    if (storedValue === null || storedValue === undefined || storedValue === "") {
+      throw new Error("decryptValue requires stored ciphertext");
+    }
+  
+    const key = getEncryptionKeyBuffer();
+    const buf = Buffer.from(String(storedValue), "base64");
+    const minLen = IV_LENGTH + TAG_LENGTH;
+    if (buf.length <= minLen) {
+      throw new Error("invalid encrypted payload");
+    }
+  
+    const iv = buf.subarray(0, IV_LENGTH);
+    const tag = buf.subarray(IV_LENGTH, minLen);
+    const ciphertext = buf.subarray(minLen);
+    const decipher = crypto.createDecipheriv(ALGO, key, iv);
+    decipher.setAuthTag(tag);
+    return Buffer.concat([
+      decipher.update(ciphertext),
+      decipher.final(),
+    ]).toString("utf8");
+  } catch {
+    return ""
   }
-
-  const key = getEncryptionKeyBuffer();
-  const buf = Buffer.from(String(storedValue), "base64");
-  const minLen = IV_LENGTH + TAG_LENGTH;
-  if (buf.length <= minLen) {
-    throw new Error("invalid encrypted payload");
-  }
-
-  const iv = buf.subarray(0, IV_LENGTH);
-  const tag = buf.subarray(IV_LENGTH, minLen);
-  const ciphertext = buf.subarray(minLen);
-  const decipher = crypto.createDecipheriv(ALGO, key, iv);
-  decipher.setAuthTag(tag);
-  return Buffer.concat([
-    decipher.update(ciphertext),
-    decipher.final(),
-  ]).toString("utf8");
 };

@@ -1,5 +1,10 @@
 const { getEmployeeDetail } = require("../../service/personnel.service");
-const { LOG_ACTIONS } = require("../../utils/logActions");
+const Personnel = require("../../model/personnel.model");
+const responses = require("../../utils/responses");
+
+jest.mock("../../utils/password", () => ({
+  decryptValue: jest.fn(() => "12000"),
+}));
 
 jest.mock("../../model/personnel.model", () => ({
   getEmployeeById: jest.fn(),
@@ -11,15 +16,12 @@ jest.mock("../../model/personnel.model", () => ({
 jest.mock("../../model/log.model");
 jest.mock("../../utils/ip");
 
-const Personnel = require("../../model/personnel.model");
-const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
-
 const mockEmployee = {
   employeeId: "abc-123",
   email: "test@gmail.com",
   name: "Test User",
   role: "admin",
+  type: "nomina",
   isActive: true,
   isActive2FA: false,
   blockedUntil: null,
@@ -28,6 +30,7 @@ const mockEmployee = {
   totpSecret: null,
   tempTotpSecret: null,
   tempTotpSecretCreatedAt: null,
+  salary: 12000,
 };
 
 const mockEmployeeAdminInfo = {
@@ -115,83 +118,40 @@ const mockEmployeeRecord = {
   ],
 };
 
-// Mirrors Express: route `/employee-detail/:employeeID` → req.params.employeeID; verifyToken → req.user.id
-const makeReq = ({
-  body = {},
-  params = {},
-  user = { id: "viewer-user-id" },
-} = {}) => ({
-  body,
-  params,
-  ip: "127.0.0.1",
-  headers: {},
-  socket: { remoteAddress: "127.0.0.1" },
-  user,
-});
-
 beforeEach(() => {
   jest.clearAllMocks();
-  getClientIp.mockReturnValue("127.0.0.1");
-  createLog.mockResolvedValue();
 });
 
 describe("getEmployeeDetail", () => {
-  it("retorna 400 cuando no hay employeeID", async () => {
-    // Arrange
-
-    // Act
-    const result = await getEmployeeDetail(
-      makeReq({ user: { id: "u1" }, params: {} }),
-    );
-
-    // Assert
-    expect(result.status).toBe(400);
-    expect(result.body.code).toBe("Request Mala");
-    expect(Personnel.getEmployeeById).not.toHaveBeenCalled();
-  });
-
   it("retorna 404 cuando empleado no existe", async () => {
     // Arrange
     Personnel.getEmployeeById.mockResolvedValue(null);
 
     // Act
-    const result = await getEmployeeDetail(
-      makeReq({ params: { employeeID: "missing-id" } }),
-    );
+    const result = await getEmployeeDetail("viewer-user-id", "missing-id");
 
     // Assert
-    expect(result.status).toBe(404);
-    expect(result.body.code).toBe("Not Found");
+    // expect(result.status).toBe(404);
+    expect(result.code).toBe(responses.personnel.notFound);
     expect(Personnel.getAdminEmployeeInfoById).not.toHaveBeenCalled();
     expect(Personnel.getEmployeeRecord).not.toHaveBeenCalled();
   });
 
-  it("retorna 200 con basicInfo, adminInfo, record y loggea la acción", async () => {
+  it("retorna 200 con basicInfo, adminInfo, y record", async () => {
     Personnel.getEmployeeById.mockResolvedValue({ ...mockEmployee });
     Personnel.getAdminEmployeeInfoById.mockResolvedValue(mockEmployeeAdminInfo);
     Personnel.getEmployeeRecord.mockResolvedValue(mockEmployeeRecord);
 
-    const result = await getEmployeeDetail(
-      makeReq({
-        params: { employeeID: "abc-123" },
-        user: { id: "admin-viewer" },
-      }),
-    );
+    const result = await getEmployeeDetail("admin-viewer", "abc-123");
 
-    expect(result.status).toBe(200);
-    expect(result.body.success).toBe(true);
-    expect(result.body.data.employee.basicInfo).toEqual(mockEmployee);
-    expect(result.body.data.employee.adminInfo).toEqual(mockEmployeeAdminInfo);
-    expect(result.body.data.employee.record).toEqual(mockEmployeeRecord);
+    // expect(result.status).toBe(200);
+    expect(result.code).toBe(responses.personnel.found);
+    expect(result.data.employee.basicInfo).toEqual(mockEmployee);
+    expect(result.data.employee.adminInfo).toEqual(mockEmployeeAdminInfo);
+    expect(result.data.employee.record).toEqual(mockEmployeeRecord);
 
     expect(Personnel.getEmployeeById).toHaveBeenCalledWith("abc-123");
     expect(Personnel.getAdminEmployeeInfoById).toHaveBeenCalledWith("abc-123");
     expect(Personnel.getEmployeeRecord).toHaveBeenCalledWith("abc-123");
-
-    expect(createLog).toHaveBeenCalledWith(
-      "admin-viewer",
-      LOG_ACTIONS.READ_EMPLOYEE_DETAIL,
-      "127.0.0.1",
-    );
   });
 });

@@ -17,6 +17,7 @@ exports.getEmployeeDetail = async (req, res) => {
     }
 
     const result = await personnelService.getEmployeeDetail(userID, employeeID);
+    console.log("result: ", result);
 
     if (result.code === responses.personnel.notFound) {
       return res.status(404).json({
