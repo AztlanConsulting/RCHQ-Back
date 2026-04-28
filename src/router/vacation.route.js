@@ -6,9 +6,13 @@ const {
 } = require("../middleware/abac");
 
 const {
-    getRemainingVacations
+    getRemainingVacations,
+    requestVacation
 } = require("../controller/vacation/add.controller")
 
 router.get("/remaining/:id", verifyToken, isAllowed, getRemainingVacations);
+
+router.post("/request", verifyToken, requestVacation);
+
 
 module.exports = router;

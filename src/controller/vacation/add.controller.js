@@ -33,9 +33,18 @@ exports.getRemainingVacations = async (req, res) => {
 }
 
 exports.requestVacation = async (req, res) => {
-    try {
-        const { employeeId, startDate, endDate } = req.body;
-        const result = await requestVacation(employeeId, startDate, endDate, req);
+    //try {
+        const startDate = req.body.startDate;
+        const endDate = req.body.endDate;
+
+        const startDateElements = startDate.split("-");
+        const endDateElements = endDate.split("-");
+
+        const parsedStartDate = new Date(Date.UTC(startDateElements[0], startDateElements[1]-1, startDateElements[2]));
+        const parsedEndDate = new Date(Date.UTC(endDateElements[0], endDateElements[1]-1, endDateElements[2]));
+
+        const employeeId = req.user.id;
+        const result = await requestVacation(employeeId, parsedStartDate, parsedEndDate, req);
 
         if (result.code == responses.vacation.alreadyRequest) {
             return res.status(406).json({
@@ -72,10 +81,10 @@ exports.requestVacation = async (req, res) => {
             });
         }
 
-    } catch {
+    /*} catch {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
         });
-    }
+    }*/
 }

@@ -16,6 +16,7 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { createLog } = require("../../model/log.model")
 const { requestVacation } = require("../../model/vacation/add.model")
 const responses = require("../../utils/responses");
+const { v4: uuidv4 } = require("uuid");
 
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
@@ -105,13 +106,19 @@ exports.requestVacation = async (employeeId, startDate, endDate, req) => {
         }
     }
 
-    await requestVacation(employeeId, startDate, endDate);
+    await requestVacation(
+        uuidv4(), 
+        employeeId, 
+        startDate, 
+        endDate,
+        usedDays
+    );
     await createLog(
         employeeId,
         LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
         getClientIp(req),
         employeeId
-    )
+    );
 
     return {
         code: responses.vacation.requested
