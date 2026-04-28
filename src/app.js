@@ -30,12 +30,7 @@ app.use(
 
 app.use("/auth", authRouter);
 
-const userRouter = require("./router/user.route");
-const employeeRouter = require("./router/employee.route");
-
 app.use("/user", userRouter);
-app.use("/employee", employeeRouter);
-
 app.use("/employee", employeeRouter);
 
 app.use(errorHandler);
