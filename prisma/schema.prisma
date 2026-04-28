@@ -294,3 +294,12 @@ model workday {
   name             String             @unique @db.VarChar(9)
   employee_workday employee_workday[]
 }
+
+model blacklist {
+  blacklist_id String   @id(map: "blacklist_pk") @db.Uuid
+  curp         String   @db.VarChar(18)
+  name         String   @db.VarChar(50)
+  surname      String   @db.VarChar(50)
+  reason       String   @db.VarChar(250)
+  created_at   DateTime @db.Timestamp(6)
+}

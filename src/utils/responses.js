@@ -17,6 +17,14 @@ const responses = {
     found: 'PROFILE_FOUND',
     notFound: 'PROFILE_NOT_FOUND',
   },
+  employee: {
+    notFound: "EMPLOYEE_NOT_FOUND",
+    alreadyInactive: "EMPLOYEE_ALREADY_INACTIVE",
+    deactivated: "EMPLOYEE_DEACTIVATED",
+    deactivationFailed: "EMPLOYEE_DEACTIVATION_FAILED",
+    deactivatedAndBlacklisted: "EMPLOYEE_DEACTIVATED_AND_BLACKLISTED",
+    deactivatedBlacklistFailed: "EMPLOYEE_DEACTIVATED_BLACKLIST_FAILED",
+},
 };
 
 module.exports = responses;
