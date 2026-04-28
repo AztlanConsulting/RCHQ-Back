@@ -37,9 +37,40 @@ exports.requestVacation = async (req, res) => {
         const { employeeId, startDate, endDate } = req.body;
         const result = await requestVacation(employeeId, startDate, endDate, req);
 
-        if (result.code == responses.vacation.alreadyRequest {
-            
-        })
+        if (result.code == responses.vacation.alreadyRequest) {
+            return res.status(406).json({
+                success: false,
+                message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados"
+            });
+        }
+
+        if (result.code == responses.vacation.badDates) {
+            return res.status(406).json({
+                success: false,
+                message: "No se puede tener una fecha de inicio posterior a la de finalización"
+            });
+        }
+
+        if (result.code == responses.vacation.insufficientDays) {
+            return res.status(406).json({
+                success: false,
+                message: "No se tienen suficientes días disponibles para solicitar las vacaciones"
+            });
+        }
+
+        if (result.code == responses.vacation.withoutDates) {
+            return res.status(406).json({
+                success: false,
+                message: "Se ocupan tener registrados los días de trabajo"
+            });
+        }
+
+        if (result.code == responses.vacation.requested) {
+            return res.status(201).json({
+                success: true,
+                message: "Se solicitaron las vacaciones de forma correcta"
+            });
+        }
 
     } catch {
         return res.status(500).json({
