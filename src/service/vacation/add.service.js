@@ -6,10 +6,16 @@ const {
     toUTC, 
     calculateUsedDays
 } = require("../../utils/dates");
-const { getVacationsInRange } = require("../../model/vacation/consult.model")
+const { 
+    getVacationsInRange, 
+    getOutsideVacations 
+} = require("../../model/vacation/consult.model")
 const { getVacationDays } = require("../../utils/vacationDays")
+const { getClientIp } = require("../../utils/ip");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { createLog } = require("../../model/log.model")
+const { requestVacation } = require("../../model/vacation/add.model")
 const responses = require("../../utils/responses");
-const { employee } = require("../../prisma");
 
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
@@ -60,7 +66,7 @@ exports.getRemainingVacations = async (employeeId) => {
     }
 }
 
-exports.requestVacation = async (employeeId, startDate, endDate) => {
+exports.requestVacation = async (employeeId, startDate, endDate, req) => {
     if (endDate < startDate) {
         return {
             code: responses.vacation.badDates
@@ -75,7 +81,7 @@ exports.requestVacation = async (employeeId, startDate, endDate) => {
     }
 
     const remainingVacationResult = await this.getRemainingVacations(employeeId);
-    const remaningVacations = remainingVacationResult.data.remainingDays;
+    const remainingVacations = remainingVacationResult.data.remainingDays;
 
     const usedDays = calculateUsedDays(workDays, startDate, endDate);
 
@@ -92,8 +98,22 @@ exports.requestVacation = async (employeeId, startDate, endDate) => {
         }
     }
 
-    // Verificafr que no haya fuera de rango
+    const vacationsOutsideRequest = await getOutsideVacations(employeeId, startDate, endDate);
+    if (vacationsOutsideRequest.length > 0) {
+        return {
+            code: responses.vacation.alreadyRequest
+        }
+    }
 
-    // POST
+    await requestVacation(employeeId, startDate, endDate);
+    await createLog(
+        employeeId,
+        LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
+        getClientIp(req),
+        employeeId
+    )
 
+    return {
+        code: responses.vacation.requested
+    }
 }

@@ -1,6 +1,8 @@
-const { getRemainingVacations } = require("../../service/vacation/add.service")
+const { 
+    getRemainingVacations, 
+    requestVacation
+} = require("../../service/vacation/add.service")
 const responses = require("../../utils/responses");
-
 
 exports.getRemainingVacations = async (req, res) => {
     try {
@@ -22,6 +24,23 @@ exports.getRemainingVacations = async (req, res) => {
                 }
             });
         }
+    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+        });
+    }
+}
+
+exports.requestVacation = async (req, res) => {
+    try {
+        const { employeeId, startDate, endDate } = req.body;
+        const result = await requestVacation(employeeId, startDate, endDate, req);
+
+        if (result.code == responses.vacation.alreadyRequest {
+            
+        })
+
     } catch {
         return res.status(500).json({
             success: false,

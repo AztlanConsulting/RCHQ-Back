@@ -58,7 +58,7 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             end: vacation.end,  
             name: "Vacaciones",
             type: "Vacaciones",
-            color: "#443322", // TODO: Si la vacación está pendiente, darle un color más opaco
+            color: vacation.status == 0 ? "#221100" : "#443322",
             link: ""
         })
     });
