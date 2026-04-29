@@ -17,7 +17,6 @@ exports.toUTC = (date) => {
 }
 
 exports.spanishToDay = (day) => {
-    console.log(day)
     switch (day) {
         case "Domingo":
             return 0;
@@ -42,7 +41,6 @@ exports.calculateUsedDays = (workDays, startDate, endDate) => {
     workDays.forEach(workDay => {
         days.push(this.spanishToDay(workDay.workday.name))
     });
-    console.log(days);
 
     let usedDays = 0;
 
@@ -53,7 +51,6 @@ exports.calculateUsedDays = (workDays, startDate, endDate) => {
             usedDays += 1;
         }
         currentDay.setUTCDate(currentDay.getUTCDate() + 1);
-        console.log(currentDay)
     }
 
     return usedDays;

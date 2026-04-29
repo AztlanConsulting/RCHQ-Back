@@ -7,12 +7,18 @@ const {
 
 const {
     getRemainingVacations,
-    requestVacation
-} = require("../controller/vacation/add.controller")
+    requestVacation,
+    registerEmployeeVacation,
+} = require("../controller/vacation/add.controller");
 
 router.get("/remaining/:id", verifyToken, isAllowed, getRemainingVacations);
 
 router.post("/request", verifyToken, requestVacation);
 
+router.post(
+    "/employees/:employeeId/register",
+    verifyToken,
+    registerEmployeeVacation
+);
 
 module.exports = router;

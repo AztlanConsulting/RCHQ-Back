@@ -108,7 +108,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-020', 'Cambio de contraseña exitoso', false),
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
 ('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false),
-('vac-001', 'Creación de solicitud de vacaciones exitosa', false);
+('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
+('vaca-002', 'Registro de vacaciones de empleado exitoso', false);
 
 INSERT INTO public.workday (workday_id, name) VALUES
 ('a0000003-0000-4000-8000-000580000000', 'Lunes'),

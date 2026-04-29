@@ -23,8 +23,16 @@ const responses = {
     insufficientDays: 'THERE_ARE_NOT_ENOUGH_REMAINING_DAYS',
     alreadyRequest: 'THERE_IS_ALREADY_A_REQUEST_BETWEEN_THOSE_DAYS',
     requested: 'REQUESTED_CORRECTLY',
+    registered: 'REGISTERED_CORRECTLY',
     workDaysFound: 'WORK_DAYS_FOUND',
-    workDaysNotFound: 'WORK_DAYS_NOT_FOUND'
+    workDaysNotFound: 'WORK_DAYS_NOT_FOUND',
+
+    userNotAuthenticated: 'USER_NOT_AUTHENTICATED',
+    insufficientPermissions: 'INSUFFICIENT_PERMISSIONS',
+    employeeNotFound: 'EMPLOYEE_NOT_FOUND',
+    employeeOutOfScope: 'EMPLOYEE_OUT_OF_SCOPE',
+    pastDateNotAllowed: 'PAST_DATE_NOT_ALLOWED',
+    noWorkDaysInRange: 'NO_WORK_DAYS_IN_RANGE',
   },
 };
 

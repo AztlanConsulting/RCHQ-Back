@@ -49,14 +49,6 @@ async function getStartDate(employeeId) {
     });
 }
 
-module.exports = {
-    findById,
-    getAllRoles,
-    getWorkDays,
-    getHome,
-    getStartDate
-};
-
 exports.findById = async (employee_id) => {
     return await prisma.employee.findUnique({
         where: { employee_id },
@@ -70,4 +62,24 @@ exports.getAllRoles = async () => {
         roleId: role.role_id,
         name: role.name,
     }));
+};
+
+exports.findByIdWithRoleAndHouse = async (employeeId) => {
+    return await prisma.employee.findUnique({
+        where: {
+            employee_id: employeeId,
+        },
+        include: {
+            role: true,
+            house: true,
+        },
+    });
+}
+
+module.exports = {
+    findById,
+    getAllRoles,
+    getWorkDays,
+    getHome,
+    getStartDate
 };
