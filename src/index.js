@@ -1,3 +1,6 @@
+// Loads the variables in the enviorment file
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -6,9 +9,6 @@ const employeeRouter = require("./router/employee.route");
 const userRouter = require("./router/user.route");
 const errorHandler = require("./middleware/ErrorHandler");
 const path = require("path");
-
-// Loads the variables in the enviorment file
-require("dotenv").config();
 
 const port = Number(process.env.RUNNING_PORT || 3000);
 
