@@ -1,30 +1,32 @@
 // tests/backend/profile.controller.test.js
-const { getUserProfile: controllerFn } = require("../../controller/user/profile.controller");
+const {
+  getUserProfile: controllerFn,
+} = require("../../controller/user/profile.controller");
 
 jest.mock("../../service/user/profile.service");
 const profileService = require("../../service/user/profile.service");
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const buildRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
-  res.json   = jest.fn().mockReturnValue(res);
+  res.json = jest.fn().mockReturnValue(res);
   return res;
 };
 
 const MOCK_EMPLOYEE_DATA = {
-  houseName:   "Casa Hogar Querétaro",
-  roleName:    "Coordinador",
-  name:        "Juan",
-  surname:     "Pérez",
-  email:       "juan@casa.org",
-  rfc:         "PEGJ900101XXX",
-  curp:        "PEGJ900101HQRRZN01",
-  nss:         "12345678901",
+  houseName: "Casa Hogar Querétaro",
+  roleName: "Coordinador",
+  name: "Juan",
+  surname: "Pérez",
+  email: "juan@casa.org",
+  rfc: "PEGJ900101XXX",
+  curp: "PEGJ900101HQRRZN01",
+  nss: "12345678901",
   bankAccount: "012345678901234567",
-  birthDate:   new Date("1990-01-01"),
-  picture:     null,
+  birthDate: new Date("1990-01-01"),
+  picture: null,
 };
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -38,9 +40,9 @@ describe("profile.controller — getUserProfile", () => {
   });
 
   describe("Flujo exitoso — 200", () => {
-    it("responde 200 con data cuando el service retorna profile.found", async () => {
+    it("responde 200 con data cuando el service retorna PROFILE.FOUND", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.found,
+        code: RESPONSES.PROFILE.FOUND,
         data: MOCK_EMPLOYEE_DATA,
       });
 
@@ -50,26 +52,28 @@ describe("profile.controller — getUserProfile", () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         message: "Perfil encontrado",
-        data:    MOCK_EMPLOYEE_DATA,
+        data: MOCK_EMPLOYEE_DATA,
       });
     });
 
     it("pasa el employeeId correcto al service", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.found,
+        code: RESPONSES.PROFILE.FOUND,
         data: MOCK_EMPLOYEE_DATA,
       });
 
       await controllerFn(req, res);
 
-      expect(profileService.getUserProfile).toHaveBeenCalledWith("uuid-empleado-001");
+      expect(profileService.getUserProfile).toHaveBeenCalledWith(
+        "uuid-empleado-001",
+      );
     });
   });
 
   describe("Flujo - perfil no encontrado — 404", () => {
-    it("responde 404 cuando el service retorna profile.notFound", async () => {
+    it("responde 404 cuando el service retorna PROFILE.NOT_FOUND", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.notFound,
+        code: RESPONSES.PROFILE.NOT_FOUND,
       });
 
       await controllerFn(req, res);
@@ -83,7 +87,7 @@ describe("profile.controller — getUserProfile", () => {
 
     it("no incluye data en la respuesta 404", async () => {
       profileService.getUserProfile.mockResolvedValue({
-        code: responses.profile.notFound,
+        code: RESPONSES.PROFILE.NOT_FOUND,
       });
 
       await controllerFn(req, res);

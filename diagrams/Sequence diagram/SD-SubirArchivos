@@ -1,0 +1,63 @@
+@startuml
+title Subir archivos de empleado — Backend (MVC + Service + Prisma)
+
+actor Cliente as "Frontend"
+
+boundary "Router\n(document.routes.js)" as Router
+control "Controller\n(document.controller.js)" as Controller
+control "Service\n(document.service.js)" as Service
+entity "Model\n(document.model.js)" as Model
+entity "Middleware\n(verifyToken)" as Middleware
+entity "Middleware\n(uploadFile / multer)" as Multer
+database "PostgreSQL\n(via Prisma)" as Postgres
+
+== Obtener documentos del empleado ==
+
+Cliente -> Router : GET /employees/:id/documents\nAuthorization: Bearer token
+Router -> Middleware : verifyToken(req)
+Middleware --> Router : req.user = { id, email, role }
+Router -> Controller : getDocumentsByEmployee(req, res)
+Controller -> Service : getDocumentsByEmployee(employeeId)
+
+Service -> Model : getDocumentsByEmployee(employeeId)
+Model -> Postgres : prisma.document.findMany\n({ where: { employee_id } })
+Postgres --> Model : [documents]
+Model --> Service : [documents]
+
+alt Empleado no encontrado
+    Service --> Controller : { status: 404 }
+    Controller --> Cliente : { success: false,\nmessage: "Employee not found" }
+else OK
+    Service --> Controller : { status: 200, data: [documents] }
+    Controller --> Cliente : { success: true,\ndata: [documents] }
+end
+
+== Subir documento del empleado ==
+
+Cliente -> Router : POST /employees/:id/documents\nAuthorization: Bearer token\nbody: { tipoDocumento } + file
+Router -> Middleware : verifyToken(req)
+Middleware --> Router : req.user = { id, email, role }
+Router -> Multer : uploadFile(req)\nValida formato (PDF, JPG, PNG)\nValida tamaño máximo
+Multer --> Router : req.file = { originalname,\nmimetype, size, buffer }
+
+alt Formato o tamaño inválido
+    Multer --> Controller : MulterError
+    Controller --> Cliente : { success: false,\nmessage: "Formato o tamaño no permitido" }
+else Archivo válido
+    Router -> Controller : uploadDocument(req, res)
+    Controller -> Service : uploadDocument(employeeId, file, tipoDocumento)
+
+    Service -> Service : uploadToStorage(file)\n(ej. S3 / local /\ncloudinary)
+
+    alt Error en storage
+        Service --> Controller : { status: 500 }
+        Controller --> Cliente : { success: false,\nmessage: "Error al subir el archivo,\nintenta de nuevo" }
+    else Subida exitosa
+        Service -> Postgres : prisma.$transaction\n- document.create({\n  employee_id,\n  tipo,\n  nombre,\n  url,\n  fecha\n})\n- createLog(FILE_UPLOAD_SUCCESS)
+        Postgres --> Service : documentoGuardado
+        Service --> Controller : { status: 201,\ndata: documentoGuardado }
+        Controller --> Cliente : { success: true,\ndata: documentoGuardado }
+    end
+end
+
+@enduml
