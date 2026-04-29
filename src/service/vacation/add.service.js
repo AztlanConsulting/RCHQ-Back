@@ -241,11 +241,16 @@ exports.registerEmployeeVacation = async ({
         startDateResult.start_date
     );
 
-    if (startDate < workYearStart || endDate >= workYearEnd) {
-        return {
-            code: responses.vacation.outsideCurrentWorkYear,
-        };
-    }
+    // Como ya se calculan los días disponibles del año laboral actual, sí conviene
+    // conservar esta regla, aunque no estaba originalmente en los criterios definidos
+    // de la US28. Si requerimos bloquear vacaciones futuras fuera del año laboral actual,
+    // hará falta descomentar este bloque y agregar un nuevo código de respuesta
+    // en utils/responses.js
+    // if (startDate < workYearStart || endDate >= workYearEnd) {
+    //     return {
+    //         code: responses.vacation.outsideCurrentWorkYear,
+    //     };
+    // }
 
     const committedVacations = await getCommittedVacationsInRange(
         targetEmployeeId,
