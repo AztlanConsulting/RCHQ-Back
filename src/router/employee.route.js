@@ -18,6 +18,11 @@ const {
     postAdd,
 } = require("../controller/employee/create.controller");
 const { getAll } = require("../controller/employee/get.controller");
+const { employeePolicy, viewDocuments, modifyDocuments } = require("../policies/employee.policies");
+const { uploadDocs } = require("../middleware/uploadDocs");
+const employeeGetController = require("../controller/employee/get.controller");
+const employeeAddController = require("../controller/employee/create.controller");
+const employeeDeleteController = require("../controller/employee/delete.controller");
 
 router.get(
     "/add",
