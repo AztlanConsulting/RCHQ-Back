@@ -32,6 +32,7 @@ const RESPONSES = {
   },
   vacation: {
     badDates: 'START_DATE_AFTER_THE_END_DATE',
+    invalidDates: 'INVALID_VACATION_DATES',
     withoutDates: 'THE_EMPLOYEE_DOES_NOT_HAVE_ITS_WORKING_DAYS_REGISTERED',
     insufficientDays: 'THERE_ARE_NOT_ENOUGH_REMAINING_DAYS',
     alreadyRequest: 'THERE_IS_ALREADY_A_REQUEST_BETWEEN_THOSE_DAYS',

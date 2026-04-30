@@ -37,6 +37,10 @@ function isAdminOrCoordinator(roleName) {
     return isAdmin(roleName) || isCoordinator(roleName);
 }
 
+function isValidDateObject(date) {
+    return date instanceof Date && !Number.isNaN(date.getTime());
+}
+
 function getTodayUTC() {
     const now = new Date();
     return new Date(Date.UTC(
@@ -166,6 +170,12 @@ exports.registerEmployeeVacation = async ({
         };
     }
 
+    if (!targetEmployeeId) {
+        return {
+            code: responses.vacation.employeeNotFound,
+        };
+    }
+
     const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
 
     if (!actorEmployee) {
@@ -174,7 +184,7 @@ exports.registerEmployeeVacation = async ({
         };
     }
 
-    const actorRoleName = actorEmployee.role.name;
+    const actorRoleName = actorEmployee.role?.name;
 
     if (!isAdminOrCoordinator(actorRoleName)) {
         return {
@@ -196,6 +206,12 @@ exports.registerEmployeeVacation = async ({
     ) {
         return {
             code: responses.vacation.employeeOutOfScope,
+        };
+    }
+
+    if (!isValidDateObject(startDate) || !isValidDateObject(endDate)) {
+        return {
+            code: responses.vacation.invalidDates,
         };
     }
 
