@@ -14,6 +14,39 @@ function parseDateToUTC(dateString) {
     ));
 }
 
+function isValidDateString(dateString) {
+    if (typeof dateString !== "string") return false;
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(dateString)) return false;
+
+    const [year, month, day] = dateString.split("-").map(Number);
+    const parsedDate = parseDateToUTC(dateString);
+
+    return (
+        parsedDate.getUTCFullYear() === year &&
+        parsedDate.getUTCMonth() === month - 1 &&
+        parsedDate.getUTCDate() === day
+    );
+}
+
+function validateVacationDatesBody(req, res) {
+    const { startDate, endDate } = req.body;
+
+    if (!isValidDateString(startDate) || !isValidDateString(endDate)) {
+        res.status(400).json({
+            success: false,
+            message: "Las fechas son requeridas y deben tener formato YYYY-MM-DD",
+        });
+        return null;
+    }
+
+    return {
+        parsedStartDate: parseDateToUTC(startDate),
+        parsedEndDate: parseDateToUTC(endDate),
+    };
+}
+
 exports.getRemainingVacations = async (req, res) => {
     try {
         const employeeId = req.params.id;
@@ -104,16 +137,14 @@ exports.registerEmployeeVacation = async (req, res) => {
         const targetEmployeeId = req.params.employeeId;
         const actorEmployeeId = req.user.id;
 
-        const { startDate, endDate } = req.body;
-
-        const parsedStartDate = parseDateToUTC(startDate);
-        const parsedEndDate = parseDateToUTC(endDate);
+        const parsedDates = validateVacationDatesBody(req, res);
+        if (!parsedDates) return;
 
         const result = await registerEmployeeVacation({
             actorEmployeeId,
             targetEmployeeId,
-            startDate: parsedStartDate,
-            endDate: parsedEndDate,
+            startDate: parsedDates.parsedStartDate,
+            endDate: parsedDates.parsedEndDate,
             req,
         });
 
@@ -201,7 +232,7 @@ exports.registerEmployeeVacation = async (req, res) => {
             success: false,
             message: "Internal Server Error",
         });
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",

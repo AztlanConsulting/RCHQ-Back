@@ -51,37 +51,49 @@ exports.getRemainingVacations = async (employeeId) => {
 
     if (!result) {
         return {
-            code: responses.vacation.workDaysNotFound,
-        };
+            code: responses.vacation.workDaysNotFound
+        }
     }
 
-    const employeeStartDate = result.start_date;
+    const baseDate = result.start_date;
+    const baseDay = baseDate.getUTCDate();
+    const baseMonth = baseDate.getUTCMonth();
+    const baseYear = baseDate.getUTCFullYear();
 
-    const { workYearStart, workYearEnd } = getCurrentWorkYearRange(employeeStartDate);
+    const currentDate = new Date();
+    const currentDay = currentDate.getUTCDate();
+    const currentMonth = currentDate.getUTCMonth();
+    const currentYear = currentDate.getUTCFullYear();
 
-    const committedVacations = await getCommittedVacationsInRange(
-        employeeId,
-        workYearStart,
-        workYearEnd
-    );
+    let anniversaryAlreadyPassed = false;
 
-    const committedDays = committedVacations.reduce(
-        (total, vacation) => total + vacation.used_days,
-        0
-    );
+    if ((currentMonth == baseMonth && currentDay >= baseDay) || currentMonth > baseMonth) {
+        anniversaryAlreadyPassed = true;
+    }
 
-    const yearsWorked =
-        workYearStart.getUTCFullYear() - employeeStartDate.getUTCFullYear();
+    let startYear = currentDate.getUTCFullYear();
+    let endYear = startYear + 1;
 
+    const startDate = new Date(Date.UTC(startYear, baseMonth, baseDay));
+    const endDate = new Date(Date.UTC(endYear, baseMonth, baseDay));
+
+    let usedDays = 0;
+    const vacations = await getVacationsInRange(employeeId, startDate, endDate);
+
+    vacations.forEach(vacation => {
+        usedDays += vacation.used_days;
+    });
+
+    const yearsWorked = currentYear - baseYear - (!anniversaryAlreadyPassed ? 1 : 0);
     const maxDays = getVacationDays(yearsWorked);
 
     return {
         code: responses.vacation.workDaysFound,
         data: {
-            remainingDays: maxDays - committedDays,
-        },
-    };
-};
+            remainingDays: maxDays - usedDays
+        }
+    }
+}
 
 exports.requestVacation = async (employeeId, startDate, endDate, req) => {
     if (endDate < startDate) {
