@@ -1,5 +1,7 @@
 const validate = (schema, property = "body") => {
+  
   return (req, res, next) => {
+    console.log(req);
     const result = schema.safeParse(req[property]);
 
     if (!result.success) {

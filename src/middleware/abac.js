@@ -24,13 +24,14 @@ const authorize = (policyFn, getResource) => async (req, res, next) => {
 
 const isAllowed = async (req, res, next) => {
     try {
-        if (req.user.role == "admin") return next();
-        if (req.user.id == req.params.id) return next();
+        const targetId = req.params.id | req.params.employeeId | "";
 
-        // Verifica sea coordinador y de la misma casa
+        if (req.user.role == "Admin") return next();
+        if (req.user.id == targetId) return next();
+
         const homeQuery = await getHome(req.params.id);
         if (!homeQuery) return res.status(500).json({ error: "Error del servidor" });
-        if (req.user.houseId == homeQuery.house_id && req.user.role == "coordinator") {
+        if (req.user.houseId == homeQuery.house_id && req.user.role == "Coordinador") {
             return next();
         }
 
