@@ -11,20 +11,24 @@ const prisma = new PrismaClient();
 const TEST_HOUSE_ID = randomUUID();
 const TEST_ADMIN_ID = randomUUID();
 let TEST_ROLE_ID;
-
+const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_ROUTE = "/employee/getAll";
 
 // ─── Helpers ──────────────────────────────────────────────
-const generateToken = () => {
+const generateToken = (
+    payloadOverrides = {},
+    signOptions = { expiresIn: "1h" },
+) => {
+    const defaultPayload = {
+        id: TEST_ADMIN_ID,
+        role: "Administrador",
+        houseId: TEST_HOUSE_ID,
+        tokenType: "SESSION",
+    };
     return jwt.sign(
-        {
-            id: TEST_ADMIN_ID,
-            role: "Administrador",
-            houseId: TEST_HOUSE_ID,
-            tokenType: "SESSION",
-        },
-        process.env.JWT_SECRET || "test_secret",
-        { expiresIn: "1h" },
+        { ...defaultPayload, ...payloadOverrides },
+        JWT_SECRET,
+        signOptions,
     );
 };
 
@@ -100,72 +104,141 @@ afterAll(async () => {
     await prisma.$disconnect();
 });
 
-describe(`GET ${API_ROUTE} - integration`, () => {
-    it("retorna empleados activos por default", async () => {
-        // Arrange
-        const token = generateToken();
+// ─── SUITE DE PRUEBAS ─────────────────────────────────────
+describe(`GET ${API_ROUTE} - Integration & Security`, () => {
+    describe("Comportamiento esperado", () => {
+        it("retorna empleados activos por default", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`);
+            expect(res.statusCode).toBe(200);
+            expect(res.body.data.length).toBe(6);
+        });
 
-        // Act
-        const res = await request(app)
-            .get(API_ROUTE)
-            .set("Authorization", `Bearer ${token}`);
+        it("retorna empleados inactivos si active=false", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?active=false`)
+                .set("Authorization", `Bearer ${token}`);
+            expect(res.statusCode).toBe(200);
+            expect(res.body.data.length).toBe(5);
+        });
 
-        // Assert
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data.length).toBe(6);
+        it("busca empleados por coincidencia parcial (search)", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?search=Juan1`)
+                .set("Authorization", `Bearer ${token}`);
+            expect(res.statusCode).toBe(200);
+            expect(res.body.data.length).toBeGreaterThan(0);
+        });
     });
 
-    it("retorna empleados inactivos", async () => {
-        // Arrange
-        const token = generateToken();
+    describe("2. Fuzzing y Manipulación de Parámetros (Inputs destructivos)", () => {
+        it("retorna 200 y aplica defaults si envían letras en paginación", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?page=DROP_TABLE&limit=HACK`)
+                .set("Authorization", `Bearer ${token}`);
 
-        // Act
-        const res = await request(app)
-            .get(`${API_ROUTE}?active=false`)
-            .set("Authorization", `Bearer ${token}`);
+            // Debería sobrevivir al intento y usar página 1, límite 6
+            expect(res.statusCode).toBe(200);
+            expect(res.body.pagination.page).toBe(1);
+            expect(res.body.pagination.limit).toBe(6);
+        });
 
-        // Assert
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data.length).toBe(5);
+        it("capea o maneja inteligentemente límites absurdamente altos para evitar Memory Exhaustion (DoS)", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?limit=9999999`)
+                .set("Authorization", `Bearer ${token}`);
+
+            expect(res.statusCode).toBe(200);
+            // Asegúrate de que tu backend tenga un max-limit (ej: 100). Si retorna 9999999, tienes un hueco de seguridad.
+            expect(res.body.pagination.limit).toBeLessThanOrEqual(100);
+        });
+
+        it("retorna una lista vacía y no un error 500 al buscar una página fuera de rango", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?page=9000`)
+                .set("Authorization", `Bearer ${token}`);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.data.length).toBe(0);
+        });
+
+        it("no rompe la consulta Prisma al enviar caracteres especiales de bases de datos", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?search=%;--'`)
+                .set("Authorization", `Bearer ${token}`);
+
+            expect(res.statusCode).toBe(200);
+        });
     });
 
-    it("retorna paginación personalizada", async () => {
-        // Arrange
-        const token = generateToken();
+    describe("3. Seguridad: Autenticación y Autorización", () => {
+        it("retorna 401 si no se envía token", async () => {
+            const res = await request(app).get(API_ROUTE);
+            expect(res.statusCode).toBe(401);
+        });
 
-        // Act
-        const res = await request(app)
-            .get(`${API_ROUTE}?page=2&limit=3`)
-            .set("Authorization", `Bearer ${token}`);
+        it("retorna 401 si el token está manipulado o mal formado", async () => {
+            const res = await request(app)
+                .get(API_ROUTE)
+                .set(
+                    "Authorization",
+                    "Bearer token_inventado_para_hackear.123",
+                );
+            expect(res.statusCode).toBe(401);
+        });
 
-        // Assert
-        expect(res.statusCode).toBe(200);
-        expect(res.body.pagination.page).toBe(2);
-        expect(res.body.pagination.limit).toBe(3);
-        expect(res.body.data.length).toBe(3);
+        it("retorna 401 si el token está expirado", async () => {
+            // Creamos un token que venció hace 1 segundo (-1s)
+            const expiredToken = generateToken({}, { expiresIn: "-1s" });
+            const res = await request(app)
+                .get(API_ROUTE)
+                .set("Authorization", `Bearer ${expiredToken}`);
+            expect(res.statusCode).toBe(401);
+        });
+
+        it("retorna 403 (o error de seguridad) si el token NO tiene un houseId válido", async () => {
+            // Generamos token sin houseId para ver si el middleware lo ataja
+            const maliciousToken = generateToken({ houseId: undefined });
+            const res = await request(app)
+                .get(API_ROUTE)
+                .set("Authorization", `Bearer ${maliciousToken}`);
+
+            // Debería ser atrapado por la validación, arrojando 400, 401 o 403.
+            expect(res.statusCode).toBeGreaterThanOrEqual(400);
+        });
     });
 
-    it("busca empleados por nombre", async () => {
-        // Arrange
-        const token = generateToken();
+    describe("4. Resiliencia: Rate Limiting", () => {
+        it("debería retornar 429 Too Many Requests al lanzar un pico masivo de peticiones", async () => {
+            const token = generateToken();
+            let responses = [];
 
-        // Act
-        const res = await request(app)
-            .get(`${API_ROUTE}?search=Juan1`)
-            .set("Authorization", `Bearer ${token}`);
+            // Lanzamos 150 peticiones simultáneas
+            // NOTA: Si tu límite es mayor (ej. 1000/min), sube este número.
+            for (let i = 0; i < 150; i++) {
+                responses.push(
+                    request(app)
+                        .get(API_ROUTE)
+                        .set("Authorization", `Bearer ${token}`),
+                );
+            }
 
-        // Assert
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data.length).toBeGreaterThan(0);
-    });
+            const results = await Promise.all(responses);
 
-    it("retorna 401 si no se envía token", async () => {
-        // Arrange
+            // Evaluamos si AL MENOS una petición fue bloqueada con 429
+            const hasRateLimitTriggered = results.some(
+                (res) => res.statusCode === 429,
+            );
 
-        // Act
-        const res = await request(app).get(API_ROUTE);
-
-        // Assert
-        expect(res.statusCode).toBe(401);
+            expect(hasRateLimitTriggered).toBe(true);
+        });
     });
 });

@@ -3,6 +3,15 @@ const { getEmployees } = require("../../service/employee/get.service");
 exports.getAll = async (req, res) => {
     try {
         const { houseId } = req.user;
+
+        if (!houseId) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "Acceso denegado: El usuario no está asociado a ninguna casa.",
+            });
+        }
+
         const { active, page, limit, search } = req.query;
 
         const result = await getEmployees(houseId, active, page, limit, search);
