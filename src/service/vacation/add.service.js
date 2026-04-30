@@ -162,7 +162,7 @@ exports.registerEmployeeVacation = async ({
     targetEmployeeId,
     startDate,
     endDate,
-    req,
+    ipAddress,
 }) => {
     if (!actorEmployeeId) {
         return {
@@ -313,7 +313,7 @@ exports.registerEmployeeVacation = async ({
     await createLog(
         actorEmployeeId,
         LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,
-        getClientIp(req),
+        ipAddress,
         targetEmployeeId
     );
 

@@ -22,10 +22,6 @@ jest.mock("../../model/log.model", () => ({
     createLog: jest.fn(),
 }));
 
-jest.mock("../../utils/ip", () => ({
-    getClientIp: jest.fn(),
-}));
-
 jest.mock("uuid", () => ({
     v4: jest.fn(),
 }));
@@ -43,7 +39,6 @@ const {
 
 const { registerVacation } = require("../../model/vacation/add.model");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const { v4: uuidv4 } = require("uuid");
 
 const responses = require("../../utils/responses");
@@ -242,7 +237,7 @@ describe("US28 - registerEmployeeVacation unit tests - defensive/security covera
             targetEmployeeId: targetId,
             startDate,
             endDate,
-            req: request,
+            ipAddress,
         });
     }
 
@@ -258,7 +253,6 @@ describe("US28 - registerEmployeeVacation unit tests - defensive/security covera
     beforeEach(() => {
         jest.clearAllMocks();
         uuidv4.mockReturnValue(vacationId);
-        getClientIp.mockReturnValue(ipAddress);
         mockDefaultSuccessfulDependencies();
     });
 

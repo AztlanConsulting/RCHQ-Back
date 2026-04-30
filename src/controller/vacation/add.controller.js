@@ -4,6 +4,7 @@ const {
     registerEmployeeVacation,
 } = require("../../service/vacation/add.service")
 const responses = require("../../utils/responses");
+const { getClientIp } = require("../../utils/ip");
 
 function parseDateToUTC(dateString) {
     const dateElements = dateString.split("-");
@@ -140,12 +141,14 @@ exports.registerEmployeeVacation = async (req, res) => {
         const parsedDates = validateVacationDatesBody(req, res);
         if (!parsedDates) return;
 
+        const ipAddress = getClientIp(req);
+
         const result = await registerEmployeeVacation({
             actorEmployeeId,
             targetEmployeeId,
             startDate: parsedDates.parsedStartDate,
             endDate: parsedDates.parsedEndDate,
-            req,
+            ipAddress,
         });
 
         if (result.code === responses.vacation.userNotAuthenticated) {
