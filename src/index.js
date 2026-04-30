@@ -1,8 +1,6 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { PrismaClient } = require('@prisma/client');
-const { getClientIp } = require("./utils/ip");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const vacationRouter = require("./router/vacation.route");
@@ -10,7 +8,6 @@ const eventRouter = require("./router/event.route");
 
 
 const userRouter = require("./router/user.route");
-const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
 
@@ -26,10 +23,10 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    }),
+  cors({
+    origin: true,
+    credentials: true,
+  }),
 );
 
 app.use("/auth", authRouter);

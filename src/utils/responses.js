@@ -12,10 +12,23 @@
         },
     };
 */
-const responses = {
-  profile: {
-    found: 'PROFILE_FOUND',
-    notFound: 'PROFILE_NOT_FOUND',
+const RESPONSES = {
+  PROFILE: {
+    FOUND: "PROFILE_FOUND",
+    NOT_FOUND: "PROFILE_NOT_FOUND",
+  },
+  DOCUMENTS: {
+    NOT_FOUND: "Documento no encontrado",
+    OK: "Documento obtenido",
+    DELETE: "Documento borrado",
+    EMPTY: "No hay documentos",
+    NOT_ALLOW: "Tipo de documento invalido",
+    UPLOAD: "Se subió correctamente",
+    ALREADY_EXIST: "El documento ya existe",
+  },
+  USER: {
+    NOT_FOUND: "Usuario no encontrado",
+    NOT_ACCESS: "Acceso bloqueado",
   },
   vacation: {
     badDates: 'START_DATE_AFTER_THE_END_DATE',
@@ -36,4 +49,4 @@ const responses = {
   },
 };
 
-module.exports = responses;
+module.exports = RESPONSES;

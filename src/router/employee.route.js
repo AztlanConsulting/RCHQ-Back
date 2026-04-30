@@ -1,38 +1,62 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
-const { employeePolicy } = require("../policies/employee.policies");
+const { employeePolicy, viewDocuments, modifyDocuments } = require("../policies/employee.policies");
 const upload = require("../middleware/upload");
 const {
     authorize,
     isAllowed
 } = require("../middleware/abac");
-
-const {
-    getAdd,
-    getById,
-    postAdd,
-} = require("../controller/employee/create.controller");
-
-const { getAll } = require("../controller/employee/get.controller");
+const { uploadDocs } = require("../middleware/uploadDocs");
+const employeeGetController = require("../controller/employee/get.controller");
+const employeeAddController = require("../controller/employee/create.controller");
+const employeeDeleteController = require("../controller/employee/delete.controller");
 const { getWorkDays } = require("../controller/employee/getOne.controller")
 
-router.get("/add", verifyToken, getAdd);
+router.get("/getAll", verifyToken, authorize(employeePolicy), employeeGetController.getAll);
 
-router.get("/getAll", verifyToken, authorize(employeePolicy), getAll);
-
-router.get("/:id", getById);
+router.get("/add", verifyToken, employeeGetController.getAdd);
 
 router.get("/getWorkDays/:id", verifyToken, isAllowed, getWorkDays);
 
 router.post(
-    "/add",
-    verifyToken,
-    upload.single("picture"),
-    authorize(employeePolicy, (req) => ({
-        house_id: req.body.house_id,
-    })),
-    postAdd,
+  "/add",
+  verifyToken,
+  upload.single("picture"),
+  authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
+  employeeAddController.postAdd,
 );
+
+router.get(
+  "/:id/documents",
+  verifyToken,
+  authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
+  employeeGetController.getDocumentsByEmployee,
+);
+
+router.post(
+  "/:id/documents",
+  verifyToken,
+  authorize(modifyDocuments),
+  uploadDocs.single("file"),
+  employeeAddController.uploadDocument,
+);
+
+router.put(
+  "/:id/documents/:field",
+  verifyToken,
+  authorize(modifyDocuments),
+  uploadDocs.single("file"),
+  employeeAddController.updateDocument,
+);
+
+router.delete(
+  "/:id/documents/:field",
+  verifyToken,
+  authorize(modifyDocuments),
+  employeeDeleteController.deleteDocument,
+);
+
+router.get("/:id", employeeGetController.getById);
 
 module.exports = router;

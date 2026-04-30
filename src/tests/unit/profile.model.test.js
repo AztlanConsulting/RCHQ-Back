@@ -14,31 +14,31 @@ const prisma = require("../../prisma");
 const EMPLOYEE_ID = "uuid-empleado-001";
 
 const DB_ROW = {
-  name:         "Juan",
-  surname:      "Pérez",
-  email:        "juan@casa.org",
-  rfc:          "PERJ900101ABC",
-  curp:         "PERJ900101HDFRZN01",
-  nss:          "12345678901",
+  name: "Juan",
+  surname: "Pérez",
+  email: "juan@casa.org",
+  rfc: "PERJ900101ABC",
+  curp: "PERJ900101HDFRZN01",
+  nss: "12345678901",
   bank_account: "012345678901234567",
-  birth_date:   new Date("1990-01-01"),
-  picture:      "https://cdn.example.com/foto.jpg",
-  house:        { name: "Casa Hogar Querétaro" },
-  role:         { name: "Coordinador" },
+  birth_date: new Date("1990-01-01"),
+  picture: "https://cdn.example.com/foto.jpg",
+  house: { name: "Casa Hogar Querétaro" },
+  role: { name: "Coordinador" },
 };
 
 const MAPPED = {
-  houseName:   "Casa Hogar Querétaro",
-  roleName:    "Coordinador",
-  name:        "Juan",
-  surname:     "Pérez",
-  email:       "juan@casa.org",
-  rfc:         "PERJ900101ABC",
-  curp:        "PERJ900101HDFRZN01",
-  nss:         "12345678901",
+  houseName: "Casa Hogar Querétaro",
+  roleName: "Coordinador",
+  name: "Juan",
+  surname: "Pérez",
+  email: "juan@casa.org",
+  rfc: "PERJ900101ABC",
+  curp: "PERJ900101HDFRZN01",
+  nss: "12345678901",
   bankAccount: "012345678901234567",
-  birthDate:   new Date("1990-01-01"),
-  picture:     "https://cdn.example.com/foto.jpg",
+  birthDate: new Date("1990-01-01"),
+  picture: "https://cdn.example.com/foto.jpg",
 };
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ describe("profile.model — findEmployeeProfile", () => {
         where: { employee_id: EMPLOYEE_ID },
         select: expect.objectContaining({
           house: { select: { name: true } },
-          role:  { select: { name: true } },
+          role: { select: { name: true } },
         }),
       });
     });
@@ -81,11 +81,11 @@ describe("profile.model — findEmployeeProfile", () => {
     it("maneja campos opcionales nulos sin romper el mapeo", async () => {
       prisma.employee.findUnique.mockResolvedValue({
         ...DB_ROW,
-        rfc:          null,
-        nss:          null,
+        rfc: null,
+        nss: null,
         bank_account: null,
-        birth_date:   null,
-        picture:      null,
+        birth_date: null,
+        picture: null,
       });
 
       const result = await findEmployeeProfile(EMPLOYEE_ID);
@@ -110,9 +110,13 @@ describe("profile.model — findEmployeeProfile", () => {
 
   describe("Flujo - error de base de datos", () => {
     it("propaga el error cuando prisma lanza una excepción", async () => {
-      prisma.employee.findUnique.mockRejectedValue(new Error("DB connection lost"));
+      prisma.employee.findUnique.mockRejectedValue(
+        new Error("DB connection lost"),
+      );
 
-      await expect(findEmployeeProfile(EMPLOYEE_ID)).rejects.toThrow("DB connection lost");
+      await expect(findEmployeeProfile(EMPLOYEE_ID)).rejects.toThrow(
+        "DB connection lost",
+      );
     });
   });
 });

@@ -7,7 +7,7 @@ const employeeModel = require("../../model/employee/get.model");
 // =====================================================
 
 jest.mock("../../model/employee/get.model", () => ({
-    getEmployees: jest.fn(),
+  getEmployees: jest.fn(),
 }));
 
 const { getEmployees } = require("../../service/employee/get.service");
@@ -17,176 +17,176 @@ const { getEmployees } = require("../../service/employee/get.service");
 // =====================================================
 
 describe("Employee Service - getEmployees", () => {
-    const houseId = "house-123";
+  const houseId = "house-123";
 
-    beforeEach(() => {
-        jest.clearAllMocks();
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // =====================================================
+  // CONSULTA EXITOSA Y VALORES DEFAULT
+  // =====================================================
+
+  it("debería retornar empleados activos por default", async () => {
+    // Arrange
+    employeeModel.getEmployees.mockResolvedValue({
+      employees: [
+        {
+          employeeId: "1",
+          name: "Juan",
+          surname: "Perez",
+          picture: "juan.jpg",
+          isActive: true,
+          roleName: "Chef",
+        },
+      ],
+      total: 1,
     });
 
-    // =====================================================
-    // CONSULTA EXITOSA Y VALORES DEFAULT
-    // =====================================================
+    // Act
+    const result = await getEmployees(houseId);
 
-    it("debería retornar empleados activos por default", async () => {
-        // Arrange
-        employeeModel.getEmployees.mockResolvedValue({
-            employees: [
-                {
-                    employeeId: "1",
-                    name: "Juan",
-                    surname: "Perez",
-                    picture: "juan.jpg",
-                    isActive: true,
-                    roleName: "Chef",
-                },
-            ],
-            total: 1,
-        });
+    // Assert
+    expect(employeeModel.getEmployees).toHaveBeenCalledWith(
+      houseId,
+      true,
+      "",
+      0,
+      6,
+    );
 
-        // Act
-        const result = await getEmployees(houseId);
-
-        // Assert
-        expect(employeeModel.getEmployees).toHaveBeenCalledWith(
-            houseId,
-            true,
-            "",
-            0,
-            6,
-        );
-
-        expect(result.data[0]).toEqual({
-            employeeId: "1",
-            fullName: "Juan Perez",
-            role: "Chef",
-            picture: "juan.jpg",
-            status: true,
-        });
-
-        expect(result.pagination).toEqual({
-            page: 1,
-            limit: 6,
-            total: 1,
-            totalPages: 1,
-        });
+    expect(result.data[0]).toEqual({
+      employeeId: "1",
+      fullName: "Juan Perez",
+      role: "Chef",
+      picture: "juan.jpg",
+      status: true,
     });
 
-    it("debería retornar empleados inactivos", async () => {
-        // Arrange
-        employeeModel.getEmployees.mockResolvedValue({
-            employees: [],
-            total: 0,
-        });
+    expect(result.pagination).toEqual({
+      page: 1,
+      limit: 6,
+      total: 1,
+      totalPages: 1,
+    });
+  });
 
-        // Act
-        await getEmployees(houseId, "false");
-
-        // Assert
-        expect(employeeModel.getEmployees).toHaveBeenCalledWith(
-            houseId,
-            false,
-            "",
-            0,
-            6,
-        );
+  it("debería retornar empleados inactivos", async () => {
+    // Arrange
+    employeeModel.getEmployees.mockResolvedValue({
+      employees: [],
+      total: 0,
     });
 
-    // =====================================================
-    // PAGINACIÓN
-    // =====================================================
+    // Act
+    await getEmployees(houseId, "false");
 
-    it("debería aplicar paginación correctamente", async () => {
-        // Arrange
-        employeeModel.getEmployees.mockResolvedValue({
-            employees: [],
-            total: 50,
-        });
+    // Assert
+    expect(employeeModel.getEmployees).toHaveBeenCalledWith(
+      houseId,
+      false,
+      "",
+      0,
+      6,
+    );
+  });
 
-        // Act
-        const result = await getEmployees(houseId, "true", "3", "6");
+  // =====================================================
+  // PAGINACIÓN
+  // =====================================================
 
-        // Assert
-        expect(employeeModel.getEmployees).toHaveBeenCalledWith(
-            houseId,
-            true,
-            "",
-            12,
-            6,
-        );
-
-        expect(result.pagination).toEqual({
-            page: 3,
-            limit: 6,
-            total: 50,
-            totalPages: 9,
-        });
+  it("debería aplicar paginación correctamente", async () => {
+    // Arrange
+    employeeModel.getEmployees.mockResolvedValue({
+      employees: [],
+      total: 50,
     });
 
-    // =====================================================
-    // BÚSQUEDA
-    // =====================================================
+    // Act
+    const result = await getEmployees(houseId, "true", "3", "6");
 
-    it("debería buscar por nombre o apellido", async () => {
-        // Arrange
-        employeeModel.getEmployees.mockResolvedValue({
-            employees: [],
-            total: 0,
-        });
+    // Assert
+    expect(employeeModel.getEmployees).toHaveBeenCalledWith(
+      houseId,
+      true,
+      "",
+      12,
+      6,
+    );
 
-        // Act
-        await getEmployees(houseId, "true", "1", "6", "juan");
+    expect(result.pagination).toEqual({
+      page: 3,
+      limit: 6,
+      total: 50,
+      totalPages: 9,
+    });
+  });
 
-        // Assert
-        expect(employeeModel.getEmployees).toHaveBeenCalledWith(
-            houseId,
-            true,
-            "juan",
-            0,
-            6,
-        );
+  // =====================================================
+  // BÚSQUEDA
+  // =====================================================
+
+  it("debería buscar por nombre o apellido", async () => {
+    // Arrange
+    employeeModel.getEmployees.mockResolvedValue({
+      employees: [],
+      total: 0,
     });
 
-    it("debería limpiar espacios en búsqueda", async () => {
-        // Arrange
-        employeeModel.getEmployees.mockResolvedValue({
-            employees: [],
-            total: 0,
-        });
+    // Act
+    await getEmployees(houseId, "true", "1", "6", "juan");
 
-        // Act
-        await getEmployees(houseId, "true", "1", "6", "   juan   ");
+    // Assert
+    expect(employeeModel.getEmployees).toHaveBeenCalledWith(
+      houseId,
+      true,
+      "juan",
+      0,
+      6,
+    );
+  });
 
-        // Assert
-        expect(employeeModel.getEmployees).toHaveBeenCalledWith(
-            houseId,
-            true,
-            "juan",
-            0,
-            6,
-        );
+  it("debería limpiar espacios en búsqueda", async () => {
+    // Arrange
+    employeeModel.getEmployees.mockResolvedValue({
+      employees: [],
+      total: 0,
     });
 
-    // =====================================================
-    // VALIDACIONES Y FALLBACKS
-    // =====================================================
+    // Act
+    await getEmployees(houseId, "true", "1", "6", "   juan   ");
 
-    it("debería usar valores default si page y limit son inválidos", async () => {
-        // Arrange
-        employeeModel.getEmployees.mockResolvedValue({
-            employees: [],
-            total: 0,
-        });
+    // Assert
+    expect(employeeModel.getEmployees).toHaveBeenCalledWith(
+      houseId,
+      true,
+      "juan",
+      0,
+      6,
+    );
+  });
 
-        // Act
-        await getEmployees(houseId, "true", "-1", "abc");
+  // =====================================================
+  // VALIDACIONES Y FALLBACKS
+  // =====================================================
 
-        // Assert
-        expect(employeeModel.getEmployees).toHaveBeenCalledWith(
-            houseId,
-            true,
-            "",
-            0,
-            6,
-        );
+  it("debería usar valores default si page y limit son inválidos", async () => {
+    // Arrange
+    employeeModel.getEmployees.mockResolvedValue({
+      employees: [],
+      total: 0,
     });
+
+    // Act
+    await getEmployees(houseId, "true", "-1", "abc");
+
+    // Assert
+    expect(employeeModel.getEmployees).toHaveBeenCalledWith(
+      houseId,
+      true,
+      "",
+      0,
+      6,
+    );
+  });
 });
