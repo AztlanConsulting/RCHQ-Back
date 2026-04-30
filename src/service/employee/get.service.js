@@ -3,7 +3,14 @@ const {
   getAllRoles,
   findDocumentRowByEmployee,
   getEmployees,
+  getEmployeeById,
+  getEmployeeAddress,
+  getHouseByEmployeeId,
+  getAdminEmployeeInfoById,
+  getEmployeeRecord,
 } = require("../../model/employee/get.model");
+const { decryptValue } = require("../../utils/password");
+// const personnel = require("../model/personnel.model");
 const RESPONSES = require("../../utils/responses");
 
 exports.getEmployees = async (
@@ -70,4 +77,59 @@ exports.getDocumentsByEmployee = async (employeeId) => {
   }
 
   return { type: RESPONSES.DOCUMENTS.OK, body: docRow };
+};
+
+
+exports.getEmployeeDetail = async (userID, employeeID) => {
+  // get basic employee info
+  const employeeBasicInfo = await getEmployeeById(employeeID);
+
+  // Return 400 Bad request if there is no employee id to lookup
+  if (!userID || !employeeID) {
+    return {
+      code: RESPONSES.personnel.badRequest,
+    };
+  }
+
+  // If the employee whose detail we want to see doesn't exist,
+  // return 404 Not Found
+  if (!employeeBasicInfo) {
+    return {
+      code: RESPONSES.personnel.notFound,
+    };
+  }
+
+  const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
+
+  if (decryptedSalary) {
+    employeeBasicInfo.salary = decryptedSalary;
+  }
+
+  const employeeAddress = await getEmployeeAddress(employeeID);
+  if (employeeAddress) {
+    employeeBasicInfo.address = employeeAddress;
+  }
+
+  const house = await getHouseByEmployeeId(employeeID);
+  if (house) {
+    employeeBasicInfo.house = house;
+  }
+
+  // get administrativeEmployeeInfo
+  const employeeAdminInfo =
+    await getAdminEmployeeInfoById(employeeID);
+
+  // get employee record
+  const employeeRecord = await getEmployeeRecord(employeeID);
+
+  return {
+    code: RESPONSES.personnel.found,
+    data: {
+      employee: {
+        basicInfo: employeeBasicInfo,
+        adminInfo: employeeAdminInfo,
+        record: employeeRecord,
+      },
+    },
+  };
 };
