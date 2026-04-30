@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
+const { requireRole } = require("../middleware/rbac");
 const { authorize } = require("../middleware/abac");
 const upload = require("../middleware/upload");
 const { employeePolicy, viewDocuments, modifyDocuments } = require("../policies/employee.policies");
@@ -12,6 +13,14 @@ const employeeDeleteController = require("../controller/employee/delete.controll
 router.get("/getAll", verifyToken, authorize(employeePolicy), employeeGetController.getAll);
 
 router.get("/add", verifyToken, employeeGetController.getAdd);
+
+router.get(
+  "/employee-detail/:employeeID",
+  verifyToken,
+  requireRole("admin"),
+  // authorize(),
+  employeeGetController.getEmployeeDetail,
+);
 
 router.post(
   "/add",

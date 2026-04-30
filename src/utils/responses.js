@@ -30,6 +30,11 @@ const RESPONSES = {
     NOT_FOUND: "Usuario no encontrado",
     NOT_ACCESS: "Acceso bloqueado",
   },
+  personnel: {
+    badRequest: "BAD_REQUEST",
+    notFound: "EMPLOYEE_NOT_FOUND",
+    found: "EMPLOYEE_DATA_FOUND",
+  },
 };
 
 module.exports = RESPONSES;

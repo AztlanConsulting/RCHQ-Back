@@ -4,6 +4,7 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
+const { LOG_ACTIONS } = require("../../utils/logActions");
 const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient();
@@ -15,6 +16,8 @@ const TEST_EMPLOYEE_ID = randomUUID();
 const TEST_EMAIL = "integration@test.com";
 const TEST_PASSWORD = "TestPass123";
 const TEST_CURP = "TEST123456INTXXX01";
+// Must differ from other integration files: role.name is @unique
+const TEST_ROLE_NAME = "test-role-auth-it";
 
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
@@ -35,9 +38,21 @@ const seedDependencies = async () => {
     update: {},
     create: {
       role_id: TEST_ROLE_ID,
-      name: "test-role-integration",
+      name: TEST_ROLE_NAME,
     },
   });
+  // createLog() FK: every action_id used in app code must exist in `action`
+  for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {
+    await prisma.action.upsert({
+      where: { action_id: actionId },
+      update: {},
+      create: {
+        action_id: actionId,
+        description: `IT seed: ${key}`.slice(0, 120),
+        important: false,
+      },
+    });
+  }
 };
 
 const createTestEmployee = async (overrides = {}) => {
@@ -51,12 +66,15 @@ const createTestEmployee = async (overrides = {}) => {
       password: hashedPwd,
       name: "Test",
       surname: "User",
+      type: "internal",
       curp: TEST_CURP,
       start_date: new Date("2024-01-01"),
       has_first_login: false,
       is_active: true,
       is_active_two_factor_auth: false,
       failed_login_attempts: 0,
+      failed_2fa_attempts: 0,
+      salary: "long-encrypted-salary-value",
       ...overrides,
     },
   });
@@ -69,7 +87,7 @@ const generateSessionToken = () => {
       id: TEST_EMPLOYEE_ID,
       email: TEST_EMAIL,
       name: "Test User",
-      role: "test-role-integration",
+      role: TEST_ROLE_NAME,
       privileges: [],
       tokenType: "SESSION",
     },
