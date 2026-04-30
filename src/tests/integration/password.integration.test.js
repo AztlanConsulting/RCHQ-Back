@@ -67,6 +67,7 @@ const createTestEmployee = async (overrides = {}) => {
       surname: "User",
       curp: TEST_CURP,
       start_date: new Date("2024-01-01"),
+      type: "permanente",
       has_first_login: false,
       is_active: true,
       is_active_two_factor_auth: false,
@@ -91,19 +92,12 @@ const createFirstLoginEmployee = async (overrides = {}) => {
       surname: "Login",
       curp: TEST_FIRST_LOGIN_CURP,
       start_date: new Date("2024-01-01"),
+      type: "permanente",
       has_first_login: true,
       is_active: true,
-<<<<<<< HEAD
       is_active_two_factor_auth: false,
       failed_login_attempts: 0,
       failed_two_factor_auth_attempts: 0,
-=======
-      is_active_2fa: false,
-      failed_login_attempts: 0,
-      failed_2fa_attempts: 0,
-      type: "nomina",
-      salary: TEST_SALARY_ENC_STUB,
->>>>>>> feature/us-07-ver-empleado
       ...overrides,
     },
   });
