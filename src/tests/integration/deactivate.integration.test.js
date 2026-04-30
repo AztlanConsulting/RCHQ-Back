@@ -7,116 +7,136 @@ const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
 const { PrismaClient } = require("@prisma/client");
+const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient({
   datasources: { db: { url: process.env.TEST_DATABASE_URL } },
 });
 
-// ─── IDs de los empleados de prueba (aleatorios para no colisionar) ───────────
+// ─── IDs aleatorios para evitar colisiones entre suites ──────────────────────
+const TEST_HOUSE_ID        = randomUUID();
+let TEST_ROLE_ADMIN_ID = randomUUID();
 const TEST_ACTOR_ID        = randomUUID();
 const TEST_TARGET_ID       = randomUUID();
 const TEST_TARGET_BL_ID    = randomUUID();
 const TEST_TARGET_INACT_ID = randomUUID();
 
-const TS = Date.now();
-const TEST_ACTOR_EMAIL    = `actor.deactivate.${TS}@test.com`;
-const TEST_PASSWORD       = "AdminPass99";
+const TEST_ACTOR_EMAIL  = `actor.deactivate.${Date.now()}@test.com`;
+const TEST_PASSWORD     = "AdminPass99";
 
-// CURPs únicos (18 chars máximo, solo alfanuméricos)
-const TEST_ACTOR_CURP     = `ADMC${TS.toString().slice(-8)}HDF01`;
-const TEST_TARGET_CURP    = `TGTC${TS.toString().slice(-8)}HDF02`;
-const TEST_TARGET_BL_CURP = `BLPC${TS.toString().slice(-8)}HDF03`;
-const TEST_INACT_CURP     = `INAC${TS.toString().slice(-8)}HDF04`;
+const TEST_ACTOR_CURP   = `ADMC${Date.now().toString().slice(-6)}HDFRZN01`;
+const TEST_TARGET_CURP  = `TGTC${Date.now().toString().slice(-6)}HDFRZN02`;
+const TEST_TARGET_BL_CURP   = `BLPC${Date.now().toString().slice(-6)}HDFRZN03`;
+const TEST_INACT_CURP   = `INAC${Date.now().toString().slice(-6)}HDFRZN04`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const seedDependencies = async (hashedPassword) => {
+  await prisma.house.upsert({
+    where:  { house_id: TEST_HOUSE_ID },
+    update: {},
+    create: {
+      house_id:     TEST_HOUSE_ID,
+      name:         `Casa Test Deactivate ${TEST_HOUSE_ID}`,
+      location:     "Querétaro",
+      phone_number: "4421234567",
+      description:  "Casa de prueba deactivate",
+      image:        "test.jpg",
+    },
+  });
 
-// Reutiliza el house y role "Admin" que ya existen en el seed de la DB de test
-const getExistingDependencies = async () => {
-  const house = await prisma.house.findFirst();
-  const role  = await prisma.role.findFirst({ where: { name: "Admin" } });
+  const adminRole = await prisma.role.upsert({
+    where:  { name: "Admin" }, 
+    update: {},
+    create: { role_id: TEST_ROLE_ADMIN_ID, name: "Admin" },
+  });
 
-  if (!house || !role) {
-    throw new Error(
-      "No se encontró house o role 'Admin' en la DB de test. Asegúrate de correr el seed primero.",
-    );
-  }
+  // Actor (Admin que da de baja)
+  await prisma.employee.create({
+    data: {
+      employee_id:     TEST_ACTOR_ID,
+      house_id:        TEST_HOUSE_ID,
+      role_id:         TEST_ROLE_ADMIN_ID,
+      name:            "Actor",
+      surname:         "Admin",
+      is_active:       true,
+      email:           TEST_ACTOR_EMAIL,
+      password:        hashedPassword,
+      has_first_login: false,
+      curp:            TEST_ACTOR_CURP,
+      rfc:             `ACT${Date.now().toString().slice(-9)}`,
+      birth_date:      new Date("1990-01-01"),
+      start_date:      new Date("2022-01-01"),
+      nss:             `${Date.now().toString().slice(-11)}`,
+      bank_account:    `0${Date.now().toString().slice(-17)}`,
+    },
+  });
 
-  return { houseId: house.house_id, roleId: role.role_id };
-};
+  // Empleado activo a dar de baja
+  await prisma.employee.create({
+    data: {
+      employee_id:     TEST_TARGET_ID,
+      house_id:        TEST_HOUSE_ID,
+      role_id:         TEST_ROLE_ADMIN_ID,
+      name:            "Juan",
+      surname:         "Objetivo",
+      is_active:       true,
+      email:           `target.${TEST_TARGET_ID}@test.com`,
+      password:        hashedPassword,
+      has_first_login: false,
+      curp:            TEST_TARGET_CURP,
+      rfc:             `TGT${Date.now().toString().slice(-9)}`,
+      birth_date:      new Date("1990-01-01"),
+      start_date:      new Date("2022-01-01"),
+      nss:             `${(Date.now() + 1).toString().slice(-11)}`,
+      bank_account:    `1${Date.now().toString().slice(-17)}`,
+    },
+  });
 
-const seedEmployees = async (hashedPassword, houseId, roleId) => {
-  await prisma.employee.createMany({
-    data: [
-      // Actor Admin que da de baja
-      {
-        employee_id:     TEST_ACTOR_ID,
-        house_id:        houseId,
-        role_id:         roleId,
-        name:            "Actor",
-        surname:         "Admin",
-        is_active:       true,
-        email:           TEST_ACTOR_EMAIL,
-        password:        hashedPassword,
-        has_first_login: false,
-        curp:            TEST_ACTOR_CURP,
-        rfc:             `ACT${TS.toString().slice(-9)}`,
-        birth_date:      new Date("1990-01-01"),
-        start_date:      new Date("2022-01-01"),
-      },
-      // Empleado activo a dar de baja sin lista negra
-      {
-        employee_id:     TEST_TARGET_ID,
-        house_id:        houseId,
-        role_id:         roleId,
-        name:            "Juan",
-        surname:         "Objetivo",
-        is_active:       true,
-        email:           `target.${TS}@test.com`,
-        password:        hashedPassword,
-        has_first_login: false,
-        curp:            TEST_TARGET_CURP,
-        rfc:             `TGT${TS.toString().slice(-9)}`,
-        birth_date:      new Date("1990-01-01"),
-        start_date:      new Date("2022-01-01"),
-      },
-      // Empleado activo a dar de baja + lista negra
-      {
-        employee_id:     TEST_TARGET_BL_ID,
-        house_id:        houseId,
-        role_id:         roleId,
-        name:            "Pedro",
-        surname:         "ListaNegra",
-        is_active:       true,
-        email:           `targetbl.${TS}@test.com`,
-        password:        hashedPassword,
-        has_first_login: false,
-        curp:            TEST_TARGET_BL_CURP,
-        rfc:             `BLP${(TS + 1).toString().slice(-9)}`,
-        birth_date:      new Date("1990-01-01"),
-        start_date:      new Date("2022-01-01"),
-      },
-      // Empleado ya inactivo
-      {
-        employee_id:     TEST_TARGET_INACT_ID,
-        house_id:        houseId,
-        role_id:         roleId,
-        name:            "Ana",
-        surname:         "Inactiva",
-        is_active:       false,
-        email:           `inact.${TS}@test.com`,
-        password:        hashedPassword,
-        has_first_login: false,
-        curp:            TEST_INACT_CURP,
-        rfc:             `INA${(TS + 2).toString().slice(-9)}`,
-        birth_date:      new Date("1990-01-01"),
-        start_date:      new Date("2022-01-01"),
-      },
-    ],
+  // Empleado activo a dar de baja + lista negra
+  await prisma.employee.create({
+    data: {
+      employee_id:     TEST_TARGET_BL_ID,
+      house_id:        TEST_HOUSE_ID,
+      role_id:         TEST_ROLE_ADMIN_ID,
+      name:            "Pedro",
+      surname:         "ListaNegra",
+      is_active:       true,
+      email:           `targetbl.${TEST_TARGET_BL_ID}@test.com`,
+      password:        hashedPassword,
+      has_first_login: false,
+      curp:            TEST_TARGET_BL_CURP,
+      rfc:             `BLP${Date.now().toString().slice(-9)}`,
+      birth_date:      new Date("1990-01-01"),
+      start_date:      new Date("2022-01-01"),
+      nss:             `${(Date.now() + 2).toString().slice(-11)}`,
+      bank_account:    `2${Date.now().toString().slice(-17)}`,
+    },
+  });
+
+  // Empleado ya inactivo
+  await prisma.employee.create({
+    data: {
+      employee_id:     TEST_TARGET_INACT_ID,
+      house_id:        TEST_HOUSE_ID,
+      role_id:         TEST_ROLE_ADMIN_ID,
+      name:            "Ana",
+      surname:         "Inactiva",
+      is_active:       false,
+      email:           `inact.${TEST_TARGET_INACT_ID}@test.com`,
+      password:        hashedPassword,
+      has_first_login: false,
+      curp:            TEST_INACT_CURP,
+      rfc:             `INA${Date.now().toString().slice(-9)}`,
+      birth_date:      new Date("1990-01-01"),
+      start_date:      new Date("2022-01-01"),
+      nss:             `${(Date.now() + 3).toString().slice(-11)}`,
+      bank_account:    `3${Date.now().toString().slice(-17)}`,
+    },
   });
 };
 
 const cleanDb = async () => {
-  const allIds = [
+  const allEmployeeIds = [
     TEST_ACTOR_ID,
     TEST_TARGET_ID,
     TEST_TARGET_BL_ID,
@@ -124,14 +144,15 @@ const cleanDb = async () => {
   ];
 
   await prisma.logs.deleteMany({
-    where: { employee_id: { in: allIds } },
+    where: { employee_id: { in: allEmployeeIds } },
   });
   await prisma.blacklist.deleteMany({
     where: { curp: { in: [TEST_TARGET_CURP, TEST_TARGET_BL_CURP] } },
   });
   await prisma.employee.deleteMany({
-    where: { employee_id: { in: allIds } },
+    where: { employee_id: { in: allEmployeeIds } },
   });
+  await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
 };
 
 const loginAndGetToken = async () => {
@@ -151,9 +172,9 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
 
   beforeAll(async () => {
     await cleanDb();
+    await seedActions(prisma);
     const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 10);
-    const { houseId, roleId } = await getExistingDependencies();
-    await seedEmployees(hashedPassword, houseId, roleId);
+    await seedDependencies(hashedPassword);
     token = await loginAndGetToken();
   });
 
