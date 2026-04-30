@@ -24,7 +24,7 @@ const authorize = (policyFn, getResource) => async (req, res, next) => {
 
 const isAllowed = async (req, res, next) => {
     try {
-        const targetId = req.params.id | req.params.employeeId | "";
+        const targetId = req.params.employeeId || req.params.id || "";
 
         if (req.user.role == "Admin") return next();
         if (req.user.id == targetId) return next();
