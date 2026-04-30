@@ -51,6 +51,7 @@ const seedDependencies = async () => {
       start_date: new Date(),
       is_active: true,
       has_first_login: true,
+      type: "nomina",
     },
   });
 };
@@ -232,6 +233,7 @@ describe("GET /employee/:id/documents - integration", () => {
         is_active_two_factor_auth: false,
         failed_login_attempts: 0,
         failed_two_factor_auth_attempts: 0,
+        type: "nomina",
       },
     });
 
