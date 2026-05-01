@@ -36,15 +36,36 @@ exports.mapEmployeeAddress = (employeeAddress) => {
   };
 };
 
-exports.mapHouse = (house) => {
-  if (!house) return undefined;
 
-  return {
-    houseId: house.house_id,
-    name: house.name,
-    location: house.location,
-    phoneNumber: house.phone_number,
-    description: house.description,
-    image: house.image,
-  };
+exports.mapEmployeeFaults = (employeeFaults) => {
+  if (!employeeFaults) return undefined;
+
+  return employeeFaults.employee_fault.map((ef) => ({
+    faultId: ef.fault.fault_id,
+    date: ef.fault.date,
+    description: ef.fault.description,
+  }));
+};
+
+exports.mapEmployeeWorkdays = (employeeWorkdays) => {
+  if (!employeeWorkdays) return undefined;
+
+  return employeeWorkdays.employee_workday.map((w) => ({
+    workdayId: w.workday.workday_id,
+    name: w.workday.name,
+    start: w.start,
+    end: w.end,
+  }));
+};
+
+exports.mapEmployeeVacationRequests = (employeeVacationRequests) => {
+  if (!employeeVacationRequests) return undefined;
+
+  return employeeVacationRequests.vacations_request.map((v) => ({
+    vacationsRequestId: v.vacations_request_id,
+    start: v.start,
+    end: v.end,
+    status: v.status,
+    feedback: v.feedback,
+  }));
 };

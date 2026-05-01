@@ -81,25 +81,24 @@ exports.getAll = async (req, res) => {
 
 exports.getEmployeeDetail = async (req, res) => {
   try {
-    // const result = await getEmployeeDetail(req);
     const userID = req.user.id;
-    const { employeeID } = req.params;
+    const { employeeId } = req.params;
 
-    const result = await getEmployeeDetail(userID, employeeID);
+    const result = await getEmployeeDetail(userID, employeeId);
 
-    if (result.code === RESPONSES.personnel.badRequest) {
+    if (result.code === RESPONSES.EMPLOYEE.BAD_REQUEST) {
       return res.status(400).json({
         success: false,
         message: "Body incompleto para este request",
       });
     }
-    if (result.code === RESPONSES.personnel.notFound) {
+    if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
       return res.status(404).json({
         success: false,
         message: "Empleado con ID dado no encontrado",
       });
     }
-    if (result.code === RESPONSES.personnel.found) {
+    if (result.code === RESPONSES.EMPLOYEE.FOUND) {
       return res.status(200).json({
         success: true,
         message: "Data del empleado encontrado con éxito",

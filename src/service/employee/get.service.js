@@ -5,12 +5,15 @@ const {
   getEmployees,
   getEmployeeById,
   getEmployeeAddress,
-  getHouseByEmployeeId,
-  getAdminEmployeeInfoById,
-  getEmployeeRecord,
+  // getHouseByEmployeeId,
+  // getAdminEmployeeInfoById,
+  // getEmployeeRecord,
+  getEmployeeFaults,
+  getEmployeeWorkdays,
+  getEmployeeVacationRequests,
 } = require("../../model/employee/get.model");
+const { getHouseByEmployeeId } = require("../../model/house/get.model")
 const { decryptValue } = require("../../utils/password");
-// const personnel = require("../model/personnel.model");
 const RESPONSES = require("../../utils/responses");
 
 exports.getEmployees = async (
@@ -80,55 +83,60 @@ exports.getDocumentsByEmployee = async (employeeId) => {
 };
 
 
-exports.getEmployeeDetail = async (userID, employeeID) => {
-  // get basic employee info
-  const employeeBasicInfo = await getEmployeeById(employeeID);
-
-  // Return 400 Bad request if there is no employee id to lookup
-  if (!userID || !employeeID) {
+exports.getEmployeeDetail = async (userID, employeeId) => {
+  if (!userID || !employeeId) {
     return {
-      code: RESPONSES.personnel.badRequest,
+      code: RESPONSES.EMPLOYEE.BAD_REQUEST,
     };
   }
 
-  // If the employee whose detail we want to see doesn't exist,
-  // return 404 Not Found
+  const employeeBasicInfo = await getEmployeeById(employeeId);
+
   if (!employeeBasicInfo) {
     return {
-      code: RESPONSES.personnel.notFound,
+      code: RESPONSES.EMPLOYEE.NOT_FOUND,
     };
   }
 
   const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
-
   if (decryptedSalary) {
     employeeBasicInfo.salary = decryptedSalary;
   }
 
-  const employeeAddress = await getEmployeeAddress(employeeID);
-  if (employeeAddress) {
-    employeeBasicInfo.address = employeeAddress;
-  }
+  const employeeAddress = await getEmployeeAddress(employeeId);
+  // if (employeeAddress) {
+  //   employeeBasicInfo.address = employeeAddress;
+  // }
 
-  const house = await getHouseByEmployeeId(employeeID);
-  if (house) {
-    employeeBasicInfo.house = house;
-  }
+  const employeeHouse = await getHouseByEmployeeId(employeeId);
+  // if (house) {
+  //   employeeBasicInfo.house = house;
+  // }
 
-  // get administrativeEmployeeInfo
-  const employeeAdminInfo =
-    await getAdminEmployeeInfoById(employeeID);
+  const employeeFaults = await getEmployeeFaults(employeeId);
+  const employeeWorkdays = await getEmployeeWorkdays(employeeId);
+  const employeeVacationRequests = await getEmployeeVacationRequests(employeeId);
 
-  // get employee record
-  const employeeRecord = await getEmployeeRecord(employeeID);
+  // const employeeAdminInfo =
+  //   await getAdminEmployeeInfoById(employeeID);
+
+  // const employeeRecord = await getEmployeeRecord(employeeID);
 
   return {
-    code: RESPONSES.personnel.found,
+    code: RESPONSES.EMPLOYEE.FOUND,
     data: {
       employee: {
-        basicInfo: employeeBasicInfo,
-        adminInfo: employeeAdminInfo,
-        record: employeeRecord,
+        basicInfo: {
+          employee: employeeBasicInfo,
+          address: employeeAddress,
+          house: employeeHouse,
+        },
+        adminInfo: {
+          faults: employeeFaults,
+          workdays: employeeWorkdays,
+          vacationRequests: employeeVacationRequests,
+        // record: employeeRecord,
+        },
       },
     },
   };

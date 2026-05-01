@@ -30,10 +30,10 @@ const RESPONSES = {
     NOT_FOUND: "Usuario no encontrado",
     NOT_ACCESS: "Acceso bloqueado",
   },
-  personnel: {
-    badRequest: "BAD_REQUEST",
-    notFound: "EMPLOYEE_NOT_FOUND",
-    found: "EMPLOYEE_DATA_FOUND",
+  EMPLOYEE: {
+    BAD_REQUEST: "BAD_REQUEST",
+    NOT_FOUND: "EMPLOYEE_NOT_FOUND",
+    FOUND: "EMPLOYEE_DATA_FOUND",
   },
 };
 
