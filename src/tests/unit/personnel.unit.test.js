@@ -1,23 +1,27 @@
-const { getEmployeeDetail } = require("../../service/personnel.service");
-const Personnel = require("../../model/personnel.model");
-const responses = require("../../utils/responses");
+const { getEmployeeDetail } = require("../../service/employee/get.service");
+const EmployeeModel = require("../../model/employee/get.model");
+const HouseModel = require("../../model/house/get.model");
+const RESPONSES = require("../../utils/responses");
 
 jest.mock("../../utils/password", () => ({
   decryptValue: jest.fn(() => "12000"),
 }));
 
-jest.mock("../../model/personnel.model", () => ({
+jest.mock("../../model/employee/get.model", () => ({
   getEmployeeById: jest.fn(),
   getEmployeeAddress: jest.fn(),
-  getHouseByEmployeeId: jest.fn(),
-  getAdminEmployeeInfoById: jest.fn(),
-  getEmployeeRecord: jest.fn(),
+  getEmployeeFaults: jest.fn(),
+  getEmployeeWorkdays: jest.fn(),
+  getEmployeeVacationRequests: jest.fn(),
 }));
-jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
+
+jest.mock("../../model/house/get.model", () => ({
+  getHouseById: jest.fn(),
+}));
 
 const mockEmployee = {
   employeeId: "abc-123",
+  houseId: "house-1",
   email: "test@gmail.com",
   name: "Test User",
   role: "admin",
@@ -25,133 +29,94 @@ const mockEmployee = {
   isActive: true,
   isActive2FA: false,
   blockedUntil: null,
-  twoFaBlockedUntil: null,
-  pwd: "hashedPassword",
-  totpSecret: null,
-  tempTotpSecret: null,
-  tempTotpSecretCreatedAt: null,
-  salary: 12000,
+  salary: "encryptedSalary",
 };
 
-const mockEmployeeAdminInfo = {
-  faults: [
-    {
-      faultId: "fault-1",
-      date: new Date("2025-01-10"),
-      description: "Late arrival",
-    },
-  ],
-  addresses: [
-    {
-      employeeAddressId: "addr-1",
-      url: "https://example.com/proof-of-address.pdf",
-      date: new Date("2025-02-01T12:00:00Z"),
-    },
-  ],
-  workdays: [
-    {
-      workdayId: "wd-1",
-      name: "L-V",
-      start: new Date("1970-01-01T09:00:00.000Z"),
-      end: new Date("1970-01-01T18:00:00.000Z"),
-    },
-  ],
-  vacationRequests: [
-    {
-      vacationsRequestId: "vac-1",
-      start: new Date("2025-07-01"),
-      end: new Date("2025-07-14"),
-      status: 1,
-      feedback: null,
-    },
-  ],
+const mockAddress = {
+  employeeAddressId: "addr-1",
+  street: "Calle 1",
+  municipio: "Muni",
+  city: "CDMX",
+  postalCode: "01000",
+  date: new Date("2024-04-01T12:00:00Z"),
 };
 
-const mockEmployeeRecord = {
-  documents: [
-    {
-      documentId: "doc-1",
-      url: "https://example.com/employee-docs-bundle",
-      files: {
-        cv: "cv.pdf",
-        birthCertificate: null,
-        taxStatusCertificate: "tax.pdf",
-        addressCertificate: null,
-        nss: null,
-        professionalId: null,
-        educationCertificate: null,
-        medicalCertificate: null,
-        stateCriminalRecordCertificate: null,
-        federalCriminalRecordCertificate: null,
-        firstRecommendationLetter: null,
-        secondRecommendationLetter: null,
-        driverLicense: null,
-        signedRegulation: null,
-        signedContract: null,
-        signedConfidentialLetter: null,
-        signedEthicsLetter: null,
-        inductionManual: null,
-      },
-    },
-  ],
-  insideCertifications: [
-    {
-      insideCertificationId: "in-1",
-      name: "Safety",
-      description: "Internal safety course",
-      date: new Date("2024-06-01"),
-    },
-  ],
-  outsideCertifications: [
-    {
-      outsideCertificationId: "out-1",
-      name: "First aid",
-      file: "first-aid.pdf",
-    },
-  ],
-  psychologicalEvaluations: [
-    {
-      psychologicalEvaluationId: "psy-1",
-      file: "eval-2024.pdf",
-      date: new Date("2024-01-15"),
-    },
-  ],
+const mockHouse = {
+  houseId: "house-1",
+  name: "Casa Hogar",
+  location: "Querétaro",
 };
+
+const mockFaults = [
+  {
+    faultId: "fault-1",
+    date: new Date("2025-01-10"),
+    description: "Late arrival",
+  },
+];
+
+const mockWorkdays = [
+  {
+    workdayId: "wd-1",
+    name: "L-V",
+    start: new Date("1970-01-01T09:00:00.000Z"),
+    end: new Date("1970-01-01T18:00:00.000Z"),
+  },
+];
+
+const mockVacationRequests = [
+  {
+    vacationsRequestId: "vac-1",
+    start: new Date("2025-07-01"),
+    end: new Date("2025-07-14"),
+    status: 1,
+    feedback: null,
+  },
+];
 
 beforeEach(() => {
   jest.clearAllMocks();
 });
 
 describe("getEmployeeDetail", () => {
-  it("retorna 404 cuando empleado no existe", async () => {
-    // Arrange
-    Personnel.getEmployeeById.mockResolvedValue(null);
+  it("retorna NOT_FOUND cuando empleado no existe", async () => {
+    EmployeeModel.getEmployeeById.mockResolvedValue(null);
 
-    // Act
     const result = await getEmployeeDetail("viewer-user-id", "missing-id");
 
-    // Assert
-    // expect(result.status).toBe(404);
-    expect(result.code).toBe(responses.personnel.notFound);
-    expect(Personnel.getAdminEmployeeInfoById).not.toHaveBeenCalled();
-    expect(Personnel.getEmployeeRecord).not.toHaveBeenCalled();
+    expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
+    expect(EmployeeModel.getEmployeeAddress).not.toHaveBeenCalled();
+    expect(EmployeeModel.getEmployeeFaults).not.toHaveBeenCalled();
+    expect(EmployeeModel.getEmployeeWorkdays).not.toHaveBeenCalled();
+    expect(EmployeeModel.getEmployeeVacationRequests).not.toHaveBeenCalled();
+    expect(HouseModel.getHouseById).not.toHaveBeenCalled();
   });
 
-  it("retorna 200 con basicInfo, adminInfo, y record", async () => {
-    Personnel.getEmployeeById.mockResolvedValue({ ...mockEmployee });
-    Personnel.getAdminEmployeeInfoById.mockResolvedValue(mockEmployeeAdminInfo);
-    Personnel.getEmployeeRecord.mockResolvedValue(mockEmployeeRecord);
+  it("retorna FOUND con basicInfo y adminInfo", async () => {
+    EmployeeModel.getEmployeeById.mockResolvedValue({ ...mockEmployee });
+    EmployeeModel.getEmployeeAddress.mockResolvedValue(mockAddress);
+    HouseModel.getHouseById.mockResolvedValue(mockHouse);
+    EmployeeModel.getEmployeeFaults.mockResolvedValue(mockFaults);
+    EmployeeModel.getEmployeeWorkdays.mockResolvedValue(mockWorkdays);
+    EmployeeModel.getEmployeeVacationRequests.mockResolvedValue(mockVacationRequests);
 
     const result = await getEmployeeDetail("admin-viewer", "abc-123");
 
-    // expect(result.status).toBe(200);
-    expect(result.code).toBe(responses.personnel.found);
-    expect(result.data.employee.basicInfo).toEqual(mockEmployee);
-    expect(result.data.employee.adminInfo).toEqual(mockEmployeeAdminInfo);
-    expect(result.data.employee.record).toEqual(mockEmployeeRecord);
+    expect(result.code).toBe(RESPONSES.EMPLOYEE.FOUND);
 
-    expect(Personnel.getEmployeeById).toHaveBeenCalledWith("abc-123");
-    expect(Personnel.getAdminEmployeeInfoById).toHaveBeenCalledWith("abc-123");
-    expect(Personnel.getEmployeeRecord).toHaveBeenCalledWith("abc-123");
+    const { basicInfo, adminInfo } = result.data.employee;
+    expect(basicInfo.employee).toMatchObject({ email: "test@gmail.com" });
+    expect(basicInfo.address).toEqual(mockAddress);
+    expect(basicInfo.house).toEqual(mockHouse);
+    expect(adminInfo.faults).toEqual(mockFaults);
+    expect(adminInfo.workdays).toEqual(mockWorkdays);
+    expect(adminInfo.vacationRequests).toEqual(mockVacationRequests);
+
+    expect(EmployeeModel.getEmployeeById).toHaveBeenCalledWith("abc-123");
+    expect(EmployeeModel.getEmployeeAddress).toHaveBeenCalledWith("abc-123");
+    expect(HouseModel.getHouseById).toHaveBeenCalledWith(mockEmployee.houseId);
+    expect(EmployeeModel.getEmployeeFaults).toHaveBeenCalledWith("abc-123");
+    expect(EmployeeModel.getEmployeeWorkdays).toHaveBeenCalledWith("abc-123");
+    expect(EmployeeModel.getEmployeeVacationRequests).toHaveBeenCalledWith("abc-123");
   });
 });
