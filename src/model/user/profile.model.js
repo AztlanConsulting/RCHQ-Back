@@ -1,6 +1,4 @@
-// src/model/profile.model.js
 const prisma = require("../../prisma");
-// const { mapProfile } = require("../../utils/mappers/users.map");
 
 exports.findEmployeeProfile = async (employeeId) => {
   const employee = await prisma.employee.findUnique({

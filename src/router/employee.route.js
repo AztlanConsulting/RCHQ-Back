@@ -11,7 +11,7 @@ const employeeAddController = require("../controller/employee/create.controller"
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
 router.get("/getAll", verifyToken, 
-  // authorize(employeePolicy), 
+  authorize(employeePolicy), 
   employeeGetController.getAll);
 
 router.get("/add", verifyToken, 
