@@ -68,7 +68,7 @@ model employee {
   role_id                         String   @db.Uuid
   name                            String   @db.VarChar(50)
   surname                         String   @db.VarChar(50)
-  type                            String   @db.VarChar(20)
+  type                            String?  @db.VarChar(20)
   is_active                       Boolean
   email                           String   @unique @db.VarChar(60)
   password                        String   @db.VarChar(72)
