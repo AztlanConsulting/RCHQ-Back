@@ -1,15 +1,15 @@
-exports.mapProfile = (e) => {
+exports.mapProfile = (profile) => {
   return {
-    houseName: e.house.name,
-    roleName: e.role.name,
-    name: e.name,
-    surname: e.surname,
-    email: e.email,
-    rfc: e.rfc,
-    curp: e.curp,
-    nss: e.nss,
-    bankAccount: e.bank_account,
-    birthDate: e.birth_date,
-    picture: e.picture,
+    houseName: profile.house.name,
+    roleName: profile.role.name,
+    name: profile.name,
+    surname: profile.surname,
+    email: profile.email,
+    rfc: profile.rfc,
+    curp: profile.curp,
+    nss: profile.nss,
+    bankAccount: profile.bank_account,
+    birthDate: profile.birth_date,
+    picture: profile.picture,
   };
 };

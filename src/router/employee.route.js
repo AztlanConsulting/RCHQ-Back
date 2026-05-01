@@ -10,11 +10,14 @@ const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
-router.get("/getAll", verifyToken, 
+router.get("/getAll", 
+  verifyToken, 
   authorize(employeePolicy), 
-  employeeGetController.getAll);
+  employeeGetController.getAll
+);
 
-router.get("/add", verifyToken, 
+router.get("/add", 
+  verifyToken, 
   employeeGetController.getAdd
 );
 

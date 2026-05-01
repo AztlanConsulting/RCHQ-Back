@@ -101,14 +101,14 @@ exports.getEmployeeDetail = async (req, res) => {
     if (result.code === RESPONSES.EMPLOYEE.FOUND) {
       return res.status(200).json({
         success: true,
-        message: "Data del empleado encontrado con éxito",
+        message: "Datos del empleado encontrado con éxito",
         data: result.data,
       });
     }
 
     return res.status(500).json({
       sucess: false,
-      message: "Error interno del servidor, resultado inesperado al fetch employee detail",
+      message: "Error interno del servidor, resultado inesperado al solicitar detalle del empleado",
       data: {},
     });
   } catch (err) {
