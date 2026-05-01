@@ -4,6 +4,7 @@ const cors = require("cors");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const userRouter = require("./router/user.route");
+const vacationRouter = require("./router/vacation.route");
 
 const errorHandler = require("./middleware/ErrorHandler");
 
@@ -30,6 +31,8 @@ app.use("/auth", authRouter);
 app.use("/user", userRouter);
 
 app.use("/employee", employeeRouter);
+
+app.use("/vacation", vacationRouter);
 
 app.use(errorHandler);
 
