@@ -5,9 +5,6 @@ const {
   getEmployees,
   getEmployeeById,
   getEmployeeAddress,
-  // getHouseByEmployeeId,
-  // getAdminEmployeeInfoById,
-  // getEmployeeRecord,
   getEmployeeFaults,
   getEmployeeWorkdays,
   getEmployeeVacationRequests,
@@ -104,23 +101,11 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
   }
 
   const employeeAddress = await getEmployeeAddress(employeeId);
-  // if (employeeAddress) {
-  //   employeeBasicInfo.address = employeeAddress;
-  // }
-
   const employeeHouse = await getHouseByEmployeeId(employeeId);
-  // if (house) {
-  //   employeeBasicInfo.house = house;
-  // }
 
   const employeeFaults = await getEmployeeFaults(employeeId);
   const employeeWorkdays = await getEmployeeWorkdays(employeeId);
   const employeeVacationRequests = await getEmployeeVacationRequests(employeeId);
-
-  // const employeeAdminInfo =
-  //   await getAdminEmployeeInfoById(employeeID);
-
-  // const employeeRecord = await getEmployeeRecord(employeeID);
 
   return {
     code: RESPONSES.EMPLOYEE.FOUND,
@@ -135,7 +120,6 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
           faults: employeeFaults,
           workdays: employeeWorkdays,
           vacationRequests: employeeVacationRequests,
-        // record: employeeRecord,
         },
       },
     },
