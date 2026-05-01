@@ -1,4 +1,3 @@
-// Loads the variables in the enviorment file
 require("dotenv").config();
 
 const express = require("express");
