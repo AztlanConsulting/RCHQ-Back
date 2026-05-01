@@ -8,6 +8,7 @@ exports.mapEmployee = (employee) => {
     surname: employee.surname,
     role: employee.role?.name,
     roleId: employee.role_id,
+    houseId: employee.house_id,
     type: employee.type,
     isActive: employee.is_active,
     curp: employee.curp,

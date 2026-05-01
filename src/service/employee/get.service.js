@@ -9,7 +9,7 @@ const {
   getEmployeeWorkdays,
   getEmployeeVacationRequests,
 } = require("../../model/employee/get.model");
-const { getHouseByEmployeeId } = require("../../model/house/get.model")
+const { getHouseById } = require("../../model/house/get.model")
 const { decryptValue } = require("../../utils/password");
 const RESPONSES = require("../../utils/responses");
 
@@ -101,7 +101,7 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
   }
 
   const employeeAddress = await getEmployeeAddress(employeeId);
-  const employeeHouse = await getHouseByEmployeeId(employeeId);
+  const employeeHouse = await getHouseById(employeeBasicInfo.houseId);
 
   const employeeFaults = await getEmployeeFaults(employeeId);
   const employeeWorkdays = await getEmployeeWorkdays(employeeId);
