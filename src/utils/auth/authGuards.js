@@ -16,18 +16,17 @@ async function clearExpiredLoginBlock(employee) {
   }
 }
 
-async function clearExpired2FABlock(employee) {
-  // TIENE que validar que la fecha exista antes de compararla
+async function clearExpiredTwoFactorAuthBlock(employee) {
   if (
     employee.twoFaBlockedUntil &&
     new Date(employee.twoFaBlockedUntil) <= new Date()
   ) {
-    await User.clear2FASecurityState(employee.employeeId);
+    await User.clearTwoFactorAuthSecurityState(employee.employeeId);
   }
 }
 
 module.exports = {
   isBlockedUntil,
   clearExpiredLoginBlock,
-  clearExpired2FABlock,
+  clearExpiredTwoFactorAuthBlock,
 };

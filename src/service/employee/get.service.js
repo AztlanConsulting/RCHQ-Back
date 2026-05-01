@@ -1,4 +1,10 @@
-const { getEmployees } = require("../../model/employee/get.model");
+const {
+    findById,
+    getAllRoles,
+    findDocumentRowByEmployee,
+    getEmployees,
+} = require("../../model/employee/get.model");
+const RESPONSES = require("../../utils/responses");
 
 exports.getEmployees = async (
     houseId,
@@ -43,4 +49,28 @@ exports.getEmployees = async (
             totalPages,
         },
     };
+};
+
+exports.getById = async (id) => {
+    return await findById(id);
+};
+
+exports.getRoles = async () => {
+    return await getAllRoles();
+};
+
+exports.getDocumentsByEmployee = async (employeeId) => {
+    const employee = await findById(employeeId);
+
+    if (!employee) {
+        return { type: RESPONSES.USER.NOT_FOUND, body: null };
+    }
+
+    const docRow = await findDocumentRowByEmployee(employeeId);
+
+    if (!docRow) {
+        return { type: RESPONSES.DOCUMENTS.NOT_FOUND, body: null };
+    }
+
+    return { type: RESPONSES.DOCUMENTS.OK, body: docRow };
 };

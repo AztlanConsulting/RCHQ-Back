@@ -18,13 +18,13 @@
 require("dotenv").config({ path: ".env.test" });
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
-const request  = require("supertest");
-const bcrypt   = require("bcrypt");
-const app      = require("../../index");
+const request = require("supertest");
+const bcrypt = require("bcryptjs");
+const app = require("../../index");
 const { seedDb, cleanDb, disconnectDb, IDS } = require("../helpers/dbSetup");
 
 // ─── Credenciales de prueba (deben coincidir con el seed) ────────────────────
-const VALID_EMAIL    = "andre@gmail.com";
+const VALID_EMAIL = "andre@gmail.com";
 const VALID_PASSWORD = "Andatti67";
 
 // ─── Helper: hace login y retorna el SESSION token ───────────────────────────
@@ -36,7 +36,7 @@ const loginAndGetToken = async () => {
   // Falla rápido si el login no fue exitoso — el problema está en el seed
   if (res.status !== 200 || !res.body?.data?.token) {
     throw new Error(
-      `loginAndGetToken falló inesperadamente: ${JSON.stringify(res.body)}`
+      `loginAndGetToken falló inesperadamente: ${JSON.stringify(res.body)}`,
     );
   }
 
@@ -106,9 +106,7 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     });
 
     it("retorna 400 cuando faltan campos requeridos", async () => {
-      const res = await request(app)
-        .post("/auth/login")
-        .send({});
+      const res = await request(app).post("/auth/login").send({});
 
       expect(res.status).toBe(400);
     });
@@ -137,11 +135,11 @@ describe("Flujo integración: Login → GET /user/profile", () => {
         .set("Authorization", `Bearer ${sessionToken}`);
 
       expect(res.body.data).toMatchObject({
-        name:      "Carlos",
-        surname:   "Ramírez",
-        email:     VALID_EMAIL,
+        name: "Carlos",
+        surname: "Ramírez",
+        email: VALID_EMAIL,
         houseName: "Casa de Desarrollo",
-        roleName:  "Admin",
+        roleName: "Admin",
       });
     });
 
@@ -188,11 +186,11 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     });
 
     it("401 — token expirado no permite ver el perfil", async () => {
-      const jwt      = require("jsonwebtoken");
+      const jwt = require("jsonwebtoken");
       const expToken = jwt.sign(
         { id: IDS.employee, tokenType: "SESSION" },
         process.env.JWT_SECRET,
-        { expiresIn: "-1s" }
+        { expiresIn: "-1s" },
       );
 
       const res = await request(app)
@@ -203,11 +201,11 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     });
 
     it("403 — token con tokenType incorrecto no permite ver el perfil", async () => {
-      const jwt        = require("jsonwebtoken");
+      const jwt = require("jsonwebtoken");
       const wrongToken = jwt.sign(
         { id: IDS.employee, tokenType: "REFRESH" },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
       );
 
       const res = await request(app)
