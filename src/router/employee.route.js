@@ -3,6 +3,7 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { authorize } = require("../middleware/abac");
 const { employeePolicy } = require("../policies/employee.policies");
+const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
 
 const {
@@ -15,7 +16,13 @@ const { getAll } = require("../controller/employee/get.controller");
 
 router.get("/add", verifyToken, getAdd);
 
-router.get("/getAll", verifyToken, authorize(employeePolicy), getAll);
+router.get(
+    "/getAll",
+    apiLimiter,
+    verifyToken,
+    authorize(employeePolicy),
+    getAll,
+);
 
 router.get("/:id", getById);
 
