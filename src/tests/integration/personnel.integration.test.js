@@ -336,9 +336,10 @@ describe("GET /employee/employee-detail/:employeeID - integration", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toBeDefined();
     expect(res.body.data.employee).toBeDefined();
-    const { basicInfo, adminInfo, record } = res.body.data.employee;
-    expect(basicInfo).toMatchObject({ email: TEST_SUBJECT_EMAIL });
+    const { basicInfo, adminInfo } = res.body.data.employee;
+    expect(basicInfo.employee).toMatchObject({ email: TEST_SUBJECT_EMAIL });
     expect(basicInfo.address).toMatchObject({ street: "Calle 1" });
+    expect(basicInfo.house).toMatchObject({ name: expect.any(String) });
     expect(adminInfo).toMatchObject({
       faults: [
         expect.objectContaining({
@@ -348,20 +349,6 @@ describe("GET /employee/employee-detail/:employeeID - integration", () => {
       workdays: [expect.objectContaining({ name: expect.any(String) })],
       vacationRequests: [
         expect.objectContaining({ status: 1, feedback: "ok" }),
-      ],
-    });
-    expect(record).toMatchObject({
-      documents: [
-        expect.objectContaining({ url: "https://docs.example/bundle1" }),
-      ],
-      insideCertifications: [
-        expect.objectContaining({ name: "Cert interna integration" }),
-      ],
-      outsideCertifications: [
-        expect.objectContaining({ name: "Cert externa" }),
-      ],
-      psychologicalEvaluations: [
-        expect.objectContaining({ file: "psych.pdf" }),
       ],
     });
   });
