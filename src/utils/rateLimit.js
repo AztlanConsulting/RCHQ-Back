@@ -65,8 +65,8 @@ exports.authLimiter = rateLimit({
             const token = authHeader.split(" ")[1];
             try {
                 const decoded = jwt.decode(token);
-                if (decoded && decoded.email) {
-                    return decoded.email;
+                if (decoded && decoded.employeeId) {
+                    return decoded.employeeId;
                 }
             } catch (error) {}
         }

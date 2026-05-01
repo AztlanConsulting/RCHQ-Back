@@ -20,7 +20,7 @@ router.post("/login", authLimiter, validate(loginSchema), authController.loginFu
 
 router.post(
   "/first-login/change-password",
-  authLimiter,
+  apiLimiter,
   verifyFirstLoginToken,
   validate(firstLoginChangePasswordSchema),
   authController.changePasswordFirstLogin,
