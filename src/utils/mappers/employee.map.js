@@ -18,6 +18,7 @@ exports.mapEmployee = (employee) => {
     endDate: employee.end_date,
     phoneNumber: employee.phone_number,
     nss: employee.nss,
+    rfc: employee.rfc,
     bankAccount: employee.bank_account,
     salary: employee.salary,
   };

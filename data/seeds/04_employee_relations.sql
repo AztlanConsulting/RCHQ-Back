@@ -143,31 +143,37 @@ FROM public.employee e
 WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (fault_id, employee_id) DO NOTHING;
 
--- workday schedules (Lun-Vie 9–18, second user weekend pattern sample)
+-- workday schedules (andre: Mon/Tue/Thu/Fri with varying hours; maria: Lunes sample)
 
+-- Lunes
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT
-  'c0000001-0000-4000-8000-000000000001',
-  e.employee_id,
-  '09:00:00',
-  '18:00:00'
-FROM public.employee e
-WHERE e.email = 'andre@gmail.com'
-ON CONFLICT (workday_id, employee_id) DO UPDATE SET
-  start = EXCLUDED.start,
-  "end" = EXCLUDED."end";
+SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
+-- Martes
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT
-  'c0000001-0000-4000-8000-000000000001',
-  e.employee_id,
-  '10:00:00',
-  '19:00:00'
-FROM public.employee e
-WHERE e.email = 'maria.operaciones@example.com'
-ON CONFLICT (workday_id, employee_id) DO UPDATE SET
-  start = EXCLUDED.start,
-  "end" = EXCLUDED."end";
+SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '09:00:00', '18:00:00'
+FROM public.employee e WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+-- Jueves
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '07:00:00', '16:00:00'
+FROM public.employee e WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+-- Viernes
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '10:00:00', '19:00:00'
+FROM public.employee e WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+-- Maria: Lunes
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '10:00:00', '19:00:00'
+FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
 -- vacations (status: 0 pending, 1 approved — adjust to your app convention)
 -- IDs: gen_random_uuid() (literals like v0000… are invalid: UUIDs are hex only)
