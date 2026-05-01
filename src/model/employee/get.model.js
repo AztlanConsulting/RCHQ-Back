@@ -5,7 +5,7 @@ const {
   mapEmployeeFaults,
   mapEmployeeWorkdays,
   mapEmployeeVacationRequests
-} = require("../../utils/mappers/personnel.map");
+} = require("../../utils/mappers/employee.map");
 
 exports.findByCurp = async (curp) => {
   return await prisma.employee.findUnique({
