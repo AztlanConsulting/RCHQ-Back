@@ -86,7 +86,7 @@ describe("Employee Service - getEmployees", () => {
                     {
                         employeeId: "2",
                         name: "Maria",
-                        surname: null, // Simulamos que la DB retorna null
+                        surname: null,
                         picture: null,
                         isActive: true,
                         roleName: "Limpieza",
@@ -97,7 +97,6 @@ describe("Employee Service - getEmployees", () => {
 
             const result = await getEmployees(houseId);
 
-            // Asumiendo la corrección con .filter(Boolean).join(" ")
             expect(result.data[0].fullName).toBe("Maria");
             expect(result.data[0].picture).toBeNull();
         });
@@ -112,7 +111,6 @@ describe("Employee Service - getEmployees", () => {
 
             const result = await getEmployees(houseId, "true", "3", "6");
 
-            // page 3, limit 6 -> offset = (3-1) * 6 = 12
             expect(employeeModel.getEmployees).toHaveBeenCalledWith(
                 houseId,
                 true,
@@ -124,7 +122,7 @@ describe("Employee Service - getEmployees", () => {
                 page: 3,
                 limit: 6,
                 total: 50,
-                totalPages: 9, // Math.ceil(50 / 6)
+                totalPages: 9,
             });
         });
 
@@ -164,7 +162,6 @@ describe("Employee Service - getEmployees", () => {
 
             await getEmployees(houseId, "true", "0", "10");
 
-            // page 1, limit 10 -> offset 0
             expect(employeeModel.getEmployees).toHaveBeenCalledWith(
                 houseId,
                 true,
@@ -251,7 +248,6 @@ describe("Employee Service - getEmployees", () => {
         });
 
         it("debería manejar el caso donde el houseId es null (ej. fallo en capa superior)", async () => {
-            // Como el houseId viene del token, si llega null aquí, la DB simplemente no encontrará nada
             employeeModel.getEmployees.mockResolvedValue({
                 employees: [],
                 total: 0,
@@ -273,11 +269,8 @@ describe("Employee Service - getEmployees", () => {
         });
 
         it("debería manejar una respuesta malformada del modelo de forma segura", async () => {
-            // Simulamos que el modelo devuelve undefined
             employeeModel.getEmployees.mockResolvedValue(undefined);
 
-            // Dependiendo de cómo esté estructurado tu servicio, esto podría lanzar un TypeError
-            // al intentar leer result.employees, lo cual está bien que se propague.
             await expect(getEmployees(houseId)).rejects.toThrow();
         });
     });
