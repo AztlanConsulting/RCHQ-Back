@@ -174,6 +174,13 @@ exports.getEmployeeVacationRequests = async (employeeId) => {
     where: { employee_id: employeeId },
     select: {
       vacations_request: {
+        where: {
+          status: 1,
+          start: {
+            gte: new Date(`${new Date().getFullYear()}-01-01`),
+            lt: new Date(`${new Date().getFullYear() + 1}-01-01`),
+          },
+        },
         select: {
           vacations_request_id: true,
           start: true,
