@@ -197,6 +197,13 @@ exports.registerEmployeeVacation = async (req, res) => {
             });
         }
 
+        if (result.code === responses.vacation.outsideCurrentWorkYear) {
+            return res.status(406).json({
+                success: false,
+                message: "Las vacaciones deben registrarse dentro del año laboral actual",
+            });
+        }
+
         if (result.code === responses.vacation.registered) {
             return res.status(201).json({
                 success: true,

@@ -47,6 +47,7 @@ const RESPONSES = {
     employeeOutOfScope: 'EMPLOYEE_OUT_OF_SCOPE',
     pastDateNotAllowed: 'PAST_DATE_NOT_ALLOWED',
     noWorkDaysInRange: 'NO_WORK_DAYS_IN_RANGE',
+    outsideCurrentWorkYear: 'OUTSIDE_CURRENT_WORK_YEAR',
   },
 };
 
