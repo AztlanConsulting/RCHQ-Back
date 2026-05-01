@@ -276,7 +276,10 @@ async function verifyTwoFactorSetup(req) {
   if (!employee.tempTotpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "No hay configuracion pendiente de TwoFactorAuth" },
+      body: {
+        success: false,
+        message: "No hay configuracion pendiente de TwoFactorAuth",
+      },
     };
   }
 
@@ -304,7 +307,8 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "El tiempo de TwoFactorAuth setup ha expirado. Trate más adeltante.",
+        message:
+          "El tiempo de TwoFactorAuth setup ha expirado. Trate más adeltante.",
       },
     };
   }

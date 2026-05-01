@@ -5,7 +5,7 @@ const {
   findDocumentRowByEmployee,
 } = require("../../model/employee/get.model");
 const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
-const RESPONSES  = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 const fs = require("fs");
 
 const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);

@@ -22,7 +22,6 @@ exports.deleteDocument = async (req, res) => {
           LOG_ACTIONS.DOCUMENT_DELETED,
           getClientIp(req),
           id,
-
         );
       } catch (err) {
         console.error("Error creando log:", err);

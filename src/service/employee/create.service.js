@@ -12,7 +12,9 @@ const {
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
-const { employeeCreateSchema } = require("../../schemas/employee/create.schemas");
+const {
+  employeeCreateSchema,
+} = require("../../schemas/employee/create.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
 const { v4: uuidv4 } = require("uuid");
@@ -114,7 +116,10 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
     deleteFileIfExists(file?.path);
     return {
       type: RESPONSES.DOCUMENTS.NOT_ALLOW,
-      body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
+      body: {
+        success: false,
+        message: `Tipo de documento inválido: ${documentField}`,
+      },
     };
   }
 
@@ -133,13 +138,22 @@ exports.uploadDocument = async (employeeId, file, documentField) => {
     deleteFileIfExists(file?.path);
     return {
       type: RESPONSES.DOCUMENTS.ALREADY_EXIST,
-      body: { success: false, message: "Este documento ya existe", field: documentField },
+      body: {
+        success: false,
+        message: "Este documento ya existe",
+        field: documentField,
+      },
     };
   }
 
   const fileUrl = `uploads/documents/${file.filename}`;
   const resultDoc = existingRow
-    ? await updateDocumentField(existingRow.document_id, employeeId, documentField, fileUrl)
+    ? await updateDocumentField(
+        existingRow.document_id,
+        employeeId,
+        documentField,
+        fileUrl,
+      )
     : await createDocumentRowWithUrl(employeeId, documentField, fileUrl);
 
   return {
@@ -153,7 +167,10 @@ exports.updateDocument = async (employeeId, documentField, file) => {
     deleteFileIfExists(file?.path);
     return {
       type: RESPONSES.DOCUMENTS.NOT_ALLOW,
-      body: { success: false, message: `Tipo de documento inválido: ${documentField}` },
+      body: {
+        success: false,
+        message: `Tipo de documento inválido: ${documentField}`,
+      },
     };
   }
 
@@ -172,7 +189,10 @@ exports.updateDocument = async (employeeId, documentField, file) => {
     deleteFileIfExists(file?.path);
     return {
       type: RESPONSES.DOCUMENTS.NOT_FOUND,
-      body: { success: false, message: "No se encontró documento del empleado" },
+      body: {
+        success: false,
+        message: "No se encontró documento del empleado",
+      },
     };
   }
 

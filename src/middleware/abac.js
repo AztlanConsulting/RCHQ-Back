@@ -15,7 +15,7 @@ const authorize = (policyFn, getResource) => async (req, res, next) => {
     return res.status(403).json({ error: "Acceso denegado" });
   } catch (error) {
     console.error("error en authorize: ", error);
-    return res.status(500).json({ message: "Error del servidor"});
+    return res.status(500).json({ message: "Error del servidor" });
   }
 };
 

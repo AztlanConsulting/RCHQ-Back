@@ -6,7 +6,7 @@ const {
   uploadDocument,
   updateDocument,
 } = require("../../service/employee/create.service");
-const  RESPONSES = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
