@@ -892,6 +892,46 @@ describe("US28 - registerEmployeeVacation unit tests - defensive/security covera
     });
 
     describe("committed days and remaining days validation", () => {
+        test("returns outsideCurrentWorkYear when requested vacation ends outside current work year", async () => {
+            const outsideWorkYearStartDate = makeUTCDate(2027, 4, 9);
+            const outsideWorkYearEndDate = makeUTCDate(2027, 4, 10);
+
+            const result = await callRegisterVacation({
+                startDate: outsideWorkYearStartDate,
+                endDate: outsideWorkYearEndDate,
+            });
+
+            expect(result).toEqual({
+                code: responses.vacation.outsideCurrentWorkYear,
+            });
+
+            expect(getStartDate).toHaveBeenCalledWith(targetEmployeeId);
+            expect(getCommittedVacationsInRange).not.toHaveBeenCalled();
+            expect(registerVacation).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+            expect(uuidv4).not.toHaveBeenCalled();
+        });
+
+        test("allows vacation that ends one day before current work year ends", async () => {
+            const lastValidStartDate = makeUTCDate(2027, 4, 8);
+            const lastValidEndDate = makeUTCDate(2027, 4, 8);
+
+            const result = await callRegisterVacation({
+                startDate: lastValidStartDate,
+                endDate: lastValidEndDate,
+            });
+
+            expect(result.code).toBe(responses.vacation.registered);
+
+            expect(registerVacation).toHaveBeenCalledWith(
+                vacationId,
+                targetEmployeeId,
+                lastValidStartDate,
+                lastValidEndDate,
+                1
+            );
+        });
+        
         test("calls getCommittedVacationsInRange with exact target id and current work year range", async () => {
             const result = await callRegisterVacation();
 
