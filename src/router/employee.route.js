@@ -22,10 +22,11 @@ router.get(
     employeeGetController.getAll,
 );
 
-router.get("/add", verifyToken, employeeGetController.getAdd);
+router.get("/add", apiLimiter, verifyToken, employeeGetController.getAdd);
 
 router.post(
     "/add",
+    apiLimiter,
     verifyToken,
     upload.single("picture"),
     authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
@@ -34,6 +35,7 @@ router.post(
 
 router.get(
     "/:id/documents",
+    apiLimiter,
     verifyToken,
     authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
     employeeGetController.getDocumentsByEmployee,
@@ -41,6 +43,7 @@ router.get(
 
 router.post(
     "/:id/documents",
+    apiLimiter,
     verifyToken,
     authorize(modifyDocuments),
     uploadDocs.single("file"),
@@ -49,6 +52,7 @@ router.post(
 
 router.put(
     "/:id/documents/:field",
+    apiLimiter,
     verifyToken,
     authorize(modifyDocuments),
     uploadDocs.single("file"),
@@ -57,11 +61,12 @@ router.put(
 
 router.delete(
     "/:id/documents/:field",
+    apiLimiter,
     verifyToken,
     authorize(modifyDocuments),
     employeeDeleteController.deleteDocument,
 );
 
-router.get("/:id", employeeGetController.getById);
+router.get("/:id", apiLimiter, employeeGetController.getById);
 
 module.exports = router;
