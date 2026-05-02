@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -6,11 +8,7 @@ const employeeRouter = require("./router/employee.route");
 const userRouter = require("./router/user.route");
 
 const errorHandler = require("./middleware/ErrorHandler");
-
 const path = require("path");
-
-// Loads the variables in the enviorment file
-require("dotenv").config();
 
 const port = Number(process.env.RUNNING_PORT || 3000);
 
@@ -26,10 +24,15 @@ app.use(
 );
 
 app.use("/auth", authRouter);
-
+app.use("/employee", employeeRouter);
 app.use("/user", userRouter);
 
-app.use("/employee", employeeRouter);
+app.use("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "App funcionando correctamente",
+  });
+});
 
 app.use(errorHandler);
 

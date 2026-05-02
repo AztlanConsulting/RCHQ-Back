@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
+const { requireRole } = require("../middleware/rbac");
 const { authorize } = require("../middleware/abac");
 const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
@@ -23,6 +24,13 @@ router.get(
 );
 
 router.get("/add", apiLimiter, verifyToken, employeeGetController.getAdd);
+
+router.get(
+    "/employee-detail/:employeeId",
+    verifyToken,
+    requireRole("Administrador", "Coordinador"),
+    employeeGetController.getEmployeeDetail,
+);
 
 router.post(
     "/add",

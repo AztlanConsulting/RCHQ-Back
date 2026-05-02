@@ -3,7 +3,14 @@ const {
     getAllRoles,
     findDocumentRowByEmployee,
     getEmployees,
+    getEmployeeById,
+    getEmployeeAddress,
+    getEmployeeFaults,
+    getEmployeeWorkdays,
+    getEmployeeVacationRequests,
 } = require("../../model/employee/get.model");
+const { getHouseById } = require("../../model/house/get.model");
+const { decryptValue } = require("../../utils/password");
 const RESPONSES = require("../../utils/responses");
 
 exports.getEmployees = async (
@@ -73,4 +80,51 @@ exports.getDocumentsByEmployee = async (employeeId) => {
     }
 
     return { type: RESPONSES.DOCUMENTS.OK, body: docRow };
+};
+
+exports.getEmployeeDetail = async (userID, employeeId) => {
+    if (!userID || !employeeId) {
+        return {
+            code: RESPONSES.EMPLOYEE.BAD_REQUEST,
+        };
+    }
+
+    const employeeBasicInfo = await getEmployeeById(employeeId);
+
+    if (!employeeBasicInfo) {
+        return {
+            code: RESPONSES.EMPLOYEE.NOT_FOUND,
+        };
+    }
+
+    const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
+    if (decryptedSalary) {
+        employeeBasicInfo.salary = decryptedSalary;
+    }
+
+    const employeeAddress = await getEmployeeAddress(employeeId);
+    const employeeHouse = await getHouseById(employeeBasicInfo.houseId);
+
+    const employeeFaults = await getEmployeeFaults(employeeId);
+    const employeeWorkdays = await getEmployeeWorkdays(employeeId);
+    const employeeVacationRequests =
+        await getEmployeeVacationRequests(employeeId);
+
+    return {
+        code: RESPONSES.EMPLOYEE.FOUND,
+        data: {
+            employee: {
+                basicInfo: {
+                    employee: employeeBasicInfo,
+                    address: employeeAddress,
+                    house: employeeHouse,
+                },
+                adminInfo: {
+                    faults: employeeFaults,
+                    workdays: employeeWorkdays,
+                    vacationRequests: employeeVacationRequests,
+                },
+            },
+        },
+    };
 };
