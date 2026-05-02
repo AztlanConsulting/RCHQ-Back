@@ -1,4 +1,5 @@
 const validate = (schema, property = "body") => {
+  
   return (req, res, next) => {
     const dataToValidate =
       property === "all"

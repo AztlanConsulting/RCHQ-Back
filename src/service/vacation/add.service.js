@@ -74,8 +74,8 @@ exports.getRemainingVacations = async (employeeId) => {
     if ((currentMonth == baseMonth && currentDay >= baseDay) || currentMonth > baseMonth) {
         anniversaryAlreadyPassed = true;
     }
-
-    let startYear = currentDate.getUTCFullYear();
+    
+    let startYear = anniversaryAlreadyPassed ? currentDate.getUTCFullYear() : currentDate.getUTCFullYear() - 1;
     let endYear = startYear + 1;
 
     const startDate = new Date(Date.UTC(startYear, baseMonth, baseDay));
