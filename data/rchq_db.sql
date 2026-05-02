@@ -53,26 +53,9 @@ CREATE TABLE public.inside_certifications (
 );
 
 CREATE TABLE public.documents (
-	document_id uuid NOT NULL,
-	cv varchar(100) NULL,
-	birth_certificate varchar(100) NULL,
-	tax_status_certificate varchar(100) NULL,
-	address_certificate varchar(100) NULL,
-	nss varchar(100) NULL,
-	professional_id varchar(100) NULL,
-	education_certificate varchar(100) NULL,
-	medical_certificate varchar(100) NULL,
-	state_criminal_record_certificate varchar(100) NULL,
-	federal_criminal_record_certificate varchar(100) NULL,
-	first_recommendation_letter varchar(100) NULL,
-	second_recommendation_letter varchar(100) NULL,
-	driver_license varchar(100) NULL,
-	signed_regulation varchar(100) NULL,
-	signed_contract varchar(100) NULL,
-	signed_confidential_letter varchar(100) NULL,
-	signed_ethics_letter varchar(100) NULL,
-	induction_manual varchar(100) NULL,
-	CONSTRAINT documents_pk PRIMARY KEY (document_id)
+    document_id uuid NOT NULL,
+    name varchar(100) NOT NULL UNIQUE,
+    CONSTRAINT documents_pk PRIMARY KEY (document_id)
 );
 
 CREATE TABLE public.employee (

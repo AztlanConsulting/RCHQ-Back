@@ -124,4 +124,35 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-003', 'Documento de empleado actualizado', false),
 ('empl-004', 'Documento de empleado eliminado', false);
 
+-- =========================
+-- DOCUMENTOS
+-- =========================
+
+INSERT INTO public.documents (document_id, name)
+VALUES
+('c0000001-0000-4000-8000-000000000001', 'Curriculum Vitae'),
+('c0000001-0000-4000-8000-000000000002', 'Acta de Nacimiento'),
+('c0000001-0000-4000-8000-000000000003', 'CURP'),
+('c0000001-0000-4000-8000-000000000004', 'INE'),
+('c0000001-0000-4000-8000-000000000005', 'Constancia de Situación Fiscal'),
+('c0000001-0000-4000-8000-000000000006', 'Comprobante de Domicilio'),
+('c0000001-0000-4000-8000-000000000007', 'Número IMSS / NSS'),
+('c0000001-0000-4000-8000-000000000008', 'Cédula Profesional'),
+('c0000001-0000-4000-8000-000000000009', 'Título o Comprobante de Último Nivel de Estudios'),
+('c0000001-0000-4000-8000-000000000010', 'Certificado Médico'),
+('c0000001-0000-4000-8000-000000000011', 'Carta de No Antecedentes Penales Estatal'),
+('c0000001-0000-4000-8000-000000000012', 'Carta de No Antecedentes Penales Federal'),
+('c0000001-0000-4000-8000-000000000013', 'Cuenta Bancaria'),
+('c0000001-0000-4000-8000-000000000014', 'Carta de Recomendación 1'),
+('c0000001-0000-4000-8000-000000000015', 'Carta de Recomendación 2'),
+('c0000001-0000-4000-8000-000000000016', 'Licencia de Manejo'),
+('c0000001-0000-4000-8000-000000000017', 'Perfil del Puesto / Manual de Puesto'),
+('c0000001-0000-4000-8000-000000000018', 'Contrato'),
+('c0000001-0000-4000-8000-000000000019', 'Reglamento Interno de Trabajo Firmado'),
+('c0000001-0000-4000-8000-000000000020', 'Carta de Confidencialidad Firmada'),
+('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
+('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
+('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
+('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación');
+
 COMMIT;

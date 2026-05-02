@@ -15,26 +15,9 @@ model action {
 }
 
 model documents {
-  document_id                         String               @id(map: "documents_pk") @db.Uuid
-  cv                                  String?              @db.VarChar(100)
-  birth_certificate                   String?              @db.VarChar(100)
-  tax_status_certificate              String?              @db.VarChar(100)
-  address_certificate                 String?              @db.VarChar(100)
-  nss                                 String?              @db.VarChar(100)
-  professional_id                     String?              @db.VarChar(100)
-  education_certificate               String?              @db.VarChar(100)
-  medical_certificate                 String?              @db.VarChar(100)
-  state_criminal_record_certificate   String?              @db.VarChar(100)
-  federal_criminal_record_certificate String?              @db.VarChar(100)
-  first_recommendation_letter         String?              @db.VarChar(100)
-  second_recommendation_letter        String?              @db.VarChar(100)
-  driver_license                      String?              @db.VarChar(100)
-  signed_regulation                   String?              @db.VarChar(100)
-  signed_contract                     String?              @db.VarChar(100)
-  signed_confidential_letter          String?              @db.VarChar(100)
-  signed_ethics_letter                String?              @db.VarChar(100)
-  induction_manual                    String?              @db.VarChar(100)
-  employee_documents                  employee_documents[]
+  document_id        String               @id(map: "documents_pk") @db.Uuid
+  name               String               @unique @db.VarChar(100)
+  employee_documents employee_documents[]
 }
 
 model donation {

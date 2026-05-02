@@ -28,7 +28,7 @@ router.get("/add",
 router.get(
   "/employee-detail/:employeeId",
   verifyToken,
-  requireRole("ADMINISTRATOR", "COORDINATOR"),
+  requireRole("Admin", "Coordinator"),
   employeeGetController.getEmployeeDetail,
 );
 
