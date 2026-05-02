@@ -1,4 +1,11 @@
 const prisma = require("../../prisma");
+const {
+  mapEmployee,
+  mapEmployeeAddress,
+  mapEmployeeFaults,
+  mapEmployeeWorkdays,
+  mapEmployeeVacationRequests
+} = require("../../utils/mappers/employee.map");
 
 exports.findByCurp = async (curp) => {
   return await prisma.employee.findUnique({
@@ -76,4 +83,115 @@ exports.getEmployees = async (houseId, active, search, skip, take) => {
     })),
     total,
   };
+};
+
+exports.findEmployeeByEmail = async (email) => {
+  const employee = await prisma.employee.findFirst({
+    where: {
+      email: {
+        equals: email.trim(),
+        mode: "insensitive",
+      },
+    },
+    include: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+  return mapEmployee(employee);
+};
+
+exports.getEmployeeById = async (employeeId) => {
+  const employee = await prisma.employee.findUnique({
+    where: { employee_id: employeeId },
+    include: {
+      role: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+  return mapEmployee(employee);
+};
+
+exports.getEmployeeAddress = async (employeeId) => {
+  const employeeAddress = await prisma.employee_address.findFirst({
+    where: { employee_id: employeeId },
+  });
+
+  return mapEmployeeAddress(employeeAddress);
+};
+
+exports.getEmployeeFaults = async (employeeId) => {
+  const employeeFaults = await prisma.employee.findUnique({
+    where: { employee_id: employeeId },
+    select: {
+      employee_fault: {
+        select: {
+          fault: {
+            select: {
+              fault_id: true,
+              date: true,
+              description: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return mapEmployeeFaults(employeeFaults);
+};
+
+exports.getEmployeeWorkdays = async (employeeId) => {
+  const employeeWorkdays = await prisma.employee.findUnique({
+    where: { employee_id: employeeId },
+    select: {
+      employee_workday: {
+        select: {
+          start: true,
+          end: true,
+          workday: {
+            select: {
+              workday_id: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return mapEmployeeWorkdays(employeeWorkdays);
+};
+
+exports.getEmployeeVacationRequests = async (employeeId) => {
+  const employeeVacationRequests = await prisma.employee.findUnique({
+    where: { employee_id: employeeId },
+    select: {
+      vacations_request: {
+        where: {
+          status: 1,
+          start: {
+            gte: new Date(`${new Date().getFullYear()}-01-01`),
+            lt: new Date(`${new Date().getFullYear() + 1}-01-01`),
+          },
+        },
+        select: {
+          vacations_request_id: true,
+          start: true,
+          end: true,
+          status: true,
+          feedback: true,
+        },
+        orderBy: { start: "desc" },
+      },
+    },
+  });
+
+  return mapEmployeeVacationRequests(employeeVacationRequests);
 };
