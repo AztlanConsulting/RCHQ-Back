@@ -5,7 +5,9 @@ const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: { db: { url: process.env.TEST_DATABASE_URL } },
+});
 
 // ─── Constantes de prueba ─────────────────────────────────
 const TEST_HOUSE_ID = randomUUID();
@@ -67,6 +69,7 @@ const seedDependencies = async () => {
         surname: "Perez",
         email: `juan${i}@test.com`,
         password: "123456",
+        type: "nomina",
         curp: `TEST900101HDFRR${String(i).padStart(2, "0")}`,
         birth_date: new Date("1990-01-01"),
         start_date: new Date(),
@@ -74,6 +77,7 @@ const seedDependencies = async () => {
         has_first_login: false,
         is_active_two_factor_auth: false,
         failed_login_attempts: 0,
+        failed_two_factor_auth_attempts: 0,
       },
     });
   }

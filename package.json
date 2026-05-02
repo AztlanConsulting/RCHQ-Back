@@ -4,6 +4,7 @@
   "description": "xd",
   "main": "src/index.js",
   "scripts": {
+    "encrypt": "node scripts/encrypt-cli.js",
     "start": "nodemon src/index.js",
     "start:test": "dotenv -e .env.test -- nodemon src/index.js",
     "test": "jest",

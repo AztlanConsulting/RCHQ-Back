@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
+const { requireRole } = require("../middleware/rbac");
 const { authorize } = require("../middleware/abac");
 const upload = require("../middleware/upload");
 const {
@@ -13,14 +14,23 @@ const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
-router.get(
-  "/getAll",
-  verifyToken,
-  authorize(employeePolicy),
-  employeeGetController.getAll,
+router.get("/getAll", 
+  verifyToken, 
+  authorize(employeePolicy), 
+  employeeGetController.getAll
 );
 
-router.get("/add", verifyToken, employeeGetController.getAdd);
+router.get("/add", 
+  verifyToken, 
+  employeeGetController.getAdd
+);
+
+router.get(
+  "/employee-detail/:employeeId",
+  verifyToken,
+  requireRole("ADMINISTRATOR", "COORDINATOR"),
+  employeeGetController.getEmployeeDetail,
+);
 
 router.post(
   "/add",
