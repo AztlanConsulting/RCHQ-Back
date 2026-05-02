@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
-const { requireRole } = require("../middleware/rbac");
+const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { authorize } = require("../middleware/abac");
 const upload = require("../middleware/upload");
 const {
@@ -15,7 +15,9 @@ const employeeAddController = require("../controller/employee/create.controller"
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
 router.get("/getAll", 
-  verifyToken, 
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("viewEmployees"), 
   authorize(employeePolicy), 
   employeeGetController.getAll
 );
@@ -28,7 +30,8 @@ router.get("/add",
 router.get(
   "/employee-detail/:employeeId",
   verifyToken,
-  requireRole("ADMINISTRATOR", "COORDINATOR"),
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("viewEmployees"),
   employeeGetController.getEmployeeDetail,
 );
 
@@ -43,6 +46,7 @@ router.post(
 router.get(
   "/:id/documents",
   verifyToken,
+  requirePrivileges("viewDocuments"),
   authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
   employeeGetController.getDocumentsByEmployee,
 );
@@ -50,6 +54,8 @@ router.get(
 router.post(
   "/:id/documents",
   verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageDocuments"),
   authorize(modifyDocuments),
   uploadDocs.single("file"),
   employeeAddController.uploadDocument,
@@ -58,6 +64,8 @@ router.post(
 router.put(
   "/:id/documents/:field",
   verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageDocuments"),
   authorize(modifyDocuments),
   uploadDocs.single("file"),
   employeeAddController.updateDocument,
@@ -66,6 +74,8 @@ router.put(
 router.delete(
   "/:id/documents/:field",
   verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageDocuments"),
   authorize(modifyDocuments),
   employeeDeleteController.deleteDocument,
 );

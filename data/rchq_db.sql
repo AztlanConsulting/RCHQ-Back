@@ -39,6 +39,20 @@ CREATE TABLE public.role (
 	CONSTRAINT role_pk PRIMARY KEY (role_id)
 );
 
+CREATE TABLE public.privileges (
+  privilege_id  uuid        NOT NULL,
+  name          varchar(50) NOT NULL UNIQUE,
+  CONSTRAINT privileges_pk PRIMARY KEY (privilege_id)
+);
+
+CREATE TABLE public.role_privilege (
+  role_id       uuid NOT NULL,
+  privilege_id  uuid NOT NULL,
+  CONSTRAINT role_privilege_pk PRIMARY KEY (role_id, privilege_id),
+  CONSTRAINT role_privilege_role_fk      FOREIGN KEY (role_id)      REFERENCES public.role(role_id)      ON DELETE CASCADE,
+  CONSTRAINT role_privilege_privilege_fk FOREIGN KEY (privilege_id) REFERENCES public.privileges(privilege_id) ON DELETE CASCADE
+);
+
 CREATE TABLE public.event_type (
 	event_type_id uuid NOT NULL,
 	name varchar(30) NOT NULL UNIQUE,

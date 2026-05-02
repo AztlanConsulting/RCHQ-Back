@@ -55,12 +55,10 @@ const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     try {
       if (!req.user) {
-        console.log(req.user);
         return res.status(401).json({ message: "User not authenticated" });
       }
 
       if (!allowedRoles.includes(req.user.role)) {
-        console.log(req.user.role);
         return res.status(403).json({ message: "Role not allowed" });
       }
       next();
