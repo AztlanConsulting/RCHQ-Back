@@ -3,6 +3,7 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { authorize } = require("../middleware/abac");
+const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
 const {
   employeePolicy,
@@ -14,18 +15,17 @@ const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
-router.get("/getAll", 
-  verifyToken,
-  requireRole("Admin", "Coordinador"),
-  requirePrivileges("viewEmployees"), 
-  authorize(employeePolicy), 
-  employeeGetController.getAll
+router.get(
+    "/getAll",
+    apiLimiter,
+    verifyToken,
+    requireRole("Admin", "Coordinador"),
+    requirePrivileges("viewEmployees"), 
+    authorize(employeePolicy),
+    employeeGetController.getAll,
 );
 
-router.get("/add", 
-  verifyToken, 
-  employeeGetController.getAdd
-);
+router.get("/add", apiLimiter, verifyToken, employeeGetController.getAdd);
 
 router.get(
   "/employee-detail/:employeeId",
@@ -36,15 +36,17 @@ router.get(
 );
 
 router.post(
-  "/add",
-  verifyToken,
-  upload.single("picture"),
-  authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
-  employeeAddController.postAdd,
+    "/add",
+    apiLimiter,
+    verifyToken,
+    upload.single("picture"),
+    authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
+    employeeAddController.postAdd,
 );
 
 router.get(
   "/:id/documents",
+  apiLimiter,
   verifyToken,
   requirePrivileges("viewDocuments"),
   authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
@@ -53,6 +55,7 @@ router.get(
 
 router.post(
   "/:id/documents",
+  apiLimiter,
   verifyToken,
   requireRole("Admin", "Coordinador"),
   requirePrivileges("manageDocuments"),
@@ -63,6 +66,7 @@ router.post(
 
 router.put(
   "/:id/documents/:field",
+  apiLimiter,
   verifyToken,
   requireRole("Admin", "Coordinador"),
   requirePrivileges("manageDocuments"),
@@ -73,6 +77,7 @@ router.put(
 
 router.delete(
   "/:id/documents/:field",
+  apiLimiter,
   verifyToken,
   requireRole("Admin", "Coordinador"),
   requirePrivileges("manageDocuments"),
@@ -80,6 +85,6 @@ router.delete(
   employeeDeleteController.deleteDocument,
 );
 
-router.get("/:id", employeeGetController.getById);
+router.get("/:id", apiLimiter, employeeGetController.getById);
 
 module.exports = router;
