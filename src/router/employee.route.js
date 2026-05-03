@@ -25,7 +25,13 @@ router.get(
     employeeGetController.getAll,
 );
 
-router.get("/add", apiLimiter, verifyToken, employeeGetController.getAdd);
+router.get("/add", 
+  apiLimiter, 
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("createEmployees"),
+  authorize(employeePolicy, (req) => ({ house_id: req.query.house_id })), 
+  employeeGetController.getAdd);
 
 router.get(
   "/employee-detail/:employeeId",
@@ -40,6 +46,8 @@ router.post(
     apiLimiter,
     verifyToken,
     upload.single("picture"),
+    requireRole("Admin", "Coordinador"),
+    requirePrivileges("createEmployees"),
     authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
     employeeAddController.postAdd,
 );
@@ -85,6 +93,11 @@ router.delete(
   employeeDeleteController.deleteDocument,
 );
 
-router.get("/:id", apiLimiter, employeeGetController.getById);
+router.get("/:id", 
+  apiLimiter, 
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("viewEmployees"),
+  employeeGetController.getById);
 
 module.exports = router;

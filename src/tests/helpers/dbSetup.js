@@ -186,13 +186,12 @@ async function seedDb({ passwordOverride } = {}) {
 }
 
 async function cleanDb() {
-  await prisma.logs.deleteMany({ where: { employee_id: IDS.employee } });
-  await prisma.employee_documents.deleteMany({
-    where: { employee_id: IDS.employee },
-  });
-  await prisma.employee.deleteMany({ where: { employee_id: IDS.employee } });
-  await prisma.employee.deleteMany({ where: { email: SEED.employee.email } });
-  await prisma.employee.deleteMany({ where: { curp: SEED.employee.curp } });
+  await prisma.logs.deleteMany();
+  await prisma.employee_documents.deleteMany();
+  await prisma.documents.deleteMany();
+
+  await prisma.employee.deleteMany();
+
   await prisma.role.deleteMany({ where: { role_id: IDS.role } });
   await prisma.role.deleteMany({ where: { name: SEED.role.name } });
   await prisma.house.deleteMany({ where: { house_id: IDS.house } });

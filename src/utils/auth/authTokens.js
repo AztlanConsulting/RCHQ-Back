@@ -32,9 +32,7 @@ async function buildUserPayload(employee) {
 
 exports.buildSessionToken = async (employee) => {
   const payload = await buildUserPayload(employee);
-  console.log("payload antes de generar token:", payload);
   const token = generateToken(payload);
-  console.log("token generado:", token);
   return token;
 };
 
