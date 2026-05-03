@@ -1,14 +1,9 @@
--- Minimal seed: houses, roles, one employee, and log actions
--- Login: andre@gmail.com / Andatti67
--- Re-run safe
+-- =============================================================
+-- 5. SEED
+-- =============================================================
 
-
--- =========================
--- CATÁLOGOS
--- =========================
-
-INSERT INTO public.house (house_id, name, location, phone_number, description, image)
-VALUES 
+-- Casas
+INSERT INTO public.house (house_id, name, location, phone_number, description, image) VALUES
 ('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', 'boop'),
 ('a0000001-0000-4000-8000-000000000002', 'Sonríe villa infantil', 'Querétaro, Qro.', '4420000001', 'Institución de asistencia infantil', 'default_house'),
 ('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'Querétaro, Qro.', '4420000002', 'Hogar para niños y niñas', 'default_house'),
@@ -21,12 +16,13 @@ VALUES
 ('a0000001-0000-4000-8000-000000000010', 'Proyecto de Vida I.A.P', 'Querétaro, Qro.', '4420000009', 'Desarrollo humano y social', 'default_house'),
 ('a0000001-0000-4000-8000-000000000011', 'Puerta Abierta I.A.P', 'Querétaro, Qro.', '4420000010', 'Atención a niñas y adolescentes', 'default_house'),
 ('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'Querétaro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house'),
-('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house');
+('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house')
+ON CONFLICT DO NOTHING;
 
-INSERT INTO public.role (role_id, name)
-VALUES 
+-- Roles
+INSERT INTO public.role (role_id, name) VALUES
 ('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
-('a0000002-0000-4000-8000-000000000002', 'Admin'), -- Utilizo Admin/Administrador consolidado
+('a0000002-0000-4000-8000-000000000002', 'Admin'),
 ('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
 ('a0000002-0000-4000-8000-000000000004', 'Lavandería'),
 ('a0000002-0000-4000-8000-000000000005', 'Responsable del cuidado de NNA'),
@@ -47,55 +43,37 @@ VALUES
 ('a0000002-0000-4000-8000-000000000020', 'Auxiliar de Limpieza'),
 ('a0000002-0000-4000-8000-000000000021', 'Auxiliar de Lavandería'),
 ('a0000002-0000-4000-8000-000000000022', 'Chofer'),
-('a0000002-0000-4000-8000-000000000023', 'Cocinera');
+('a0000002-0000-4000-8000-000000000023', 'Cocinera')
+ON CONFLICT DO NOTHING;
 
+-- Empleado de prueba
+-- Login: andre@gmail.com / Andatti67
 INSERT INTO public.employee (
-  employee_id,
-  house_id,
-  role_id,
-  name,
-  surname,
-  is_active,
-  email,
-  password,
-  has_first_login,
-  failed_login_attempts,
-  totp_secret,
-  curp,
-  rfc,
-  birth_date,
-  picture,
-  start_date,
-  nss,
-  bank_account,
-  blocked_until,
-  temp_totp_secret,
-  temp_totp_secret_created_at
+    employee_id, house_id, role_id, name, surname,
+    is_active, email, password, has_first_login,
+    failed_login_attempts, totp_secret, curp, rfc,
+    birth_date, picture, start_date, nss, bank_account,
+    blocked_until, temp_totp_secret, temp_totp_secret_created_at,
+    type
 )
 VALUES (
-  'b8f54b14-701e-4e87-a019-caef53dcda99', -- UUID fijo para que sea Re-run safe y testeable
-  (SELECT house_id FROM house WHERE name = 'Desarrollo' LIMIT 1),
-  (SELECT role_id FROM role WHERE name = 'Admin' LIMIT 1),
-  'Carlos',
-  'Ramírez',
-  true,
-  'andre@gmail.com',
-  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
-  true, -- En true para evitar el modal de "cambio de contraseña" inicial
-  0,
-  NULL,
-  'XAXX010101HDFXXX01',
-  NULL,
-  '2003-10-04',
-  'boop',
-  '2026-04-09',
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL
-);
+    'b8f54b14-701e-4e87-a019-caef53dcda99',
+    (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+    (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
+    'Carlos', 'Ramírez',
+    true,
+    'andre@gmail.com',
+    '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+    true,
+    0, NULL,
+    'XAXX010101HDFXXX01',
+    NULL, '2003-10-04', 'boop', '2026-04-09',
+    NULL, NULL, NULL, NULL, NULL,
+    'nomina'
+)
+ON CONFLICT DO NOTHING;
 
+-- Acciones de log
 INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-001', 'Intento fallido de autenticación', false),
 ('auth-002', 'Cuenta bloqueada temporalmente por múltiples intentos fallidos', false),
@@ -122,14 +100,11 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
-('empl-004', 'Documento de empleado eliminado', false);
+('empl-004', 'Documento de empleado eliminado', false)
+ON CONFLICT DO NOTHING;
 
--- =========================
--- DOCUMENTOS
--- =========================
-
-INSERT INTO public.documents (document_id, name)
-VALUES
+-- Tipos de documento
+INSERT INTO public.documents (document_id, name) VALUES
 ('c0000001-0000-4000-8000-000000000001', 'Curriculum Vitae'),
 ('c0000001-0000-4000-8000-000000000002', 'Acta de Nacimiento'),
 ('c0000001-0000-4000-8000-000000000003', 'CURP'),
@@ -153,6 +128,7 @@ VALUES
 ('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
 ('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
 ('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
-('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación');
+('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación')
+ON CONFLICT DO NOTHING;
 
 COMMIT;

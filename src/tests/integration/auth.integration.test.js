@@ -21,435 +21,435 @@ const TEST_ROLE_NAME = "test-role-auth-it";
 
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
-  await prisma.house.upsert({
-    where: { house_id: TEST_HOUSE_ID },
-    update: {},
-    create: {
-      house_id: TEST_HOUSE_ID,
-      name: "Casa de Prueba Integration",
-      location: "Test Location",
-      phone_number: "4421234567",
-      description: "Casa usada solo para tests de integración",
-      image: "test-image.jpg",
-    },
-  });
-  await prisma.role.upsert({
-    where: { role_id: TEST_ROLE_ID },
-    update: {},
-    create: {
-      role_id: TEST_ROLE_ID,
-      name: TEST_ROLE_NAME,
-    },
-  });
-  // createLog() FK: every action_id used in app code must exist in `action`
-  for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {
-    await prisma.action.upsert({
-      where: { action_id: actionId },
-      update: {},
-      create: {
-        action_id: actionId,
-        description: `IT seed: ${key}`.slice(0, 120),
-        important: false,
-      },
+    await prisma.house.upsert({
+        where: { house_id: TEST_HOUSE_ID },
+        update: {},
+        create: {
+            house_id: TEST_HOUSE_ID,
+            name: "Casa de Prueba Integration",
+            location: "Test Location",
+            phone_number: "4421234567",
+            description: "Casa usada solo para tests de integración",
+            image: "test-image.jpg",
+        },
     });
-  }
+    await prisma.role.upsert({
+        where: { role_id: TEST_ROLE_ID },
+        update: {},
+        create: {
+            role_id: TEST_ROLE_ID,
+            name: TEST_ROLE_NAME,
+        },
+    });
+    // createLog() FK: every action_id used in app code must exist in `action`
+    for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {
+        await prisma.action.upsert({
+            where: { action_id: actionId },
+            update: {},
+            create: {
+                action_id: actionId,
+                description: `IT seed: ${key}`.slice(0, 120),
+                important: false,
+            },
+        });
+    }
 };
 
 const createTestEmployee = async (overrides = {}) => {
-  const hashedPwd = await bcrypt.hash(TEST_PASSWORD, 10);
-  return prisma.employee.create({
-    data: {
-      employee_id: TEST_EMPLOYEE_ID,
-      house_id: TEST_HOUSE_ID,
-      role_id: TEST_ROLE_ID,
-      email: TEST_EMAIL,
-      password: hashedPwd,
-      name: "Test",
-      surname: "User",
-      type: "internal",
-      curp: TEST_CURP,
-      start_date: new Date("2024-01-01"),
-      has_first_login: false,
-      is_active: true,
-      is_active_two_factor_auth: false,
-      failed_login_attempts: 0,
-      failed_two_factor_auth_attempts: 0,
-      salary: "long-encrypted-salary-value",
-      ...overrides,
-    },
-  });
+    const hashedPwd = await bcrypt.hash(TEST_PASSWORD, 10);
+    return prisma.employee.create({
+        data: {
+            employee_id: TEST_EMPLOYEE_ID,
+            house_id: TEST_HOUSE_ID,
+            role_id: TEST_ROLE_ID,
+            email: TEST_EMAIL,
+            password: hashedPwd,
+            name: "Test",
+            surname: "User",
+            type: "internal",
+            curp: TEST_CURP,
+            start_date: new Date("2024-01-01"),
+            has_first_login: false,
+            is_active: true,
+            is_active_two_factor_auth: false,
+            failed_login_attempts: 0,
+            failed_two_factor_auth_attempts: 0,
+            salary: "long-encrypted-salary-value",
+            ...overrides,
+        },
+    });
 };
 
 const generateSessionToken = () => {
-  const jwt = require("jsonwebtoken");
-  return jwt.sign(
-    {
-      id: TEST_EMPLOYEE_ID,
-      email: TEST_EMAIL,
-      name: "Test User",
-      role: TEST_ROLE_NAME,
-      privileges: [],
-      tokenType: "SESSION",
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" },
-  );
+    const jwt = require("jsonwebtoken");
+    return jwt.sign(
+        {
+            id: TEST_EMPLOYEE_ID,
+            email: TEST_EMAIL,
+            name: "Test User",
+            role: TEST_ROLE_NAME,
+            privileges: [],
+            tokenType: "SESSION",
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" },
+    );
 };
 
 const cleanDb = async () => {
-  await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
-  await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
+    await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
+    await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
 };
 
 // ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
-  await cleanDb();
-  await seedDependencies();
-  await seedActions();
+    await cleanDb();
+    await seedDependencies();
+    await seedActions();
 });
 afterEach(async () => {
-  await cleanDb();
+    await cleanDb();
 });
 afterAll(async () => {
-  await prisma.role.deleteMany({ where: { role_id: TEST_ROLE_ID } });
-  await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
-  await prisma.$disconnect();
+    await prisma.role.deleteMany({ where: { role_id: TEST_ROLE_ID } });
+    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
+    await prisma.$disconnect();
 });
 
 // ─── LOGIN ────────────────────────────────────────────────
 describe("POST /auth/login - integration", () => {
-  it("retorna 200 y token con credenciales válidas", async () => {
-    // Arrange
-    await createTestEmployee();
+    it("retorna 200 y token con credenciales válidas", async () => {
+        // Arrange
+        await createTestEmployee();
 
-    // Act
-    const res = await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+        // Act
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
-    // Assert
-    expect(res.statusCode).toBe(200);
-    expect(res.body.data).toHaveProperty("token");
-    expect(res.body.data.user.email).toBe(TEST_EMAIL);
-  });
-
-  it("retorna 401 con contraseña incorrecta", async () => {
-    // Arrange
-    await createTestEmployee();
-
-    // Act
-    const res = await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: "wrongpass" });
-
-    // Assert
-    expect(res.statusCode).toBe(401);
-    expect(res.body.code).toBe("INVALID_CREDENTIALS");
-  });
-
-  it("retorna 401 si el usuario no existe", async () => {
-    // Arrange — no se crea empleado
-
-    // Act
-    const res = await request(app)
-      .post("/auth/login")
-      .send({ email: "noexiste@test.com", password: TEST_PASSWORD });
-
-    // Assert
-    expect(res.statusCode).toBe(401);
-  });
-
-  it("retorna 400 si el email tiene formato inválido", async () => {
-    // Arrange — payload inválido
-
-    // Act
-    const res = await request(app)
-      .post("/auth/login")
-      .send({ email: "notanemail", password: TEST_PASSWORD });
-
-    // Assert
-    expect(res.statusCode).toBe(400);
-    expect(res.body.code).toBe("VALIDATION_ERROR");
-  });
-
-  it("incrementa failed_login_attempts en BD al fallar", async () => {
-    // Arrange
-    await createTestEmployee();
-
-    // Act
-    await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: "wrongpass" });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
+        // Assert
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toHaveProperty("token");
+        expect(res.body.data.user.email).toBe(TEST_EMAIL);
     });
 
-    // Assert
-    expect(emp.failed_login_attempts).toBe(1);
-  });
+    it("retorna 401 con contraseña incorrecta", async () => {
+        // Arrange
+        await createTestEmployee();
 
-  it("bloquea la cuenta en BD después de 3 intentos fallidos", async () => {
-    // Arrange
-    await createTestEmployee();
+        // Act
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: "wrongpass" });
 
-    // Act
-    await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: "wrong" });
-    await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: "wrong" });
-    await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: "wrong" });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
+        // Assert
+        expect(res.statusCode).toBe(401);
+        expect(res.body.code).toBe("INVALID_CREDENTIALS");
     });
 
-    // Assert
-    expect(emp.blocked_until).not.toBeNull();
-  });
+    it("retorna 401 si el usuario no existe", async () => {
+        // Arrange — no se crea empleado
 
-  it("retorna preTwoFactorAuthToken cuando el usuario tiene TwoFactorAuth activo", async () => {
-    // Arrange
-    await createTestEmployee({
-      is_active_two_factor_auth: true,
-      totp_secret: "FAKESECRET",
+        // Act
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: "noexiste@test.com", password: TEST_PASSWORD });
+
+        // Assert
+        expect(res.statusCode).toBe(401);
     });
 
-    // Act
-    const res = await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+    it("retorna 400 si el email tiene formato inválido", async () => {
+        // Arrange — payload inválido
 
-    // Assert
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty("preTwoFactorAuthToken");
-    expect(res.body.isActiveTwoFactorAuth).toBe(true);
-  });
+        // Act
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: "notanemail", password: TEST_PASSWORD });
 
-  it("limpia el estado de seguridad en BD tras login exitoso", async () => {
-    // Arrange
-    await createTestEmployee({ failed_login_attempts: 2 });
-
-    // Act
-    await request(app)
-      .post("/auth/login")
-      .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
+        // Assert
+        expect(res.statusCode).toBe(400);
+        expect(res.body.code).toBe("VALIDATION_ERROR");
     });
 
-    // Assert
-    expect(emp.failed_login_attempts).toBe(0);
-    expect(emp.blocked_until).toBeNull();
-  });
+    it("incrementa failed_login_attempts en BD al fallar", async () => {
+        // Arrange
+        await createTestEmployee();
+
+        // Act
+        await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: "wrongpass" });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+
+        // Assert
+        expect(emp.failed_login_attempts).toBe(1);
+    });
+
+    it("bloquea la cuenta en BD después de 3 intentos fallidos", async () => {
+        // Arrange
+        await createTestEmployee();
+
+        // Act
+        await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: "wrong" });
+        await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: "wrong" });
+        await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: "wrong" });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+
+        // Assert
+        expect(emp.blocked_until).not.toBeNull();
+    });
+
+    it("retorna preTwoFactorAuthToken cuando el usuario tiene TwoFactorAuth activo", async () => {
+        // Arrange
+        await createTestEmployee({
+            is_active_two_factor_auth: true,
+            totp_secret: "FAKESECRET",
+        });
+
+        // Act
+        const res = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+
+        // Assert
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty("preTwoFactorAuthToken");
+        expect(res.body.isActiveTwoFactorAuth).toBe(true);
+    });
+
+    it("limpia el estado de seguridad en BD tras login exitoso", async () => {
+        // Arrange
+        await createTestEmployee({ failed_login_attempts: 2 });
+
+        // Act
+        await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+
+        // Assert
+        expect(emp.failed_login_attempts).toBe(0);
+        expect(emp.blocked_until).toBeNull();
+    });
 });
 
 // ─── SETUP 2FA ────────────────────────────────────────────
 describe("POST /auth/2fa/setup - integration", () => {
-  it("guarda temp_totp_secret en BD y retorna QR", async () => {
-    // Arrange
-    await createTestEmployee();
-    const token = generateSessionToken();
+    it("guarda temp_totp_secret en BD y retorna QR", async () => {
+        // Arrange
+        await createTestEmployee();
+        const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/setup")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ id: TEST_EMPLOYEE_ID });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/setup")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ id: TEST_EMPLOYEE_ID });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+
+        // Assert
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toHaveProperty("qrImage");
+        expect(res.body.nextStep).toBe("VERIFY_TWO_FACTOR_AUTH_SETUP");
+        expect(emp.temp_totp_secret).not.toBeNull();
     });
 
-    // Assert
-    expect(res.statusCode).toBe(200);
-    expect(res.body.data).toHaveProperty("qrImage");
-    expect(res.body.nextStep).toBe("VERIFY_TWO_FACTOR_AUTH_SETUP");
-    expect(emp.temp_totp_secret).not.toBeNull();
-  });
+    it("retorna 409 si TwoFactorAuth ya está configurado en BD", async () => {
+        // Arrange
+        await createTestEmployee({
+            totp_secret: "EXISTINGSECRET",
+            is_active_two_factor_auth: true,
+        });
+        const token = generateSessionToken();
 
-  it("retorna 409 si TwoFactorAuth ya está configurado en BD", async () => {
-    // Arrange
-    await createTestEmployee({
-      totp_secret: "EXISTINGSECRET",
-      is_active_two_factor_auth: true,
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/setup")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ id: TEST_EMPLOYEE_ID });
+
+        // Assert
+        expect(res.statusCode).toBe(409);
     });
-    const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/setup")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ id: TEST_EMPLOYEE_ID });
+    it("retorna 401 sin token de sesión", async () => {
+        // Arrange — no se manda Authorization header
 
-    // Assert
-    expect(res.statusCode).toBe(409);
-  });
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/setup")
+            .send({ id: TEST_EMPLOYEE_ID });
 
-  it("retorna 401 sin token de sesión", async () => {
-    // Arrange — no se manda Authorization header
-
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/setup")
-      .send({ id: TEST_EMPLOYEE_ID });
-
-    // Assert
-    expect(res.statusCode).toBe(401);
-  });
+        // Assert
+        expect(res.statusCode).toBe(401);
+    });
 });
 
 // ─── VERIFY 2FA SETUP ─────────────────────────────────────
 describe("POST /auth/2fa/verify - integration", () => {
-  it("retorna 409 si no hay setup pendiente en BD", async () => {
-    // Arrange
-    await createTestEmployee({ temp_totp_secret: null });
-    const token = generateSessionToken();
+    it("retorna 409 si no hay setup pendiente en BD", async () => {
+        // Arrange
+        await createTestEmployee({ temp_totp_secret: null });
+        const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/verify")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ token: "123456" });
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/verify")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ token: "123456" });
 
-    // Assert
-    expect(res.statusCode).toBe(409);
-  });
-
-  it("retorna 409 y limpia el secret en BD si el setup expiró", async () => {
-    // Arrange
-    await createTestEmployee({
-      temp_totp_secret: "SECRETBASE32",
-      temp_totp_secret_created_at: new Date(Date.now() - 20 * 60 * 1000),
-    });
-    const token = generateSessionToken();
-
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/verify")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ token: "123456" });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
+        // Assert
+        expect(res.statusCode).toBe(409);
     });
 
-    // Assert
-    expect(res.statusCode).toBe(409);
-    expect(emp.temp_totp_secret).toBeNull();
-  });
+    it("retorna 409 y limpia el secret en BD si el setup expiró", async () => {
+        // Arrange
+        await createTestEmployee({
+            temp_totp_secret: "SECRETBASE32",
+            temp_totp_secret_created_at: new Date(Date.now() - 20 * 60 * 1000),
+        });
+        const token = generateSessionToken();
+
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/verify")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ token: "123456" });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+
+        // Assert
+        expect(res.statusCode).toBe(409);
+        expect(emp.temp_totp_secret).toBeNull();
+    });
 });
 
 // ─── DISABLE 2FA ──────────────────────────────────────────
 describe("POST /auth/2fa/disable - integration", () => {
-  it("desactiva TwoFactorAuth y limpia secrets en BD con contraseña correcta", async () => {
-    // Arrange
-    await createTestEmployee({
-      is_active_two_factor_auth: true,
-      totp_secret: "FAKESECRET",
-    });
-    const token = generateSessionToken();
+    it("desactiva TwoFactorAuth y limpia secrets en BD con contraseña correcta", async () => {
+        // Arrange
+        await createTestEmployee({
+            is_active_two_factor_auth: true,
+            totp_secret: "FAKESECRET",
+        });
+        const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/disable")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ password: TEST_PASSWORD });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
-    });
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/disable")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ password: TEST_PASSWORD });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
 
-    // Assert
-    expect(res.statusCode).toBe(200);
-    expect(res.body.nextStep).toBe("TWO_FACTOR_AUTH_DISABLED");
-    expect(emp.totp_secret).toBeNull();
-    expect(emp.is_active_two_factor_auth).toBe(false);
-  });
-
-  it("retorna 401 con contraseña incorrecta y NO modifica la BD", async () => {
-    // Arrange
-    await createTestEmployee({
-      is_active_two_factor_auth: true,
-      totp_secret: "FAKESECRET",
-    });
-    const token = generateSessionToken();
-
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/disable")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ password: "wrongpass" });
-    const emp = await prisma.employee.findUnique({
-      where: { employee_id: TEST_EMPLOYEE_ID },
+        // Assert
+        expect(res.statusCode).toBe(200);
+        expect(res.body.nextStep).toBe("TWO_FACTOR_AUTH_DISABLED");
+        expect(emp.totp_secret).toBeNull();
+        expect(emp.is_active_two_factor_auth).toBe(false);
     });
 
-    // Assert
-    expect(res.statusCode).toBe(401);
-    expect(emp.totp_secret).toBe("FAKESECRET");
-    expect(emp.is_active_two_factor_auth).toBe(true);
-  });
+    it("retorna 401 con contraseña incorrecta y NO modifica la BD", async () => {
+        // Arrange
+        await createTestEmployee({
+            is_active_two_factor_auth: true,
+            totp_secret: "FAKESECRET",
+        });
+        const token = generateSessionToken();
 
-  it("retorna 409 si TwoFactorAuth no está activo en BD", async () => {
-    // Arrange
-    await createTestEmployee({
-      is_active_two_factor_auth: false,
-      totp_secret: null,
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/disable")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ password: "wrongpass" });
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+
+        // Assert
+        expect(res.statusCode).toBe(401);
+        expect(emp.totp_secret).toBe("FAKESECRET");
+        expect(emp.is_active_two_factor_auth).toBe(true);
     });
-    const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .post("/auth/2fa/disable")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ password: TEST_PASSWORD });
+    it("retorna 409 si TwoFactorAuth no está activo en BD", async () => {
+        // Arrange
+        await createTestEmployee({
+            is_active_two_factor_auth: false,
+            totp_secret: null,
+        });
+        const token = generateSessionToken();
 
-    // Assert
-    expect(res.statusCode).toBe(409);
-  });
+        // Act
+        const res = await request(app)
+            .post("/auth/2fa/disable")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ password: TEST_PASSWORD });
+
+        // Assert
+        expect(res.statusCode).toBe(409);
+    });
 });
 
 // ─── GET STATUS 2FA ───────────────────────────────────────
 describe("GET /auth/2fa/status - integration", () => {
-  it("retorna false si TwoFactorAuth no está activo en BD", async () => {
-    // Arrange
-    await createTestEmployee({ is_active_two_factor_auth: false });
-    const token = generateSessionToken();
+    it("retorna false si TwoFactorAuth no está activo en BD", async () => {
+        // Arrange
+        await createTestEmployee({ is_active_two_factor_auth: false });
+        const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .get("/auth/2fa/status")
-      .set("Authorization", `Bearer ${token}`);
+        // Act
+        const res = await request(app)
+            .get("/auth/2fa/status")
+            .set("Authorization", `Bearer ${token}`);
 
-    // Assert
-    expect(res.statusCode).toBe(200);
-    expect(res.body.StatusTwoFactorAuth).toBe(false);
-  });
-
-  it("retorna true si TwoFactorAuth está activo en BD", async () => {
-    // Arrange
-    await createTestEmployee({
-      is_active_two_factor_auth: true,
-      totp_secret: "FAKESECRET",
+        // Assert
+        expect(res.statusCode).toBe(200);
+        expect(res.body.StatusTwoFactorAuth).toBe(false);
     });
-    const token = generateSessionToken();
 
-    // Act
-    const res = await request(app)
-      .get("/auth/2fa/status")
-      .set("Authorization", `Bearer ${token}`);
+    it("retorna true si TwoFactorAuth está activo en BD", async () => {
+        // Arrange
+        await createTestEmployee({
+            is_active_two_factor_auth: true,
+            totp_secret: "FAKESECRET",
+        });
+        const token = generateSessionToken();
 
-    // Assert
-    expect(res.statusCode).toBe(200);
-    expect(res.body.StatusTwoFactorAuth).toBe(true);
-  });
+        // Act
+        const res = await request(app)
+            .get("/auth/2fa/status")
+            .set("Authorization", `Bearer ${token}`);
 
-  it("retorna 401 sin token de sesión", async () => {
-    // Arrange — no se manda Authorization header
+        // Assert
+        expect(res.statusCode).toBe(200);
+        expect(res.body.StatusTwoFactorAuth).toBe(true);
+    });
 
-    // Act
-    const res = await request(app).get("/auth/2fa/status");
+    it("retorna 401 sin token de sesión", async () => {
+        // Arrange — no se manda Authorization header
 
-    // Assert
-    expect(res.statusCode).toBe(401);
-  });
+        // Act
+        const res = await request(app).get("/auth/2fa/status");
+
+        // Assert
+        expect(res.statusCode).toBe(401);
+    });
 });

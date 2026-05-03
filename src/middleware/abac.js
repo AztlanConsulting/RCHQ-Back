@@ -1,25 +1,27 @@
 const canAccess = (user, policyFn, resource) => {
-  if (!user) return false;
-  return policyFn(user, resource);
+    if (!user) return false;
+    return policyFn(user, resource);
 };
 
 const authorize = (policyFn, getResource) => async (req, res, next) => {
-  try {
-    const resource =
-      typeof getResource === "function" ? await getResource(req) : getResource;
+    try {
+        const resource =
+            typeof getResource === "function"
+                ? await getResource(req)
+                : getResource;
 
-    if (canAccess(req.user, policyFn, resource)) {
-      return next();
+        if (canAccess(req.user, policyFn, resource)) {
+            return next();
+        }
+
+        return res.status(403).json({ error: "Acceso denegado" });
+    } catch (error) {
+        console.error("error en authorize: ", error);
+        return res.status(500).json({ message: "Error del servidor" });
     }
-
-    return res.status(403).json({ error: "Acceso denegado" });
-  } catch (error) {
-    console.error("error en authorize: ", error);
-    return res.status(500).json({ message: "Error del servidor" });
-  }
 };
 
 module.exports = {
-  authorize,
-  canAccess,
+    authorize,
+    canAccess,
 };

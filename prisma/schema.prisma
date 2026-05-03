@@ -70,6 +70,10 @@ model employee {
   two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
   temp_totp_secret                String?                         @db.VarChar
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
+  type                            String?                         @db.VarChar(20)
+  salary                          String?                         @db.VarChar(72)
+  end_date                        DateTime?                       @db.Date
+  phone_number                    String?                         @db.VarChar(20)
   house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                            role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address                employee_address[]
@@ -88,7 +92,11 @@ model employee {
 model employee_address {
   employee_address_id String   @id(map: "employee_address_pk") @db.Uuid
   employee_id         String   @db.Uuid
-  url                 String   @db.VarChar(100)
+  url                 String   @db.VarChar(200)
+  street              String?  @db.VarChar(200)
+  municipio           String?  @db.VarChar(120)
+  city                String?  @db.VarChar(100)
+  postal_code         String?  @db.VarChar(10)
   date                DateTime @db.Timestamp(6)
   employee            employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_address_employee_fk")
 }
