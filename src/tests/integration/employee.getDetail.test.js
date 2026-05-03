@@ -29,7 +29,7 @@ const generateAdminSessionToken = () =>
             id: IDS.employee,
             email: SEED.employee.email,
             name: "Admin Test",
-            role: "ADMINISTRATOR",
+            role: "Admin",
             privileges: [],
             tokenType: "SESSION",
         },
@@ -50,7 +50,7 @@ const seedSubjectEmployeeWithRelations = async () => {
             surname: "Employee",
             type: "internal",
             curp: TEST_CURP_SUBJECT,
-            start_date: new Date("2024-03-15"),
+            start_date: new Date("2026-03-15"),
             has_first_login: true,
             is_active: true,
             is_active_two_factor_auth: false,
@@ -69,7 +69,7 @@ const seedSubjectEmployeeWithRelations = async () => {
             municipio: "Muni",
             city: "CDMX",
             postal_code: "01000",
-            date: new Date("2024-04-01T12:00:00.000Z"),
+            date: new Date("2026-04-01T12:00:00.000Z"),
         },
     });
 
@@ -90,7 +90,7 @@ const seedSubjectEmployeeWithRelations = async () => {
     await prisma.fault.create({
         data: {
             fault_id: TEST_FAULT_ID,
-            date: new Date("2024-05-10"),
+            date: new Date("2026-05-10"),
             description: "Falta de prueba (integration)",
         },
     });
@@ -105,8 +105,8 @@ const seedSubjectEmployeeWithRelations = async () => {
         data: {
             vacations_request_id: TEST_VACATION_REQ_ID,
             employee_id: TEST_SUBJECT_EMPLOYEE_ID,
-            start: new Date("2024-12-01"),
-            end: new Date("2024-12-15"),
+            start: new Date("2026-12-01"),
+            end: new Date("2026-12-15"),
             status: 1,
             feedback: "ok",
         },

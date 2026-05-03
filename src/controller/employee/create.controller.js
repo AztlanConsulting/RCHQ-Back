@@ -1,4 +1,3 @@
-const fs = require("fs");
 const {
     getRoles,
     getById: getEmployeeById,
@@ -9,13 +8,7 @@ const RESPONSES = require("../../utils/responses");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
-
-const deleteFileIfExists = (filePath) => {
-    if (!filePath) return;
-    fs.unlink(filePath, (err) => {
-        if (err) console.error("Error eliminando archivo:", err.message);
-    });
-};
+const {deleteFileIfExists} = require("../../utils/deleteFile");
 
 exports.getAdd = async (req, res) => {
     try {

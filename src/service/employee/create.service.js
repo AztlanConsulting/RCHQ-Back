@@ -18,7 +18,7 @@ const {
 } = require("../../schemas/employee/create.schemas");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
-const { v4: uuidv4 } = require("uuid");
+const { randomUUID } = require("crypto");
 const RESPONSES = require("../../utils/responses");
 
 exports.getById = async (id) => {
@@ -69,7 +69,7 @@ exports.createEmployee = async (employee, user, req) => {
     const hashedPassword = await hashPassword("red_de_casas_hogar");
 
     const newEmployee = await create({
-        employeeId: uuidv4(),
+        employeeId: randomUUID(),
         houseId: user.houseId,
         roleId: data.roleId,
         name: data.name,

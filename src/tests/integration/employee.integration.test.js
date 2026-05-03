@@ -34,7 +34,7 @@ describe("Employee Service - createEmployee", () => {
     // Variables globales para las pruebas
     const mockUserAdmin = {
         id: "user-1",
-        role: "Administrador",
+        role: "Admin",
         houseId: "a0000001-0000-4000-8000-000000000001",
     };
 
@@ -136,7 +136,7 @@ describe("Employee Service - createEmployee", () => {
         expect(result.success).toBe(true);
         expect(employee.create).toHaveBeenCalledWith(
             expect.objectContaining({
-                houseId: mockUserCoordinatorOtherHouse.houseId, // Fuerza su propia casa
+                houseId: mockUserCoordinatorOtherHouse.houseId,
             }),
         );
     });
@@ -156,7 +156,8 @@ describe("Employee Service - createEmployee", () => {
 
     it("debería fallar si falta name", async () => {
         // Arrange
-        const { name, ...data } = baseEmployee;
+        const data = { ...baseEmployee };
+        delete data.name;
 
         // Act
         const result = await createEmployee(data, mockUserAdmin, mockReq);

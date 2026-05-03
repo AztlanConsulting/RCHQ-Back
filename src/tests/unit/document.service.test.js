@@ -1,256 +1,253 @@
-const {
-    uploadDocument,
-    updateDocument,
-} = require("../../service/employee/create.service");
+// tests/unit/document.unit.test.js
+const { uploadDocument } = require("../../service/employee/create.service");
+const { updateDocument } = require("../../service/employee/update.service");
 const { deleteDocument } = require("../../service/employee/delete.service");
-const {
-    getDocumentsByEmployee,
-} = require("../../service/employee/get.service");
+const { getDocumentsByEmployee } = require("../../service/employee/get.service");
 const RESPONSES = require("../../utils/responses");
 
 // ─── Mocks ────────────────────────────────────────────────
 jest.mock("../../model/employee/get.model");
 jest.mock("../../model/employee/create.model");
 jest.mock("../../model/employee/delete.model");
+jest.mock("../../model/employee/update.model");
 
-const readModel = require("../../model/employee/get.model");
+const readModel  = require("../../model/employee/get.model");
 const createModel = require("../../model/employee/create.model");
 const deleteModel = require("../../model/employee/delete.model");
-const fs = require("fs");
+const updateModel = require("../../model/employee/update.model");
 
-jest.spyOn(fs, "unlinkSync").mockImplementation(() => {});
+// Evitar que deleteFileIfExists explote en unit tests
+jest.mock("../../utils/deleteFile", () => ({ deleteFileIfExists: jest.fn() }));
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 
 // ─── Fixtures ─────────────────────────────────────────────
-const TEST_EMPLOYEE_ID = "emp-123";
-const VALID_FIELD = "cv";
-const INVALID_FIELD = "invalid_field";
-const MOCK_FILE = { filename: "test-file.pdf" };
-const FILE_URL = `uploads/documents/${MOCK_FILE.filename}`;
+const EMP_ID   = "emp-uuid-123";
+const DOC_ID   = "doc-uuid-456";  // UUID real de un tipo de documento
+const BAD_ID   = "not-a-uuid";
+const FILE     = { filename: "test.pdf", path: "uploads/documents/test.pdf" };
+const FILE_URL = `uploads/documents/${FILE.filename}`;
+const MOCK_EMP = { employee_id: EMP_ID };
+const MOCK_DOC_TYPE = { document_id: DOC_ID, name: "cv" };
+const MOCK_EXISTING = { document_id: DOC_ID, employee_id: EMP_ID, url: "uploads/documents/old.pdf" };
 
-beforeEach(() => {
-    jest.clearAllMocks();
-});
+beforeEach(() => jest.clearAllMocks());
 
-// ─── UPLOAD DOCUMENT ──────────────────────────────────────
-describe("uploadDocument service", () => {
-    it("retorna NOT_ALLOW si el tipo de documento es inválido", async () => {
-        const result = await uploadDocument(
-            TEST_EMPLOYEE_ID,
-            MOCK_FILE,
-            INVALID_FIELD,
-        );
+// ═══════════════════════════════════════════════════════════
+// uploadDocument
+// ═══════════════════════════════════════════════════════════
+describe("uploadDocument", () => {
+    it("NOT_ALLOW — documentId no existe en la tabla documents", async () => {
+        readModel.findDocumentById.mockResolvedValue(null);
+
+        const result = await uploadDocument(EMP_ID, FILE, BAD_ID);
+
         expect(result.type).toBe(RESPONSES.DOCUMENTS.NOT_ALLOW);
-        expect(result.body.success).toBe(false);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
+        expect(readModel.findById).not.toHaveBeenCalled();
     });
 
-    it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
+    it("USER.NOT_FOUND — empleado inexistente", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
         readModel.findById.mockResolvedValue(null);
-        const result = await uploadDocument(
-            TEST_EMPLOYEE_ID,
-            MOCK_FILE,
-            VALID_FIELD,
-        );
+
+        const result = await uploadDocument(EMP_ID, FILE, DOC_ID);
+
         expect(result.type).toBe(RESPONSES.USER.NOT_FOUND);
-        expect(readModel.findById).toHaveBeenCalledWith(TEST_EMPLOYEE_ID);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
     });
 
-    it("retorna ALREADY_EXIST si el campo ya tiene un documento", async () => {
-        // Arrange
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue({
-            document_id: "doc-1",
-            documents: {
-                [VALID_FIELD]: "uploads/documents/existing.pdf",
-            },
-        });
+    it("ALREADY_EXIST — el par (employee, document) ya existe", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.findEmployeeDocument.mockResolvedValue(MOCK_EXISTING);
 
-        // Act
-        const result = await uploadDocument(
-            TEST_EMPLOYEE_ID,
-            MOCK_FILE,
-            VALID_FIELD,
-        );
+        const result = await uploadDocument(EMP_ID, FILE, DOC_ID);
 
-        // Assert
         expect(result.type).toBe(RESPONSES.DOCUMENTS.ALREADY_EXIST);
-        expect(result.body.success).toBe(false);
-        expect(result.body.field).toBe(VALID_FIELD);
-        expect(createModel.createDocumentRowWithUrl).not.toHaveBeenCalled();
-        expect(createModel.updateDocumentField).not.toHaveBeenCalled();
+        expect(result.body.field).toBe(DOC_ID);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
+        expect(createModel.createEmployeeDocument).not.toHaveBeenCalled();
     });
 
-    it("crea un nuevo registro si el empleado no tiene ningún documento previo", async () => {
-        // Arrange
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue(null);
-        createModel.createDocumentRowWithUrl.mockResolvedValue({ id: "doc-1" });
+    it("UPLOAD — crea el registro correctamente cuando no existe", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.findEmployeeDocument.mockResolvedValue(null);
+        createModel.createEmployeeDocument.mockResolvedValue({ employee_id: EMP_ID, document_id: DOC_ID, url: FILE_URL });
 
-        // Act
-        const result = await uploadDocument(
-            TEST_EMPLOYEE_ID,
-            MOCK_FILE,
-            VALID_FIELD,
-        );
+        const result = await uploadDocument(EMP_ID, FILE, DOC_ID);
 
-        // Assert
         expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOAD);
-        expect(createModel.createDocumentRowWithUrl).toHaveBeenCalledWith(
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-            FILE_URL,
-        );
+        expect(createModel.createEmployeeDocument).toHaveBeenCalledWith(EMP_ID, DOC_ID, FILE_URL);
+        expect(result.body.success).toBe(true);
     });
 
-    it("actualiza la fila existente si el empleado tiene otros documentos pero ese campo está vacío", async () => {
-        // Arrange
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue({
-            document_id: "doc-1",
-            documents: {
-                [VALID_FIELD]: null,
-            },
-        });
-        createModel.updateDocumentField.mockResolvedValue({ id: "doc-1" });
+    it("lanza error si createEmployeeDocument falla (el archivo se limpia)", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.findEmployeeDocument.mockResolvedValue(null);
+        createModel.createEmployeeDocument.mockRejectedValue(new Error("DB down"));
 
-        // Act
-        const result = await uploadDocument(
-            TEST_EMPLOYEE_ID,
-            MOCK_FILE,
-            VALID_FIELD,
-        );
-
-        // Assert
-        expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOAD);
-        expect(createModel.updateDocumentField).toHaveBeenCalledWith(
-            "doc-1",
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-            FILE_URL,
-        );
-        expect(createModel.createDocumentRowWithUrl).not.toHaveBeenCalled();
+        await expect(uploadDocument(EMP_ID, FILE, DOC_ID)).rejects.toThrow("DB down");
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE_URL);
     });
 });
 
-// ─── UPDATE DOCUMENT ──────────────────────────────────────
-describe("updateDocument service", () => {
-    it("retorna NOT_ALLOW si el tipo de documento es inválido", async () => {
-        const result = await updateDocument(
-            TEST_EMPLOYEE_ID,
-            INVALID_FIELD,
-            MOCK_FILE,
-        );
+// ═══════════════════════════════════════════════════════════
+// updateDocument
+// ═══════════════════════════════════════════════════════════
+describe("updateDocument", () => {
+    it("NOT_ALLOW — documentId no existe", async () => {
+        readModel.findDocumentById.mockResolvedValue(null);
+
+        const result = await updateDocument(EMP_ID, BAD_ID, FILE);
+
         expect(result.type).toBe(RESPONSES.DOCUMENTS.NOT_ALLOW);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
     });
 
-    it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
+    it("USER.NOT_FOUND — empleado inexistente", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
         readModel.findById.mockResolvedValue(null);
-        const result = await updateDocument(
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-            MOCK_FILE,
-        );
+
+        const result = await updateDocument(EMP_ID, DOC_ID, FILE);
+
         expect(result.type).toBe(RESPONSES.USER.NOT_FOUND);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
     });
 
-    it("retorna DOCUMENTS.NOT_FOUND si no existe fila de documentos", async () => {
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue(null);
-        const result = await updateDocument(
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-            MOCK_FILE,
-        );
+    it("DOCUMENTS.NOT_FOUND — el par (employee, document) no existe aún", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.findEmployeeDocument.mockResolvedValue(null);
+
+        const result = await updateDocument(EMP_ID, DOC_ID, FILE);
+
         expect(result.type).toBe(RESPONSES.DOCUMENTS.NOT_FOUND);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
+        expect(updateModel.updateEmployeeDocument).not.toHaveBeenCalled();
     });
 
-    it("actualiza el documento exitosamente", async () => {
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue({
-            document_id: "doc-1",
-        });
-        createModel.updateDocumentField.mockResolvedValue({
-            id: "doc-1",
-            [VALID_FIELD]: FILE_URL,
-        });
+    it("UPLOAD — actualiza y borra el archivo anterior", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.findEmployeeDocument.mockResolvedValue(MOCK_EXISTING);
+        updateModel.updateEmployeeDocument.mockResolvedValue({ ...MOCK_EXISTING, url: FILE_URL });
 
-        const result = await updateDocument(
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-            MOCK_FILE,
-        );
+        const result = await updateDocument(EMP_ID, DOC_ID, FILE);
 
         expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOAD);
-        expect(createModel.updateDocumentField).toHaveBeenCalledWith(
-            "doc-1",
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-            FILE_URL,
-        );
+        expect(updateModel.updateEmployeeDocument).toHaveBeenCalledWith(EMP_ID, DOC_ID, FILE_URL);
+        // El archivo viejo debe eliminarse
+        expect(deleteFileIfExists).toHaveBeenCalledWith(MOCK_EXISTING.url);
+    });
+
+    it("UPLOAD — no intenta borrar archivo anterior si url era null", async () => {
+        readModel.findDocumentById.mockResolvedValue(MOCK_DOC_TYPE);
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.findEmployeeDocument.mockResolvedValue({ ...MOCK_EXISTING, url: null });
+        updateModel.updateEmployeeDocument.mockResolvedValue({ ...MOCK_EXISTING, url: FILE_URL });
+
+        await updateDocument(EMP_ID, DOC_ID, FILE);
+
+        // deleteFileIfExists solo se llama con el nuevo si falla, no con null
+        expect(deleteFileIfExists).not.toHaveBeenCalledWith(null);
     });
 });
 
-// ─── DELETE DOCUMENT ──────────────────────────────────────
-describe("deleteDocument service", () => {
-    it("retorna NOT_ALLOW si el tipo de documento es inválido", async () => {
-        const result = await deleteDocument(TEST_EMPLOYEE_ID, INVALID_FIELD);
-        expect(result.type).toBe(RESPONSES.DOCUMENTS.NOT_ALLOW);
-    });
+// ═══════════════════════════════════════════════════════════
+// deleteDocument
+// ═══════════════════════════════════════════════════════════
+describe("deleteDocument", () => {
+    it("DOCUMENTS.NOT_FOUND — el par (employee, document) no existe", async () => {
+        readModel.findEmployeeDocument.mockResolvedValue(null);
 
-    it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
-        readModel.findById.mockResolvedValue(null);
-        const result = await deleteDocument(TEST_EMPLOYEE_ID, VALID_FIELD);
-        expect(result.type).toBe(RESPONSES.USER.NOT_FOUND);
-    });
+        const result = await deleteDocument(EMP_ID, DOC_ID);
 
-    it("retorna DOCUMENTS.NOT_FOUND si no hay registros", async () => {
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue(null);
-        const result = await deleteDocument(TEST_EMPLOYEE_ID, VALID_FIELD);
         expect(result.type).toBe(RESPONSES.DOCUMENTS.NOT_FOUND);
+        expect(deleteModel.deleteEmployeeDocument).not.toHaveBeenCalled();
     });
 
-    it("elimina el archivo y limpia la BD exitosamente", async () => {
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        const mockDocRow = {
-            document_id: "doc-1",
-            documents: { [VALID_FIELD]: "uploads/test.pdf" },
-        };
-        readModel.findDocumentRowByEmployee.mockResolvedValue(mockDocRow);
-        deleteModel.clearDocumentField.mockResolvedValue(true);
-        fs.unlinkSync.mockImplementation(() => {});
+    it("DELETED — elimina el registro y el archivo físico", async () => {
+        readModel.findEmployeeDocument.mockResolvedValue(MOCK_EXISTING);
+        deleteModel.deleteEmployeeDocument.mockResolvedValue(true);
 
-        const result = await deleteDocument(TEST_EMPLOYEE_ID, VALID_FIELD);
+        const result = await deleteDocument(EMP_ID, DOC_ID);
 
-        expect(fs.unlinkSync).toHaveBeenCalledWith("uploads/test.pdf");
-        expect(deleteModel.clearDocumentField).toHaveBeenCalledWith(
-            "doc-1",
-            TEST_EMPLOYEE_ID,
-            VALID_FIELD,
-        );
-        expect(result.type).toBe(RESPONSES.DOCUMENTS.DELETE);
+        expect(result.type).toBe(RESPONSES.DOCUMENTS.DELETED);
+        expect(deleteModel.deleteEmployeeDocument).toHaveBeenCalledWith(EMP_ID, DOC_ID);
+        expect(deleteFileIfExists).toHaveBeenCalledWith(MOCK_EXISTING.url);
+        expect(result.body.success).toBe(true);
+    });
+
+    it("DELETED — funciona aunque url sea null (sin archivo físico)", async () => {
+        readModel.findEmployeeDocument.mockResolvedValue({ ...MOCK_EXISTING, url: null });
+        deleteModel.deleteEmployeeDocument.mockResolvedValue(true);
+
+        const result = await deleteDocument(EMP_ID, DOC_ID);
+
+        expect(result.type).toBe(RESPONSES.DOCUMENTS.DELETED);
+        // deleteFileIfExists se llama con null, es su responsabilidad no explotar
+        expect(deleteFileIfExists).not.toHaveBeenCalled();
+    });
+
+    it("propaga el error si deleteEmployeeDocument falla", async () => {
+        readModel.findEmployeeDocument.mockResolvedValue(MOCK_EXISTING);
+        deleteModel.deleteEmployeeDocument.mockRejectedValue(new Error("FK constraint"));
+
+        await expect(deleteDocument(EMP_ID, DOC_ID)).rejects.toThrow("FK constraint");
     });
 });
 
-// ─── GET DOCUMENTS ────────────────────────────────────────
-describe("getDocumentsByEmployee service", () => {
-    it("retorna USER.NOT_FOUND si el empleado no existe", async () => {
+// ═══════════════════════════════════════════════════════════
+// getDocumentsByEmployee
+// ═══════════════════════════════════════════════════════════
+describe("getDocumentsByEmployee", () => {
+    it("USER.NOT_FOUND — empleado no existe", async () => {
         readModel.findById.mockResolvedValue(null);
-        const result = await getDocumentsByEmployee(TEST_EMPLOYEE_ID);
+
+        const result = await getDocumentsByEmployee(EMP_ID);
+
         expect(result.type).toBe(RESPONSES.USER.NOT_FOUND);
+        expect(readModel.getDocumentsByEmployee).not.toHaveBeenCalled();
     });
 
-    it("retorna DOCUMENTS.NOT_FOUND si no tiene documentos", async () => {
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue(null);
-        const result = await getDocumentsByEmployee(TEST_EMPLOYEE_ID);
+    it("DOCUMENTS.NOT_FOUND — empleado existe pero no tiene documentos", async () => {
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.getDocumentsByEmployee.mockResolvedValue([]);
+
+        const result = await getDocumentsByEmployee(EMP_ID);
+
         expect(result.type).toBe(RESPONSES.DOCUMENTS.NOT_FOUND);
+        expect(result.body).toEqual([]);
     });
 
-    it("retorna DOCUMENTS.OK y el registro si existen documentos", async () => {
-        readModel.findById.mockResolvedValue({ id: TEST_EMPLOYEE_ID });
-        readModel.findDocumentRowByEmployee.mockResolvedValue({ cv: "url" });
-        const result = await getDocumentsByEmployee(TEST_EMPLOYEE_ID);
+    it("DOCUMENTS.OK — mapea correctamente los documentos", async () => {
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.getDocumentsByEmployee.mockResolvedValue([
+            { document_id: DOC_ID, url: FILE_URL, documents: { name: "cv" } },
+        ]);
+
+        const result = await getDocumentsByEmployee(EMP_ID);
+
         expect(result.type).toBe(RESPONSES.DOCUMENTS.OK);
-        expect(result.body).toEqual({ cv: "url" });
+        expect(result.body).toEqual([
+            { documentId: DOC_ID, name: "cv", url: FILE_URL },
+        ]);
+    });
+
+    it("DOCUMENTS.OK — maneja múltiples documentos sin mezclar datos", async () => {
+        const secondDocId = "doc-uuid-789";
+        readModel.findById.mockResolvedValue(MOCK_EMP);
+        readModel.getDocumentsByEmployee.mockResolvedValue([
+            { document_id: DOC_ID,      url: "uploads/documents/cv.pdf",  documents: { name: "cv" } },
+            { document_id: secondDocId, url: "uploads/documents/nss.pdf", documents: { name: "nss" } },
+        ]);
+
+        const result = await getDocumentsByEmployee(EMP_ID);
+
+        expect(result.body).toHaveLength(2);
+        expect(result.body[0].name).toBe("cv");
+        expect(result.body[1].name).toBe("nss");
     });
 });

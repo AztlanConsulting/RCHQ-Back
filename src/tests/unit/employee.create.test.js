@@ -25,7 +25,7 @@ const { createEmployee } = require("../../service/employee/create.service");
 describe("Employee Service - createEmployee", () => {
     const mockUserAdmin = {
         id: "user-1",
-        role: "Administrador",
+        role: "Admin",
         houseId: "a0000001-0000-4000-8000-000000000001",
     };
 
@@ -120,7 +120,8 @@ describe("Employee Service - createEmployee", () => {
     });
 
     it("debería fallar si falta name", async () => {
-        const { name, ...data } = baseEmployee;
+        const data = { ...baseEmployee };
+        delete data.name;
         const result = await createEmployee(data, mockUserAdmin, mockReq);
         expect(result.success).toBe(false);
         expect(result.type).toBe("VALIDATION_ERROR");
