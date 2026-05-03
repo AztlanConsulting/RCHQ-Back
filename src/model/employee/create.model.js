@@ -1,5 +1,4 @@
 const prisma = require("../../prisma");
-const { v4: uuidv4 } = require("uuid");
 
 exports.create = async (employeeData) => {
   const data = {
@@ -44,42 +43,12 @@ exports.create = async (employeeData) => {
   };
 };
 
-exports.createDocumentRowWithUrl = async (employeeId, field, fileUrl) => {
-  return await prisma.$transaction(async (tx) => {
-    const newDoc = await tx.documents.create({
-      data: {
-        document_id: uuidv4(),
-        [field]: fileUrl,
-      },
-    });
-
-    await tx.employee_documents.create({
-      data: {
-        document_id: newDoc.document_id,
-        employee_id: employeeId,
-        url: fileUrl,
-      },
-    });
-
-    return newDoc;
-  });
-};
-
-exports.updateDocumentField = async (
-  document_id,
-  employee_id,
-  field,
-  fileUrl,
-) => {
-  return await prisma.$transaction(async (tx) => {
-    const updatedDoc = await tx.documents.update({
-      where: { document_id },
-      data: { [field]: fileUrl },
-    });
-    await tx.employee_documents.update({
-      where: { document_id_employee_id: { document_id, employee_id } },
-      data: { url: fileUrl },
-    });
-    return updatedDoc;
+exports.createEmployeeDocument = async (employeeId, documentId, fileUrl) => {
+  return await prisma.employee_documents.create({
+    data: {
+      document_id: documentId,
+      employee_id: employeeId,
+      url: fileUrl,
+    },
   });
 };

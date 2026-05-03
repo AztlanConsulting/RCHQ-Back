@@ -1,55 +1,25 @@
-//service/employee/employeeDelete.service.js
-const { clearDocumentField } = require("../../model/employee/delete.model");
-const {
-  findById,
-  findDocumentRowByEmployee,
-} = require("../../model/employee/get.model");
-const { VALID_DOCUMENT_FIELDS } = require("../../middleware/uploadDocs");
+const { deleteFileIfExists } = require("../../utils/deleteFile");
+const { findEmployeeDocument } = require("../../model/employee/get.model");
+const { deleteEmployeeDocument } = require("../../model/employee/delete.model");
 const RESPONSES = require("../../utils/responses");
-const fs = require("fs");
 
-const validateField = (field) => VALID_DOCUMENT_FIELDS.includes(field);
-
-exports.deleteDocument = async (employeeId, documentField) => {
-  if (!validateField(documentField)) {
-    return {
-      type: RESPONSES.DOCUMENTS.NOT_ALLOW,
-      body: {
-        success: false,
-        message: `Tipo de documento inválido: ${documentField}`,
-      },
-    };
-  }
-
-  const employee = await findById(employeeId);
-  if (!employee) {
-    return {
-      type: RESPONSES.USER.NOT_FOUND,
-      body: { success: false, message: "Empleado no encontrado" },
-    };
-  }
-
-  const docRow = await findDocumentRowByEmployee(employeeId);
-  if (!docRow) {
+exports.deleteDocument = async (employeeId, documentId) => {
+  const existing = await findEmployeeDocument(employeeId, documentId);
+  if (!existing) {
     return {
       type: RESPONSES.DOCUMENTS.NOT_FOUND,
-      body: { success: false, message: "El empleado no tiene documentos" },
+      body: { success: false, message: "Documento no encontrado" },
     };
   }
-
-  const currentUrl = docRow.documents?.[documentField];
-  if (currentUrl) {
-    try {
-      fs.unlinkSync(currentUrl);
-    } catch (err) {
-      console.error("delete error: ", err);
-    }
+  try {
+    await deleteEmployeeDocument(employeeId, documentId);
+    if (existing.url) deleteFileIfExists(existing.url);
+    return {
+      type: RESPONSES.DOCUMENTS.DELETED,
+      body: { success: true },
+    };
+  } catch (err) {
+    console.error("Error deleting document:", err);
+    throw err;
   }
-
-  await clearDocumentField(docRow.document_id, employeeId, documentField);
-
-  return {
-    type: RESPONSES.DOCUMENTS.DELETE,
-    body: { success: true, message: "Documento eliminado correctamente" },
-  };
 };

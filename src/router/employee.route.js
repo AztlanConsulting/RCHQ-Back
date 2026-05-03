@@ -12,6 +12,7 @@ const {
 const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
+const employeeUpdateController = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
 router.get("/getAll", 
@@ -41,6 +42,12 @@ router.post(
 );
 
 router.get(
+  "/document-types",
+  verifyToken,
+  employeeGetController.getDocumentTypes,
+);
+
+router.get(
   "/:id/documents",
   verifyToken,
   authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
@@ -60,7 +67,7 @@ router.put(
   verifyToken,
   authorize(modifyDocuments),
   uploadDocs.single("file"),
-  employeeAddController.updateDocument,
+  employeeUpdateController.updateDocument,
 );
 
 router.delete(

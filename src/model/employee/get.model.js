@@ -27,6 +27,13 @@ exports.getAllRoles = async () => {
   }));
 };
 
+exports.getDocumentTypes = async () => {
+  return await prisma.documents.findMany({
+    orderBy: { name: "asc" },
+    select: { document_id: true, name: true },
+  });
+};
+
 exports.getDocumentsByEmployee = async (employeeId) => {
   return await prisma.employee_documents.findMany({
     where: { employee_id: employeeId },
@@ -34,10 +41,17 @@ exports.getDocumentsByEmployee = async (employeeId) => {
   });
 };
 
-exports.findDocumentRowByEmployee = async (employee_id) => {
-  return await prisma.employee_documents.findFirst({
-    where: { employee_id },
-    include: { documents: true },
+exports.findEmployeeDocument = async (employeeId, documentId) => {
+  return await prisma.employee_documents.findUnique({
+    where: {
+      document_id_employee_id: { document_id: documentId, employee_id: employeeId },
+    },
+  });
+};
+
+exports.findDocumentById = async (documentId) => {
+  return await prisma.documents.findUnique({
+    where: { document_id: documentId },
   });
 };
 

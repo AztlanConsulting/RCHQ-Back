@@ -4,6 +4,7 @@ const {
   getDocumentsByEmployee,
   getEmployees,
   getEmployeeDetail,
+  getDocumentTypes,
 } = require("../../service/employee/get.service");
 const RESPONSES = require("../../utils/responses");
 
@@ -36,23 +37,31 @@ exports.getById = async (req, res) => {
 exports.getDocumentsByEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id)
-      return res.status(400).json({ success: false, message: "Bad Request" });
+    if (!id) return res.status(400).json({ success: false, message: "Bad Request" });
 
     const result = await getDocumentsByEmployee(id);
 
     if (result.type === RESPONSES.DOCUMENTS.OK)
-      return res.status(200).json({ success: true, body: result.body });
+      return res.status(200).json({ success: true, data: result.body });
+
     if (result.type === RESPONSES.DOCUMENTS.NOT_FOUND)
-      return res
-        .status(200)
-        .json({ success: true, message: "El empleado no tiene documentos" });
+      return res.status(200).json({ success: true, data: [] });
+
     if (result.type === RESPONSES.USER.NOT_FOUND)
-      return res
-        .status(404)
-        .json({ success: false, message: "Empleado no encontrado" });
+      return res.status(404).json({ success: false, message: "Empleado no encontrado" });
+
   } catch (err) {
     console.error("getDocumentsByEmployee error:", err);
+    return res.status(500).json({ success: false, message: "Error interno del servidor" });
+  }
+};
+
+exports.getDocumentTypes = async (req, res) => {
+  try {
+    const result = await getDocumentTypes();
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    console.error("getDocumentTypes error:", err);
     return res
       .status(500)
       .json({ success: false, message: "Error interno del servidor" });

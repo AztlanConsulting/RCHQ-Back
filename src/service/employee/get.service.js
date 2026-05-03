@@ -8,6 +8,8 @@ const {
   getEmployeeFaults,
   getEmployeeWorkdays,
   getEmployeeVacationRequests,
+  getDocumentTypes,
+  getDocumentsByEmployee,
 } = require("../../model/employee/get.model");
 const { getHouseById } = require("../../model/house/get.model")
 const { decryptValue } = require("../../utils/password");
@@ -124,4 +126,33 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
       },
     },
   };
+};
+
+exports.getDocumentTypes = async () => {
+  try {
+    const documentTypes = await getDocumentTypes();
+    return documentTypes;
+  } catch (error) {
+    console.error("Error fetching document types:", error);
+    return { success: false, message: "Error fetching document types" };
+  }
+};
+
+exports.getDocumentsByEmployee = async (employeeId) => {
+  const employee = await findById(employeeId);
+  if (!employee) {
+    return { type: RESPONSES.USER.NOT_FOUND, body: null };
+  }
+
+  const documents = await getDocumentsByEmployee(employeeId);
+  if (!documents || documents.length === 0) {
+    return { type: RESPONSES.DOCUMENTS.NOT_FOUND, body: [] };
+  }
+
+  const mapped = documents.map((d) => ({
+    documentId: d.document_id,
+    name: d.documents.name,
+    url: d.url,
+  }));
+  return { type: RESPONSES.DOCUMENTS.OK, body: mapped };
 };

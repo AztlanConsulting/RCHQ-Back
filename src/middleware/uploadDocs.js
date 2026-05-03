@@ -8,27 +8,6 @@ const ALLOWED_DOCUMENT_TYPES = [
   "image/png",
 ];
 
-const VALID_DOCUMENT_FIELDS = [
-  "cv",
-  "birth_certificate",
-  "tax_status_certificate",
-  "address_certificate",
-  "nss",
-  "professional_id",
-  "education_certificate",
-  "medical_certificate",
-  "state_criminal_record_certificate",
-  "federal_criminal_record_certificate",
-  "first_recommendation_letter",
-  "second_recommendation_letter",
-  "driver_license",
-  "signed_regulation",
-  "signed_contract",
-  "signed_confidential_letter",
-  "signed_ethics_letter",
-  "induction_manual",
-];
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/documents/");
@@ -55,4 +34,4 @@ const uploadDocs = multer({
   },
 });
 
-module.exports = { uploadDocs, VALID_DOCUMENT_FIELDS };
+module.exports = { uploadDocs };
