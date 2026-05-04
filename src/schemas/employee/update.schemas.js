@@ -9,7 +9,6 @@ const TIME_REGEX         = /^\d{2}:\d{2}$/;
 
 const emptyToNull = (val) => (val === "" ? null : val);
 
-// ── Información básica (nombre, CURP, RFC, NSS, cuenta, nacimiento) ───────────
 const employeeBasicUpdateSchema = z
   .object({
     name: z.string().trim().min(2, "El nombre es obligatorio")
@@ -65,7 +64,6 @@ const employeeBasicUpdateSchema = z
     { message: "Debe enviarse al menos un campo para actualizar" }
   );
 
-// ── Información de contacto (email, teléfono, dirección) ─────────────────────
 const employeeContactUpdateSchema = z
   .object({
     email: z.string().trim().toLowerCase().email("Formato de correo inválido")
@@ -85,7 +83,6 @@ const employeeContactUpdateSchema = z
     { message: "Debe enviarse al menos un campo para actualizar" }
   );
 
-// ── Información administrativa (casa, rol, tipo, salario, horarios) ───────────
 const workdayUpdateSchema = z
   .object({
     workdayId: z.string().uuid("El workdayId debe ser un UUID válido"),

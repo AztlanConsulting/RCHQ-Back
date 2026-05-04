@@ -22,12 +22,13 @@ exports.getUpdateForm = async (req, res) => {
 exports.updateBasicInfo = async (req, res) => {
   const { employeeId } = req.params;
   const requesterId = req.user.id;
+  const body = req.body;
 
   try {
     const result = await updateBasicInfoService({
       requesterId,
       employeeId,
-      body: req.body,
+      body
     });
 
     if (result.type === RESPONSES.EMPLOYEE.BAD_REQUEST)
@@ -58,12 +59,13 @@ exports.updateBasicInfo = async (req, res) => {
 exports.updateContactInfo = async (req, res) => {
   const { employeeId } = req.params;
   const requesterId = req.user.id;
+  const body = req.body;
 
   try {
     const result = await updateContactInfoService({
       requesterId,
       employeeId,
-      body: req.body,
+      body
     });
 
     if (result.type === RESPONSES.EMPLOYEE.BAD_REQUEST)
@@ -94,12 +96,13 @@ exports.updateContactInfo = async (req, res) => {
 exports.updateAdminInfo = async (req, res) => {
   const { employeeId } = req.params;
   const requesterId = req.user.id;
+  const body = req.body;
 
   try {
     const result = await updateAdminInfoService({
       requesterId,
       employeeId,
-      body: req.body,
+      body
     });
 
     if (result.type === RESPONSES.EMPLOYEE.BAD_REQUEST)
