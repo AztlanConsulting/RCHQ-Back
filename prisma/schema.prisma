@@ -264,10 +264,26 @@ model psychological_evaluation {
   employee                    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "psychological_evaluation_employee_fk")
 }
 
+model privileges {
+  privilege_id   String           @id(map: "privileges_pk") @db.Uuid
+  name           String           @unique @db.VarChar(50)
+  role_privilege role_privilege[]
+}
+
+model role_privilege {
+  role_id      String     @db.Uuid
+  privilege_id String     @db.Uuid
+  privilege    privileges @relation(fields: [privilege_id], references: [privilege_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_privilege_fk")
+  role         role       @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_role_fk")
+
+  @@id([role_id, privilege_id], map: "role_privilege_pk")
+}
+
 model role {
-  role_id  String     @id(map: "role_pk") @db.Uuid
-  name     String     @unique @db.VarChar(50)
-  employee employee[]
+  role_id        String           @id(map: "role_pk") @db.Uuid
+  name           String           @unique @db.VarChar(50)
+  employee       employee[]
+  role_privilege role_privilege[]
 }
 
 model vacations_request {

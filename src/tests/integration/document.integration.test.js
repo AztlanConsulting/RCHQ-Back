@@ -40,6 +40,7 @@ const sign = (overrides = {}) =>
             houseId: IDS.house,
             role: "Admin",
             tokenType: "SESSION",
+            privileges: ["manageDocuments", "viewDocuments"],
             ...overrides,
         },
         process.env.JWT_SECRET,

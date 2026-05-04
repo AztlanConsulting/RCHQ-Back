@@ -221,25 +221,16 @@ async function seedDb({ passwordOverride } = {}) {
 }
 
 async function cleanDb() {
-    // 1. Logs primero (FK a employee)
-    await prisma.logs.deleteMany({ where: { employee_id: IDS.employee } });
+  await prisma.logs.deleteMany();
+  await prisma.employee_documents.deleteMany();
+  await prisma.documents.deleteMany();
 
-    // 2. Relaciones del empleado
-    await prisma.employee_documents.deleteMany({ where: { employee_id: IDS.employee } });
+  await prisma.employee.deleteMany();
 
-    // 3. Empleado — por todas las claves únicas para no dejar huérfanos
-    await prisma.employee.deleteMany({ where: { email: SEED.employee.email } });
-    await prisma.employee.deleteMany({ where: { curp: SEED.employee.curp } });
-
-    // 4. Rol — solo si ningún otro empleado lo usa
-    const usersWithRole = await prisma.employee.count({ where: { role_id: IDS.role } });
-    if (usersWithRole === 0) {
-        await prisma.role.deleteMany({ where: { role_id: IDS.role } });
-    }
-
-    // 5. Casa — por id y por nombre para limpiar colisiones de runs anteriores
-    await prisma.house.deleteMany({ where: { house_id: IDS.house } });
-    await prisma.house.deleteMany({ where: { name: SEED.house.name } });
+  await prisma.role.deleteMany({ where: { role_id: IDS.role } });
+  await prisma.role.deleteMany({ where: { name: SEED.role.name } });
+  await prisma.house.deleteMany({ where: { house_id: IDS.house } });
+  await prisma.house.deleteMany({ where: { name: SEED.house.name } });
 }
 
 async function disconnectDb() {

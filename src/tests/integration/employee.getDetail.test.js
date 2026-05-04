@@ -24,18 +24,18 @@ const TEST_CURP_SUBJECT = "GETDT123456SUBXX02";
 
 // ─── JWT con rol admin (requireRole mira el payload, no la BD) ────────────────
 const generateAdminSessionToken = () =>
-    jwt.sign(
-        {
-            id: IDS.employee,
-            email: SEED.employee.email,
-            name: "Admin Test",
-            role: "Admin",
-            privileges: [],
-            tokenType: "SESSION",
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" },
-    );
+  jwt.sign(
+    {
+      id: IDS.employee,
+      email: SEED.employee.email,
+      name: "Admin Test",
+      role: "Admin",
+      privileges: ["viewEmployees", "createEmployees", "manageEmployees"],
+      tokenType: "SESSION",
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" },
+  );
 
 // ─── Seed del empleado sujeto con sus relaciones ──────────────────────────────
 const seedSubjectEmployeeWithRelations = async () => {
@@ -101,16 +101,16 @@ const seedSubjectEmployeeWithRelations = async () => {
         },
     });
 
-    await prisma.vacations_request.create({
-        data: {
-            vacations_request_id: TEST_VACATION_REQ_ID,
-            employee_id: TEST_SUBJECT_EMPLOYEE_ID,
-            start: new Date("2026-12-01"),
-            end: new Date("2026-12-15"),
-            status: 1,
-            feedback: "ok",
-        },
-    });
+  await prisma.vacations_request.create({
+    data: {
+      vacations_request_id: TEST_VACATION_REQ_ID,
+      employee_id: TEST_SUBJECT_EMPLOYEE_ID,
+      start: new Date("2026-12-01"),
+      end: new Date("2026-12-15"),
+      status: 1,
+      feedback: "ok",
+    },
+  });
 };
 
 // ─── Cleanup del empleado sujeto (hijos primero) ──────────────────────────────

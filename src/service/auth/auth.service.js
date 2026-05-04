@@ -146,41 +146,41 @@ async function login(req) {
         };
     }
 
-    if (employee.isActiveTwoFactorAuth) {
-        const preTwoFactorAuthToken = buildPreTwoFactorAuthJwt(employee);
-        return {
-            status: 200,
-            body: {
-                success: true,
-                message: "Inicio de sesión exitoso",
-                isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
-                preTwoFactorAuthToken,
-            },
-        };
-    }
-
-    const token = buildSessionToken(employee);
-
-    await createLog(employee.employeeId, LOG_ACTIONS.LOGIN_SUCCESS, ipAddress);
-
+  if (employee.isActiveTwoFactorAuth) {
+    const preTwoFactorAuthToken = buildPreTwoFactorAuthJwt(employee);
     return {
-        status: 200,
-        body: {
-            success: true,
-            message: "Inicio de sesión exitoso",
-            isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
-            data: {
-                token,
-                user: {
-                    employeeId: employee.employeeId,
-                    email: employee.email,
-                    name: employee.name,
-                    role: employee.role,
-                },
-            },
-        },
+      status: 200,
+      body: {
+        success: true,
+        message: "Inicio de sesión exitoso",
+        isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
+        preTwoFactorAuthToken,
+      },
     };
-}
+  }
+
+  const token = await buildSessionToken(employee);
+
+  await createLog(employee.employeeId, LOG_ACTIONS.LOGIN_SUCCESS, ipAddress);
+
+  return {
+    status: 200,
+    body: {
+      success: true,
+      message: "Inicio de sesión exitoso",
+      isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
+      data: {
+        token,
+        user: {
+          employeeId: employee.employeeId,
+          email: employee.email,
+          name: employee.name,
+          role: employee.role,
+        },
+      },
+    },
+  };
+};
 
 async function setupTwoFactorAuth({ employeeId, ipAddress }) {
     if (!employeeId) {
@@ -482,31 +482,31 @@ async function validateTwoFactorAuth(req) {
         };
     }
 
-    await User.clearTwoFactorAuthSecurityState(employee.employeeId);
+  await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
-    const tokenJwt = buildSessionToken(employee);
+  const tokenJwt = await buildSessionToken(employee);
 
-    await createLog(
-        employee.employeeId,
-        LOG_ACTIONS.TWO_FA_LOGIN_SUCCESS,
-        ipAddress,
-    );
+  await createLog(
+    employee.employeeId,
+    LOG_ACTIONS.TWO_FA_LOGIN_SUCCESS,
+    ipAddress,
+  );
 
-    return {
-        status: 200,
-        body: {
-            success: true,
-            message: "TwoFactorAuth validacion correcta",
-            nextStep: "LOGIN_COMPLETE",
-            token: tokenJwt,
-            data: {
-                employeeId: employee.employeeId,
-                email: employee.email,
-                name: employee.name,
-                role: employee.role,
-            },
-        },
-    };
+  return {
+    status: 200,
+    body: {
+      success: true,
+      message: "TwoFactorAuth validacion correcta",
+      nextStep: "LOGIN_COMPLETE",
+      token: tokenJwt,
+      data: {
+        employeeId: employee.employeeId,
+        email: employee.email,
+        name: employee.name,
+        role: employee.role,
+      },
+    },
+  };
 }
 
 async function getTwoFactorAuthStatus(req) {

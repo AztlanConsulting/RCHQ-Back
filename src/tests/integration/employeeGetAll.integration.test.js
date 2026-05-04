@@ -26,6 +26,7 @@ const generateToken = (
         role: "Admin",
         houseId: TEST_HOUSE_ID,
         tokenType: "SESSION",
+        privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
     };
 
     return jwt.sign(

@@ -1,9 +1,14 @@
--- =============================================================
--- 5. SEED
--- =============================================================
+-- ============================================================
+-- SEED MINIMAL — RCHQ
+-- Login: andre@gmail.com / Andatti67
+-- Re-run safe: todos los inserts tienen ON CONFLICT DO NOTHING
+-- ============================================================
 
--- Casas
-INSERT INTO public.house (house_id, name, location, phone_number, description, image) VALUES
+-- =========================
+-- HOUSES
+-- =========================
+INSERT INTO public.house (house_id, name, location, phone_number, description, image)
+VALUES 
 ('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', 'boop'),
 ('a0000001-0000-4000-8000-000000000002', 'Sonríe villa infantil', 'Querétaro, Qro.', '4420000001', 'Institución de asistencia infantil', 'default_house'),
 ('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'Querétaro, Qro.', '4420000002', 'Hogar para niños y niñas', 'default_house'),
@@ -19,8 +24,11 @@ INSERT INTO public.house (house_id, name, location, phone_number, description, i
 ('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house')
 ON CONFLICT DO NOTHING;
 
--- Roles
-INSERT INTO public.role (role_id, name) VALUES
+-- =========================
+-- ROLES
+-- =========================
+INSERT INTO public.role (role_id, name)
+VALUES 
 ('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
 ('a0000002-0000-4000-8000-000000000002', 'Admin'),
 ('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
@@ -46,8 +54,71 @@ INSERT INTO public.role (role_id, name) VALUES
 ('a0000002-0000-4000-8000-000000000023', 'Cocinera')
 ON CONFLICT DO NOTHING;
 
--- Empleado de prueba
--- Login: andre@gmail.com / Andatti67
+-- =========================
+-- PRIVILEGES
+-- =========================
+INSERT INTO public.privileges (privilege_id, name)
+VALUES
+('00000001-0000-4000-8000-000000000001', 'viewEmployees'),
+('00000001-0000-4000-8000-000000000002', 'createEmployees'),
+('00000001-0000-4000-8000-000000000003', 'manageEmployees'),
+('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
+('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
+('00000001-0000-4000-8000-000000000006', 'viewLogs')
+ON CONFLICT DO NOTHING;
+
+-- =========================
+-- ROLE_PRIVILEGE
+-- =========================
+
+-- Admin — todos los privilegios
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000002', privilege_id
+FROM public.privileges
+ON CONFLICT DO NOTHING;
+
+-- Coordinador — gestión completa excepto logs
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
+FROM public.privileges p
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments')
+ON CONFLICT DO NOTHING;
+
+-- Roles que solo ven documentos
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE r.name IN (
+  'Psicóloga', 'Psicólogo', 'Trabajador Social', 'Enfermera',
+  'Terapeuta', 'Responsable del cuidado de NNA',
+  'Asistente de Dirección', 'Asistente de Finanzas'
+)
+AND p.name = 'viewDocuments'
+ON CONFLICT DO NOTHING;
+
+-- Coordinadores de área — ver empleados y documentos
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE r.name IN ('Coordinador Operativo', 'Coordinador Administrativo', 'Coordinador de Programa')
+AND p.name IN ('viewEmployees', 'viewDocuments')
+ON CONFLICT DO NOTHING;
+
+-- Direcciones — ver empleados, documentos y logs
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Dirección de Programa')
+AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
+ON CONFLICT DO NOTHING;
+
+-- =========================
+-- EMPLOYEE
+-- Contraseña: Andatti67
+-- =========================
 INSERT INTO public.employee (
     employee_id, house_id, role_id, name, surname,
     is_active, email, password, has_first_login,
@@ -57,23 +128,33 @@ INSERT INTO public.employee (
     type
 )
 VALUES (
-    'b8f54b14-701e-4e87-a019-caef53dcda99',
-    (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
-    (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
-    'Carlos', 'Ramírez',
-    true,
-    'andre@gmail.com',
-    '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
-    true,
-    0, NULL,
-    'XAXX010101HDFXXX01',
-    NULL, '2003-10-04', 'boop', '2026-04-09',
-    NULL, NULL, NULL, NULL, NULL,
-    'nomina'
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT role_id  FROM public.role   WHERE name = 'Admin'      LIMIT 1),
+  'Carlos',
+  'Ramírez',
+  true,
+  'andre@gmail.com',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  0,
+  NULL,
+  'XAXX010101HDFXXX01',
+  NULL,
+  '2003-10-04',
+  'boop',
+  '2026-04-09',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL
 )
 ON CONFLICT DO NOTHING;
 
--- Acciones de log
+-- =========================
+-- ACTIONS
+-- =========================
 INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-001', 'Intento fallido de autenticación', false),
 ('auth-002', 'Cuenta bloqueada temporalmente por múltiples intentos fallidos', false),
@@ -103,8 +184,12 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-004', 'Documento de empleado eliminado', false)
 ON CONFLICT DO NOTHING;
 
--- Tipos de documento
-INSERT INTO public.documents (document_id, name) VALUES
+-- =========================
+-- DOCUMENTOS
+-- =========================
+
+INSERT INTO public.documents (document_id, name)
+VALUES
 ('c0000001-0000-4000-8000-000000000001', 'Curriculum Vitae'),
 ('c0000001-0000-4000-8000-000000000002', 'Acta de Nacimiento'),
 ('c0000001-0000-4000-8000-000000000003', 'CURP'),
@@ -128,7 +213,7 @@ INSERT INTO public.documents (document_id, name) VALUES
 ('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
 ('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
 ('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
-('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación')
+('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación');
 ON CONFLICT DO NOTHING;
 
 COMMIT;
