@@ -16,6 +16,15 @@ const employeeAddController = require("../controller/employee/create.controller"
 const employeeDeleteController = require("../controller/employee/delete.controller");
 const employeeUpdateController = require("../controller/employee/update.controller");
 
+router.get(
+  "/update-form",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageEmployees"),
+  employeeUpdateController.getUpdateForm,
+);
+
 
 router.get(
     "/getAll",
@@ -101,16 +110,6 @@ router.get("/:id",
   requireRole("Admin", "Coordinador"),
   requirePrivileges("viewEmployees"),
   employeeGetController.getById);
-
-
-router.get(
-  "/update-form",
-  apiLimiter,
-  verifyToken,
-  requireRole("Admin", "Coordinador"),
-  requirePrivileges("manageEmployees"),
-  employeeUpdateController.getUpdateForm,
-);
 
 router.put(
   "/:employeeId/basic-info",

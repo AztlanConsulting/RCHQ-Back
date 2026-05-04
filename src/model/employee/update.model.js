@@ -5,7 +5,7 @@ const {
   mapEmployeeContactData,
   mapEmployeeAdminData,
   mapAddressData,
-} = require("../../schemas/employee/update.schemas");
+} = require("../../utils/mappers/employee.map");
 
 
 exports.updateBasicInfo = async (employeeId, body) => {
