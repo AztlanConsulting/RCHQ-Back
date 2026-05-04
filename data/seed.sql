@@ -196,7 +196,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
-('empl-004', 'Documento de empleado eliminado', false)
+('empl-004', 'Documento de empleado eliminado', false),
+('empl-005', 'Información de empleado actualizada', false)
 ON CONFLICT DO NOTHING;
 
 -- =========================
