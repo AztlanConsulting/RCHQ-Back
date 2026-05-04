@@ -14,6 +14,8 @@ const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
+const employeeUpdateController = require("../controller/employee/update.controller");
+
 
 router.get(
     "/getAll",
@@ -99,5 +101,46 @@ router.get("/:id",
   requireRole("Admin", "Coordinador"),
   requirePrivileges("viewEmployees"),
   employeeGetController.getById);
+
+
+// GET catálogos para edición
+router.get(
+  "/update-form",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageEmployees"),
+  employeeUpdateController.getUpdateForm,
+);
+
+// PUT información básica
+router.put(
+  "/:employeeId/basic-info",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageEmployees"),
+  employeeUpdateController.updateBasicInfo,
+);
+
+// PUT información de contacto
+router.put(
+  "/:employeeId/contact-info",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageEmployees"),
+  employeeUpdateController.updateContactInfo,
+);
+
+// PUT información administrativa
+router.put(
+  "/:employeeId/admin-info",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageEmployees"),
+  employeeUpdateController.updateAdminInfo,
+);
 
 module.exports = router;
