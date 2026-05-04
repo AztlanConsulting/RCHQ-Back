@@ -13,27 +13,26 @@ const TEST_HOUSE_ID = randomUUID();
 const TEST_ROLE_ID = randomUUID();
 const TEST_EMPLOYEE_ID = randomUUID();
 const TEST_EMAIL = "doctest@test.com";
-const TEST_HOUSE_NAME = `Casa Docs Test ${TEST_HOUSE_ID}`;
 
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
   await prisma.house.upsert({
     where: { house_id: TEST_HOUSE_ID },
-    update: { name: TEST_HOUSE_NAME },
+    update: {},
     create: {
-      house_id: TEST_HOUSE_ID,
-      name: TEST_HOUSE_NAME,
-      location: "Test Location",
-      phone_number: "442503720481",
-      description: "Casa usada solo para tests de documentos",
-      image: "test-image.jpg",
+      house_id:     TEST_HOUSE_ID,
+      name:         "Casa Test Update",
+      location:     "Test",
+      phone_number: "4420000000",
+      description:  "Test",
+      image:        "test.jpg",
     },
   });
 
   await prisma.role.upsert({
     where: { role_id: TEST_ROLE_ID },
-    update: { name: "Admin" },
-    create: { role_id: TEST_ROLE_ID, name: "Admin" },
+    update: {},
+    create: { role_id: TEST_ROLE_ID, name: "test-role-docs-it" },
   });
 
   await prisma.employee.upsert({
