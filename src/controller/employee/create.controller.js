@@ -87,7 +87,7 @@ exports.uploadDocument = async (req, res) => {
 
         const result = await uploadDocument(id, file, documentField);
 
-        if (result.type === RESPONSES.DOCUMENTS.UPLOAD) {
+        if (result.type === RESPONSES.DOCUMENTS.UPLOADED) {
             try {
                 await createLog(
                     req.user.id,
@@ -104,7 +104,7 @@ exports.uploadDocument = async (req, res) => {
             return res.status(400).json(result.body);
         if (result.type === RESPONSES.USER.NOT_FOUND)
             return res.status(404).json(result.body);
-        if (result.type === RESPONSES.DOCUMENTS.ALREADY_EXIST)
+        if (result.type === RESPONSES.DOCUMENTS.ALREADY_EXISTS)
             return res.status(409).json(result.body);
     } catch (err) {
         console.error("uploadDocument error:", err);

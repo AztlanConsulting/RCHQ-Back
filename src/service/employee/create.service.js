@@ -128,7 +128,7 @@ exports.uploadDocument = async (employeeId, file, documentId) => {
     if (existing) {
         deleteFileIfExists(file?.path);
         return {
-            type: RESPONSES.DOCUMENTS.ALREADY_EXIST,
+            type: RESPONSES.DOCUMENTS.ALREADY_EXISTS,
             body: {
                 success: false,
                 message: "Este documento ya existe",
@@ -145,7 +145,7 @@ exports.uploadDocument = async (employeeId, file, documentId) => {
             fileUrl,
         );
         return {
-            type: RESPONSES.DOCUMENTS.UPLOAD,
+            type: RESPONSES.DOCUMENTS.UPLOADED,
             body: { success: true, data: result },
         };
     } catch (err) {

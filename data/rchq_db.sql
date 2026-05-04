@@ -96,52 +96,38 @@ CREATE TABLE IF NOT EXISTS public.action (
 -- =============================================================
 
 CREATE TABLE IF NOT EXISTS public.employee (
-    employee_id uuid NOT NULL,
-    house_id uuid NOT NULL,
-    role_id uuid NOT NULL,
-    name varchar(50) NOT NULL,
-    surname varchar(50) NOT NULL,
-    is_active bool NOT NULL,
-    email varchar(60) NOT NULL UNIQUE,
-    password varchar(72) NOT NULL,
-    has_first_login bool NOT NULL,
-    is_active_two_factor_auth bool NOT NULL DEFAULT false,
-    failed_login_attempts int NOT NULL DEFAULT 0,
-    failed_two_factor_auth_attempts int NOT NULL DEFAULT 0,
-    totp_secret varchar(32) NULL,
-    curp varchar(18) NOT NULL UNIQUE,
-    rfc varchar(13) NULL UNIQUE,
-    birth_date date NULL,
-    picture varchar(150) NULL,
-    start_date date NOT NULL,
-    nss varchar(11) NULL UNIQUE,
-    bank_account varchar(18) NULL,
-    blocked_until timestamp NULL,
-    two_fa_blocked_until timestamp NULL,
-    temp_totp_secret varchar NULL,
-    temp_totp_secret_created_at timestamp NULL,
-    CONSTRAINT employee_pk PRIMARY KEY (employee_id),
+    employee_id                      uuid          NOT NULL,
+    house_id                         uuid          NOT NULL,
+    role_id                          uuid          NOT NULL,
+    name                             varchar(50)   NOT NULL,
+    surname                          varchar(50)   NOT NULL,
+    is_active                        bool          NOT NULL,
+    email                            varchar(60)   NOT NULL UNIQUE,
+    password                         varchar(72)   NOT NULL,
+    has_first_login                  bool          NOT NULL,
+    is_active_two_factor_auth        bool          NOT NULL DEFAULT false,
+    failed_login_attempts            int           NOT NULL DEFAULT 0,
+    failed_two_factor_auth_attempts  int           NOT NULL DEFAULT 0,
+    totp_secret                      varchar(32)   NULL,
+    curp                             varchar(18)   NOT NULL UNIQUE,
+    rfc                              varchar(13)   NULL UNIQUE,
+    birth_date                       date          NULL,
+    picture                          varchar(150)  NULL,
+    start_date                       date          NOT NULL,
+    end_date                         date          NULL,
+    nss                              varchar(11)   NULL UNIQUE,
+    bank_account                     varchar(18)   NULL,
+    phone_number                     varchar(20)   NULL,
+    type                             varchar(20)   NOT NULL DEFAULT 'nomina',
+    salary                           varchar(72)   NULL,
+    blocked_until                    timestamp     NULL,
+    two_fa_blocked_until             timestamp     NULL,
+    temp_totp_secret                 varchar       NULL,
+    temp_totp_secret_created_at      timestamp     NULL,
+    CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
     CONSTRAINT employee_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id),
-    CONSTRAINT employee_role_fk FOREIGN KEY (role_id) REFERENCES public.role(role_id)
+    CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id)
 );
-
-
--- =============================================================
--- 3. MIGRACIONES SOBRE EMPLOYEE Y EMPLOYEE_ADDRESS
--- =============================================================
-
--- type
-ALTER TABLE public.employee ADD COLUMN IF NOT EXISTS type varchar(20);
-UPDATE public.employee SET type = 'nomina' WHERE type IS NULL;
-
--- salary
-ALTER TABLE public.employee ADD COLUMN IF NOT EXISTS salary varchar(72);
-
--- end_date
-ALTER TABLE public.employee ADD COLUMN IF NOT EXISTS end_date date;
-
--- phone_number
-ALTER TABLE public.employee ADD COLUMN IF NOT EXISTS phone_number varchar(20);
 
 
 -- =============================================================
@@ -182,7 +168,7 @@ CREATE TABLE IF NOT EXISTS public.outside_certification (
 CREATE TABLE IF NOT EXISTS public.employee_address (
     employee_address_id uuid NOT NULL,
     employee_id uuid NOT NULL,
-    url varchar(200) NOT NULL,
+    url text NOT NULL,
     street varchar(200) NULL,
     municipio varchar(120) NULL,
     city varchar(100) NULL,
@@ -193,7 +179,7 @@ CREATE TABLE IF NOT EXISTS public.employee_address (
 );
 
 -- Migración sobre employee_address si ya existía con url VARCHAR(100)
-ALTER TABLE public.employee_address ALTER COLUMN url TYPE varchar(200);
+ALTER TABLE public.employee_address ALTER COLUMN url TYPE text;
 ALTER TABLE public.employee_address ADD COLUMN IF NOT EXISTS street varchar(200);
 ALTER TABLE public.employee_address ADD COLUMN IF NOT EXISTS municipio varchar(120);
 ALTER TABLE public.employee_address ADD COLUMN IF NOT EXISTS city varchar(100);
@@ -260,7 +246,7 @@ CREATE TABLE IF NOT EXISTS public.employee_inside_certification (
 CREATE TABLE IF NOT EXISTS public.employee_documents (
     document_id uuid NOT NULL,
     employee_id uuid NOT NULL,
-    url varchar(100) NOT NULL,
+    url text NOT NULL,
     CONSTRAINT employee_documents_pk PRIMARY KEY (document_id, employee_id),
     CONSTRAINT employee_documents_documents_fk FOREIGN KEY (document_id) REFERENCES public.documents(document_id),
     CONSTRAINT employee_documents_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)

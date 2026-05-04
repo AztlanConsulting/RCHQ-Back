@@ -17,7 +17,7 @@ exports.updateDocument = async (req, res) => {
 
         const result = await updateDocument(id, field, file);
 
-        if (result.type === RESPONSES.DOCUMENTS.UPLOAD) {
+        if (result.type === RESPONSES.DOCUMENTS.UPLOADED) {
             try {
                 await createLog(
                     req.user.id,

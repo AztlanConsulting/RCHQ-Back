@@ -63,7 +63,7 @@ describe("uploadDocument", () => {
 
         const result = await uploadDocument(EMP_ID, FILE, DOC_ID);
 
-        expect(result.type).toBe(RESPONSES.DOCUMENTS.ALREADY_EXIST);
+        expect(result.type).toBe(RESPONSES.DOCUMENTS.ALREADY_EXISTS);
         expect(result.body.field).toBe(DOC_ID);
         expect(deleteFileIfExists).toHaveBeenCalledWith(FILE.path);
         expect(createModel.createEmployeeDocument).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe("uploadDocument", () => {
 
         const result = await uploadDocument(EMP_ID, FILE, DOC_ID);
 
-        expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOAD);
+        expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOADED);
         expect(createModel.createEmployeeDocument).toHaveBeenCalledWith(EMP_ID, DOC_ID, FILE_URL);
         expect(result.body.success).toBe(true);
     });
@@ -136,7 +136,7 @@ describe("updateDocument", () => {
 
         const result = await updateDocument(EMP_ID, DOC_ID, FILE);
 
-        expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOAD);
+        expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOADED);
         expect(updateModel.updateEmployeeDocument).toHaveBeenCalledWith(EMP_ID, DOC_ID, FILE_URL);
         // El archivo viejo debe eliminarse
         expect(deleteFileIfExists).toHaveBeenCalledWith(MOCK_EXISTING.url);

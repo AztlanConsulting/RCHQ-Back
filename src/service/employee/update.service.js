@@ -47,7 +47,7 @@ exports.updateDocument = async (employeeId, documentId, file) => {
         );
         if (existing.url) deleteFileIfExists(existing.url);
         return {
-            type: RESPONSES.DOCUMENTS.UPLOAD,
+            type: RESPONSES.DOCUMENTS.UPLOADED,
             body: { success: true, data: updated },
         };
     } catch (err) {

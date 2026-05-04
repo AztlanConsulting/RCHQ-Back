@@ -23,8 +23,8 @@ const RESPONSES = {
         DELETED: "Documento borrado",
         EMPTY: "No hay documentos",
         NOT_ALLOW: "Tipo de documento invalido",
-        UPLOAD: "Se subió correctamente",
-        ALREADY_EXIST: "El documento ya existe",
+        UPLOADED: "Se subió correctamente",
+        ALREADY_EXISTS: "El documento ya existe",
     },
     USER: {
         NOT_FOUND: "Usuario no encontrado",
