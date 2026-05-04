@@ -103,7 +103,6 @@ router.get("/:id",
   employeeGetController.getById);
 
 
-// GET catálogos para edición
 router.get(
   "/update-form",
   apiLimiter,
@@ -113,7 +112,6 @@ router.get(
   employeeUpdateController.getUpdateForm,
 );
 
-// PUT información básica
 router.put(
   "/:employeeId/basic-info",
   apiLimiter,
@@ -123,7 +121,6 @@ router.put(
   employeeUpdateController.updateBasicInfo,
 );
 
-// PUT información de contacto
 router.put(
   "/:employeeId/contact-info",
   apiLimiter,
@@ -133,7 +130,6 @@ router.put(
   employeeUpdateController.updateContactInfo,
 );
 
-// PUT información administrativa
 router.put(
   "/:employeeId/admin-info",
   apiLimiter,

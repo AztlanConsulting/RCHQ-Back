@@ -107,6 +107,6 @@ exports.mapEmployeeAdminData = (body) => {
   if (body.houseId !== undefined) mapped.house_id = body.houseId;
   if (body.roleId  !== undefined) mapped.role_id  = body.roleId;
   if (body.type    !== undefined) mapped.type     = body.type;
-  if (body.salary  !== undefined) mapped.salary   = body.salary; // ya encriptado
+  if (body.salary  !== undefined) mapped.salary   = body.salary;
   return mapped;
 };

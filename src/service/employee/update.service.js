@@ -8,17 +8,12 @@ const {
 } = require("../../model/employee/update.model");
 const { findById, getAllRoles } = require("../../model/employee/get.model");
 const { encryptValue } = require("../../utils/password");
-const { createLog } = require("../../model/log.model");
-const { LOG_ACTIONS } = require("../../utils/logActions");
-const { getClientIp } = require("../../utils/ip");
 const {
   employeeBasicUpdateSchema,
   employeeContactUpdateSchema,
   employeeAdminUpdateSchema,
 } = require("../../schemas/employee/update.schemas");
 const RESPONSES = require("../../utils/responses");
-
-// ── Catálogos para el formulario de edición ───────────────────────────────────
 
 exports.getUpdateFormData = async (user) => {
   const [roles, houses, workdays] = await Promise.all([
@@ -29,12 +24,9 @@ exports.getUpdateFormData = async (user) => {
   return { roles, houses, workdays, houseId: user.houseId };
 };
 
-// ── Actualizar información básica ─────────────────────────────────────────────
-
-exports.updateBasicInfoService = async (requesterId, employeeId, body, req) => {
-  if (!requesterId || !employeeId) {
+exports.updateBasicInfoService = async ({ requesterId, employeeId, body }) => {
+  if (!requesterId || !employeeId)
     return { type: RESPONSES.EMPLOYEE.BAD_REQUEST };
-  }
 
   const parsed = employeeBasicUpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -49,20 +41,12 @@ exports.updateBasicInfoService = async (requesterId, employeeId, body, req) => {
 
   await updateBasicInfo(employeeId, parsed.data);
 
-  try {
-    await createLog(requesterId, LOG_ACTIONS.EMPLOYEE_UPDATED, employeeId, getClientIp(req));
-  } catch (error) {
-    console.error("Error creando log de actualización de empleado:", error);
-  }
-
   return { type: RESPONSES.EMPLOYEE.UPDATED };
 };
 
-
-exports.updateContactInfoService = async (requesterId, employeeId, body, req) => {
-  if (!requesterId || !employeeId) {
+exports.updateContactInfoService = async ({ requesterId, employeeId, body }) => {
+  if (!requesterId || !employeeId)
     return { type: RESPONSES.EMPLOYEE.BAD_REQUEST };
-  }
 
   const parsed = employeeContactUpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -77,19 +61,12 @@ exports.updateContactInfoService = async (requesterId, employeeId, body, req) =>
 
   await updateContactInfo(employeeId, parsed.data);
 
-  try {
-    await createLog(requesterId, LOG_ACTIONS.EMPLOYEE_UPDATED, employeeId, getClientIp(req));
-  } catch (error) {
-    console.error("Error creando log de actualización de empleado:", error);
-  }
-
   return { type: RESPONSES.EMPLOYEE.UPDATED };
 };
 
-exports.updateAdminInfoService = async (requesterId, employeeId, body, req) => {
-  if (!requesterId || !employeeId) {
+exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
+  if (!requesterId || !employeeId)
     return { type: RESPONSES.EMPLOYEE.BAD_REQUEST };
-  }
 
   const parsed = employeeAdminUpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -104,7 +81,6 @@ exports.updateAdminInfoService = async (requesterId, employeeId, body, req) => {
 
   const { workdays, salary, ...rest } = parsed.data;
 
-  // Encriptar salario si viene
   if (salary !== undefined) {
     rest.salary = encryptValue(String(salary));
   }
@@ -115,12 +91,6 @@ exports.updateAdminInfoService = async (requesterId, employeeId, body, req) => {
 
   if (workdays && workdays.length > 0) {
     await upsertWorkdays(employeeId, workdays);
-  }
-
-  try {
-    await createLog(requesterId, LOG_ACTIONS.EMPLOYEE_UPDATED, employeeId, getClientIp(req));
-  } catch (error) {
-    console.error("Error creando log de actualización de empleado:", error);
   }
 
   return { type: RESPONSES.EMPLOYEE.UPDATED };
