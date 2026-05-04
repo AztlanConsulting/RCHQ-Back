@@ -110,7 +110,7 @@ const generateSessionToken = () => {
       email: TEST_EMAIL,
       name: "Password User",
       role: "test-role-password-integration",
-      privileges: [],
+      privileges: ["viewEmployees", "changePassword"],
       tokenType: "SESSION",
     },
     process.env.JWT_SECRET,

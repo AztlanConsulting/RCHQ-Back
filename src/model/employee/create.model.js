@@ -1,5 +1,5 @@
 const prisma = require("../../prisma");
-const { v4: uuidv4 } = require("uuid");
+const {randomUUID} = require("crypto");
 
 exports.create = async (employeeData) => {
   const data = {
@@ -48,7 +48,7 @@ exports.createDocumentRowWithUrl = async (employeeId, field, fileUrl) => {
   return await prisma.$transaction(async (tx) => {
     const newDoc = await tx.documents.create({
       data: {
-        document_id: uuidv4(),
+        document_id: randomUUID(),
         [field]: fileUrl,
       },
     });

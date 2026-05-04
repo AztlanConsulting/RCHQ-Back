@@ -1,12 +1,12 @@
--- Minimal seed: houses, roles, one employee, and log actions
+-- ============================================================
+-- SEED MINIMAL — RCHQ
 -- Login: andre@gmail.com / Andatti67
--- Re-run safe
-
+-- Re-run safe: todos los inserts tienen ON CONFLICT DO NOTHING
+-- ============================================================
 
 -- =========================
--- CATÁLOGOS
+-- HOUSES
 -- =========================
-
 INSERT INTO public.house (house_id, name, location, phone_number, description, image)
 VALUES 
 ('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', 'boop'),
@@ -21,12 +21,16 @@ VALUES
 ('a0000001-0000-4000-8000-000000000010', 'Proyecto de Vida I.A.P', 'Querétaro, Qro.', '4420000009', 'Desarrollo humano y social', 'default_house'),
 ('a0000001-0000-4000-8000-000000000011', 'Puerta Abierta I.A.P', 'Querétaro, Qro.', '4420000010', 'Atención a niñas y adolescentes', 'default_house'),
 ('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'Querétaro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house'),
-('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house');
+('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house')
+ON CONFLICT DO NOTHING;
 
+-- =========================
+-- ROLES
+-- =========================
 INSERT INTO public.role (role_id, name)
 VALUES 
 ('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
-('a0000002-0000-4000-8000-000000000002', 'Admin'), -- Utilizo Admin/Administrador consolidado
+('a0000002-0000-4000-8000-000000000002', 'Admin'),
 ('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
 ('a0000002-0000-4000-8000-000000000004', 'Lavandería'),
 ('a0000002-0000-4000-8000-000000000005', 'Responsable del cuidado de NNA'),
@@ -47,8 +51,74 @@ VALUES
 ('a0000002-0000-4000-8000-000000000020', 'Auxiliar de Limpieza'),
 ('a0000002-0000-4000-8000-000000000021', 'Auxiliar de Lavandería'),
 ('a0000002-0000-4000-8000-000000000022', 'Chofer'),
-('a0000002-0000-4000-8000-000000000023', 'Cocinera');
+('a0000002-0000-4000-8000-000000000023', 'Cocinera')
+ON CONFLICT DO NOTHING;
 
+-- =========================
+-- PRIVILEGES
+-- =========================
+INSERT INTO public.privileges (privilege_id, name)
+VALUES
+('00000001-0000-4000-8000-000000000001', 'viewEmployees'),
+('00000001-0000-4000-8000-000000000002', 'createEmployees'),
+('00000001-0000-4000-8000-000000000003', 'manageEmployees'),
+('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
+('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
+('00000001-0000-4000-8000-000000000006', 'viewLogs')
+ON CONFLICT DO NOTHING;
+
+-- =========================
+-- ROLE_PRIVILEGE
+-- =========================
+
+-- Admin — todos los privilegios
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000002', privilege_id
+FROM public.privileges
+ON CONFLICT DO NOTHING;
+
+-- Coordinador — gestión completa excepto logs
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
+FROM public.privileges p
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments')
+ON CONFLICT DO NOTHING;
+
+-- Roles que solo ven documentos
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE r.name IN (
+  'Psicóloga', 'Psicólogo', 'Trabajador Social', 'Enfermera',
+  'Terapeuta', 'Responsable del cuidado de NNA',
+  'Asistente de Dirección', 'Asistente de Finanzas'
+)
+AND p.name = 'viewDocuments'
+ON CONFLICT DO NOTHING;
+
+-- Coordinadores de área — ver empleados y documentos
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE r.name IN ('Coordinador Operativo', 'Coordinador Administrativo', 'Coordinador de Programa')
+AND p.name IN ('viewEmployees', 'viewDocuments')
+ON CONFLICT DO NOTHING;
+
+-- Direcciones — ver empleados, documentos y logs
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Dirección de Programa')
+AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
+ON CONFLICT DO NOTHING;
+
+-- =========================
+-- EMPLOYEE
+-- Contraseña: Andatti67
+-- =========================
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -73,15 +143,15 @@ INSERT INTO public.employee (
   temp_totp_secret_created_at
 )
 VALUES (
-  'b8f54b14-701e-4e87-a019-caef53dcda99', -- UUID fijo para que sea Re-run safe y testeable
-  (SELECT house_id FROM house WHERE name = 'Desarrollo' LIMIT 1),
-  (SELECT role_id FROM role WHERE name = 'Admin' LIMIT 1),
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT role_id  FROM public.role   WHERE name = 'Admin'      LIMIT 1),
   'Carlos',
   'Ramírez',
   true,
   'andre@gmail.com',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
-  true, -- En true para evitar el modal de "cambio de contraseña" inicial
+  false,
   0,
   NULL,
   'XAXX010101HDFXXX01',
@@ -94,8 +164,12 @@ VALUES (
   NULL,
   NULL,
   NULL
-);
+)
+ON CONFLICT DO NOTHING;
 
+-- =========================
+-- ACTIONS
+-- =========================
 INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-001', 'Intento fallido de autenticación', false),
 ('auth-002', 'Cuenta bloqueada temporalmente por múltiples intentos fallidos', false),
@@ -122,6 +196,39 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
-('empl-004', 'Documento de empleado eliminado', false);
+('empl-004', 'Documento de empleado eliminado', false)
+ON CONFLICT DO NOTHING;
+
+-- =========================
+-- DOCUMENTOS
+-- =========================
+
+INSERT INTO public.documents (document_id, name)
+VALUES
+('c0000001-0000-4000-8000-000000000001', 'Curriculum Vitae'),
+('c0000001-0000-4000-8000-000000000002', 'Acta de Nacimiento'),
+('c0000001-0000-4000-8000-000000000003', 'CURP'),
+('c0000001-0000-4000-8000-000000000004', 'INE'),
+('c0000001-0000-4000-8000-000000000005', 'Constancia de Situación Fiscal'),
+('c0000001-0000-4000-8000-000000000006', 'Comprobante de Domicilio'),
+('c0000001-0000-4000-8000-000000000007', 'Número IMSS / NSS'),
+('c0000001-0000-4000-8000-000000000008', 'Cédula Profesional'),
+('c0000001-0000-4000-8000-000000000009', 'Título o Comprobante de Último Nivel de Estudios'),
+('c0000001-0000-4000-8000-000000000010', 'Certificado Médico'),
+('c0000001-0000-4000-8000-000000000011', 'Carta de No Antecedentes Penales Estatal'),
+('c0000001-0000-4000-8000-000000000012', 'Carta de No Antecedentes Penales Federal'),
+('c0000001-0000-4000-8000-000000000013', 'Cuenta Bancaria'),
+('c0000001-0000-4000-8000-000000000014', 'Carta de Recomendación 1'),
+('c0000001-0000-4000-8000-000000000015', 'Carta de Recomendación 2'),
+('c0000001-0000-4000-8000-000000000016', 'Licencia de Manejo'),
+('c0000001-0000-4000-8000-000000000017', 'Perfil del Puesto / Manual de Puesto'),
+('c0000001-0000-4000-8000-000000000018', 'Contrato'),
+('c0000001-0000-4000-8000-000000000019', 'Reglamento Interno de Trabajo Firmado'),
+('c0000001-0000-4000-8000-000000000020', 'Carta de Confidencialidad Firmada'),
+('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
+('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
+('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
+('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación');
+ON CONFLICT DO NOTHING;
 
 COMMIT;

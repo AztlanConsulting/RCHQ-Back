@@ -235,7 +235,7 @@ exports.changePasswordFirstLogin = async ({
     };
   }
 
-  const token = buildSessionToken({
+  const token = await buildSessionToken({
     ...employee,
     pwd: hashedPassword,
     hasFirstLogin: false,

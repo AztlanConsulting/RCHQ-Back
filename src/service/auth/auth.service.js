@@ -151,7 +151,7 @@ async function login(req) {
     };
   }
 
-  const token = buildSessionToken(employee);
+  const token = await buildSessionToken(employee);
 
   await createLog(employee.employeeId, LOG_ACTIONS.LOGIN_SUCCESS, ipAddress);
 
@@ -276,7 +276,10 @@ async function verifyTwoFactorSetup(req) {
   if (!employee.tempTotpSecret) {
     return {
       status: 409,
-      body: { success: false, message: "No hay configuracion pendiente de TwoFactorAuth" },
+      body: {
+        success: false,
+        message: "No hay configuracion pendiente de TwoFactorAuth",
+      },
     };
   }
 
@@ -304,7 +307,8 @@ async function verifyTwoFactorSetup(req) {
       status: 409,
       body: {
         success: false,
-        message: "El tiempo de TwoFactorAuth setup ha expirado. Trate más adeltante.",
+        message:
+          "El tiempo de TwoFactorAuth setup ha expirado. Trate más adeltante.",
       },
     };
   }
@@ -472,7 +476,7 @@ async function validateTwoFactorAuth(req) {
 
   await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
-  const tokenJwt = buildSessionToken(employee);
+  const tokenJwt = await buildSessionToken(employee);
 
   await createLog(
     employee.employeeId,

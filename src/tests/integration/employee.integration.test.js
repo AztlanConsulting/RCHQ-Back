@@ -25,6 +25,7 @@ jest.mock("../../utils/IP", () => ({
 }));
 
 const { createEmployee } = require("../../service/employee/create.service");
+const { privileges } = require("../../prisma");
 
 // =====================================================
 // TEST SUITE
@@ -34,26 +35,30 @@ describe("Employee Service - createEmployee", () => {
   // Variables globales para las pruebas
   const mockUserAdmin = {
     id: "user-1",
-    role: "Administrador",
+    role: "Admin",
     houseId: "a0000001-0000-4000-8000-000000000001",
+    privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
   };
 
   const mockUserCoordinatorSameHouse = {
     id: "user-2",
     role: "Coordinador",
     houseId: "a0000001-0000-4000-8000-000000000001",
+    privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
   };
 
   const mockUserCoordinatorOtherHouse = {
     id: "user-3",
     role: "Coordinador",
     houseId: "a0000001-0000-4000-8000-000000000002",
+    privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
   };
 
   const mockUserUnauthorized = {
     id: "user-4",
     role: "Empleado",
     houseId: "a0000001-0000-4000-8000-000000000001",
+    privileges: [],
   };
 
   const mockReq = {
@@ -71,6 +76,7 @@ describe("Employee Service - createEmployee", () => {
     houseId: "a0000001-0000-4000-8000-000000000001",
     roleId: "a0000002-0000-4000-8000-000000000002",
     birthDate: "1990-01-01",
+    type: "nomina",
   };
 
   beforeEach(() => {

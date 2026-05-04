@@ -32,8 +32,8 @@ const seedDependencies = async () => {
 
   await prisma.role.upsert({
     where: { role_id: TEST_ROLE_ID },
-    update: { name: "administrador" },
-    create: { role_id: TEST_ROLE_ID, name: "administrador" },
+    update: { name: "Admin" },
+    create: { role_id: TEST_ROLE_ID, name: "Admin" },
   });
 
   await prisma.employee.upsert({
@@ -61,10 +61,11 @@ const generateToken = () => {
   return jwt.sign(
     {
       id: TEST_EMPLOYEE_ID,
-      employee_id: TEST_EMPLOYEE_ID,
+      employeeId: TEST_EMPLOYEE_ID,
+      houseId: TEST_HOUSE_ID,
       email: TEST_EMAIL,
-      role: "Administrador",
-      privileges: ["modifyDocuments", "viewDocuments"],
+      role: "Admin",
+      privileges: ["manageDocuments", "viewDocuments"],
       tokenType: "SESSION",
     },
     process.env.JWT_SECRET,
@@ -225,7 +226,7 @@ describe("GET /employee/:id/documents - integration", () => {
         password: "hashed",
         name: "Test",
         surname: "User",
-        type: "permanente",
+        type: "nomina",
         curp: "OTHEMP9876543210AB",
         start_date: new Date(),
         is_active: true,
@@ -233,7 +234,6 @@ describe("GET /employee/:id/documents - integration", () => {
         is_active_two_factor_auth: false,
         failed_login_attempts: 0,
         failed_two_factor_auth_attempts: 0,
-        type: "nomina",
       },
     });
 

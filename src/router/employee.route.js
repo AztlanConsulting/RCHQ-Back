@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
-const { requireRole } = require("../middleware/rbac");
+const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { authorize } = require("../middleware/abac");
 const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
 const {
-    employeePolicy,
-    viewDocuments,
-    modifyDocuments,
+  employeePolicy,
+  viewDocuments,
+  modifyDocuments,
 } = require("../policies/employee.policies");
 const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
@@ -19,17 +19,26 @@ router.get(
     "/getAll",
     apiLimiter,
     verifyToken,
+    requireRole("Admin", "Coordinador"),
+    requirePrivileges("viewEmployees"), 
     authorize(employeePolicy),
     employeeGetController.getAll,
 );
 
-router.get("/add", apiLimiter, verifyToken, employeeGetController.getAdd);
+router.get("/add", 
+  apiLimiter, 
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("createEmployees"),
+  authorize(employeePolicy, (req) => ({ house_id: req.query.house_id })), 
+  employeeGetController.getAdd);
 
 router.get(
-    "/employee-detail/:employeeId",
-    verifyToken,
-    requireRole("Administrador", "Coordinador"),
-    employeeGetController.getEmployeeDetail,
+  "/employee-detail/:employeeId",
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("viewEmployees"),
+  employeeGetController.getEmployeeDetail,
 );
 
 router.post(
@@ -37,44 +46,58 @@ router.post(
     apiLimiter,
     verifyToken,
     upload.single("picture"),
+    requireRole("Admin", "Coordinador"),
+    requirePrivileges("createEmployees"),
     authorize(employeePolicy, (req) => ({ house_id: req.body.house_id })),
     employeeAddController.postAdd,
 );
 
 router.get(
-    "/:id/documents",
-    apiLimiter,
-    verifyToken,
-    authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
-    employeeGetController.getDocumentsByEmployee,
+  "/:id/documents",
+  apiLimiter,
+  verifyToken,
+  requirePrivileges("viewDocuments"),
+  authorize(viewDocuments, (req) => ({ employeeId: req.params.id })),
+  employeeGetController.getDocumentsByEmployee,
 );
 
 router.post(
-    "/:id/documents",
-    apiLimiter,
-    verifyToken,
-    authorize(modifyDocuments),
-    uploadDocs.single("file"),
-    employeeAddController.uploadDocument,
+  "/:id/documents",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageDocuments"),
+  authorize(modifyDocuments),
+  uploadDocs.single("file"),
+  employeeAddController.uploadDocument,
 );
 
 router.put(
-    "/:id/documents/:field",
-    apiLimiter,
-    verifyToken,
-    authorize(modifyDocuments),
-    uploadDocs.single("file"),
-    employeeAddController.updateDocument,
+  "/:id/documents/:field",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageDocuments"),
+  authorize(modifyDocuments),
+  uploadDocs.single("file"),
+  employeeAddController.updateDocument,
 );
 
 router.delete(
-    "/:id/documents/:field",
-    apiLimiter,
-    verifyToken,
-    authorize(modifyDocuments),
-    employeeDeleteController.deleteDocument,
+  "/:id/documents/:field",
+  apiLimiter,
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("manageDocuments"),
+  authorize(modifyDocuments),
+  employeeDeleteController.deleteDocument,
 );
 
-router.get("/:id", apiLimiter, employeeGetController.getById);
+router.get("/:id", 
+  apiLimiter, 
+  verifyToken,
+  requireRole("Admin", "Coordinador"),
+  requirePrivileges("viewEmployees"),
+  employeeGetController.getById);
 
 module.exports = router;

@@ -372,7 +372,7 @@ describe("POST /auth/2fa/disable - integration", () => {
       is_active_two_factor_auth: true,
       totp_secret: "FAKESECRET",
     });
-    const token = generateSessionToken();
+    const token = await  generateSessionToken();
 
     // Act
     const res = await request(app)

@@ -23,9 +23,10 @@ const generateToken = (
 ) => {
     const defaultPayload = {
         employeeId: TEST_ADMIN_ID,
-        role: "Administrador",
+        role: "Admin",
         houseId: TEST_HOUSE_ID,
         tokenType: "SESSION",
+        privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
     };
 
     return jwt.sign(
@@ -37,14 +38,14 @@ const generateToken = (
 
 const seedDependencies = async () => {
     let role = await prisma.role.findUnique({
-        where: { name: "Administrador" },
+        where: { name: "Admin" },
     });
 
     if (!role) {
         role = await prisma.role.create({
             data: {
                 role_id: randomUUID(),
-                name: "Administrador",
+                name: "Admin",
             },
         });
     }
