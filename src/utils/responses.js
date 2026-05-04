@@ -17,14 +17,14 @@ const RESPONSES = {
     FOUND: "PROFILE_FOUND",
     NOT_FOUND: "PROFILE_NOT_FOUND",
   },
-  DOCUMENTS: {
-    NOT_FOUND: "Documento no encontrado",
-    OK: "Documento obtenido",
-    DELETE: "Documento borrado",
-    EMPTY: "No hay documentos",
-    NOT_ALLOW: "Tipo de documento invalido",
-    UPLOAD: "Se subió correctamente",
-    ALREADY_EXIST: "El documento ya existe",
+    DOCUMENTS: {
+        NOT_FOUND: "Documento no encontrado",
+        OK: "Documento obtenido",
+        DELETED: "Documento borrado",
+        EMPTY: "No hay documentos",
+        NOT_ALLOW: "Tipo de documento invalido",
+        UPLOADED: "Se subió correctamente",
+        ALREADY_EXISTS: "El documento ya existe",
   },
   USER: {
     NOT_FOUND: "Usuario no encontrado",

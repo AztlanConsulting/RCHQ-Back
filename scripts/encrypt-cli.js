@@ -7,11 +7,11 @@ const { encryptValue } = require("../src/utils/password");
 
 const salaries = process.argv.slice(2);
 if (salaries.length === 0) {
-  console.error("Usage: node scripts/encrypt-cli.js <salary> [<salary> ...]");
-  console.error("Example: node scripts/encrypt-cli.js 12000 0");
-  process.exit(1);
+    console.error("Usage: node scripts/encrypt-cli.js <salary> [<salary> ...]");
+    console.error("Example: node scripts/encrypt-cli.js 12000 0");
+    process.exit(1);
 }
 
 for (const salary of salaries) {
-  console.log(`${salary}\t${encryptValue(salary)}`);
+    console.log(`${salary}\t${encryptValue(salary)}`);
 }

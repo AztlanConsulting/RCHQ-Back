@@ -17,10 +17,10 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
+    cors({
+        origin: true,
+        credentials: true,
+    }),
 );
 
 app.use("/auth", authRouter);
@@ -28,18 +28,18 @@ app.use("/employee", employeeRouter);
 app.use("/user", userRouter);
 
 app.use("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "App funcionando correctamente",
-  });
+    res.status(200).json({
+        success: true,
+        message: "App funcionando correctamente",
+    });
 });
 
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
 }
 
 module.exports = app;
