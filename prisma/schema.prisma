@@ -15,26 +15,9 @@ model action {
 }
 
 model documents {
-  document_id                         String               @id(map: "documents_pk") @db.Uuid
-  cv                                  String?              @db.VarChar(100)
-  birth_certificate                   String?              @db.VarChar(100)
-  tax_status_certificate              String?              @db.VarChar(100)
-  address_certificate                 String?              @db.VarChar(100)
-  nss                                 String?              @db.VarChar(100)
-  professional_id                     String?              @db.VarChar(100)
-  education_certificate               String?              @db.VarChar(100)
-  medical_certificate                 String?              @db.VarChar(100)
-  state_criminal_record_certificate   String?              @db.VarChar(100)
-  federal_criminal_record_certificate String?              @db.VarChar(100)
-  first_recommendation_letter         String?              @db.VarChar(100)
-  second_recommendation_letter        String?              @db.VarChar(100)
-  driver_license                      String?              @db.VarChar(100)
-  signed_regulation                   String?              @db.VarChar(100)
-  signed_contract                     String?              @db.VarChar(100)
-  signed_confidential_letter          String?              @db.VarChar(100)
-  signed_ethics_letter                String?              @db.VarChar(100)
-  induction_manual                    String?              @db.VarChar(100)
-  employee_documents                  employee_documents[]
+  document_id        String               @id(map: "documents_pk") @db.Uuid
+  name               String               @unique @db.VarChar(100)
+  employee_documents employee_documents[]
 }
 
 model donation {
@@ -63,36 +46,36 @@ model donator {
 }
 
 model employee {
-  employee_id                     String   @id(map: "employee_pk") @db.Uuid
-  house_id                        String   @db.Uuid
-  role_id                         String   @db.Uuid
-  name                            String   @db.VarChar(50)
-  surname                         String   @db.VarChar(50)
-  type                            String?  @db.VarChar(20)
+  employee_id                     String                          @id(map: "employee_pk") @db.Uuid
+  house_id                        String                          @db.Uuid
+  role_id                         String                          @db.Uuid
+  name                            String                          @db.VarChar(50)
+  surname                         String                          @db.VarChar(50)
   is_active                       Boolean
-  email                           String   @unique @db.VarChar(60)
-  password                        String   @db.VarChar(72)
+  email                           String                          @unique @db.VarChar(60)
+  password                        String                          @db.VarChar(72)
   has_first_login                 Boolean
-  is_active_two_factor_auth       Boolean  @default(false)
-  failed_login_attempts           Int      @default(0)
-  failed_two_factor_auth_attempts Int      @default(0)
-  totp_secret                     String?  @db.VarChar(32)
-  curp                            String   @unique @db.VarChar(18)
-  rfc                             String?  @unique @db.VarChar(13)
-  birth_date                      DateTime? @db.Date
-  picture                         String?  @db.VarChar(150)
-  start_date                      DateTime @db.Date
-  end_date                        DateTime? @db.Date
-  phone_number                    String?  @db.VarChar(20)
-  nss                             String?  @unique @db.VarChar(11)
-  bank_account                    String?  @db.VarChar(18)
-  salary                          String?  @db.VarChar(72)
-  blocked_until                   DateTime? @db.Timestamp(6)
-  two_fa_blocked_until            DateTime? @db.Timestamp(6)
-  temp_totp_secret                String?  @db.VarChar
-  temp_totp_secret_created_at     DateTime? @db.Timestamp(6)
-  house                           house    @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
-  role                            role     @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
+  is_active_two_factor_auth       Boolean                         @default(false)
+  failed_login_attempts           Int                             @default(0)
+  failed_two_factor_auth_attempts Int                             @default(0)
+  totp_secret                     String?                         @db.VarChar(32)
+  curp                            String                          @unique @db.VarChar(18)
+  rfc                             String?                         @unique @db.VarChar(13)
+  birth_date                      DateTime?                       @db.Date
+  picture                         String?                         @db.VarChar(150)
+  start_date                      DateTime                        @db.Date
+  nss                             String?                         @unique @db.VarChar(11)
+  bank_account                    String?                         @db.VarChar(18)
+  blocked_until                   DateTime?                       @db.Timestamp(6)
+  two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
+  temp_totp_secret                String?                         @db.VarChar
+  temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
+  type                            String?                         @db.VarChar(20)
+  salary                          String?                         @db.VarChar(72)
+  end_date                        DateTime?                       @db.Date
+  phone_number                    String?                         @db.VarChar(20)
+  house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
+  role                            role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address                employee_address[]
   employee_backup_code            employee_backup_code[]
   employee_documents              employee_documents[]
@@ -282,25 +265,25 @@ model psychological_evaluation {
 }
 
 model privileges {
-  privilege_id    String           @id(map: "privileges_pk") @db.Uuid
-  name            String           @unique @db.VarChar(50)
-  role_privilege  role_privilege[]
+  privilege_id   String           @id(map: "privileges_pk") @db.Uuid
+  name           String           @unique @db.VarChar(50)
+  role_privilege role_privilege[]
 }
 
 model role_privilege {
   role_id      String     @db.Uuid
   privilege_id String     @db.Uuid
-  role         role       @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_role_fk")
   privilege    privileges @relation(fields: [privilege_id], references: [privilege_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_privilege_fk")
+  role         role       @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_role_fk")
 
   @@id([role_id, privilege_id], map: "role_privilege_pk")
 }
 
 model role {
-  role_id         String           @id(map: "role_pk") @db.Uuid
-  name            String           @unique @db.VarChar(50)
-  employee        employee[]
-  role_privilege  role_privilege[]
+  role_id        String           @id(map: "role_pk") @db.Uuid
+  name           String           @unique @db.VarChar(50)
+  employee       employee[]
+  role_privilege role_privilege[]
 }
 
 model vacations_request {

@@ -1,7 +1,7 @@
 const {
-  generateToken,
-  generateFirstLoginToken,
-  generatePreTwoFactorAuthToken,
+    generateToken,
+    generateFirstLoginToken,
+    generatePreTwoFactorAuthToken,
 } = require("../jwt");
 const prisma = require("../../prisma")
 
@@ -37,17 +37,17 @@ exports.buildSessionToken = async (employee) => {
 };
 
 exports.buildFirstLoginJwt = (employee) => {
-  return generateFirstLoginToken({
-    id: employee.employeeId,
-    email: employee.email,
-    tokenType: "FIRST_LOGIN",
-  });
+    return generateFirstLoginToken({
+        id: employee.employeeId,
+        email: employee.email,
+        tokenType: "FIRST_LOGIN",
+    });
 };
 
 exports.buildPreTwoFactorAuthJwt = (employee) => {
-  return generatePreTwoFactorAuthToken({
-    id: employee.employeeId,
-    email: employee.email,
-    tokenType: "preTwoFactorAuth",
-  });
+    return generatePreTwoFactorAuthToken({
+        id: employee.employeeId,
+        email: employee.email,
+        tokenType: "preTwoFactorAuth",
+    });
 };

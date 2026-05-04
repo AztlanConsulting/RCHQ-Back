@@ -1,11 +1,11 @@
 exports.employeePolicy = (user) => {
-  if (!user) return false;
+    if (!user) return false;
 
   if (user.role === "Admin") return true;
 
-  if (user.role === "Coordinador") return true;
+    if (user.role === "Coordinador") return true;
 
-  return false;
+    return false;
 };
 
 exports.viewDocuments = (user, resource) => {

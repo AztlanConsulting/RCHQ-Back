@@ -18,10 +18,10 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
+    cors({
+        origin: true,
+        credentials: true,
+    }),
 );
 
 app.use("/auth", authRouter);
@@ -32,9 +32,9 @@ app.use("/employee", employeeRouter);
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
 }
 
 module.exports = app;

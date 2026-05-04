@@ -6,13 +6,14 @@ const { authorize } = require("../middleware/abac");
 const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
 const {
-  employeePolicy,
-  viewDocuments,
-  modifyDocuments,
+    employeePolicy,
+    viewDocuments,
+    modifyDocuments,
 } = require("../policies/employee.policies");
 const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
+const employeeUpdateController = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
 router.get(
@@ -53,6 +54,13 @@ router.post(
 );
 
 router.get(
+    "/document-types",
+    apiLimiter,
+    verifyToken,
+    employeeGetController.getDocumentTypes,
+);
+
+router.get(
   "/:id/documents",
   apiLimiter,
   verifyToken,
@@ -80,7 +88,7 @@ router.put(
   requirePrivileges("manageDocuments"),
   authorize(modifyDocuments),
   uploadDocs.single("file"),
-  employeeAddController.updateDocument,
+  employeeUpdateController.updateDocument,
 );
 
 router.delete(

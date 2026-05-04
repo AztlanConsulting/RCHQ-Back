@@ -120,27 +120,12 @@ ON CONFLICT DO NOTHING;
 -- Contraseña: Andatti67
 -- =========================
 INSERT INTO public.employee (
-  employee_id,
-  house_id,
-  role_id,
-  name,
-  surname,
-  is_active,
-  email,
-  password,
-  has_first_login,
-  failed_login_attempts,
-  totp_secret,
-  curp,
-  rfc,
-  birth_date,
-  picture,
-  start_date,
-  nss,
-  bank_account,
-  blocked_until,
-  temp_totp_secret,
-  temp_totp_secret_created_at
+    employee_id, house_id, role_id, name, surname,
+    is_active, email, password, has_first_login,
+    failed_login_attempts, totp_secret, curp, rfc,
+    birth_date, picture, start_date, nss, bank_account,
+    blocked_until, temp_totp_secret, temp_totp_secret_created_at,
+    type
 )
 VALUES (
   'b8f54b14-701e-4e87-a019-caef53dcda99',
