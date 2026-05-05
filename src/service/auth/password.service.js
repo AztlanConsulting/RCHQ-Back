@@ -5,7 +5,7 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { verifyPassword, hashPassword } = require("../../utils/password");
 const {
     buildSessionToken,
-    buildPre2faJwt,
+    buildPreTwoFactorAuthJwt,
 } = require("../../utils/auth/authTokens");
 
 exports.changePassword = async ({
@@ -168,7 +168,8 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: false,
                 code: "FIRST_LOGIN_ALREADY_COMPLETED",
-                message: "Cambio de contraseña en primer inicio de sesión ya completado",
+                message:
+                    "Cambio de contraseña en primer inicio de sesión ya completado",
             },
         };
     }
@@ -212,8 +213,8 @@ exports.changePasswordFirstLogin = async ({
         );
     });
 
-    if (employee.isActive2FA) {
-        const pre2FAToken = buildPre2faJwt({
+    if (employee.isActiveTwoFactorAuth) {
+        const preTwoFactorAuthToken = buildPreTwoFactorAuthJwt({
             ...employee,
             hasFirstLogin: false,
         });
@@ -223,9 +224,9 @@ exports.changePasswordFirstLogin = async ({
             body: {
                 success: true,
                 message: "Contraseña cambiada exitosamente",
-                nextStep: "VERIFY_2FA",
+                nextStep: "LOGIN_COMPLETE",
                 data: {
-                    pre2FAToken,
+                    preTwoFactorAuthToken,
                     employeeId: employee.employeeId,
                     email: employee.email,
                     name: employee.name,
@@ -234,27 +235,27 @@ exports.changePasswordFirstLogin = async ({
         };
     }
 
-    const token = buildSessionToken({
-        ...employee,
-        pwd: hashedPassword,
-        hasFirstLogin: false,
-    });
+  const token = await buildSessionToken({
+    ...employee,
+    pwd: hashedPassword,
+    hasFirstLogin: false,
+  });
 
-    return {
-        status: 200,
-        body: {
-            success: true,
-            message: "Contraseña cambiada exitosamente",
-            nextStep: "LOGIN_COMPLETE",
-            data: {
-                token,
-                user: {
-                    employeeId: employee.employeeId,
-                    email: employee.email,
-                    name: employee.name,
-                    role: employee.role,
-                },
-            },
+  return {
+    status: 200,
+    body: {
+      success: true,
+      message: "Contraseña cambiada exitosamente",
+      nextStep: "LOGIN_COMPLETE",
+      data: {
+        token,
+        user: {
+          employeeId: employee.employeeId,
+          email: employee.email,
+          name: employee.name,
+          role: employee.role,
         },
-    };
+      },
+    },
+  };
 };

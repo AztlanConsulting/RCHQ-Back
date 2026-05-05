@@ -25,6 +25,9 @@ const TEST_FIRST_LOGIN_CURP = "FLOG900101HDFABC02";
 const TEST_TEMP_PASSWORD = "Temporal123A";
 const TEST_FIRST_LOGIN_NEW_PASSWORD = "Definitiva123A";
 
+/** Placeholder ciphertext (VarChar 72); must be String, never numeric 0 */
+//const TEST_SALARY_ENC_STUB = "enc-stub-password-it-salary-placeholder";
+
 // ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
     await prisma.house.upsert({
@@ -35,7 +38,8 @@ const seedDependencies = async () => {
             name: "Casa de Prueba Password Integration",
             location: "Test Location",
             phone_number: "4421234567",
-            description: "Casa usada solo para tests de integración de password",
+            description:
+                "Casa usada solo para tests de integración de password",
             image: "test-image.jpg",
         },
     });
@@ -64,11 +68,12 @@ const createTestEmployee = async (overrides = {}) => {
             surname: "User",
             curp: TEST_CURP,
             start_date: new Date("2024-01-01"),
+            type: "permanente",
             has_first_login: false,
             is_active: true,
-            is_active_2fa: false,
+            is_active_two_factor_auth: false,
             failed_login_attempts: 0,
-            failed_2fa_attempts: 0,
+            failed_two_factor_auth_attempts: 0,
             ...overrides,
         },
     });
@@ -88,29 +93,30 @@ const createFirstLoginEmployee = async (overrides = {}) => {
             surname: "Login",
             curp: TEST_FIRST_LOGIN_CURP,
             start_date: new Date("2024-01-01"),
+            type: "permanente",
             has_first_login: true,
             is_active: true,
-            is_active_2fa: false,
+            is_active_two_factor_auth: false,
             failed_login_attempts: 0,
-            failed_2fa_attempts: 0,
+            failed_two_factor_auth_attempts: 0,
             ...overrides,
         },
     });
 };
 
 const generateSessionToken = () => {
-    return jwt.sign(
-        {
-            id: TEST_EMPLOYEE_ID,
-            email: TEST_EMAIL,
-            name: "Password User",
-            role: "test-role-password-integration",
-            privileges: [],
-            tokenType: "SESSION",
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" },
-    );
+  return jwt.sign(
+    {
+      id: TEST_EMPLOYEE_ID,
+      email: TEST_EMAIL,
+      name: "Password User",
+      role: "test-role-password-integration",
+      privileges: ["viewEmployees", "changePassword"],
+      tokenType: "SESSION",
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" },
+  );
 };
 
 const generateFirstLoginToken = () => {
@@ -193,13 +199,11 @@ describe("POST /auth/change-password - integration", () => {
     it("retorna 401 si no se envía token", async () => {
         await createTestEmployee();
 
-        const res = await request(app)
-            .post("/auth/change-password")
-            .send({
-                currentPassword: TEST_PASSWORD,
-                newPassword: TEST_NEW_PASSWORD,
-                confirmPassword: TEST_NEW_PASSWORD,
-            });
+        const res = await request(app).post("/auth/change-password").send({
+            currentPassword: TEST_PASSWORD,
+            newPassword: TEST_NEW_PASSWORD,
+            confirmPassword: TEST_NEW_PASSWORD,
+        });
 
         expect(res.statusCode).toBe(401);
     });

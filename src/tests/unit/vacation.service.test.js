@@ -15,7 +15,7 @@ const vacationAddModel = require("../../model/vacation/add.model");
 const logModel = require("../../model/log.model");
 const datesUtils = require("../../utils/dates");
 const ipUtils = require("../../utils/ip");
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 
 const EMPLOYEE_ID = 1;
 const START_DATE = new Date("2025-01-01");
@@ -36,7 +36,7 @@ describe("vacation.service — requestVacation", () => {
             const result =
                 await vacationService.getRemainingVacations(EMPLOYEE_ID);
 
-            expect(result.code).toBe(responses.vacation.workDaysFound);
+            expect(result.code).toBe(RESPONSES.VACATION.REMAINING_VACATIONS_FOUND);
             expect(result.data.startDate.getTime()).toBe(
                 new Date("2025-06-01").getTime(),
             );
@@ -46,8 +46,8 @@ describe("vacation.service — requestVacation", () => {
         });
     });
 
-    describe("Flujo - Sin días de trabajo", () => {
-        it("retorna días de vacaciones libres y su rango", async () => {
+    describe("Flujo - Sin día de trabajo inicial", () => {
+        it("retorna código de error", async () => {
             employeeModel.getStartDate.mockResolvedValue(undefined);
 
             vacationConsultModel.getVacationsInRange.mockResolvedValue([]);
@@ -55,7 +55,7 @@ describe("vacation.service — requestVacation", () => {
             const result =
                 await vacationService.getRemainingVacations(START_DATE);
 
-            expect(result.code).toBe(responses.vacation.workDaysNotFound);
+            expect(result.code).toBe(RESPONSES.VACATION.WITHOUT_START_DATE);
         });
     });
 
@@ -88,7 +88,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.requested);
+            expect(result.code).toBe(RESPONSES.VACATION.REQUESTED);
             expect(vacationAddModel.requestVacation).toHaveBeenCalled();
             expect(logModel.createLog).toHaveBeenCalled();
         });
@@ -123,7 +123,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.badDates);
+            expect(result.code).toBe(RESPONSES.VACATION.BAD_DATES);
         });
     });
 
@@ -156,7 +156,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.withoutDates);
+            expect(result.code).toBe(RESPONSES.VACATION.WITHOUT_DATES);
         });
     });
 
@@ -189,7 +189,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.insufficientDays);
+            expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_DATES);
         });
     });
 
@@ -222,7 +222,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.alreadyRequest);
+            expect(result.code).toBe(RESPONSES.VACATION.ALREADY_REQUEST);
         });
 
         it("Verifica si se traslapan vacaciones fuera del rango pedido", async () => {
@@ -253,7 +253,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.alreadyRequest);
+            expect(result.code).toBe(RESPONSES.VACATION.ALREADY_REQUEST);
         });
     });
 
@@ -286,7 +286,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(responses.vacation.nullDates);
+            expect(result.code).toBe(RESPONSES.VACATION.NULL_DATES);
         });
     });
 });

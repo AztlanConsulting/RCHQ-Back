@@ -1,8 +1,8 @@
+require("dotenv").config();
+
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const { PrismaClient } = require('@prisma/client');
-const { getClientIp } = require("./utils/ip");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const vacationRouter = require("./router/vacation.route");
@@ -10,14 +10,9 @@ const eventRouter = require("./router/event.route");
 
 
 const userRouter = require("./router/user.route");
-const prisma = new PrismaClient();
 
 const errorHandler = require("./middleware/ErrorHandler");
-
 const path = require("path");
-
-// Loads the variables in the enviorment file
-require("dotenv").config();
 
 const port = Number(process.env.RUNNING_PORT || 3000);
 
@@ -33,19 +28,24 @@ app.use(
 );
 
 app.use("/auth", authRouter);
-
-app.use("/user", userRouter);
-
 app.use("/employee", employeeRouter);
+app.use("/user", userRouter);
 app.use("/vacation", vacationRouter);
 app.use("/event", eventRouter);
+
+app.use("/health", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "App funcionando correctamente",
+    });
+});
 
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
 }
 
 module.exports = app;

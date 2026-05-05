@@ -2,65 +2,65 @@ const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
 const sessionExpiresIn = "1h";
 const firstLoginExpiresIn = "15m";
-const pre2faExpiresIn = "10m";
+const preTwoFactorAuthExpiresIn = "10m";
 
 const generateToken = (user) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      houseId: user.houseId,
-      privileges: user.privileges || [],
-      tokenType: "SESSION",
-    },
-    jwtSecret,
-    { expiresIn: sessionExpiresIn },
-  );
+    return jwt.sign(
+        {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            houseId: user.houseId,
+            privileges: user.privileges || [],
+            tokenType: "SESSION",
+        },
+        jwtSecret,
+        { expiresIn: sessionExpiresIn },
+    );
 };
 
 const generateFirstLoginToken = (user) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      purpose: "FIRST_LOGIN_CHANGE_PASSWORD",
-      tokenType: "FIRST_LOGIN",
-    },
-    jwtSecret,
-    { expiresIn: firstLoginExpiresIn },
-  );
+    return jwt.sign(
+        {
+            id: user.id,
+            email: user.email,
+            purpose: "FIRST_LOGIN_CHANGE_PASSWORD",
+            tokenType: "FIRST_LOGIN",
+        },
+        jwtSecret,
+        { expiresIn: firstLoginExpiresIn },
+    );
 };
 
-const generatePre2faToken = (user) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      tokenType: "PRE_2FA",
-    },
-    jwtSecret,
-    { expiresIn: pre2faExpiresIn },
-  );
+const generatePreTwoFactorAuthToken = (user) => {
+    return jwt.sign(
+        {
+            id: user.id,
+            email: user.email,
+            tokenType: "preTwoFactorAuth",
+        },
+        jwtSecret,
+        { expiresIn: preTwoFactorAuthExpiresIn },
+    );
 };
 
 const decodeToken = (token) => {
-  if (!token) {
-    return null;
-  }
-  try {
-    return jwt.verify(token, jwtSecret);
-  } catch {
-    return null;
-  }
+    if (!token) {
+        return null;
+    }
+    try {
+        return jwt.verify(token, jwtSecret);
+    } catch {
+        return null;
+    }
 };
 
 module.exports = {
-  generateToken,
-  decodeToken,
-  generateFirstLoginToken,
-  generatePre2faToken,
+    generateToken,
+    decodeToken,
+    generateFirstLoginToken,
+    generatePreTwoFactorAuthToken,
 };
 
 

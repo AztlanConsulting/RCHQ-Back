@@ -11,7 +11,8 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({ storage,
+const upload = multer({
+    storage,
     limits: {
         fileSize: 5 * 1024 * 1024,
     },
@@ -19,11 +20,15 @@ const upload = multer({ storage,
         const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
 
         if (!allowedTypes.includes(file.mimetype)) {
-            return cb(new Error("Solo se permiten imágenes con formato JPEG, PNG y JPG"));
+            return cb(
+                new Error(
+                    "Solo se permiten imágenes con formato JPEG, PNG y JPG",
+                ),
+            );
         }
 
         cb(null, true);
     },
- });
+});
 
 module.exports = upload;

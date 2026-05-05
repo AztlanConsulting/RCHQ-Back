@@ -1,23 +1,25 @@
-const { create } = require("../../model/employee/create.model");
+const {
+    create,
+    createEmployeeDocument,
+} = require("../../model/employee/create.model");
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 const {
     findById,
     findByCurp,
     getAllRoles,
-} = require("../../model/employee/consult.model");
-
+    findDocumentById,
+    findEmployeeDocument,
+} = require("../../model/employee/get.model");
 const { createLog } = require("../../model/log.model");
-
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
-const { LOG_ACTIONS } = require("../../utils/logActions");
-
 const {
     employeeCreateSchema,
 } = require("../../schemas/employee/create.schemas");
-
+const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
-
-const { v4: uuidv4 } = require("uuid");
+const { randomUUID } = require("crypto");
+const RESPONSES = require("../../utils/responses");
 
 exports.getById = async (id) => {
     return await findById(id);
@@ -43,9 +45,7 @@ exports.createEmployee = async (employee, user, req) => {
 
     const data = validation.data;
 
-    const canCreate = employeePolicy(user, {
-        houseId: data.houseId,
-    });
+    const canCreate = employeePolicy(user, { houseId: data.houseId });
 
     if (!canCreate) {
         return {
@@ -69,7 +69,7 @@ exports.createEmployee = async (employee, user, req) => {
     const hashedPassword = await hashPassword("red_de_casas_hogar");
 
     const newEmployee = await create({
-        employeeId: uuidv4(),
+        employeeId: randomUUID(),
         houseId: user.houseId,
         roleId: data.roleId,
         name: data.name,
@@ -102,9 +102,54 @@ exports.createEmployee = async (employee, user, req) => {
         warning = "Empleado creado pero el log falló";
     }
 
-    return {
-        success: true,
-        employeeId: newEmployee.employeeId,
-        warning,
-    };
+    return { success: true, employeeId: newEmployee.employeeId, warning };
+};
+
+exports.uploadDocument = async (employeeId, file, documentId) => {
+    const docType = await findDocumentById(documentId);
+    if (!docType) {
+        deleteFileIfExists(file?.path);
+        return {
+            type: RESPONSES.DOCUMENTS.NOT_ALLOW,
+            body: { success: false, message: "Tipo de documento inválido" },
+        };
+    }
+
+    const employee = await findById(employeeId);
+    if (!employee) {
+        deleteFileIfExists(file?.path);
+        return {
+            type: RESPONSES.USER.NOT_FOUND,
+            body: { success: false, message: "Usuario no encontrado" },
+        };
+    }
+
+    const existing = await findEmployeeDocument(employeeId, documentId);
+    if (existing) {
+        deleteFileIfExists(file?.path);
+        return {
+            type: RESPONSES.DOCUMENTS.ALREADY_EXISTS,
+            body: {
+                success: false,
+                message: "Este documento ya existe",
+                field: documentId,
+            },
+        };
+    }
+
+    const fileUrl = `uploads/documents/${file.filename}`;
+    try {
+        const result = await createEmployeeDocument(
+            employeeId,
+            documentId,
+            fileUrl,
+        );
+        return {
+            type: RESPONSES.DOCUMENTS.UPLOADED,
+            body: { success: true, data: result },
+        };
+    } catch (err) {
+        deleteFileIfExists(fileUrl);
+        throw err;
+    }
 };

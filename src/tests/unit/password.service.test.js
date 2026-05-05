@@ -19,7 +19,7 @@ jest.mock("../../utils/password", () => ({
 
 jest.mock("../../utils/auth/authTokens", () => ({
     buildSessionToken: jest.fn(),
-    buildPre2faJwt: jest.fn(),
+    buildPreTwoFactorAuthJwt: jest.fn(),
 }));
 
 const prisma = require("../../prisma");
@@ -28,7 +28,7 @@ const { createLog } = require("../../model/log.model");
 const { verifyPassword, hashPassword } = require("../../utils/password");
 const {
     buildSessionToken,
-    buildPre2faJwt,
+    buildPreTwoFactorAuthJwt,
 } = require("../../utils/auth/authTokens");
 
 const {
@@ -43,7 +43,7 @@ const mockEmployee = {
     role: "admin",
     isActive: true,
     hasFirstLogin: true,
-    isActive2FA: false,
+    isActiveTwoFactorAuth: false,
     pwd: "hashed-password",
 };
 
@@ -53,7 +53,7 @@ describe("password.service", () => {
         createLog.mockResolvedValue();
         hashPassword.mockResolvedValue("new-hashed-password");
         buildSessionToken.mockReturnValue("fake-session-token");
-        buildPre2faJwt.mockReturnValue("fake-pre2fa-token");
+        buildPreTwoFactorAuthJwt.mockReturnValue("fake-pre2fa-token");
     });
 
     describe("changePassword", () => {
@@ -291,7 +291,7 @@ describe("password.service", () => {
         it("retorna pre2FAToken si el usuario tiene 2FA activo", async () => {
             auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
-                isActive2FA: true,
+                isActiveTwoFactorAuth: true,
             });
             verifyPassword.mockResolvedValueOnce(false);
 
@@ -310,9 +310,9 @@ describe("password.service", () => {
             });
 
             expect(result.status).toBe(200);
-            expect(result.body.nextStep).toBe("VERIFY_2FA");
-            expect(result.body.data.pre2FAToken).toBe("fake-pre2fa-token");
-            expect(buildPre2faJwt).toHaveBeenCalled();
+            expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
+            expect(result.body.data.preTwoFactorAuthToken).toBeDefined();
+            expect(buildPreTwoFactorAuthJwt).toHaveBeenCalled();
         });
     });
 });

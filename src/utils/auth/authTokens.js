@@ -1,35 +1,53 @@
 const {
-  generateToken,
-  generateFirstLoginToken,
-  generatePre2faToken,
+    generateToken,
+    generateFirstLoginToken,
+    generatePreTwoFactorAuthToken,
 } = require("../jwt");
+const prisma = require("../../prisma")
 
-function buildUserPayload(employee) {
-    return {
-        id: employee.employeeId,
-        email: employee.email,
-        name: employee.name,
-        role: employee.role,
-        houseId: employee.houseId,
-        privileges: ["read_profile"],
-    };
-}
+async function buildUserPayload(employee) {
 
-exports.buildSessionToken = (employee) => {
-    return generateToken(buildUserPayload(employee));
-}
+  const roleWithPrivileges = await prisma.role.findUnique({
+    where: { role_id: employee.roleId },
+    include: {
+      role_privilege: {
+        include: { privilege: true },
+      },
+    },
+  });
 
-exports.buildFirstLoginJwt = (employee) => {
-  return generateFirstLoginToken({
+  const privileges = roleWithPrivileges?.role_privilege
+    .map((rp) => rp.privilege.name) ?? [];
+
+  return {
     id: employee.employeeId,
     email: employee.email,
-  });
+    name: employee.name,
+    role: employee.role,
+    houseId: employee.houseId,
+    privileges,
+    tokenType: "SESSION",
+  };
 }
 
-exports.buildPre2faJwt = (employee) => {
-    return generatePre2faToken({
+exports.buildSessionToken = async (employee) => {
+  const payload = await buildUserPayload(employee);
+  const token = generateToken(payload);
+  return token;
+};
+
+exports.buildFirstLoginJwt = (employee) => {
+    return generateFirstLoginToken({
         id: employee.employeeId,
         email: employee.email,
+        tokenType: "FIRST_LOGIN",
     });
-}
+};
 
+exports.buildPreTwoFactorAuthJwt = (employee) => {
+    return generatePreTwoFactorAuthToken({
+        id: employee.employeeId,
+        email: employee.email,
+        tokenType: "preTwoFactorAuth",
+    });
+};

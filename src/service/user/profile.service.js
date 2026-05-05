@@ -1,19 +1,18 @@
-// src/service/profile.service.js
 const profile = require("../../model/user/profile.model");
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 
 async function getUserProfile(employeeId) {
-  const employee = await profile.findEmployeeProfile(employeeId);
+    const employee = await profile.findEmployeeProfile(employeeId);
 
-  if (!employee) {
+    if (!employee) {
+        return {
+            code: RESPONSES.PROFILE.NOT_FOUND,
+        };
+    }
     return {
-      code: responses.profile.notFound
+        code: RESPONSES.PROFILE.FOUND,
+        data: employee,
     };
-  }
-  return {
-    code: responses.profile.found,
-    data: employee
-  };
 }
 
 module.exports = { getUserProfile };

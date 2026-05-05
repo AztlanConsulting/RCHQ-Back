@@ -2,7 +2,7 @@ const {
     getRemainingVacations, 
     requestVacation
 } = require("../../service/vacation/add.service")
-const responses = require("../../utils/responses");
+const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
 
 exports.getRemainingVacations = async (req, res) => {
@@ -10,14 +10,14 @@ exports.getRemainingVacations = async (req, res) => {
         const employeeId = req.params.id;
         const result = await getRemainingVacations(employeeId);
 
-        if (result.code === responses.vacation.workDaysNotFound) {
+        if (result.code === RESPONSES.VACATION.WITHOUT_START_DATE) {
             return res.status(500).json({
                 success: false,
                 message: "Internal Server Error",
             });
         }
 
-        if (result.code === responses.vacation.workDaysFound) {
+        if (result.code === RESPONSES.VACATION.REMAINING_VACATIONS_FOUND) {
             return res.status(200).json({
                 success: true,
                 data: {
@@ -34,7 +34,7 @@ exports.getRemainingVacations = async (req, res) => {
 }
 
 exports.requestVacation = async (req, res) => {
-    //try {
+    try {
         const startDate = req.body.startDate;
         const endDate = req.body.endDate;
 
@@ -49,59 +49,59 @@ exports.requestVacation = async (req, res) => {
         const employeeId = req.user.id;
         const result = await requestVacation(employeeId, parsedStartDate, parsedEndDate, clientIp);
 
-        if (result.code == responses.vacation.nullDates) {
+        if (result.code == RESPONSES.VACATION.NULL_DATES) {
             return res.status(406).json({
                 success: false,
                 message: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones"
             });
         }
 
-        if (result.code == responses.vacation.alreadyRequest) {
+        if (result.code == RESPONSES.VACATION.ALREADY_REQUEST) {
             return res.status(406).json({
                 success: false,
                 message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados"
             });
         }
 
-        if (result.code == responses.vacation.outOfRange) {
+        if (result.code == RESPONSES.VACATION.OUT_OF_RANGE) {
             return res.status(406).json({
                 success: false,
                 message: "No se pueden solicitar vacaciones fuera del periodo actual de trabajo"
             });
         }
 
-        if (result.code == responses.vacation.badDates) {
+        if (result.code == RESPONSES.VACATION.BAD_DATES) {
             return res.status(406).json({
                 success: false,
                 message: "No se puede tener una fecha de inicio posterior a la de finalización"
             });
         }
 
-        if (result.code == responses.vacation.insufficientDays) {
+        if (result.code == RESPONSES.VACATION.INSUFFICIENT_DATES) {
             return res.status(406).json({
                 success: false,
                 message: "No se tienen suficientes días disponibles para solicitar las vacaciones"
             });
         }
 
-        if (result.code == responses.vacation.withoutDates) {
+        if (result.code == RESPONSES.VACATION.WITHOUT_DATES) {
             return res.status(406).json({
                 success: false,
                 message: "Se ocupan tener registrados los días de trabajo"
             });
         }
 
-        if (result.code == responses.vacation.requested) {
+        if (result.code == RESPONSES.VACATION.REQUESTED) {
             return res.status(201).json({
                 success: true,
                 message: "Se solicitaron las vacaciones de forma correcta"
             });
         }
 
-    /*} catch {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
         });
-    }*/
+    }
 }

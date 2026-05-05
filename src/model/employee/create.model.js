@@ -1,4 +1,5 @@
 const prisma = require("../../prisma");
+const {randomUUID} = require("crypto");
 
 exports.create = async (employeeData) => {
     const data = {
@@ -41,4 +42,14 @@ exports.create = async (employeeData) => {
         picture: employee.picture,
         startDate: employee.start_date,
     };
+};
+
+exports.createEmployeeDocument = async (employeeId, documentId, fileUrl) => {
+    return await prisma.employee_documents.create({
+        data: {
+            document_id: documentId,
+            employee_id: employeeId,
+            url: fileUrl,
+        },
+    });
 };
