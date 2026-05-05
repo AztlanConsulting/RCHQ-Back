@@ -90,7 +90,7 @@ exports.upsertWorkdays = async (employeeId, workdays) => {
 };
 
 exports.getAllWorkdays = async () => {
-  const workdays = await prisma.workday.findMany({ orderBy: { name: "asc" } });
+  const workdays = await prisma.workday.findMany({ orderBy: { workday_id: "asc" } });
   return workdays.map((w) => ({ workdayId: w.workday_id, name: w.name }));
 };
 
