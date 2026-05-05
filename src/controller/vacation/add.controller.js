@@ -3,6 +3,7 @@ const {
     requestVacation
 } = require("../../service/vacation/add.service")
 const responses = require("../../utils/responses");
+const { getClientIp } = require("../../utils/ip");
 
 exports.getRemainingVacations = async (req, res) => {
     try {
@@ -43,13 +44,29 @@ exports.requestVacation = async (req, res) => {
         const parsedStartDate = new Date(Date.UTC(startDateElements[0], startDateElements[1]-1, startDateElements[2]));
         const parsedEndDate = new Date(Date.UTC(endDateElements[0], endDateElements[1]-1, endDateElements[2]));
 
+        const clientIp = getClientIp(req);
+
         const employeeId = req.user.id;
-        const result = await requestVacation(employeeId, parsedStartDate, parsedEndDate, req);
+        const result = await requestVacation(employeeId, parsedStartDate, parsedEndDate, clientIp);
+
+        if (result.code == responses.vacation.nullDates) {
+            return res.status(406).json({
+                success: false,
+                message: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones"
+            });
+        }
 
         if (result.code == responses.vacation.alreadyRequest) {
             return res.status(406).json({
                 success: false,
                 message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados"
+            });
+        }
+
+        if (result.code == responses.vacation.outOfRange) {
+            return res.status(406).json({
+                success: false,
+                message: "No se pueden solicitar vacaciones fuera del periodo actual de trabajo"
             });
         }
 

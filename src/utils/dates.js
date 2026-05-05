@@ -1,5 +1,3 @@
-const { workday } = require("../prisma");
-
 exports.combineDateAndTime = (date, time) => {
     const day = date.getUTCDate();
     const month = date.getUTCMonth();
@@ -17,7 +15,6 @@ exports.toUTC = (date) => {
 }
 
 exports.spanishToDay = (day) => {
-    console.log(day)
     switch (day) {
         case "Domingo":
             return 0;
@@ -37,12 +34,20 @@ exports.spanishToDay = (day) => {
     return -1
 }
 
-exports.calculateUsedDays = (workDays, startDate, endDate) => {
+exports.calculateUsedDays = (workDays, startDate, endDate, events) => {
     const days = [];
     workDays.forEach(workDay => {
         days.push(this.spanishToDay(workDay.workday.name))
     });
-    console.log(days);
+
+    const freeDays = [];
+    events.forEach(event => {
+        const eventDay = event.start.getUTCDay();
+        const eventDate = event.start.toISOString().split("T")[0];
+        if (event.is_free_day == true && days.includes(eventDay) && !freeDays.includes(eventDate)) {
+            freeDays.push(eventDate)
+        }
+    });
 
     let usedDays = 0;
 
@@ -53,8 +58,7 @@ exports.calculateUsedDays = (workDays, startDate, endDate) => {
             usedDays += 1;
         }
         currentDay.setUTCDate(currentDay.getUTCDate() + 1);
-        console.log(currentDay)
     }
 
-    return usedDays;
+    return usedDays - freeDays.length;
 }

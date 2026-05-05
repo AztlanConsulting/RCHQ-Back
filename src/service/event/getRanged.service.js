@@ -8,10 +8,10 @@ const {
 } = require("../../model/event/getRanged.model")
 
 exports.getEventsInRange = async (employeeId, startDate, endDate) => {
+    // !ERROR Validar fechas correctas
+
     const result = await getHome(employeeId);
     const houseId = result.house_id;
-
-    console.log(startDate, endDate);
 
     const events = [];
 
@@ -23,7 +23,8 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             name: event.name,
             type: event.event_type.name,
             color: "#443322",
-            link: ""
+            link: "",
+            lastsAllDay: false
         })
     });
 
@@ -35,7 +36,8 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             name: event.personal_event.name,
             type: event.personal_event.event_type.name,
             color: "#443322",
-            link: ""
+            link: "",
+            lastsAllDay: false
         })
     });
 
@@ -47,19 +49,24 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             name: event.name,
             type: event.event_type.name,
             color: "#443322",
-            link: ""
+            link: "",
+            lastsAllDay: false
         })
     });
 
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
     vacations.forEach(vacation => {
+        const vacationEnd = new Date(vacation.end);
+        vacationEnd.setUTCDate(vacationEnd.getUTCDate() + 1);
+
         events.push({
             start: vacation.start,
-            end: vacation.end,  
+            end: vacationEnd,  
             name: "Vacaciones",
             type: "Vacaciones",
-            color: vacation.status == 0 ? "#221100" : "#443322",
-            link: ""
+            color: vacation.status == 0 ? "#86d982" : "#55c94f",
+            link: "",
+            lastsAllDay: true
         })
     });
 

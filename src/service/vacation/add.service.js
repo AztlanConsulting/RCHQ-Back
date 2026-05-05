@@ -1,17 +1,18 @@
 const { 
     getStartDate, 
-    getWorkDays
+    getWorkDays,
 } = require("../../model/employee/consult.model");
 const { 
-    toUTC, 
     calculateUsedDays
 } = require("../../utils/dates");
 const { 
     getVacationsInRange, 
     getOutsideVacations 
 } = require("../../model/vacation/consult.model")
+const { 
+    getGlobalEventsInRange, 
+} = require("../../model/event/getRanged.model")
 const { getVacationDays } = require("../../utils/vacationDays")
-const { getClientIp } = require("../../utils/ip");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { createLog } = require("../../model/log.model")
 const { requestVacation } = require("../../model/vacation/add.model")
@@ -21,6 +22,7 @@ const { v4: uuidv4 } = require("uuid");
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
 
+    // !ERROR: El código de respuesta está mal
     if (!result) {
         return {
             code: responses.vacation.workDaysNotFound
@@ -50,8 +52,11 @@ exports.getRemainingVacations = async (employeeId) => {
     const endDate = new Date(Date.UTC(endYear, baseMonth, baseDay));
 
     let usedDays = 0;
+
+    // !ERROR: Si una vacación está en 2 ciclos al mismo tiempo, los días se van a contar mal
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
 
+    // ERROR??? Se puede hacer el SUM directo desde prisma?
     vacations.forEach(vacation => {
         usedDays += vacation.used_days;
     });
@@ -62,12 +67,15 @@ exports.getRemainingVacations = async (employeeId) => {
     return {
         code: responses.vacation.workDaysFound,
         data: {
-            remainingDays: maxDays - usedDays
+            remainingDays: maxDays - usedDays,
+            startDate: startDate,
+            endDate: endDate
         }
     }
 }
 
-exports.requestVacation = async (employeeId, startDate, endDate, req) => {
+exports.requestVacation = async (employeeId, startDate, endDate, ipAddress) => {
+
     if (endDate < startDate) {
         return {
             code: responses.vacation.badDates
@@ -83,8 +91,27 @@ exports.requestVacation = async (employeeId, startDate, endDate, req) => {
 
     const remainingVacationResult = await this.getRemainingVacations(employeeId);
     const remainingVacations = remainingVacationResult.data.remainingDays;
+    
+    // ? QUESTION: Se pueden pedir vacaciones del próximo ciclo?
+    const today = new Date();
+    const anniversaryStartDate = remainingVacationResult.data.startDate;
+    const anniversaryEndDate = remainingVacationResult.data.endDate;
+    
+    if (today > anniversaryEndDate || today < anniversaryStartDate) {
+        return {
+            code: responses.vacation.outOfRange
+        }
+    }
 
-    const usedDays = calculateUsedDays(workDays, startDate, endDate);
+    const globalEvents = await getGlobalEventsInRange(startDate, endDate);
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, globalEvents);
+
+    if (usedDays == 0) {
+        return {
+            code: responses.vacation.nullDates
+        }
+    }
 
     if (usedDays > remainingVacations) {
         return {
@@ -113,10 +140,11 @@ exports.requestVacation = async (employeeId, startDate, endDate, req) => {
         endDate,
         usedDays
     );
+
     await createLog(
         employeeId,
         LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
-        getClientIp(req),
+        ipAddress,
         employeeId
     );
 
