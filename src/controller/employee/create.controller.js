@@ -52,7 +52,7 @@ exports.postAdd = async (req, res) => {
                 case "CONFLICT":
                     return res.status(409).json({
                         error: result.message,
-                        redirect: `/employee/${result.employeeId}`,
+                        redirect: `/app/personal/ver/${result.employeeId}`,
                     });
                 default:
                     return res.status(400).json({ error: result.message });
@@ -61,7 +61,7 @@ exports.postAdd = async (req, res) => {
 
         return res.status(201).json({
             message: "Empleado creado con éxito.",
-            redirect: `/employee/${result.employeeId}`,
+            redirect: `/app/personal/ver/${result.employeeId}`,
             warning: result.warning,
         });
     } catch (error) {
