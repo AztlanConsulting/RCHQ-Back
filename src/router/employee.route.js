@@ -15,7 +15,6 @@ const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeUpdateController = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
-const employeeUpdateController = require("../controller/employee/update.controller");
 
 router.get(
   "/update-form",
