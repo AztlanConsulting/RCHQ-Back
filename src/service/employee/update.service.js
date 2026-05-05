@@ -87,8 +87,12 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
 
   const { workdays, salary, ...rest } = parsed.data;
 
-  if (salary !== undefined) {
-    rest.salary = encryptValue(String(salary));
+  if (salary !== undefined && salary !== null) {
+    if (salary === 0 || salary === "0") {
+      rest.salary = "0"; 
+    } else {
+      rest.salary = encryptValue(String(salary));
+    }
   }
 
   if (Object.keys(rest).length > 0) {

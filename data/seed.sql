@@ -148,6 +148,7 @@ VALUES (
   NULL,
   NULL,
   NULL,
+  NULL,
   NULL
 )
 ON CONFLICT DO NOTHING;
@@ -214,7 +215,7 @@ VALUES
 ('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
 ('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
 ('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
-('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación');
+('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación')
 ON CONFLICT DO NOTHING;
 
 COMMIT;
