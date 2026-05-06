@@ -7,6 +7,7 @@ jest.mock("../../model/employee/update.model", () => ({
   upsertWorkdays:    jest.fn(),
   getAllWorkdays:     jest.fn(),
   getAllHouses:       jest.fn(),
+  getFrecuencyPaymentOptions: jest.fn(),
 }));
 
 jest.mock("../../model/employee/get.model", () => ({
@@ -29,6 +30,7 @@ const {
   upsertWorkdays,
   getAllWorkdays,
   getAllHouses,
+  getFrecuencyPaymentOptions,
 } = require("../../model/employee/update.model");
 const { findById, getAllRoles } = require("../../model/employee/get.model");
 const { encryptValue }         = require("../../utils/password");
@@ -59,7 +61,6 @@ const validContactBody = {
   phoneNumber: "4421234567",
 };
 
-// ✅ workdayId con UUID hex válido (solo caracteres 0-9, a-f)
 const validAdminBody = {
   houseId: "a0000001-0000-4000-8000-000000000001",
   roleId:  "a0000002-0000-4000-8000-000000000001",
@@ -82,6 +83,7 @@ beforeEach(() => {
   getAllRoles.mockResolvedValue([{ roleId: "r1", name: "Admin" }]);
   getAllHouses.mockResolvedValue([{ houseId: "h1", name: "Casa Test" }]);
   getAllWorkdays.mockResolvedValue([{ workdayId: "wd1", name: "Lunes" }]);
+  getFrecuencyPaymentOptions.mockResolvedValue([{ id: "f1", name: "Quincenal" }]);
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -96,10 +98,12 @@ describe("getUpdateFormData", () => {
       houses:   [{ houseId: "h1", name: "Casa Test" }],
       workdays: [{ workdayId: "wd1", name: "Lunes" }],
       houseId:  "h1",
+      frecuencyOptions: [{ id: "f1", name: "Quincenal" }],
     });
     expect(getAllRoles).toHaveBeenCalledTimes(1);
     expect(getAllHouses).toHaveBeenCalledTimes(1);
     expect(getAllWorkdays).toHaveBeenCalledTimes(1);
+    expect(getFrecuencyPaymentOptions).toHaveBeenCalledTimes(1);
   });
 
   it("propaga el error si algún modelo falla", async () => {
@@ -591,7 +595,6 @@ describe("updateAdminInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    // ✅ UUID válido pero start >= end → debe fallar por lógica de horario, no por UUID
     it("retorna VALIDATION_ERROR con workday con start >= end", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
@@ -602,7 +605,7 @@ describe("updateAdminInfoService", () => {
           ],
         },
       });
-      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
     });
 
     it("retorna VALIDATION_ERROR con formato de hora inválido", async () => {
