@@ -477,7 +477,6 @@ describe("updateAdminInfoService", () => {
       expect(upsertWorkdays).not.toHaveBeenCalled();
     });
 
-    // ✅ UUID válido (solo hex)
     it("no llama a updateAdminInfo si solo vienen workdays", async () => {
       await updateAdminInfoService({
         requesterId: REQUESTER_ID,
@@ -515,7 +514,6 @@ describe("updateAdminInfoService", () => {
   });
 
   describe("NOT_FOUND", () => {
-    // ✅ validAdminBody ya tiene UUID válido, findById retorna null → debe llegar a NOT_FOUND
     it("retorna NOT_FOUND si el empleado no existe", async () => {
       findById.mockResolvedValue(null);
       const result = await updateAdminInfoService({
@@ -661,7 +659,6 @@ describe("updateAdminInfoService", () => {
       ).rejects.toThrow("DB exploded");
     });
 
-    // ✅ UUID válido para que pase validación y llegue a llamar upsertWorkdays
     it("propaga el error si upsertWorkdays falla", async () => {
       upsertWorkdays.mockRejectedValue(new Error("Workday DB error"));
       await expect(
