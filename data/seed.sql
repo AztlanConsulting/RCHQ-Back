@@ -149,10 +149,9 @@ VALUES (
   NULL,
   NULL,
   NULL,
-  NULL
+  'nomina'
 )
 ON CONFLICT DO NOTHING;
-
 -- =========================
 -- ACTIONS
 -- =========================

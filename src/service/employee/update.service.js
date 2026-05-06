@@ -5,6 +5,7 @@ const {
   upsertWorkdays,
   getAllWorkdays,
   getAllHouses,
+  getFrecuencyPaymentOptions,
 } = require("../../model/employee/update.model");
 const { findById, getAllRoles } = require("../../model/employee/get.model");
 const { encryptValue } = require("../../utils/password");
@@ -22,12 +23,13 @@ const {
 const { updateEmployeeDocument } = require("../../model/employee/update.model");
 
 exports.getUpdateFormData = async (user) => {
-  const [roles, houses, workdays] = await Promise.all([
+  const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
     getAllRoles(),
     getAllHouses(),
     getAllWorkdays(),
+    getFrecuencyPaymentOptions(),
   ]);
-  return { roles, houses, workdays, houseId: user.houseId };
+  return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
 };
 
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body }) => {

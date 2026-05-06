@@ -89,8 +89,8 @@ const workdayUpdateSchema = z
     start:     z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el inicio"),
     end:       z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el fin"),
   })
-  .refine(({ start, end }) => start < end, {
-    message: "La hora de inicio debe ser anterior a la hora de fin",
+  .refine(({ start, end }) => start !== end, {
+    message: "La hora de inicio y fin no pueden ser iguales",
   });
 
 const employeeAdminUpdateSchema = z
@@ -99,6 +99,8 @@ const employeeAdminUpdateSchema = z
     roleId:  z.string().uuid("El roleId debe ser un UUID válido").optional(),
 
     type: z.string().trim().max(20).transform(emptyToNull).nullable().optional(),
+    
+    frequencyOfPaymentId: z.string().uuid().nullable().optional(),
 
     salary: z.number().positive("El salario debe ser un valor positivo")
       .max(1_000_000, "El salario excede el límite permitido")

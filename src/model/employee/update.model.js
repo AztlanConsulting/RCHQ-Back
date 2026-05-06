@@ -79,12 +79,19 @@ exports.upsertWorkdays = async (employeeId, workdays) => {
       where: { employee_id: employeeId },
     }),
     prisma.employee_workday.createMany({
-      data: workdays.map((w) => ({
-        workday_id:  w.workdayId,
-        employee_id: employeeId,
-        start: new Date(`1970-01-01T${w.start}:00Z`),
-        end:   new Date(`1970-01-01T${w.end}:00Z`),
-      })),
+      data: workdays.map((w) => {
+        const startDate = new Date(`1970-01-01T${w.start}:00Z`);
+        let endDate = new Date(`1970-01-01T${w.end}:00Z`);
+        if (endDate <= startDate) {
+          endDate = new Date(`1970-01-02T${w.end}:00Z`);
+        }
+        return {
+          workday_id:  w.workdayId,
+          employee_id: employeeId,
+          start: startDate,
+          end:   endDate,
+        };
+      }),
     }),
   ]);
 };
@@ -92,6 +99,11 @@ exports.upsertWorkdays = async (employeeId, workdays) => {
 exports.getAllWorkdays = async () => {
   const workdays = await prisma.workday.findMany({ orderBy: { workday_id: "asc" } });
   return workdays.map((w) => ({ workdayId: w.workday_id, name: w.name }));
+};
+
+exports.getFrecuencyPaymentOptions = async () => {
+  const options = await prisma.frecuency_of_payment.findMany({ orderBy: { frecuency_of_payment_id: "asc" } });
+  return options.map((o) => ({ optionId: o.frecuency_of_payment_id, name: o.name }));
 };
 
 exports.getAllHouses = async () => {

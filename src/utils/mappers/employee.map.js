@@ -107,5 +107,6 @@ exports.mapEmployeeAdminData = (body) => {
   if (body.roleId  !== undefined) mapped.role_id  = body.roleId;
   if (body.type    !== undefined) mapped.type     = body.type;
   if (body.salary  !== undefined) mapped.salary   = body.salary;
+  if (body.frequencyOfPaymentId !== undefined) mapped.frequency_of_payment_id = body.frequencyOfPaymentId;
   return mapped;
 };
