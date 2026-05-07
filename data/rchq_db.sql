@@ -308,3 +308,24 @@ CREATE TABLE IF NOT EXISTS public.employee_personal_event (
     CONSTRAINT employee_personal_event_personal_event_fk FOREIGN KEY (personal_event_id) REFERENCES public.personal_event(personal_event_id),
     CONSTRAINT employee_personal_event_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
+
+CREATE TABLE public.absence_type (
+	absence_type_id uuid NOT NULL,
+	name varchar(30) NOT NULL UNIQUE,
+	CONSTRAINT absence_type_pk PRIMARY KEY (absence_type_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.absence (
+    absence_id uuid NOT NULL,
+    employee_id uuid NOT NULL,
+    absence_type_id uuid NOT NULL,
+    start date NOT NULL,
+    "end" date NOT NULL,
+    description text NULL,
+    url text NULL,
+    is_deleted bool NOT NULL DEFAULT false,
+    CONSTRAINT absence_pk PRIMARY KEY (absence_id),
+    CONSTRAINT absence_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
+    CONSTRAINT absence_absence_type_fk FOREIGN KEY (absence_type_id) REFERENCES public.absence_type(absence_type_id)
+
+);
