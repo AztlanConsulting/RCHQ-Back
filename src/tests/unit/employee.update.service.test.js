@@ -68,7 +68,8 @@ const validContactBody = {
 const validAdminBody = {
   houseId: "a0000001-0000-4000-8000-000000000001",
   roleId:  "a0000002-0000-4000-8000-000000000001",
-  type:    "tiempo_completo",
+  type:    "Asalariado",
+  frequencyOfPaymentId: "f0000001-0000-4000-8000-000000000001",
   salary:  15000,
   workdays: [
     { workdayId: "d0000001-0000-4000-8000-000000000001", start: "08:00", end: "17:00" },
@@ -476,7 +477,7 @@ describe("updateAdminInfoService", () => {
       await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
-        body:        { type: "tiempo_completo" },
+        body:        { type: "Asalariado" },
       });
       expect(upsertWorkdays).not.toHaveBeenCalled();
     });
@@ -658,7 +659,7 @@ describe("updateAdminInfoService", () => {
         updateAdminInfoService({
           requesterId: REQUESTER_ID,
           employeeId:  EMPLOYEE_ID,
-          body:        { type: "tiempo_completo" },
+          body:        { type: "Asalariado" },
         })
       ).rejects.toThrow("DB exploded");
     });
@@ -684,7 +685,7 @@ describe("updateAdminInfoService", () => {
         updateAdminInfoService({
           requesterId: REQUESTER_ID,
           employeeId:  EMPLOYEE_ID,
-          body:        { type: "tiempo_completo" },
+          body:        { type: "Asalariado" },
         })
       ).rejects.toThrow("findById DB error");
     });
