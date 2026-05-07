@@ -125,11 +125,8 @@ exports.getEmployeeById = async (employeeId) => {
     const employee = await prisma.employee.findUnique({
         where: { employee_id: employeeId },
         include: {
-            role: {
-                select: {
-                    name: true,
-                },
-            },
+            role: {select: {name: true}},
+            frecuency_of_payment: {select: {name: true}},
         },
     });
     return mapEmployee(employee);
@@ -211,4 +208,23 @@ exports.getEmployeeVacationRequests = async (employeeId) => {
     });
 
     return mapEmployeeVacationRequests(employeeVacationRequests);
+};
+
+exports.getAllWorkdays = async () => {
+  const workdays = await prisma.workday.findMany({ orderBy: { workday_id: "asc" } });
+  return workdays.map((w) => ({ workdayId: w.workday_id, name: w.name }));
+};
+
+exports.getFrecuencyPaymentOptions = async () => {
+  const options = await prisma.frecuency_of_payment.findMany({ orderBy: { frecuency_of_payment_id: "asc" } });
+  return options.map((o) => ({ optionId: o.frecuency_of_payment_id, name: o.name }));
+};
+
+exports.getAllHouses = async () => {
+  const houses = await prisma.house.findMany({ orderBy: { name: "asc" } });
+  return houses.map((h) => ({
+    houseId: h.house_id,
+    name: h.name,
+    location: h.location,
+  }));
 };

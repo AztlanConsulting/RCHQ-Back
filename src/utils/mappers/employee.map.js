@@ -21,6 +21,8 @@ exports.mapEmployee = (employee) => {
         rfc: employee.rfc,
         bankAccount: employee.bank_account,
         salary: employee.salary,
+        frequencyOfPaymentId:   employee.frequency_of_payment_id,
+        frequencyOfPaymentName: employee.frecuency_of_payment?.name ?? null,
     };
 };
 
@@ -69,4 +71,44 @@ exports.mapEmployeeVacationRequests = (employeeVacationRequests) => {
         status: v.status,
         feedback: v.feedback,
     }));
+};
+
+exports.mapEmployeeBasicData = (body) => {
+  const mapped = {};
+  if (body.name        !== undefined) mapped.name         = body.name;
+  if (body.surname     !== undefined) mapped.surname       = body.surname;
+  if (body.curp        !== undefined) mapped.curp          = body.curp;
+  if (body.rfc         !== undefined) mapped.rfc           = body.rfc;
+  if (body.nss         !== undefined) mapped.nss           = body.nss;
+  if (body.bankAccount !== undefined) mapped.bank_account  = body.bankAccount;
+  if (body.birthDate   !== undefined) {
+    mapped.birth_date = body.birthDate ? new Date(body.birthDate) : null;
+  }
+  return mapped;
+};
+
+exports.mapEmployeeContactData = (body) => {
+  const mapped = {};
+  if (body.email       !== undefined) mapped.email        = body.email;
+  if (body.phoneNumber !== undefined) mapped.phone_number = body.phoneNumber;
+  return mapped;
+};
+
+exports.mapAddressData = (body) => {
+  const mapped = {};
+  if (body.street     !== undefined) mapped.street      = body.street;
+  if (body.municipio  !== undefined) mapped.municipio   = body.municipio;
+  if (body.city       !== undefined) mapped.city        = body.city;
+  if (body.postalCode !== undefined) mapped.postal_code = body.postalCode;
+  return mapped;
+};
+
+exports.mapEmployeeAdminData = (body) => {
+  const mapped = {};
+  if (body.houseId !== undefined) mapped.house_id = body.houseId;
+  if (body.roleId  !== undefined) mapped.role_id  = body.roleId;
+  if (body.type    !== undefined) mapped.type     = body.type;
+  if (body.salary  !== undefined) mapped.salary   = body.salary;
+  if (body.frequencyOfPaymentId !== undefined) mapped.frequency_of_payment_id = body.frequencyOfPaymentId;
+  return mapped;
 };

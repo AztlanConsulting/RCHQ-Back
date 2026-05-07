@@ -10,6 +10,9 @@ const {
     getEmployeeVacationRequests,
     getDocumentTypes,
     getDocumentsByEmployee,
+    getAllWorkdays,
+    getAllHouses,
+    getFrecuencyPaymentOptions,
 } = require("../../model/employee/get.model");
 const { getHouseById } = require("../../model/house/get.model");
 const { decryptValue } = require("../../utils/password");
@@ -158,4 +161,14 @@ exports.getDocumentsByEmployee = async (employeeId) => {
         url: d.url,
     }));
     return { type: RESPONSES.DOCUMENTS.OK, body: mapped };
+};
+
+exports.getUpdateFormData = async (user) => {
+  const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
+    getAllRoles(),
+    getAllHouses(),
+    getAllWorkdays(),
+    getFrecuencyPaymentOptions(),
+  ]);
+  return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
 };
