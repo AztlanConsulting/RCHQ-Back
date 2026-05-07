@@ -1,0 +1,63 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.dev
+    container_name: rchq-backend
+    restart: unless-stopped
+    environment:
+      - RUNNING_PORT=${RUNNING_PORT}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - MAILGUN_KEY=${MAILGUN_KEY}
+      - LOG_IP_HASH_SECRET=${LOG_IP_HASH_SECRET}
+    expose:
+      - "3000"
+    networks:
+      - rchq-network
+    depends_on:
+      - database
+
+  frontend:
+    build:
+      context: ../rchq_front
+      dockerfile: Dockerfile.dev
+      args:
+      - VITE_API_URL=${VITE_API_URL}
+    container_name: rchq-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - rchq-network
+    depends_on:
+      - backend
+
+  database:
+    image: postgres:16-alpine
+    container_name: rchq-database
+    restart: unless-stopped
+    expose:
+      - "5432"
+    networks:
+      - rchq-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/nginx/nginx.conf
+    networks:
+      - rhcq-network
+    depends_on:
+      - frontend
+      - backend
+
+networks:
+  rchq-network:
+    driver: bridge
+    
