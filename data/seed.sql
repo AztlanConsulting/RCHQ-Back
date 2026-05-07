@@ -293,7 +293,7 @@ VALUES (
   0,
   NULL,
   NOW(),
-  5
+  4
 );
 
 -- =========================
@@ -441,7 +441,6 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.employee WHERE employee_id = 'e0000001-0000-4000-8000-000000000001'
 );
 
--- Enrich / align first user (keeps existing id; fills phone and optional end_date)
 UPDATE public.employee
 SET
   house_id = COALESCE(
@@ -450,8 +449,6 @@ SET
   ),
   phone_number = COALESCE(phone_number, '+52 442 479 2232')
 WHERE email = 'andre@gmail.com';
-
--- employee_address: one row per user (idempotent on fixed UUIDs)
 
 INSERT INTO public.employee_address (
   employee_address_id,
@@ -512,8 +509,6 @@ ON CONFLICT (employee_address_id) DO UPDATE SET
   postal_code = EXCLUDED.postal_code,
   date = EXCLUDED.date;
 
--- employee ↔ fault
-
 INSERT INTO public.employee_fault (fault_id, employee_id)
 SELECT 'd0000001-0000-4000-8000-000000000001', e.employee_id
 FROM public.employee e
@@ -526,35 +521,23 @@ FROM public.employee e
 WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (fault_id, employee_id) DO NOTHING;
 
--- workday schedules (maria: Mon/Tue/Thu/Fri with varying hours)
-
--- Lunes
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
 SELECT 'a0000003-0000-4000-8000-000580000000', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
--- Martes
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
 SELECT 'a0000003-0000-4000-8000-000000580001', e.employee_id, '09:00:00', '18:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
--- Jueves
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
 SELECT 'a0000003-0000-4000-8000-000000580003', e.employee_id, '07:00:00', '16:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
--- Viernes
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
 SELECT 'a0000003-0000-4000-8000-000580000004', e.employee_id, '10:00:00', '19:00:00'
-FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
-ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
-
--- Maria: Lunes
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT 'a0000003-0000-4000-8000-000580000000', e.employee_id, '10:00:00', '19:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
@@ -576,7 +559,7 @@ VALUES (
   0,
   NULL,
   NOW(),
-  5
+  4
 );
 
 COMMIT;
