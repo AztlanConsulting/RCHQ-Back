@@ -70,7 +70,11 @@ const employeeContactUpdateSchema = z
       .max(60, "El correo es demasiado largo")
       .optional(),
 
-    phoneNumber: z.string().trim().max(20).transform(emptyToNull).nullable().optional(),
+    phoneNumber: z.string().trim().max(10).transform(emptyToNull).nullable()
+  .refine((val) => val === null || val.length === 10, { 
+    message: "El número de teléfono debe tener exactamente 10 dígitos" 
+  })
+  .optional(),
 
     street:     z.string().trim().max(200).transform(emptyToNull).nullable().optional(),
     municipio:  z.string().trim().max(120).transform(emptyToNull).nullable().optional(),

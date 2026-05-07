@@ -21,6 +21,8 @@ exports.mapEmployee = (employee) => {
         rfc: employee.rfc,
         bankAccount: employee.bank_account,
         salary: employee.salary,
+        frequencyOfPaymentId:   employee.frequency_of_payment_id,
+        frequencyOfPaymentName: employee.frecuency_of_payment?.name ?? null,
     };
 };
 

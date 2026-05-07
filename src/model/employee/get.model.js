@@ -125,11 +125,8 @@ exports.getEmployeeById = async (employeeId) => {
     const employee = await prisma.employee.findUnique({
         where: { employee_id: employeeId },
         include: {
-            role: {
-                select: {
-                    name: true,
-                },
-            },
+            role: {select: {name: true}},
+            frecuency_of_payment: {select: {name: true}},
         },
     });
     return mapEmployee(employee);
