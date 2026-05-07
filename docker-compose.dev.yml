@@ -20,7 +20,7 @@ services:
 
   frontend:
     build:
-      context: ../rchq_front
+      context: ../RCHQ_front
       dockerfile: Dockerfile.dev
       args:
       - VITE_API_URL=${VITE_API_URL}
