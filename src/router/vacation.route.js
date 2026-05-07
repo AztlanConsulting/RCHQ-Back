@@ -8,7 +8,7 @@ const {
 const {
     getRemainingVacations,
     requestVacation
-} = require("../controller/vacation/add.controller")
+} = require("../controller/vacation/create.controller")
 
 router.get("/remaining/:id", verifyToken, isAllowed, getRemainingVacations);
 

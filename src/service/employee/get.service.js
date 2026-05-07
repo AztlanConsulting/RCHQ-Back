@@ -10,6 +10,8 @@ const {
     getEmployeeVacationRequests,
     getDocumentTypes,
     getDocumentsByEmployee,
+    getWorkDays,
+
 } = require("../../model/employee/get.model");
 const { getHouseById } = require("../../model/house/get.model");
 const { decryptValue } = require("../../utils/password");
@@ -159,3 +161,13 @@ exports.getDocumentsByEmployee = async (employeeId) => {
     }));
     return { type: RESPONSES.DOCUMENTS.OK, body: mapped };
 };
+
+exports.getWorkDays = async (employeeId) => {
+    const rawWorkDays = await getWorkDays(employeeId);
+
+    const workDays = [];
+    rawWorkDays.forEach((day) => {
+        workDays.push(day.workday.name);
+    });
+    return workDays;
+}

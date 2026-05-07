@@ -1,7 +1,7 @@
 const { 
     getRemainingVacations, 
     requestVacation
-} = require("../../service/vacation/add.service")
+} = require("../../service/vacation/create.service")
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
 

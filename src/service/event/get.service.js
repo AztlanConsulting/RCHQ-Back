@@ -1,11 +1,11 @@
 const { combineDateAndTime } = require("../../utils/dates")
-const { getVacationsInRange } = require("../../model/vacation/consult.model")
-const { getHome } = require("../../model/employee/consult.model")
+const { getVacationsInRange } = require("../../model/vacation/get.model")
+const { getHome } = require("../../model/employee/get.model")
 const { 
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange
-} = require("../../model/event/getRanged.model")
+} = require("../../model/event/get.model")
 
 exports.getEventsInRange = async (employeeId, startDate, endDate) => {
     // !ERROR Validar fechas correctas

@@ -1,21 +1,21 @@
 const { 
     getStartDate, 
     getWorkDays,
-} = require("../../model/employee/consult.model");
+} = require("../../model/employee/get.model");
 const { 
     calculateUsedDays
 } = require("../../utils/dates");
 const { 
     getVacationsInRange, 
     getOutsideVacations 
-} = require("../../model/vacation/consult.model")
+} = require("../../model/vacation/get.model")
 const { 
     getGlobalEventsInRange, 
-} = require("../../model/event/getRanged.model")
+} = require("../../model/event/get.model")
 const { getVacationDays } = require("../../utils/vacationDays")
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { createLog } = require("../../model/log.model")
-const { requestVacation } = require("../../model/vacation/add.model")
+const { requestVacation } = require("../../model/vacation/create.model")
 const RESPONSES = require("../../utils/responses");
 const { randomUUID } = require("crypto");
 

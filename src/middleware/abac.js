@@ -1,4 +1,4 @@
-const { getHome } = require("../model/employee/consult.model");
+const { getHome } = require("../model/employee/get.model");
 
 const canAccess = (user, policyFn, resource) => {
     if (!user) return false;

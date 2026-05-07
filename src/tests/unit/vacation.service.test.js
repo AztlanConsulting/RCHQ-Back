@@ -1,17 +1,17 @@
-const vacationService = require("../../service/vacation/add.service");
+const vacationService = require("../../service/vacation/create.service");
 
-jest.mock("../../model/employee/consult.model");
-jest.mock("../../model/event/getRanged.model");
-jest.mock("../../model/vacation/consult.model");
-jest.mock("../../model/vacation/add.model");
+jest.mock("../../model/employee/get.model");
+jest.mock("../../model/event/get.model");
+jest.mock("../../model/vacation/get.model");
+jest.mock("../../model/vacation/create.model");
 jest.mock("../../model/log.model");
 jest.mock("../../utils/dates");
 jest.mock("../../utils/ip");
 
-const employeeModel = require("../../model/employee/consult.model");
-const eventsModel = require("../../model/event/getRanged.model");
-const vacationConsultModel = require("../../model/vacation/consult.model");
-const vacationAddModel = require("../../model/vacation/add.model");
+const employeeModel = require("../../model/employee/get.model");
+const eventsModel = require("../../model/event/get.model");
+const vacationConsultModel = require("../../model/vacation/get.model");
+const vacationAddModel = require("../../model/vacation/create.model");
 const logModel = require("../../model/log.model");
 const datesUtils = require("../../utils/dates");
 const ipUtils = require("../../utils/ip");

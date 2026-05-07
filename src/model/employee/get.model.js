@@ -212,3 +212,36 @@ exports.getEmployeeVacationRequests = async (employeeId) => {
 
     return mapEmployeeVacationRequests(employeeVacationRequests);
 };
+
+exports.getWorkDays = async (employeeId) => {
+    return await prisma.employee_workday.findMany({
+        where: {
+            employee_id: employeeId
+        },
+        include: {
+            workday: true
+        }
+    });
+}
+
+exports.getHome = async (employeeId) => {
+    return await prisma.employee.findUnique({
+        where: {
+            employee_id: employeeId
+        },
+        select: {
+            house_id: true
+        }
+    });
+};
+
+exports.getStartDate = async (employeeId) => {
+    return await prisma.employee.findUnique({
+        where: {
+            employee_id: employeeId
+        },
+        select: {
+            start_date: true
+        }
+    });
+};

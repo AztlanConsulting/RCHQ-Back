@@ -1,4 +1,4 @@
-const { getEventsInRange } = require("../../service/event/getRanged.service")
+const { getEventsInRange } = require("../../service/event/get.service")
 
 exports.getEventsInRange = async (req, res) => {
     try {
