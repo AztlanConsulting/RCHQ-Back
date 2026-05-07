@@ -98,11 +98,14 @@ const employeeAdminUpdateSchema = z
     houseId: z.string().uuid("El houseId debe ser un UUID válido").optional(),
     roleId:  z.string().uuid("El roleId debe ser un UUID válido").optional(),
 
-    type: z.string().trim().max(20).transform(emptyToNull).nullable().optional(),
-    
+    type: z.enum(["Nomina", "Asalariado", "Honorarios", "Voluntariado"], {
+      errorMap: () => ({ message: "Tipo de contrato inválido" }),
+    }).nullable().optional(),
+
     frequencyOfPaymentId: z.string().uuid().nullable().optional(),
 
-    salary: z.number().positive("El salario debe ser un valor positivo")
+    salary: z.number()
+      .min(0, "El salario no puede ser negativo")
       .max(1_000_000, "El salario excede el límite permitido")
       .optional(),
 
@@ -112,6 +115,14 @@ const employeeAdminUpdateSchema = z
   .refine(
     (data) => Object.values(data).some((v) => v !== null && v !== undefined),
     { message: "Debe enviarse al menos un campo para actualizar" }
+  )
+  .refine(
+    (data) => {
+      if (data.salary === undefined || data.salary === null) return true;
+      if (data.type === "Voluntariado") return data.salary >= 0;
+      return data.salary > 0;
+    },
+    { message: "El salario debe ser mayor a 0 para este tipo de contrato", path: ["salary"] }
   );
 
 module.exports = {
