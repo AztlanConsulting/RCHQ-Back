@@ -22,7 +22,7 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             end: combineDateAndTime(event.date, event.end),
             name: event.name,
             type: event.event_type.name,
-            color: "#443322",
+            color: "#09dbe6",
             link: "",
             lastsAllDay: false
         })
@@ -35,7 +35,7 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             end: event.personal_event.end,
             name: event.personal_event.name,
             type: event.personal_event.event_type.name,
-            color: "#443322",
+            color: "#09dbe6",
             link: "",
             lastsAllDay: false
         })
@@ -48,7 +48,7 @@ exports.getEventsInRange = async (employeeId, startDate, endDate) => {
             end: combineDateAndTime(event.date, event.end),
             name: event.name,
             type: event.event_type.name,
-            color: "#443322",
+            color: "#09dbe6",
             link: "",
             lastsAllDay: false
         })

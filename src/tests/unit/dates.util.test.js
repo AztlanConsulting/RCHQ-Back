@@ -12,7 +12,7 @@ const WORK_DAYS = [
 ];
 const EVENTS = [
     {
-        start: new Date("2026-05-04"),
+        date: new Date("2026-05-04"),
         is_free_day: true,
     },
 ];

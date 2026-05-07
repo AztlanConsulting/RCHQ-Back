@@ -18,8 +18,9 @@ const ipUtils = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 const EMPLOYEE_ID = 1;
-const START_DATE = new Date("2025-01-01");
-const END_DATE = new Date("2025-01-05");
+const TODAY = new Date();
+const START_DATE = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() + 1));
+const END_DATE = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() + 4));
 const CLIENT_IP = "127.0.0.1";
 
 describe("vacation.service — requestVacation", () => {
@@ -41,7 +42,7 @@ describe("vacation.service — requestVacation", () => {
                 new Date("2025-06-01").getTime(),
             );
             expect(result.data.endDate.getTime()).toBe(
-                new Date("2026-06-01").getTime(),
+                new Date("2026-05-31").getTime(),
             );
         });
     });
@@ -287,6 +288,41 @@ describe("vacation.service — requestVacation", () => {
             );
 
             expect(result.code).toBe(RESPONSES.VACATION.NULL_DATES);
+        });
+    });
+
+    describe("Flujo - vacación en el pasado", () => {
+        it("Verifica que no se puedan pedir vacaciones en el pasado", async () => {
+            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
+
+            jest.spyOn(
+                vacationService,
+                "getRemainingVacations",
+            ).mockResolvedValue({
+                data: { remainingDays: 10 },
+            });
+
+            employeeModel.getHome.mockResolvedValue("1");
+
+            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
+
+            datesUtils.calculateUsedDays.mockReturnValue(5);
+
+            vacationConsultModel.getVacationsInRange.mockResolvedValue([]);
+            vacationConsultModel.getOutsideVacations.mockResolvedValue([]);
+
+            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
+
+            const yesterday = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() - 10));
+
+            const result = await vacationService.requestVacation(
+                EMPLOYEE_ID,
+                yesterday,
+                END_DATE,
+                CLIENT_IP,
+            );
+
+            expect(result.code).toBe(RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED);
         });
     });
 });

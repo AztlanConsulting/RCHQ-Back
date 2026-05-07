@@ -21,7 +21,9 @@ exports.getRemainingVacations = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 data: {
-                    remainingVacations: result.data.remainingDays
+                    remainingVacations: result.data.remainingDays,
+                    startDate: result.data.startDate,
+                    endDate: result.data.endDate,
                 }
             });
         }
@@ -48,6 +50,13 @@ exports.requestVacation = async (req, res) => {
 
         const employeeId = req.user.id;
         const result = await requestVacation(employeeId, parsedStartDate, parsedEndDate, clientIp);
+
+        if (result.code == RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED) {
+            return res.status(406).json({
+                success: false,
+                message: "No se pueden pedir vacaciones en el pasado ni para el mismo día"
+            });
+        }
 
         if (result.code == RESPONSES.VACATION.NULL_DATES) {
             return res.status(406).json({

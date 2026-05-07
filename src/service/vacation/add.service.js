@@ -48,7 +48,7 @@ exports.getRemainingVacations = async (employeeId) => {
     let endYear = startYear + 1;
     
     const startDate = new Date(Date.UTC(startYear, baseMonth, baseDay));
-    const endDate = new Date(Date.UTC(endYear, baseMonth, baseDay));
+    const endDate = new Date(Date.UTC(endYear, baseMonth, baseDay - 1));
 
     let usedDays = 0;
 
@@ -93,9 +93,15 @@ exports.requestVacation = async (employeeId, startDate, endDate, ipAddress) => {
     const anniversaryStartDate = remainingVacationResult.data.startDate;
     const anniversaryEndDate = remainingVacationResult.data.endDate;
     
-    if (today > anniversaryEndDate || today < anniversaryStartDate) {
+    if (endDate > anniversaryEndDate || startDate < anniversaryStartDate) {
         return {
             code: RESPONSES.VACATION.OUT_OF_RANGE
+        }
+    }
+
+    if (startDate < today) {
+        return {
+            code: RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED
         }
     }
 

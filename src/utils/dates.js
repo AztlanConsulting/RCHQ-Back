@@ -41,14 +41,14 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events) => {
     });
 
     const freeDays = [];
+    
     events.forEach(event => {
-        const eventDay = event.start.getUTCDay();
-        const eventDate = event.start.toISOString().split("T")[0];
+        const eventDay = event.date.getUTCDay();
+        const eventDate =event.date.toISOString().split("T")[0];
         if (event.is_free_day == true && days.includes(eventDay) && !freeDays.includes(eventDate)) {
             freeDays.push(eventDate)
         }
     });
-
     let usedDays = 0;
 
     let currentDay = new Date(startDate);
