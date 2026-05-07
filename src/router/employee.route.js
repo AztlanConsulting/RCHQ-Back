@@ -22,7 +22,7 @@ router.get(
   verifyToken,
   requireRole("Admin", "Coordinador"),
   requirePrivileges("manageEmployees"),
-  employeeUpdateController.getUpdateForm,
+  employeeGetController.getUpdateForm,
 );
 
 

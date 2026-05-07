@@ -96,25 +96,6 @@ exports.upsertWorkdays = async (employeeId, workdays) => {
   ]);
 };
 
-exports.getAllWorkdays = async () => {
-  const workdays = await prisma.workday.findMany({ orderBy: { workday_id: "asc" } });
-  return workdays.map((w) => ({ workdayId: w.workday_id, name: w.name }));
-};
-
-exports.getFrecuencyPaymentOptions = async () => {
-  const options = await prisma.frecuency_of_payment.findMany({ orderBy: { frecuency_of_payment_id: "asc" } });
-  return options.map((o) => ({ optionId: o.frecuency_of_payment_id, name: o.name }));
-};
-
-exports.getAllHouses = async () => {
-  const houses = await prisma.house.findMany({ orderBy: { name: "asc" } });
-  return houses.map((h) => ({
-    houseId: h.house_id,
-    name: h.name,
-    location: h.location,
-  }));
-};
-
 exports.updateEmployeeDocument = async (employeeId, documentId, fileUrl) => {
     return await prisma.employee_documents.update({
         where: {

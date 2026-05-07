@@ -3,11 +3,8 @@ const {
   updateContactInfo,
   updateAdminInfo,
   upsertWorkdays,
-  getAllWorkdays,
-  getAllHouses,
-  getFrecuencyPaymentOptions,
 } = require("../../model/employee/update.model");
-const { findById, getAllRoles } = require("../../model/employee/get.model");
+const { findById } = require("../../model/employee/get.model");
 const { encryptValue } = require("../../utils/password");
 const {
   employeeBasicUpdateSchema,
@@ -21,16 +18,6 @@ const {
     findEmployeeDocument,
 } = require("../../model/employee/get.model");
 const { updateEmployeeDocument } = require("../../model/employee/update.model");
-
-exports.getUpdateFormData = async (user) => {
-  const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
-    getAllRoles(),
-    getAllHouses(),
-    getAllWorkdays(),
-    getFrecuencyPaymentOptions(),
-  ]);
-  return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
-};
 
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body }) => {
   if (!requesterId || !employeeId)

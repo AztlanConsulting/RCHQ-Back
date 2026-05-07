@@ -5,14 +5,14 @@ jest.mock("../../model/employee/update.model", () => ({
   updateContactInfo: jest.fn(),
   updateAdminInfo:   jest.fn(),
   upsertWorkdays:    jest.fn(),
-  getAllWorkdays:     jest.fn(),
-  getAllHouses:       jest.fn(),
-  getFrecuencyPaymentOptions: jest.fn(),
 }));
 
 jest.mock("../../model/employee/get.model", () => ({
   findById:    jest.fn(),
   getAllRoles:  jest.fn(),
+  getAllWorkdays:     jest.fn(),
+  getAllHouses:       jest.fn(),
+  getFrecuencyPaymentOptions: jest.fn(),
 }));
 
 jest.mock("../../utils/password", () => ({
@@ -28,19 +28,23 @@ const {
   updateContactInfo,
   updateAdminInfo,
   upsertWorkdays,
+} = require("../../model/employee/update.model");
+const { 
+  findById, 
+  getAllRoles,
   getAllWorkdays,
   getAllHouses,
   getFrecuencyPaymentOptions,
-} = require("../../model/employee/update.model");
-const { findById, getAllRoles } = require("../../model/employee/get.model");
+ } = require("../../model/employee/get.model");
 const { encryptValue }         = require("../../utils/password");
 
 const {
-  getUpdateFormData,
   updateBasicInfoService,
   updateContactInfoService,
   updateAdminInfoService,
 } = require("../../service/employee/update.service");
+
+const { getUpdateFormData } = require("../../service/employee/get.service");
 
 const RESPONSES = require("../../utils/responses");
 

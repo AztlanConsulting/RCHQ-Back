@@ -1,5 +1,4 @@
 const {
-  getUpdateFormData,
   updateBasicInfoService,
   updateContactInfoService,
   updateAdminInfoService,
@@ -9,16 +8,6 @@ const RESPONSES = require("../../utils/responses");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
-
-exports.getUpdateForm = async (req, res) => {
-  try {
-    const data = await getUpdateFormData(req.user);
-    return res.status(200).json({ success: true, ...data });
-  } catch (err) {
-    console.error("getUpdateForm error:", err);
-    return res.status(500).json({ success: false, message: "Error cargando datos del formulario" });
-  }
-};
 
 exports.updateBasicInfo = async (req, res) => {
   const { employeeId } = req.params;
