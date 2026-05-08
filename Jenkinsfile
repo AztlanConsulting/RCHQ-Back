@@ -13,6 +13,11 @@ pipeline {
         sh 'npm install'
       }
     }
+    stage('Update database') {
+      steps {
+        sh 'npx prisma generate'
+      }
+    }
     stage('Run tests') {
       steps {
         sh 'npm run test:unit -- --ci'
