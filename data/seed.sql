@@ -217,6 +217,13 @@ VALUES
 ('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.absence_type (absence_type_id, name)
+VALUES
+('a0000001-0000-4000-8000-000000000001', 'Médica'),
+('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
+('a0000001-0000-4000-8000-000000000003', 'Maternidad')
+ON CONFLICT DO NOTHING;
+
 INSERT INTO public.workday (workday_id, name)
 VALUES
   ('c0000001-0000-4000-8000-000000000001', 'Lunes'),

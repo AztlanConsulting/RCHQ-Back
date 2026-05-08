@@ -75,6 +75,7 @@ model employee {
   two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
   temp_totp_secret                String?                         @db.VarChar
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
+  absence                         absence[]
   frecuency_of_payment            frecuency_of_payment?           @relation(fields: [frequency_of_payment_id], references: [frecuency_of_payment_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_frecuency_of_payment_fk")
   house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                            role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
@@ -302,6 +303,25 @@ model workday {
   workday_id       String             @id(map: "workday_pk") @db.Uuid
   name             String             @unique @db.VarChar(9)
   employee_workday employee_workday[]
+}
+
+model absence {
+  absence_id      String       @id(map: "absence_pk") @db.Uuid
+  employee_id     String       @db.Uuid
+  absence_type_id String       @db.Uuid
+  start           DateTime     @db.Date
+  end             DateTime     @db.Date
+  description     String?
+  url             String?
+  is_deleted      Boolean      @default(false)
+  absence_type    absence_type @relation(fields: [absence_type_id], references: [absence_type_id], onDelete: NoAction, onUpdate: NoAction, map: "absence_absence_type_fk")
+  employee        employee     @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "absence_employee_fk")
+}
+
+model absence_type {
+  absence_type_id String    @id(map: "absence_type_pk") @db.Uuid
+  name            String    @unique @db.VarChar(30)
+  absence         absence[]
 }
 
 model frecuency_of_payment {
