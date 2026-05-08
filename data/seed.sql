@@ -152,7 +152,6 @@ VALUES (
   'nomina'
 )
 ON CONFLICT DO NOTHING;
-
 -- =========================
 -- ACTIONS
 -- =========================
@@ -182,7 +181,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
-('empl-004', 'Documento de empleado eliminado', false)
+('empl-004', 'Documento de empleado eliminado', false),
+('empl-005', 'Información de empleado actualizada', false)
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -222,6 +222,27 @@ VALUES
 ('a0000001-0000-4000-8000-000000000001', 'Médica'),
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
 ('a0000001-0000-4000-8000-000000000003', 'Maternidad')
+INSERT INTO public.workday (workday_id, name)
+VALUES
+  ('c0000001-0000-4000-8000-000000000001', 'Lunes'),
+  ('c0000001-0000-4000-8000-000000000002', 'Martes'),
+  ('c0000001-0000-4000-8000-000000000003', 'Miércoles'),
+  ('c0000001-0000-4000-8000-000000000004', 'Jueves'),
+  ('c0000001-0000-4000-8000-000000000005', 'Viernes'),
+  ('c0000001-0000-4000-8000-000000000006', 'Sábado'),
+  ('c0000001-0000-4000-8000-000000000007', 'Domingo')
+ON CONFLICT (workday_id) DO UPDATE SET
+  name = EXCLUDED.name;
+
+
+INSERT INTO PUBLIC.frecuency_of_payment (
+  frecuency_of_payment_id,
+  name
+) VALUES
+  ('f0000001-0000-4000-8000-000000000001', 'semanal'),
+  ('f0000002-0000-4000-8000-000000000002', 'quincenal'),
+  ('f0000003-0000-4000-8000-000000000003', 'mensual')
 ON CONFLICT DO NOTHING;
+
 
 COMMIT;
