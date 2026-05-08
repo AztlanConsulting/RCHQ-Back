@@ -90,6 +90,12 @@ CREATE TABLE IF NOT EXISTS public.action (
     CONSTRAINT action_pk PRIMARY KEY (action_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.frecuency_of_payment (
+    frecuency_of_payment_id uuid NOT NULL,
+    name varchar(20) NOT NULL UNIQUE,
+    CONSTRAINT frecuency_of_payment_pk PRIMARY KEY (frecuency_of_payment_id)
+);
+
 
 -- =============================================================
 -- 2. EMPLOYEE (depende de house y role)
@@ -120,13 +126,15 @@ CREATE TABLE IF NOT EXISTS public.employee (
     phone_number                     varchar(20)   NULL,
     type                             varchar(20)   NOT NULL DEFAULT 'nomina',
     salary                           varchar(72)   NULL,
+    frequency_of_payment_id            uuid          NULL,
     blocked_until                    timestamp     NULL,
     two_fa_blocked_until             timestamp     NULL,
     temp_totp_secret                 varchar       NULL,
     temp_totp_secret_created_at      timestamp     NULL,
     CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
     CONSTRAINT employee_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id),
-    CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id)
+    CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id),
+    CONSTRAINT employee_frecuency_of_payment_fk FOREIGN KEY (frequency_of_payment_id) REFERENCES public.frecuency_of_payment(frecuency_of_payment_id)
 );
 
 
@@ -309,4 +317,25 @@ CREATE TABLE IF NOT EXISTS public.employee_personal_event (
     CONSTRAINT employee_personal_event_pk PRIMARY KEY (personal_event_id, employee_id),
     CONSTRAINT employee_personal_event_personal_event_fk FOREIGN KEY (personal_event_id) REFERENCES public.personal_event(personal_event_id),
     CONSTRAINT employee_personal_event_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
+);
+
+CREATE TABLE public.absence_type (
+	absence_type_id uuid NOT NULL,
+	name varchar(30) NOT NULL UNIQUE,
+	CONSTRAINT absence_type_pk PRIMARY KEY (absence_type_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.absence (
+    absence_id uuid NOT NULL,
+    employee_id uuid NOT NULL,
+    absence_type_id uuid NOT NULL,
+    start date NOT NULL,
+    "end" date NOT NULL,
+    description text NULL,
+    url text NULL,
+    is_deleted bool NOT NULL DEFAULT false,
+    CONSTRAINT absence_pk PRIMARY KEY (absence_id),
+    CONSTRAINT absence_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
+    CONSTRAINT absence_absence_type_fk FOREIGN KEY (absence_type_id) REFERENCES public.absence_type(absence_type_id)
+
 );

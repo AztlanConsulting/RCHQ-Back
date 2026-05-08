@@ -11,7 +11,9 @@ const {
     getDocumentTypes,
     getDocumentsByEmployee,
     getWorkDays,
-
+    getAllWorkdays,
+    getAllHouses,
+    getFrecuencyPaymentOptions,
 } = require("../../model/employee/get.model");
 const { getHouseById } = require("../../model/house/get.model");
 const { decryptValue } = require("../../utils/password");
@@ -171,3 +173,13 @@ exports.getWorkDays = async (employeeId) => {
     });
     return workDays;
 }
+
+exports.getUpdateFormData = async (user) => {
+  const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
+    getAllRoles(),
+    getAllHouses(),
+    getAllWorkdays(),
+    getFrecuencyPaymentOptions(),
+  ]);
+  return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
+};

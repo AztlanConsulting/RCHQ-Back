@@ -152,7 +152,6 @@ VALUES (
   'nomina'
 )
 ON CONFLICT DO NOTHING;
-
 -- =========================
 -- ACTIONS
 -- =========================
@@ -183,24 +182,26 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
-('empl-004', 'Documento de empleado eliminado', false)
+('empl-004', 'Documento de empleado eliminado', false),
+('empl-005', 'Información de empleado actualizada', false)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO public.workday (workday_id, name) VALUES
-('a0000003-0000-4000-8000-000580000000', 'Lunes'),
-('a0000003-0000-4000-8000-000000580001', 'Martes'),
-('a0000003-0000-4000-8000-000580000002', 'Miércoles'),
-('a0000003-0000-4000-8000-000000580003', 'Jueves'),
-('a0000003-0000-4000-8000-000580000004', 'Viernes'),
-('a0000003-0000-4000-8000-000005800005', 'Sábado'),
-('a0000003-0000-4000-8000-000058000006', 'Domingo');
+INSERT INTO public.workday (workday_id, name)
+VALUES
+('c0000001-0000-4000-8000-000000000001', 'Lunes'),
+('c0000001-0000-4000-8000-000000000002', 'Martes'),
+('c0000001-0000-4000-8000-000000000003', 'Miércoles'),
+('c0000001-0000-4000-8000-000000000004', 'Jueves'),
+('c0000001-0000-4000-8000-000000000005', 'Viernes'),
+('c0000001-0000-4000-8000-000000000006', 'Sábado'),
+('c0000001-0000-4000-8000-000000000007', 'Domingo');
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALUES
-('a0000003-0000-4000-8000-000580000000', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('a0000003-0000-4000-8000-000000580001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('a0000003-0000-4000-8000-000580000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('a0000003-0000-4000-8000-000000580003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('a0000003-0000-4000-8000-000580000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
 
 INSERT INTO public.event_type (event_type_id, name)
 VALUES
@@ -522,22 +523,22 @@ WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (fault_id, employee_id) DO NOTHING;
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT 'a0000003-0000-4000-8000-000580000000', e.employee_id, '08:00:00', '17:00:00'
+SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT 'a0000003-0000-4000-8000-000000580001', e.employee_id, '09:00:00', '18:00:00'
+SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '09:00:00', '18:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT 'a0000003-0000-4000-8000-000000580003', e.employee_id, '07:00:00', '16:00:00'
+SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '07:00:00', '16:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT 'a0000003-0000-4000-8000-000580000004', e.employee_id, '10:00:00', '19:00:00'
+SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '10:00:00', '19:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
@@ -561,5 +562,21 @@ VALUES (
   NOW(),
   4
 );
+INSERT INTO public.absence_type (absence_type_id, name)
+VALUES
+('a0000001-0000-4000-8000-000000000001', 'Médica'),
+('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
+('a0000001-0000-4000-8000-000000000003', 'Maternidad')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO PUBLIC.frecuency_of_payment (
+  frecuency_of_payment_id,
+  name
+) VALUES
+  ('f0000001-0000-4000-8000-000000000001', 'semanal'),
+  ('f0000002-0000-4000-8000-000000000002', 'quincenal'),
+  ('f0000003-0000-4000-8000-000000000003', 'mensual')
+ON CONFLICT DO NOTHING;
+
 
 COMMIT;
