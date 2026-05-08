@@ -152,41 +152,38 @@ const seed = async () => {
         },
     });
 
-    const existingAdminRole = await prisma.role.findFirst({
+    const roleAdmin = await prisma.role.upsert({
         where: { name: "Admin" },
+        update: {},
+        create: {
+            role_id: IDS.roleAdmin,
+            name: "Admin",
+        },
     });
-    if (existingAdminRole) {
-        IDS.roleAdmin = existingAdminRole.role_id;
-        empAdminBase.role_id = IDS.roleAdmin;
-    } else {
-        await prisma.role.create({
-            data: { role_id: IDS.roleAdmin, name: "Admin" },
-        });
-    }
+    IDS.roleAdmin = roleAdmin.role_id;
+    empAdminBase.role_id = roleAdmin.role_id;
 
-    const existingCoordRole = await prisma.role.findFirst({
-        where: { name: "Colaborador" },
+    const roleCoord = await prisma.role.upsert({
+        where: { name: "Coordinador" },
+        update: {},
+        create: {
+            role_id: IDS.roleCoordinator,
+            name: "Coordinador",
+        },
     });
-    if (existingCoordRole) {
-        IDS.roleCoordinator = existingCoordRole.role_id;
-        empCoordBase.role_id = IDS.roleCoordinator;
-    } else {
-        await prisma.role.create({
-            data: { role_id: IDS.roleCoordinator, name: "Colaborador" },
-        });
-    }
+    IDS.roleCoordinator = roleCoord.role_id;
+    empCoordBase.role_id = roleCoord.role_id;
 
-    const existingCookRole = await prisma.role.findFirst({
+    const roleCook = await prisma.role.upsert({
         where: { name: "Cocinero" },
+        update: {},
+        create: {
+            role_id: IDS.roleCook,
+            name: "Cocinero",
+        },
     });
-    if (existingCookRole) {
-        IDS.roleCook = existingCookRole.role_id;
-        empCookBase.role_id = IDS.roleCook;
-    } else {
-        await prisma.role.create({
-            data: { role_id: IDS.roleCook, name: "Cocinero" },
-        });
-    }
+    IDS.roleCook = roleCook.role_id;
+    empCookBase.role_id = roleCook.role_id;
 
     await prisma.employee.upsert({
         where: { employee_id: IDS.employeeAdmin },

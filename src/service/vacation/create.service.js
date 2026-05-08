@@ -101,7 +101,12 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
     const remainingVacationResult = await this.getRemainingVacations(employeeId);
     const remainingVacations = remainingVacationResult.data.remainingDays;
     
-    const today = new Date();
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate()
+    ));
     const anniversaryStartDate = remainingVacationResult.data.startDate;
     const anniversaryEndDate = remainingVacationResult.data.endDate;
     
@@ -111,7 +116,7 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
         }
     }
 
-    if (startDate < today) {
+    if (startDate <= todayUTC) {
         return {
             code: RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED
         }
