@@ -13,10 +13,10 @@
     };
 */
 const RESPONSES = {
-    PROFILE: {
-        FOUND: "PROFILE_FOUND",
-        NOT_FOUND: "PROFILE_NOT_FOUND",
-    },
+  PROFILE: {
+    FOUND: "PROFILE_FOUND",
+    NOT_FOUND: "PROFILE_NOT_FOUND",
+  },
     DOCUMENTS: {
         NOT_FOUND: "Documento no encontrado",
         OK: "Documento obtenido",
@@ -25,16 +25,18 @@ const RESPONSES = {
         NOT_ALLOW: "Tipo de documento invalido",
         UPLOADED: "Se subió correctamente",
         ALREADY_EXISTS: "El documento ya existe",
-    },
-    USER: {
-        NOT_FOUND: "Usuario no encontrado",
-        NOT_ACCESS: "Acceso bloqueado",
-    },
-    EMPLOYEE: {
-        BAD_REQUEST: "BAD_REQUEST",
-        NOT_FOUND: "EMPLOYEE_NOT_FOUND",
-        FOUND: "EMPLOYEE_DATA_FOUND",
-    },
+  },
+  USER: {
+    NOT_FOUND: "Usuario no encontrado",
+    NOT_ACCESS: "Acceso bloqueado",
+  },
+  EMPLOYEE: {
+    BAD_REQUEST: "BAD_REQUEST",
+    NOT_FOUND: "EMPLOYEE_NOT_FOUND",
+    FOUND: "EMPLOYEE_DATA_FOUND",
+    UPDATED: "EMPLOYEE_UPDATED",
+    VALIDATION_ERROR: "EMPLOYEE_VALIDATION_ERROR",
+  },
 };
 
 module.exports = RESPONSES;

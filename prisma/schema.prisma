@@ -70,11 +70,13 @@ model employee {
   phone_number                    String?                         @db.VarChar(20)
   type                            String                          @default("nomina") @db.VarChar(20)
   salary                          String?                         @db.VarChar(72)
+  frequency_of_payment_id         String?                         @db.Uuid
   blocked_until                   DateTime?                       @db.Timestamp(6)
   two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
   temp_totp_secret                String?                         @db.VarChar
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
   absence                         absence[]
+  frecuency_of_payment            frecuency_of_payment?           @relation(fields: [frequency_of_payment_id], references: [frecuency_of_payment_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_frecuency_of_payment_fk")
   house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                            role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address                employee_address[]
@@ -320,4 +322,10 @@ model absence_type {
   absence_type_id String    @id(map: "absence_type_pk") @db.Uuid
   name            String    @unique @db.VarChar(30)
   absence         absence[]
+}
+
+model frecuency_of_payment {
+  frecuency_of_payment_id String     @id(map: "frecuency_of_payment_pk") @db.Uuid
+  name                    String     @unique @db.VarChar(20)
+  employee                employee[]
 }
