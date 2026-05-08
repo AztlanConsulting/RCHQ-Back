@@ -31,6 +31,11 @@ const IDS = {
     roleCook: randomUUID(),
     employeeCook: randomUUID(),
     doc: randomUUID(),
+    workdayLunes: randomUUID(),
+    workdayMartes: randomUUID(),
+    workdayMiercoles: randomUUID(),
+    workdayJueves: randomUUID(),
+    workdayViernes: randomUUID(),
 };
 
 const empAdminBase = {
@@ -89,6 +94,51 @@ const sign = (employeeId, roleId) => {
 };
 
 const seed = async () => {
+    await prisma.workday.upsert({
+        where: { name: "Lunes" },
+        update: {},
+        create: {
+            name: "Lunes",
+            workday_id: IDS.workdayLunes,
+        }
+    });
+
+    await prisma.workday.upsert({
+        where: { name: "Martes" },
+        update: {},
+        create: {
+            name: "Martes",
+            workday_id: IDS.workdayMartes,
+        }
+    });
+
+    await prisma.workday.upsert({
+        where: { name: "Miércoles" },
+        update: {},
+        create: {
+            name: "Miércoles",
+            workday_id: IDS.workdayMiercoles,
+        }
+    });
+
+    await prisma.workday.upsert({
+        where: { name: "Jueves" },
+        update: {},
+        create: {
+            name: "Jueves",
+            workday_id: IDS.workdayJueves,
+        }
+    });
+
+    await prisma.workday.upsert({
+        where: { name: "Viernes" },
+        update: {},
+        create: {
+            name: "Viernes",
+            workday_id: IDS.workdayViernes,
+        }
+    });
+    
     await prisma.house.upsert({
         where: { house_id: IDS.house },
         update: {},
@@ -199,6 +249,19 @@ const clean = async () => {
                 ],
             },
         },
+    });
+    await prisma.workday.deleteMany({
+        where: {
+            workday_id: {
+                in: [
+                    IDS.workdayLunes,
+                    IDS.workdayMartes,
+                    IDS.workdayMiercoles,
+                    IDS.workdayJueves,
+                    IDS.workdayViernes,
+                ]
+            }
+        }
     });
     await prisma.employee.deleteMany({
         where: {

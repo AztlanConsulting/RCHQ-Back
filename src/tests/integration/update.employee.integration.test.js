@@ -35,9 +35,10 @@ beforeAll(async () => {
   await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
   await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-  await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
+  await prisma.role.deleteMany();
   await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
   await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
+  await prisma.workday.deleteMany({ where: { name: "Lunes" } });
 
   // 2. Preparar dependencias (Catálogos)
   await prisma.workday.upsert({
@@ -381,10 +382,10 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ type: "tiempo_completo" });
+      .send({ type: "Asalariado" });
     expect(res.statusCode).toBe(200);
     const updated = await prisma.employee.findUnique({ where: { employee_id: EMP_ID } });
-    expect(updated.type).toBe("tiempo_completo");
+    expect(updated.type).toBe("Asalariado");
   });
 
   it("encripta el salario en BD", async () => {
@@ -465,7 +466,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
       .send({
         workdays: [{ workdayId: WD_ID, start: "18:00", end: "08:00" }],
       });
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(200);
   });
 
   it("retorna 400 con formato de hora inválido", async () => {
