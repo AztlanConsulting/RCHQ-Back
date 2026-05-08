@@ -47,7 +47,12 @@ router.get(
   employeeGetController.getEmployeeDetail,
 );
 
-router.get("/getWorkDays/:id", verifyToken, isAllowed, getWorkDays);
+router.get("/getWorkDays/:id",
+  apiLimiter,
+  verifyToken,
+  isAllowed,
+  getWorkDays
+);
 
 router.post(
     "/add",

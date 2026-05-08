@@ -5,22 +5,33 @@ jest.mock("../../model/event/get.model");
 jest.mock("../../model/vacation/get.model");
 jest.mock("../../model/vacation/create.model");
 jest.mock("../../model/log.model");
-jest.mock("../../utils/dates");
 jest.mock("../../utils/ip");
+jest.mock("../../utils/dates", () => {
+    const actual = jest.requireActual("../../utils/dates");
+
+    return {
+        ...actual,
+        calculateUsedDays: jest.fn(),
+    };
+});
 
 const employeeModel = require("../../model/employee/get.model");
 const eventsModel = require("../../model/event/get.model");
 const vacationConsultModel = require("../../model/vacation/get.model");
 const vacationAddModel = require("../../model/vacation/create.model");
 const logModel = require("../../model/log.model");
-const datesUtils = require("../../utils/dates");
 const ipUtils = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
+const datesUtils = require("../../utils/dates");
 
 const EMPLOYEE_ID = 1;
 const TODAY = new Date();
-const START_DATE = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() + 1));
-const END_DATE = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() + 4));
+const RAW_START_DATE = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() + 1));
+const RAW_END_DATE =   new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() + 4));
+
+const START_DATE = `${RAW_START_DATE.getUTCFullYear()}-${RAW_START_DATE.getUTCMonth() + 1}-${RAW_START_DATE.getUTCDate()}`;
+const END_DATE = `${RAW_END_DATE.getUTCFullYear()}-${RAW_END_DATE.getUTCMonth() + 1}-${RAW_END_DATE.getUTCDate()}`;
+
 const CLIENT_IP = "127.0.0.1";
 
 describe("vacation.service — requestVacation", () => {
@@ -124,7 +135,7 @@ describe("vacation.service — requestVacation", () => {
                 CLIENT_IP,
             );
 
-            expect(result.code).toBe(RESPONSES.VACATION.BAD_DATES);
+            expect(result.code).toBe(RESPONSES.DATES.BAD_DATES);
         });
     });
 
@@ -313,7 +324,8 @@ describe("vacation.service — requestVacation", () => {
 
             ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
 
-            const yesterday = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() - 10));
+            const rawYesterday = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() - 10));
+            const yesterday = `${rawYesterday.getUTCFullYear()}-${rawYesterday.getUTCMonth() + 1}-${rawYesterday.getUTCDate()}`;
 
             const result = await vacationService.requestVacation(
                 EMPLOYEE_ID,

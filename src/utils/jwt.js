@@ -62,10 +62,3 @@ module.exports = {
     generateFirstLoginToken,
     generatePreTwoFactorAuthToken,
 };
-
-
-/*
-
-
-
-*/

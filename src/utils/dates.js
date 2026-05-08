@@ -34,7 +34,7 @@ exports.spanishToDay = (day) => {
     return -1
 }
 
-exports.calculateUsedDays = (workDays, startDate, endDate, events) => {
+exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const days = [];
     workDays.forEach(workDay => {
         days.push(this.spanishToDay(workDay.workday.name))
@@ -62,3 +62,31 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events) => {
 
     return usedDays - freeDays.length;
 }
+
+exports.stringToDate = (rawDate) => {
+    const dateElements = rawDate.split("-");
+
+    const year = Number(dateElements[0]);
+    const month = Number(dateElements[1]);
+    const day = Number(dateElements[2]);
+    
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+
+    return parsedDate;
+}
+
+exports.isValidDate = (rawDate) => {
+    const dateElements = rawDate.split("-");
+
+    const year = Number(dateElements[0]);
+    const month = Number(dateElements[1]);
+    const day = Number(dateElements[2]);
+
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+
+    return (
+        parsedDate.getUTCFullYear() == year &&
+        parsedDate.getUTCMonth() == month - 1 &&
+        parsedDate.getUTCDate() == day
+    );
+};

@@ -179,7 +179,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-020', 'Cambio de contraseña exitoso', false),
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
 ('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false),
-('vac-001', 'Creación de solicitud de vacaciones exitosa', false),
+('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),

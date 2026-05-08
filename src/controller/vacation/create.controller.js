@@ -40,16 +40,17 @@ exports.requestVacation = async (req, res) => {
         const startDate = req.body.startDate;
         const endDate = req.body.endDate;
 
-        const startDateElements = startDate.split("-");
-        const endDateElements = endDate.split("-");
-
-        const parsedStartDate = new Date(Date.UTC(startDateElements[0], startDateElements[1]-1, startDateElements[2]));
-        const parsedEndDate = new Date(Date.UTC(endDateElements[0], endDateElements[1]-1, endDateElements[2]));
-
         const clientIp = getClientIp(req);
 
         const employeeId = req.user.id;
-        const result = await requestVacation(employeeId, parsedStartDate, parsedEndDate, clientIp);
+        const result = await requestVacation(employeeId, startDate, endDate, clientIp);
+
+        if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
+            return res.status(400).json({
+                success: false,
+                message: "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD"
+            });
+        }
 
         if (result.code == RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED) {
             return res.status(406).json({
@@ -79,7 +80,7 @@ exports.requestVacation = async (req, res) => {
             });
         }
 
-        if (result.code == RESPONSES.VACATION.BAD_DATES) {
+        if (result.code == RESPONSES.DATES.BAD_DATES) {
             return res.status(406).json({
                 success: false,
                 message: "No se puede tener una fecha de inicio posterior a la de finalización"
@@ -110,7 +111,7 @@ exports.requestVacation = async (req, res) => {
     } catch {
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor. Por favor intente más tarde.",
         });
     }
 }

@@ -29,15 +29,24 @@ const isAllowed = async (req, res, next) => {
         if (req.user.role == "Admin") return next();
         if (req.user.id == targetId) return next();
 
-        const homeQuery = await getHome(req.params.id);
-        if (!homeQuery) return res.status(500).json({ error: "Error del servidor" });
+        const homeQuery = await getHome(targetId);
+        if (!homeQuery) return res.status(403).json({
+            success: false,
+            message: "No puede acceder a este recurso"
+        });
         if (req.user.houseId == homeQuery.house_id && req.user.role == "Coordinador") {
             return next();
         }
 
-        return res.status(500).json({ error: "Error del servidor" });
+        return res.status(403).json({
+            success: false,
+            message: "No puede acceder a este recurso"
+        });
     } catch {
-        return res.status(500).json({ error: "Error del servidor" });
+        return res.status(403).json({
+            success: false,
+            message: "No puede acceder a este recurso"
+        });
     }
 };
 

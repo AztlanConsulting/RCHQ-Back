@@ -3,7 +3,8 @@ const {
     getWorkDays,
 } = require("../../model/employee/get.model");
 const { 
-    calculateUsedDays
+    calculateUsedDays,
+    stringToDate,
 } = require("../../utils/dates");
 const { 
     getVacationsInRange, 
@@ -14,6 +15,7 @@ const {
 } = require("../../model/event/get.model")
 const { getVacationDays } = require("../../utils/vacationDays")
 const { LOG_ACTIONS } = require("../../utils/logActions");
+const { dateRangeSchema } = require("../../schemas/dates.schemas")
 const { createLog } = require("../../model/log.model")
 const { requestVacation } = require("../../model/vacation/create.model")
 const RESPONSES = require("../../utils/responses");
@@ -71,11 +73,21 @@ exports.getRemainingVacations = async (employeeId) => {
     }
 }
 
-exports.requestVacation = async (employeeId, startDate, endDate, ipAddress) => {
+exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress) => {
+    const validation = dateRangeSchema.safeParse({startDate: rawStartDate, endDate: rawEndDate});
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.DATES.WRONG_FORMAT
+        };
+    }
+
+    let startDate = stringToDate(rawStartDate);
+    let endDate = stringToDate(rawEndDate);
 
     if (endDate < startDate) {
         return {
-            code: RESPONSES.VACATION.BAD_DATES
+            code: RESPONSES.DATES.BAD_DATES
         }
     }
 

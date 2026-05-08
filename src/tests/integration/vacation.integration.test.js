@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 const app = require("../../app");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const expectCookies = require("supertest/lib/cookies");
 
 const prisma = new PrismaClient();
 
@@ -286,7 +287,10 @@ describe("Flujo integración /vacation/request", () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send({});
 
-            expect(res.status).toBe(500);
+            expect(res.status).toBe(400);
+            expect(res.body.message).toBe(
+                "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
+            );
         });
 
         it("Empleado manda solicitud con otros parámetros", async () => {
@@ -299,7 +303,26 @@ describe("Flujo integración /vacation/request", () => {
                     dummy: "data",
                 });
 
-            expect(res.status).toBe(500);
+            expect(res.status).toBe(400);
+            expect(res.body.message).toBe(
+                "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
+            );
+        });
+
+        it("Empleado manda solicitud con fechas en otro formato", async () => {
+            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const res = await request(app)
+                .post("/vacation/request")
+                .set("Authorization", `Bearer ${token}`)
+                .send({
+                    startDate: "2020/10/10",
+                    endDate: "2020/10/10",
+                });
+
+            expect(res.status).toBe(400);
+            expect(res.body.message).toBe(
+                "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
+            );
         });
 
         it("Manda error por falta de días de trabajo", async () => {
@@ -348,7 +371,7 @@ describe("Flujo integración /vacation/request", () => {
                         end: new Date("1970-01-01T18:00:00Z"),
                     },
                 });
-            };
+            }
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -367,7 +390,7 @@ describe("Flujo integración /vacation/request", () => {
         it("Pedir solo un día de vacaciones", async () => {
             const token = sign(IDS.employeeCook, IDS.roleCook);
 
-            const startDate = '2026-10-13';
+            const startDate = "2026-10-13";
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -543,8 +566,8 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir más días de los que se tienen disponibles", async () => {
             const token = sign(IDS.employeeCook, IDS.roleCook);
 
-            const startDate = '2026-11-09';
-            const endDate = '2026-11-25';
+            const startDate = "2026-11-09";
+            const endDate = "2026-11-25";
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -563,16 +586,16 @@ describe("Flujo integración /vacation/request", () => {
         it("Pedir vacaciones tomando en cuenta eventos", async () => {
             const token = sign(IDS.employeeCook, IDS.roleCook);
 
-            const startDate = '2026-11-09';
-            const endDate = '2026-11-25';
+            const startDate = "2026-11-09";
+            const endDate = "2026-11-25";
 
             const eventTypeId = randomUUID();
 
             await prisma.event_type.create({
                 data: {
                     name: "Día de prueba en vacaciones",
-                    event_type_id: eventTypeId
-                }
+                    event_type_id: eventTypeId,
+                },
             });
 
             await prisma.global_event.create({
@@ -584,8 +607,8 @@ describe("Flujo integración /vacation/request", () => {
                     end: new Date("1970-01-01T23:59:00Z"),
                     name: "Día de testeo",
                     description: "Día para testear el endpoint",
-                    is_free_day: true
-                }
+                    is_free_day: true,
+                },
             });
 
             await prisma.global_event.create({
@@ -597,8 +620,8 @@ describe("Flujo integración /vacation/request", () => {
                     end: new Date("1970-01-01T23:59:00Z"),
                     name: "Rev Mex",
                     description: "Día para testear el endpoint",
-                    is_free_day: true
-                }
+                    is_free_day: true,
+                },
             });
 
             const res = await request(app)

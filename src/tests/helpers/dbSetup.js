@@ -126,6 +126,11 @@ const SEED_ACTIONS = [
         description: "Documento de empleado eliminado",
         important: false,
     },
+    {
+        action_id: "vaca-001",
+        description: "Solicitud de vacaciones creada",
+        important: false,
+    },
 ];
 
 // ─── Datos de prueba ─────────────────────────────────────────────────────────
