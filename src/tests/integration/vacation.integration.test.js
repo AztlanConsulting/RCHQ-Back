@@ -287,7 +287,7 @@ describe("Flujo integración /vacation/request", () => {
 
     describe("PASO 1 - GET /vacation/remaining/", () => {
         it("Empleado obtiene sus propias vacaciones", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
                 .get(`/vacation/remaining/${IDS.employeeCook}`)
                 .set("Authorization", `Bearer ${token}`);
@@ -304,9 +304,9 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Coordinador obtiene las vacaciones de un empleado en su casa", async () => {
-            const token = sign(IDS.employeeCoordinator, IDS.roleCoordinator);
+            const token = sign(IDS.employeeCoordinator, "Coordinador");
             const res = await request(app)
-                .get(`/vacation/remaining/${IDS.employeeCoordinator}`)
+                .get(`/vacation/remaining/${IDS.employeeCook}`)
                 .set("Authorization", `Bearer ${token}`);
 
             expect(res.status).toBe(200);
@@ -321,9 +321,9 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Administrador obtiene las vacaciones de un empleado", async () => {
-            const token = sign(IDS.employeeAdmin, IDS.roleAdmin);
+            const token = sign(IDS.employeeAdmin, "Admin");
             const res = await request(app)
-                .get(`/vacation/remaining/${IDS.employeeAdmin}`)
+                .get(`/vacation/remaining/${IDS.employeeCook}`)
                 .set("Authorization", `Bearer ${token}`);
 
             expect(res.status).toBe(200);
@@ -340,7 +340,7 @@ describe("Flujo integración /vacation/request", () => {
 
     describe("PASO 2 - GET /vacation/request", () => {
         it("Empleado manda solicitud sin parámetros", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
                 .post("/vacation/request")
                 .set("Authorization", `Bearer ${token}`)
@@ -353,7 +353,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Empleado manda solicitud con otros parámetros", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
                 .post("/vacation/request")
                 .set("Authorization", `Bearer ${token}`)
@@ -369,7 +369,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Empleado manda solicitud con fechas en otro formato", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
                 .post("/vacation/request")
                 .set("Authorization", `Bearer ${token}`)
@@ -385,7 +385,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Manda error por falta de días de trabajo", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate()}`;
             const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate()}`;
@@ -405,7 +405,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Envío correcto", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate()}`;
             const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate()}`;
@@ -447,7 +447,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Pedir solo un día de vacaciones", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = "2026-10-13";
 
@@ -466,7 +466,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir vacaciones dentro de unas ya existentes", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() + 1}`;
             const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate() - 1}`;
@@ -486,7 +486,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir vacaciones con otras vacaciones dentro del rango", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() - 1}`;
             const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate() + 1}`;
@@ -506,7 +506,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir vacaciones para el mismo día", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${TODAY.getUTCFullYear()}-${TODAY.getUTCMonth() + 1}-${TODAY.getUTCDate()}`;
 
@@ -525,7 +525,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir vacaciones en el pasado", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${TODAY.getUTCFullYear()}-${TODAY.getUTCMonth() + 1}-${TODAY.getUTCDate() - 5}`;
 
@@ -544,7 +544,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir vacaciones fuera del periodo actual", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${START_DATE.getUTCFullYear() + 1}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() - 1}`;
             const endDate = `${END_DATE.getUTCFullYear() + 1}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate() + 1}`;
@@ -564,7 +564,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al tener la fecha de inicio posterior a la de final", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const endDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate()}`;
             const startDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate()}`;
@@ -584,7 +584,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al no pedir días hábiles", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = "2026-08-08";
 
@@ -603,7 +603,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir más días de los que se tienen disponibles", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() + 8}`;
             const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 3}-${END_DATE.getUTCDate()}`;
@@ -623,7 +623,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Error al pedir más días de los que se tienen disponibles", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = "2026-11-09";
             const endDate = "2026-11-25";
@@ -643,7 +643,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Pedir vacaciones tomando en cuenta eventos", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
 
             const startDate = "2026-11-09";
             const endDate = "2026-11-25";
@@ -700,7 +700,7 @@ describe("Flujo integración /vacation/request", () => {
 
     describe("PASO 3 - GET /vacation/remaining/", () => {
         it("Empleado obtiene sus propias vacaciones después de solicitar varias", async () => {
-            const token = sign(IDS.employeeCook, IDS.roleCook);
+            const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
                 .get(`/vacation/remaining/${IDS.employeeCook}`)
                 .set("Authorization", `Bearer ${token}`);
