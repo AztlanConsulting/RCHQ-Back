@@ -49,12 +49,17 @@ const RESPONSES = {
       FOUND: 'EVENTS_FOUND_CORRECTLY'
   },
   EMPLOYEE: {
-    BAD_REQUEST: "BAD_REQUEST",
-    NOT_FOUND: "EMPLOYEE_NOT_FOUND",
-    FOUND: "EMPLOYEE_DATA_FOUND",
-    UPDATED: "EMPLOYEE_UPDATED",
-    VALIDATION_ERROR: "EMPLOYEE_VALIDATION_ERROR",
+    BAD_REQUEST: "Faltan datos requeridos o tienen un formato incorrecto",
+    NOT_FOUND: "Empleado no encontrado",
+    FOUND: "Empleado encontrado",
+    UPDATED: "Empleado actualizado correctamente",
+    VALIDATION_ERROR: "Error de validación al actualizar el empleado",
   },
+  ABSENCE:{
+    FOUND: "Ausencias encontradas correctamente",
+    BAD_REQUEST: "Faltan datos requeridos o tienen un formato incorrecto",
+    NOT_FOUND: "No se encontraron ausencias",
+  }
 };
 
 module.exports = RESPONSES;
