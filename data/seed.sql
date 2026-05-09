@@ -64,7 +64,9 @@ VALUES
 ('00000001-0000-4000-8000-000000000003', 'manageEmployees'),
 ('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
-('00000001-0000-4000-8000-000000000006', 'viewLogs')
+('00000001-0000-4000-8000-000000000006', 'viewLogs'),
+('00000001-0000-4000-8000-000000000007', 'viewEmployeesAbsences'),
+('00000001-0000-4000-8000-000000000008', 'manageEmployeesAbsences')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -81,7 +83,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
-WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments')
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewEmployeesAbsences', 'manageEmployeesAbsences')
 ON CONFLICT DO NOTHING;
 
 -- Roles que solo ven documentos
@@ -112,7 +114,7 @@ SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
 WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Dirección de Programa')
-AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
+AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees', 'viewEmployeesAbsences', 'manageEmployeesAbsences')
 ON CONFLICT DO NOTHING;
 
 -- =========================
