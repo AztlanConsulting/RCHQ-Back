@@ -1,7 +1,10 @@
 const { getVacationsInRange } = require("../../model/vacation/get.model");
-const { getHome } = require("../../model/employee/get.model");
 const { dateRangeSchema } = require("../../schemas/dates.schemas")
 const { combineDateAndTime, stringToDate } = require("../../utils/dates");
+const { 
+    getHome, 
+    findById 
+} = require("../../model/employee/get.model");
 const {
     getHouseEventsInRange,
     getPersonalEventsInRange,
@@ -30,12 +33,19 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         }
     }
 
+    const employee = await findById(employeeId);
+    if (!employee) {
+        return {
+            code: RESPONSES.EMPLOYEE.NOT_FOUND
+        }
+    }
+
     const result = await getHome(employeeId);
     const houseId = result.house_id;
 
     const events = [];
 
-    if(houseId) {
+    if (houseId) {
         const houseEvents = await getHouseEventsInRange(
             houseId,
             startDate,

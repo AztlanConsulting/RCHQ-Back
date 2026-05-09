@@ -1,39 +1,6 @@
-const { 
-    getRemainingVacations, 
-    requestVacation
-} = require("../../service/vacation/create.service")
+const { requestVacation } = require("../../service/vacation/create.service")
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
-
-exports.getRemainingVacations = async (req, res) => {
-    try {
-        const employeeId = req.params.id;
-        const result = await getRemainingVacations(employeeId);
-
-        if (result.code === RESPONSES.VACATION.WITHOUT_START_DATE) {
-            return res.status(500).json({
-                success: false,
-                message: "Internal Server Error",
-            });
-        }
-
-        if (result.code === RESPONSES.VACATION.REMAINING_VACATIONS_FOUND) {
-            return res.status(200).json({
-                success: true,
-                data: {
-                    remainingVacations: result.data.remainingDays,
-                    startDate: result.data.startDate,
-                    endDate: result.data.endDate,
-                }
-            });
-        }
-    } catch {
-        return res.status(500).json({
-            success: false,
-            message: "Internal Server Error",
-        });
-    }
-}
 
 exports.requestVacation = async (req, res) => {
     try {

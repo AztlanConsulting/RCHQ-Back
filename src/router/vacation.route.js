@@ -6,10 +6,9 @@ const {
     isAllowed
 } = require("../middleware/abac");
 
-const {
-    getRemainingVacations,
-    requestVacation
-} = require("../controller/vacation/create.controller")
+const { getRemainingVacations } = require("../controller/vacation/get.controller");
+
+const { requestVacation } = require("../controller/vacation/create.controller");
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
 
