@@ -80,12 +80,12 @@ const empCookBase = {
     curp: "VACM000000000003AB",
 };
 
-const sign = (employeeId, roleId) => {
+const sign = (employeeId, roleName) => {
     return jwt.sign(
         {
             id: employeeId,
             houseId: IDS.house,
-            role: roleId,
+            role: roleName,
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
