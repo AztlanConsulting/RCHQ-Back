@@ -109,6 +109,8 @@ const seedSubjectEmployeeWithRelations = async () => {
       end: new Date("2026-12-15"),
       status: 1,
       feedback: "ok",
+      created_at: new Date(),
+      used_days: 3
     },
   });
 };

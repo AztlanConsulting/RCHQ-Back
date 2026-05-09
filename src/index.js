@@ -5,6 +5,10 @@ const app = express();
 const cors = require("cors");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
+const vacationRouter = require("./router/vacation.route");
+const eventRouter = require("./router/event.route");
+
+
 const userRouter = require("./router/user.route");
 
 const errorHandler = require("./middleware/ErrorHandler");
@@ -26,6 +30,8 @@ app.use(
 app.use("/auth", authRouter);
 app.use("/employee", employeeRouter);
 app.use("/user", userRouter);
+app.use("/vacation", vacationRouter);
+app.use("/event", eventRouter);
 
 app.use("/health", (req, res) => {
     res.status(200).json({

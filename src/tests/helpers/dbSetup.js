@@ -126,6 +126,11 @@ const SEED_ACTIONS = [
         description: "Documento de empleado eliminado",
         important: false,
     },
+    {
+        action_id: "vaca-001",
+        description: "Solicitud de vacaciones creada",
+        important: false,
+    },
 ];
 
 // ─── Datos de prueba ─────────────────────────────────────────────────────────
@@ -224,6 +229,20 @@ async function cleanDb() {
   await prisma.logs.deleteMany();
   await prisma.employee_documents.deleteMany();
   await prisma.documents.deleteMany();
+
+  await prisma.employee_address.deleteMany();
+  await prisma.vacations_request.deleteMany();
+
+  await prisma.employee_fault.deleteMany();
+  await prisma.fault.deleteMany();
+
+  await prisma.employee_workday.deleteMany();
+
+  await prisma.employee_personal_event.deleteMany();
+  await prisma.personal_event.deleteMany();
+  await prisma.house_event.deleteMany();
+  await prisma.global_event.deleteMany();
+  await prisma.event_type.deleteMany();
 
   await prisma.employee.deleteMany();
 

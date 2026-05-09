@@ -10,6 +10,7 @@ const {
     getEmployeeVacationRequests,
     getDocumentTypes,
     getDocumentsByEmployee,
+    getWorkDays,
     getAllWorkdays,
     getAllHouses,
     getFrecuencyPaymentOptions,
@@ -162,6 +163,16 @@ exports.getDocumentsByEmployee = async (employeeId) => {
     }));
     return { type: RESPONSES.DOCUMENTS.OK, body: mapped };
 };
+
+exports.getWorkDays = async (employeeId) => {
+    const rawWorkDays = await getWorkDays(employeeId);
+
+    const workDays = [];
+    rawWorkDays.forEach((day) => {
+        workDays.push(day.workday.name);
+    });
+    return workDays;
+}
 
 exports.getUpdateFormData = async (user) => {
   const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
