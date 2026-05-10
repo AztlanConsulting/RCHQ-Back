@@ -1,5 +1,5 @@
 const RESPONSES = require("../../utils/responses");
-const { getAllAbsences } = require("../../services/absence/get.service");
+const { getAllAbsences } = require("../../service/absence/get.service");
 
 
 exports.getAllAbsences = async (req, res) => {
@@ -9,7 +9,7 @@ exports.getAllAbsences = async (req, res) => {
 
     try {
         const result = await getAllAbsences(parsedPage, parsedLimit);
-        
+
         if(result.type === RESPONSES.ABSENCE.BAD_REQUEST){
             return res.status(400).json({
                 success: false,
