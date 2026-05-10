@@ -4,15 +4,12 @@ const { getAllAbsences } = require("../../services/absence/get.service");
 
 exports.getAllAbsences = async (req, res) => {
     const {page, limit} = req.query;
+    const parsedPage = parseInt(page);
+    const parsedLimit = parseInt(limit);
 
     try {
-        const result = await getAllAbsences(page, limit);
-        if(result.type === RESPONSES.ABSENCE.NOT_FOUND){
-            return res.status(404).json({
-                success: false,
-                message: RESPONSES.ABSENCE.NOT_FOUND,
-            });
-        }
+        const result = await getAllAbsences(parsedPage, parsedLimit);
+        
         if(result.type === RESPONSES.ABSENCE.BAD_REQUEST){
             return res.status(400).json({
                 success: false,

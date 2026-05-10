@@ -15,12 +15,21 @@ exports.getAllAbsences = async (page, limit) => {
         };
     }
 
+    const parsedLimit = Math.min(parseInt(limit), 100);
+
     try {
-        const result = await getAllAbsences(page, limit);
-        if(result.length === 0){
+        const result = await getAllAbsences(page, parsedLimit);
+
+        if (!result || result.success === false) {
+            throw new Error("Error en modelo de ausencias");
+        }
+
+        if(!result.data || result.data.length === 0){
             return {
-                success: false,
-                type: RESPONSES.ABSENCE.NOT_FOUND,
+                success: true,
+                type: RESPONSES.ABSENCE.FOUND,
+                data: [],
+                pagination: result.pagination,
             };
         }
         return {
@@ -29,6 +38,7 @@ exports.getAllAbsences = async (page, limit) => {
             data: result.data,
             pagination: result.pagination,
         };
+
     }catch (error) {
         console.log("Error obteniendo las ausencias: ", error);
         return {

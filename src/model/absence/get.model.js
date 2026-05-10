@@ -30,7 +30,7 @@ exports.getAllAbsences = async (page, limit) => {
                 skip: offset,
                 take: limit,
                 orderBy: {
-                    createdAt: "desc",
+                    start: "desc",
                 },
             }),
             prisma.absence.count({ where }),
@@ -42,6 +42,7 @@ exports.getAllAbsences = async (page, limit) => {
                 total,
                 page,
                 limit,
+                totalPages: Math.ceil(total / limit),
             },
         };
     } catch (error) {
