@@ -104,7 +104,7 @@ function generateSessionToken(employee) {
             name: employee.name,
             role: employee.roleName,
             houseId: employee.house_id,
-            privileges: [],
+            privileges: employee.privileges || [],
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
@@ -119,6 +119,7 @@ function getAdminToken() {
         name: "Admin",
         roleName: "Admin",
         house_id: HOUSE_A_ID,
+        privileges: ["manageEmployees"],
     });
 }
 
@@ -129,6 +130,7 @@ function getCoordinatorToken() {
         name: "Coordinator",
         roleName: "Coordinador",
         house_id: HOUSE_A_ID,
+        privileges: ["manageEmployees"],
     });
 }
 
@@ -139,6 +141,7 @@ function getUserToken() {
         name: "User",
         roleName: "Usuario",
         house_id: HOUSE_A_ID,
+        privileges: [],
     });
 }
 
