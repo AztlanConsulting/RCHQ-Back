@@ -7,16 +7,30 @@ exports.getAllAbsences = async (req, res) => {
 
     try {
         const result = await getAllAbsences(page, limit);
-        return res.status(200).json({
-            success: true,
-            data: result.data,
-            pagination: result.pagination,
-        });
+        if(result.type === RESPONSES.ABSENCE.NOT_FOUND){
+            return res.status(404).json({
+                success: false,
+                message: RESPONSES.ABSENCE.NOT_FOUND,
+            });
+        }
+        if(result.type === RESPONSES.ABSENCE.BAD_REQUEST){
+            return res.status(400).json({
+                success: false,
+                message: RESPONSES.ABSENCE.BAD_REQUEST,
+            });
+        }
+        if(result.type === RESPONSES.ABSENCE.FOUND){
+            return res.status(200).json({
+                success: true,
+                data: result.data,
+                pagination: result.pagination,
+            });
+        }
     } catch (error) {
         console.log("Error obteniendo las ausencias: ", error);
         return res.status(500).json({
             success: false,
-            message: RESPONSES.INTERNAL_SERVER_ERROR,
+            message: "Error interno del servidor",
         });
     }
 }
