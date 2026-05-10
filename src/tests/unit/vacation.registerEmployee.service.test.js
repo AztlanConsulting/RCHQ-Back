@@ -60,12 +60,8 @@ const {
 
 describe("US28 - registerEmployeeVacation service", () => {
     const actorAdminId = "actor-admin-id";
-    const actorCoordinatorId = "actor-coordinator-id";
-    const actorUserId = "actor-user-id";
     const targetEmployeeId = "target-employee-id";
     const vacationId = "generated-vacation-id";
-    const sameHouseId = "house-1";
-    const otherHouseId = "house-2";
     const ipAddress = "127.0.0.1";
 
     const makeUTCDate = (year, month, day) => {
@@ -98,43 +94,14 @@ describe("US28 - registerEmployeeVacation service", () => {
         { workday: { name: "Viernes" } },
     ];
 
-    const adminEmployee = {
-        employee_id: actorAdminId,
-        house_id: sameHouseId,
-        role: { name: "Admin" },
-        house: { house_id: sameHouseId },
-    };
-
-    const coordinatorEmployee = {
-        employee_id: actorCoordinatorId,
-        house_id: sameHouseId,
-        role: { name: "Coordinador" },
-        house: { house_id: sameHouseId },
-    };
-
-    const regularUserEmployee = {
-        employee_id: actorUserId,
-        house_id: sameHouseId,
-        role: { name: "Usuario" },
-        house: { house_id: sameHouseId },
-    };
-
     const targetEmployeeSameHouse = {
         employee_id: targetEmployeeId,
-        house_id: sameHouseId,
+        house_id: "house-1",
         role: { name: "Usuario" },
-        house: { house_id: sameHouseId },
-    };
-
-    const targetEmployeeOtherHouse = {
-        employee_id: targetEmployeeId,
-        house_id: otherHouseId,
-        role: { name: "Usuario" },
-        house: { house_id: otherHouseId },
+        house: { house_id: "house-1" },
     };
 
     function mockSuccessfulDependencies({
-        actor = adminEmployee,
         target = targetEmployeeSameHouse,
         workDays = mondayToFridayWorkDays,
         remainingDays = 14,
@@ -143,7 +110,6 @@ describe("US28 - registerEmployeeVacation service", () => {
         vacationResult,
     } = {}) {
         findByIdWithRoleAndHouse
-            .mockResolvedValueOnce(actor)
             .mockResolvedValueOnce(target);
 
         getWorkDays.mockResolvedValue(workDays);
@@ -222,15 +188,14 @@ describe("US28 - registerEmployeeVacation service", () => {
     });
 
     describe("happy paths", () => {
-        test("admin registra vacaciones aprobadas correctamente", async () => {
+        test("registra vacaciones aprobadas correctamente", async () => {
             const result = await callRegisterVacation();
 
             expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
             expect(result.data.vacationRequest).toBeDefined();
 
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(2);
-            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(1, actorAdminId);
-            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(2, targetEmployeeId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(1);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(targetEmployeeId);
 
             expect(getWorkDays).toHaveBeenCalledWith(targetEmployeeId);
             expect(getRemainingVacations).toHaveBeenCalledWith(targetEmployeeId);
@@ -259,44 +224,6 @@ describe("US28 - registerEmployeeVacation service", () => {
                 ipAddress,
                 targetEmployeeId
             );
-        });
-
-        test("coordinador registra vacaciones de empleado de su misma casa", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            mockSuccessfulDependencies({
-                actor: coordinatorEmployee,
-                target: targetEmployeeSameHouse,
-            });
-
-            const result = await callRegisterVacation({
-                actorEmployeeId: actorCoordinatorId,
-            });
-
-            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
-            expect(registerVacation).toHaveBeenCalledTimes(1);
-            expect(createLog).toHaveBeenCalledWith(
-                actorCoordinatorId,
-                LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,
-                ipAddress,
-                targetEmployeeId
-            );
-        });
-
-        test("admin puede registrar vacaciones de empleado de otra casa", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            mockSuccessfulDependencies({
-                actor: {
-                    ...adminEmployee,
-                    house_id: otherHouseId,
-                    house: { house_id: otherHouseId },
-                },
-                target: targetEmployeeSameHouse,
-            });
-
-            const result = await callRegisterVacation();
-
-            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
-            expect(registerVacation).toHaveBeenCalledTimes(1);
         });
 
         test("permite registrar un solo día laboral", async () => {
@@ -330,87 +257,6 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
             expect(registerVacation).toHaveBeenCalledTimes(1);
         });
-
-        test("acepta roles con mayúsculas/minúsculas mixtas", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            mockSuccessfulDependencies({
-                actor: {
-                    ...adminEmployee,
-                    role: { name: "aDmIn" },
-                },
-            });
-
-            const result = await callRegisterVacation();
-
-            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
-            expect(registerVacation).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe("validación de autenticación y permisos", () => {
-        test("retorna USER.NOT_ACCESS si no hay actorEmployeeId", async () => {
-            const result = await callRegisterVacation({
-                actorEmployeeId: null,
-            });
-
-            expect(result).toEqual({
-                code: RESPONSES.USER.NOT_ACCESS,
-            });
-
-            expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
-            expect(registerVacation).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-            expect(randomUUID).not.toHaveBeenCalled();
-        });
-
-        test("retorna USER.NOT_ACCESS si el actor no existe", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            findByIdWithRoleAndHouse.mockResolvedValueOnce(null);
-
-            const result = await callRegisterVacation();
-
-            expect(result).toEqual({
-                code: RESPONSES.USER.NOT_ACCESS,
-            });
-
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(1);
-            expect(registerVacation).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-        });
-
-        test("retorna INSUFFICIENT_PERMISSIONS si el actor no es admin ni coordinador", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            findByIdWithRoleAndHouse.mockResolvedValueOnce(regularUserEmployee);
-
-            const result = await callRegisterVacation({
-                actorEmployeeId: actorUserId,
-            });
-
-            expect(result).toEqual({
-                code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
-            });
-
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(1);
-            expect(getWorkDays).not.toHaveBeenCalled();
-            expect(registerVacation).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-        });
-
-        test("retorna INSUFFICIENT_PERMISSIONS si el actor no tiene rol", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            findByIdWithRoleAndHouse.mockResolvedValueOnce({
-                ...regularUserEmployee,
-                role: null,
-            });
-
-            const result = await callRegisterVacation();
-
-            expect(result).toEqual({
-                code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
-            });
-
-            expect(registerVacation).not.toHaveBeenCalled();
-        });
     });
 
     describe("validación de empleado objetivo y alcance por casa", () => {
@@ -430,9 +276,7 @@ describe("US28 - registerEmployeeVacation service", () => {
 
         test("retorna EMPLOYEE.NOT_FOUND si el empleado objetivo no existe", async () => {
             findByIdWithRoleAndHouse.mockReset();
-            findByIdWithRoleAndHouse
-                .mockResolvedValueOnce(adminEmployee)
-                .mockResolvedValueOnce(null);
+            findByIdWithRoleAndHouse.mockResolvedValueOnce(null);
 
             const result = await callRegisterVacation();
 
@@ -440,26 +284,8 @@ describe("US28 - registerEmployeeVacation service", () => {
                 code: RESPONSES.EMPLOYEE.NOT_FOUND,
             });
 
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(2);
-            expect(registerVacation).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-        });
-
-        test("retorna EMPLOYEE_OUT_OF_SCOPE si coordinador intenta registrar vacaciones de otra casa", async () => {
-            findByIdWithRoleAndHouse.mockReset();
-            findByIdWithRoleAndHouse
-                .mockResolvedValueOnce(coordinatorEmployee)
-                .mockResolvedValueOnce(targetEmployeeOtherHouse);
-
-            const result = await callRegisterVacation({
-                actorEmployeeId: actorCoordinatorId,
-            });
-
-            expect(result).toEqual({
-                code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
-            });
-
-            expect(getWorkDays).not.toHaveBeenCalled();
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(1);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(targetEmployeeId);
             expect(registerVacation).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -571,34 +397,6 @@ describe("US28 - registerEmployeeVacation service", () => {
 
             expect(result).toEqual({
                 code: RESPONSES.VACATION.OUT_OF_RANGE,
-            });
-
-            expect(registerVacation).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-            expect(randomUUID).not.toHaveBeenCalled();
-        });
-
-        test("retorna WRONG_FORMAT si falta startDate", async () => {
-            const result = await callRegisterVacation({
-                startDate: undefined,
-            });
-
-            expect(result).toEqual({
-                code: RESPONSES.DATES.WRONG_FORMAT,
-            });
-
-            expect(registerVacation).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-            expect(randomUUID).not.toHaveBeenCalled();
-        });
-
-        test("retorna WRONG_FORMAT si falta endDate", async () => {
-            const result = await callRegisterVacation({
-                endDate: undefined,
-            });
-
-            expect(result).toEqual({
-                code: RESPONSES.DATES.WRONG_FORMAT,
             });
 
             expect(registerVacation).not.toHaveBeenCalled();

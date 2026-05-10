@@ -375,6 +375,18 @@ async function seedBaseData() {
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
             })),
+            ...mondayToFriday.map((workdayId) => ({
+                workday_id: workdayId,
+                employee_id: ADMIN_ID,
+                start: new Date("1970-01-01T09:00:00.000Z"),
+                end: new Date("1970-01-01T18:00:00.000Z"),
+            })),
+            ...mondayToFriday.map((workdayId) => ({
+                workday_id: workdayId,
+                employee_id: COORDINATOR_ID,
+                start: new Date("1970-01-01T09:00:00.000Z"),
+                end: new Date("1970-01-01T18:00:00.000Z"),
+            })),
         ],
         skipDuplicates: true,
     });
@@ -515,6 +527,77 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(log).not.toBeNull();
     });
 
+    test("admin puede registrarse vacaciones a sí mismo", async () => {
+        const startDate = formatDate(THIRD_SUCCESS_MONDAY);
+        const endDate = formatDate(THIRD_SUCCESS_FRIDAY);
+
+        const res = await request(app)
+            .post(`/vacation/employees/${ADMIN_ID}/register`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .send({
+                startDate,
+                endDate,
+            });
+
+        const vacation = await prisma.vacations_request.findFirst({
+            where: {
+                employee_id: ADMIN_ID,
+                start: toDbDate(startDate),
+                end: toDbDate(endDate),
+                status: 1,
+            },
+        });
+
+        const log = await prisma.logs.findFirst({
+            where: {
+                employee_id: ADMIN_ID,
+                action_id: "vaca-002",
+                affected: ADMIN_ID,
+            },
+        });
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(vacation).not.toBeNull();
+        expect(log).not.toBeNull();
+    });
+
+    test("coordinador puede registrarse vacaciones a sí mismo", async () => {
+        const startDate = formatDate(THIRD_SUCCESS_MONDAY);
+        const endDate = formatDate(THIRD_SUCCESS_FRIDAY);
+
+        const res = await request(app)
+            .post(`/vacation/employees/${COORDINATOR_ID}/register`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({
+                startDate,
+                endDate,
+            });
+
+        const vacation = await prisma.vacations_request.findFirst({
+            where: {
+                employee_id: COORDINATOR_ID,
+                start: toDbDate(startDate),
+                end: toDbDate(endDate),
+                status: 1,
+            },
+        });
+
+        const log = await prisma.logs.findFirst({
+            where: {
+                employee_id: COORDINATOR_ID,
+                action_id: "vaca-002",
+                affected: COORDINATOR_ID,
+            },
+        });
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe("Vacaciones registradas correctamente");
+        expect(vacation).not.toBeNull();
+        expect(log).not.toBeNull();
+    });
+
     test("coordinador registra vacaciones de empleado de su misma casa", async () => {
         const startDate = formatDate(SECOND_SUCCESS_MONDAY);
         const endDate = formatDate(SECOND_SUCCESS_FRIDAY);
@@ -559,6 +642,33 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.statusCode).toBe(403);
         expect(res.body.success).toBe(false);
         expect(vacation).toBeNull();
+        expect(res.body).toEqual({
+            success: false,
+            message: "No puede acceder a este recurso",
+        });
+    });
+
+    test("coordinador no puede registrar vacaciones de un admin", async () => {
+        const res = await request(app)
+            .post(`/vacation/employees/${ADMIN_ID}/register`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({
+                startDate: formatDate(SUCCESS_MONDAY),
+                endDate: formatDate(SUCCESS_FRIDAY),
+            });
+
+        const vacation = await prisma.vacations_request.findFirst({
+            where: {
+                employee_id: ADMIN_ID,
+            },
+        });
+
+        expect(res.statusCode).toBe(403);
+        expect(res.body).toEqual({
+            success: false,
+            message: "No puede acceder a este recurso",
+        });
+        expect(vacation).toBeNull();
     });
 
     test("usuario sin rol permitido no puede registrar vacaciones de otro empleado", async () => {
@@ -579,6 +689,9 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.statusCode).toBe(403);
         expect(res.body).toBeDefined();
         expect(vacation).toBeNull();
+        expect(res.body).toEqual({
+            message: "Role not allowed",
+        });
     });
 
     test("retorna 401 si no se envía token", async () => {
@@ -590,6 +703,22 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
             });
 
         expect(res.statusCode).toBe(401);
+    });
+
+    test("retorna 401 si el token es inválido", async () => {
+        const res = await request(app)
+            .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
+            .set("Authorization", "Bearer token_invalido")
+            .send({
+                startDate: formatDate(SUCCESS_MONDAY),
+                endDate: formatDate(SUCCESS_FRIDAY),
+            });
+
+        expect(res.statusCode).toBe(401);
+        expect(res.body).toEqual({
+            success: false,
+            message: "Token inválido o expirado",
+        });
     });
 
     test("retorna 400 si employeeId no es UUID válido", async () => {
