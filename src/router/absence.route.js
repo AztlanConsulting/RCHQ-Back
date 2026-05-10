@@ -6,7 +6,7 @@ const router = express.Router();
 
 const getControllerAbsences = require("../controller/absence/get.controller");
 
-router.get("/absences", 
+router.get("/all", 
     apiLimiter, 
     verifyToken, 
     requireRole("Admin", "Coordinador"), 

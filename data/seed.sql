@@ -580,5 +580,92 @@ INSERT INTO PUBLIC.frecuency_of_payment (
   ('f0000003-0000-4000-8000-000000000003', 'mensual')
 ON CONFLICT DO NOTHING;
 
+-- =========================
+-- ABSENCES — con evidencia
+-- =========================
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+VALUES
+  -- Carlos (andre@gmail.com) — Médica con PDF
+  (
+    'ab000001-0000-4000-8000-000000000001',
+    'b8f54b14-701e-4e87-a019-caef53dcda99',
+    (SELECT absence_type_id FROM public.absence_type WHERE name = 'Médica'),
+    '2026-05-03',
+    '2026-05-07',
+    'Reposo por cirugía menor',
+    'uploads/evidencia_medica_carlos.pdf',
+    false
+  ),
+  -- Carlos — Paternidad con PDF
+  (
+    'ab000002-0000-4000-8000-000000000002',
+    'b8f54b14-701e-4e87-a019-caef53dcda99',
+    (SELECT absence_type_id FROM public.absence_type WHERE name = 'Paternidad'),
+    '2026-04-14',
+    '2026-04-18',
+    'Nacimiento de hijo',
+    'uploads/evidencia_paternidad_carlos.pdf',
+    false
+  ),
+  -- María (maria.operaciones@example.com) — Maternidad con PDF
+  (
+    'ab000003-0000-4000-8000-000000000003',
+    'e0000001-0000-4000-8000-000000000001',
+    (SELECT absence_type_id FROM public.absence_type WHERE name = 'Maternidad'),
+    '2026-03-01',
+    '2026-05-23',
+    'Licencia de maternidad',
+    'uploads/evidencia_maternidad_maria.pdf',
+    false
+  ),
+
+-- =========================
+-- ABSENCES — sin evidencia
+-- =========================
+  -- Carlos — Maternidad sin PDF
+  (
+    'ab000004-0000-4000-8000-000000000004',
+    'b8f54b14-701e-4e87-a019-caef53dcda99',
+    (SELECT absence_type_id FROM public.absence_type WHERE name = 'Maternidad'),
+    '2026-03-10',
+    '2026-03-14',
+    'Permiso sin comprobante entregado',
+    NULL,
+    false
+  ),
+  -- Carlos — Médica sin PDF
+  (
+    'ab000005-0000-4000-8000-000000000005',
+    'b8f54b14-701e-4e87-a019-caef53dcda99',
+    (SELECT absence_type_id FROM public.absence_type WHERE name = 'Médica'),
+    '2026-02-20',
+    '2026-02-21',
+    'Cita médica de urgencia',
+    NULL,
+    false
+  ),
+  -- María — Médica sin PDF
+  (
+    'ab000006-0000-4000-8000-000000000006',
+    'e0000001-0000-4000-8000-000000000001',
+    (SELECT absence_type_id FROM public.absence_type WHERE name = 'Médica'),
+    '2026-01-15',
+    '2026-01-16',
+    'Consulta médica general',
+    NULL,
+    false
+  )
+
+ON CONFLICT DO NOTHING;
+
 
 COMMIT;
