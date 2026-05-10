@@ -131,13 +131,6 @@ exports.registerEmployeeVacation = async (req, res) => {
             });
         }
 
-        if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
-            return res.status(403).json({
-                success: false,
-                message: "No puedes registrar vacaciones para empleados fuera de tu casa hogar",
-            });
-        }
-
         if (result.code === RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED) {
             return res.status(406).json({
                 success: false,

@@ -26,21 +26,6 @@ const { getRemainingVacations } = require("./get.service");
 const RESPONSES = require("../../utils/responses");
 const { randomUUID } = require("crypto");
 
-const ADMIN_ROLE = "admin";
-const COORDINATOR_ROLE = "coordinador";
-
-function isAdmin(roleName) {
-    return roleName?.toLowerCase() === ADMIN_ROLE;
-}
-
-function isCoordinator(roleName) {
-    return roleName?.toLowerCase() === COORDINATOR_ROLE;
-}
-
-function isAdminOrCoordinator(roleName) {
-    return isAdmin(roleName) || isCoordinator(roleName);
-}
-
 function getTodayUTC() {
     const now = new Date();
     return new Date(Date.UTC(
@@ -196,36 +181,11 @@ exports.registerEmployeeVacation = async ({
         };
     }
 
-    const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
-
-    if (!actorEmployee) {
-        return {
-            code: RESPONSES.USER.NOT_ACCESS,
-        };
-    }
-
-    const actorRoleName = actorEmployee.role?.name;
-
-    if (!isAdminOrCoordinator(actorRoleName)) {
-        return {
-            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
-        };
-    }
-
     const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
 
     if (!targetEmployee) {
         return {
             code: RESPONSES.EMPLOYEE.NOT_FOUND,
-        };
-    }
-
-    if (
-        isCoordinator(actorRoleName) &&
-        actorEmployee.house_id !== targetEmployee.house_id
-    ) {
-        return {
-            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
     }
 

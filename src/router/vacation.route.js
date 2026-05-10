@@ -5,7 +5,8 @@ const validate = require("../middleware/validate");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
-    isAllowed
+    isAllowed,
+    canRegisterEmployeeVacation,
 } = require("../middleware/abac");
 
 const { getRemainingVacations } = require("../controller/vacation/get.controller");
@@ -30,8 +31,8 @@ router.post(
     requireRole("Admin", "Coordinador"),
     requirePrivileges("manageEmployees"),
     validate(employeeVacationCreateSchema, "all"),
-    isAllowed,
-    registerEmployeeVacation
+    canRegisterEmployeeVacation,
+    registerEmployeeVacation,
 );
 
 module.exports = router;
