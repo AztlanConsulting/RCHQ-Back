@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
-const { requireRole } = require("../middleware/rbac");
+const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed
@@ -28,7 +28,9 @@ router.post(
     apiLimiter,
     verifyToken,
     requireRole("Admin", "Coordinador"),
+    requirePrivileges("manageEmployees"),
     validate(employeeVacationCreateSchema, "all"),
+    isAllowed,
     registerEmployeeVacation
 );
 
