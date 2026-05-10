@@ -5,9 +5,9 @@ const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const userRouter = require("./router/user.route");
 const vacationRouter = require("./router/vacation.route");
+const eventRouter = require("./router/event.route");
 
 const errorHandler = require("./middleware/ErrorHandler");
-
 const path = require("path");
 
 // Loads the variables in the enviorment file
@@ -20,26 +20,24 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
+    cors({
+        origin: true,
+        credentials: true,
+    }),
 );
 
 app.use("/auth", authRouter);
-
 app.use("/user", userRouter);
-
 app.use("/employee", employeeRouter);
-
 app.use("/vacation", vacationRouter);
+app.use("/event", eventRouter);
 
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
 }
 
 module.exports = app;

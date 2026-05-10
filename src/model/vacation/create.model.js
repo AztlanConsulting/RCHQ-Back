@@ -9,7 +9,7 @@ exports.requestVacation = async(vacationId, employeeId, startDate, endDate, used
             employee_id: employeeId,
             start: startDate,
             end: endDate,
-            status: 0,
+            status: VACATION_STATUS.PENDING,
             used_days: usedDays,
             created_at: new Date()
         }

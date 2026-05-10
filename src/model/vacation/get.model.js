@@ -6,30 +6,35 @@ exports.getVacationsInRange = async (employeeId, startDate, endDate) => {
         where: {
             employee_id: employeeId,
             start: {
-                lte: endDate
+                lte: endDate,
             },
             end: {
-                gte: startDate
-            }
-        }
-    })
-}
+                gte: startDate,
+            },
+            status: {
+                not: 2,
+            },
+        },
+    });
+};
 
 exports.getOutsideVacations = async (employeeId, startDate, endDate) => {
     return await prisma.vacations_request.findMany({
         where: {
             employee_id: employeeId,
             start: {
-                lte: startDate
+                lte: startDate,
             },
             end: {
-                gte: endDate
-            }
-        }
-    })
-}
+                gte: endDate,
+            },
+            status: {
+                not: 2,
+            },
+        },
+    });
+};
 
-// Busca vacaciones traslapadas y filtra por estado
 exports.getActiveVacationsInRange = async (employeeId, startDate, endDate) => {
     return await prisma.vacations_request.findMany({
         where: {
@@ -47,7 +52,6 @@ exports.getActiveVacationsInRange = async (employeeId, startDate, endDate) => {
     });
 };
 
-// Calcula días ya comprometidos en el año laboral
 exports.getCommittedVacationsInRange = async (employeeId, startDate, endDate) => {
     return await prisma.vacations_request.findMany({
         where: {

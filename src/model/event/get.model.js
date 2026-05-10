@@ -21,7 +21,7 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
             employee_id: employeeId,
             personal_event: {
                 start: {
-                lte: endDate
+                    lte: endDate
                 },
                 end: {
                     gte: startDate

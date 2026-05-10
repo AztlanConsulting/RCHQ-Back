@@ -1,9 +1,10 @@
 exports.getVacationDays = (years) => {
-    years -= 1;
-    if (years <= 5) return 12 + (years) * 2;
+    if (years <= 0) return 0;
 
-    const remainingYears = years - 5;
-    const fiveYearBlocks = Math.floor((remainingYears) / 5 + 1);
+    if (years <= 5) {
+        return 12 + (years - 1) * 2;
+    }
 
-    return fiveYearBlocks * 2 + 20;
-}
+    const extraBlocks = Math.floor((years - 6) / 5);
+    return 22 + extraBlocks * 2;
+};

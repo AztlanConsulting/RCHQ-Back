@@ -15,26 +15,9 @@ model action {
 }
 
 model documents {
-  document_id                         String               @id(map: "documents_pk") @db.Uuid
-  cv                                  String?              @db.VarChar(100)
-  birth_certificate                   String?              @db.VarChar(100)
-  tax_status_certificate              String?              @db.VarChar(100)
-  address_certificate                 String?              @db.VarChar(100)
-  nss                                 String?              @db.VarChar(100)
-  professional_id                     String?              @db.VarChar(100)
-  education_certificate               String?              @db.VarChar(100)
-  medical_certificate                 String?              @db.VarChar(100)
-  state_criminal_record_certificate   String?              @db.VarChar(100)
-  federal_criminal_record_certificate String?              @db.VarChar(100)
-  first_recommendation_letter         String?              @db.VarChar(100)
-  second_recommendation_letter        String?              @db.VarChar(100)
-  driver_license                      String?              @db.VarChar(100)
-  signed_regulation                   String?              @db.VarChar(100)
-  signed_contract                     String?              @db.VarChar(100)
-  signed_confidential_letter          String?              @db.VarChar(100)
-  signed_ethics_letter                String?              @db.VarChar(100)
-  induction_manual                    String?              @db.VarChar(100)
-  employee_documents                  employee_documents[]
+  document_id        String               @id(map: "documents_pk") @db.Uuid
+  name               String               @unique @db.VarChar(100)
+  employee_documents employee_documents[]
 }
 
 model donation {
@@ -81,12 +64,19 @@ model employee {
   birth_date                      DateTime?                       @db.Date
   picture                         String?                         @db.VarChar(150)
   start_date                      DateTime                        @db.Date
+  end_date                        DateTime?                       @db.Date
   nss                             String?                         @unique @db.VarChar(11)
   bank_account                    String?                         @db.VarChar(18)
+  phone_number                    String?                         @db.VarChar(20)
+  type                            String                          @default("nomina") @db.VarChar(20)
+  salary                          String?                         @db.VarChar(72)
+  frequency_of_payment_id         String?                         @db.Uuid
   blocked_until                   DateTime?                       @db.Timestamp(6)
   two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
   temp_totp_secret                String?                         @db.VarChar
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
+  absence                         absence[]
+  frecuency_of_payment            frecuency_of_payment?           @relation(fields: [frequency_of_payment_id], references: [frecuency_of_payment_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_frecuency_of_payment_fk")
   house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                            role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
   employee_address                employee_address[]
@@ -105,7 +95,11 @@ model employee {
 model employee_address {
   employee_address_id String   @id(map: "employee_address_pk") @db.Uuid
   employee_id         String   @db.Uuid
-  url                 String   @db.VarChar(100)
+  url                 String
+  street              String?  @db.VarChar(200)
+  municipio           String?  @db.VarChar(120)
+  city                String?  @db.VarChar(100)
+  postal_code         String?  @db.VarChar(10)
   date                DateTime @db.Timestamp(6)
   employee            employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_address_employee_fk")
 }
@@ -120,7 +114,7 @@ model employee_backup_code {
 model employee_documents {
   document_id String    @db.Uuid
   employee_id String    @db.Uuid
-  url         String    @db.VarChar(100)
+  url         String
   documents   documents @relation(fields: [document_id], references: [document_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_documents_documents_fk")
   employee    employee  @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_documents_employee_fk")
 
@@ -273,10 +267,26 @@ model psychological_evaluation {
   employee                    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "psychological_evaluation_employee_fk")
 }
 
+model privileges {
+  privilege_id   String           @id(map: "privileges_pk") @db.Uuid
+  name           String           @unique @db.VarChar(50)
+  role_privilege role_privilege[]
+}
+
+model role_privilege {
+  role_id      String     @db.Uuid
+  privilege_id String     @db.Uuid
+  privilege    privileges @relation(fields: [privilege_id], references: [privilege_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_privilege_fk")
+  role         role       @relation(fields: [role_id], references: [role_id], onDelete: Cascade, onUpdate: NoAction, map: "role_privilege_role_fk")
+
+  @@id([role_id, privilege_id], map: "role_privilege_pk")
+}
+
 model role {
-  role_id  String     @id(map: "role_pk") @db.Uuid
-  name     String     @unique @db.VarChar(50)
-  employee employee[]
+  role_id        String           @id(map: "role_pk") @db.Uuid
+  name           String           @unique @db.VarChar(50)
+  employee       employee[]
+  role_privilege role_privilege[]
 }
 
 model vacations_request {
@@ -286,8 +296,8 @@ model vacations_request {
   end                  DateTime @db.Date
   status               Int
   feedback             String?
-  created_at           DateTime @default(now()) @db.Timestamp(6)
-  used_days            Int      @default(0)
+  created_at           DateTime @db.Timestamp(6)
+  used_days            Int
   employee             employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "vacations_request_employee_fk")
 }
 
@@ -295,4 +305,29 @@ model workday {
   workday_id       String             @id(map: "workday_pk") @db.Uuid
   name             String             @unique @db.VarChar(9)
   employee_workday employee_workday[]
+}
+
+model absence {
+  absence_id      String       @id(map: "absence_pk") @db.Uuid
+  employee_id     String       @db.Uuid
+  absence_type_id String       @db.Uuid
+  start           DateTime     @db.Date
+  end             DateTime     @db.Date
+  description     String?
+  url             String?
+  is_deleted      Boolean      @default(false)
+  absence_type    absence_type @relation(fields: [absence_type_id], references: [absence_type_id], onDelete: NoAction, onUpdate: NoAction, map: "absence_absence_type_fk")
+  employee        employee     @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "absence_employee_fk")
+}
+
+model absence_type {
+  absence_type_id String    @id(map: "absence_type_pk") @db.Uuid
+  name            String    @unique @db.VarChar(30)
+  absence         absence[]
+}
+
+model frecuency_of_payment {
+  frecuency_of_payment_id String     @id(map: "frecuency_of_payment_pk") @db.Uuid
+  name                    String     @unique @db.VarChar(20)
+  employee                employee[]
 }

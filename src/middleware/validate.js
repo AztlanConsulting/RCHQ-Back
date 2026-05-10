@@ -12,17 +12,17 @@ const validate = (schema, property = "body") => {
 
     const result = schema.safeParse(dataToValidate);
 
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        code: "VALIDATION_ERROR",
-        message: "Error de validación",
-        errors: result.error.issues.map((issue) => ({
-          path: issue.path.join("."),
-          message: issue.message,
-        })),
-      });
-    }
+        if (!result.success) {
+            return res.status(400).json({
+                success: false,
+                code: "VALIDATION_ERROR",
+                message: "Error de validación",
+                errors: result.error.issues.map((issue) => ({
+                    path: issue.path.join("."),
+                    message: issue.message,
+                })),
+            });
+        }
 
     if (property === "all") {
       req.params = result.data.params ?? req.params;

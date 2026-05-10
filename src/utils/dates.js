@@ -1,5 +1,3 @@
-const { workday } = require("../prisma");
-
 exports.combineDateAndTime = (date, time) => {
     const day = date.getUTCDate();
     const month = date.getUTCMonth();
@@ -36,12 +34,21 @@ exports.spanishToDay = (day) => {
     return -1
 }
 
-exports.calculateUsedDays = (workDays, startDate, endDate) => {
+exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const days = [];
     workDays.forEach(workDay => {
         days.push(this.spanishToDay(workDay.workday.name))
     });
 
+    const freeDays = [];
+    
+    events.forEach(event => {
+        const eventDay = event.date.getUTCDay();
+        const eventDate =event.date.toISOString().split("T")[0];
+        if (event.is_free_day == true && days.includes(eventDay) && !freeDays.includes(eventDate)) {
+            freeDays.push(eventDate)
+        }
+    });
     let usedDays = 0;
 
     let currentDay = new Date(startDate);
@@ -53,5 +60,33 @@ exports.calculateUsedDays = (workDays, startDate, endDate) => {
         currentDay.setUTCDate(currentDay.getUTCDate() + 1);
     }
 
-    return usedDays;
+    return usedDays - freeDays.length;
 }
+
+exports.stringToDate = (rawDate) => {
+    const dateElements = rawDate.split("-");
+
+    const year = Number(dateElements[0]);
+    const month = Number(dateElements[1]);
+    const day = Number(dateElements[2]);
+    
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+
+    return parsedDate;
+}
+
+exports.isValidDate = (rawDate) => {
+    const dateElements = rawDate.split("-");
+
+    const year = Number(dateElements[0]);
+    const month = Number(dateElements[1]);
+    const day = Number(dateElements[2]);
+
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+
+    return (
+        parsedDate.getUTCFullYear() == year &&
+        parsedDate.getUTCMonth() == month - 1 &&
+        parsedDate.getUTCDate() == day
+    );
+};
