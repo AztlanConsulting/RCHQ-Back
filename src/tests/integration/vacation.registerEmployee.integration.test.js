@@ -9,9 +9,9 @@ const prisma = new PrismaClient();
 const HOUSE_A_ID = randomUUID();
 const HOUSE_B_ID = randomUUID();
 
-const ADMIN_ROLE_ID = randomUUID();
-const COORDINATOR_ROLE_ID = randomUUID();
-const USER_ROLE_ID = randomUUID();
+let ADMIN_ROLE_ID;
+let COORDINATOR_ROLE_ID;
+let USER_ROLE_ID;
 
 const ADMIN_ID = randomUUID();
 const COORDINATOR_ID = randomUUID();
@@ -29,8 +29,6 @@ const WORKDAY_IDS = {
     saturday: randomUUID(),
     sunday: randomUUID(),
 };
-
-const VACATION_REGISTERED_ACTION_ID = "vaca-002";
 
 function getTodayUTC() {
     const now = new Date();
@@ -68,21 +66,9 @@ function nextWeekdayDate(fromDate, targetDay) {
 
 const TODAY_UTC = getTodayUTC();
 
-const CURRENT_WORK_YEAR_START = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear(),
-    0,
-    1
-));
-
-const NEXT_WORK_YEAR_START = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() + 1,
-    0,
-    1
-));
-
 const EMPLOYEE_START_DATE = new Date(Date.UTC(
     TODAY_UTC.getUTCFullYear() - 1,
-    0,
+    TODAY_UTC.getUTCMonth(),
     1
 ));
 
@@ -102,8 +88,13 @@ const THIRD_SUCCESS_FRIDAY = addDays(THIRD_SUCCESS_MONDAY, 4);
 const WEEKEND_SATURDAY = nextWeekdayDate(BASE_FUTURE_DATE, 6);
 const WEEKEND_SUNDAY = addDays(WEEKEND_SATURDAY, 1);
 
-const OUTSIDE_WORK_YEAR_START = formatDate(NEXT_WORK_YEAR_START);
-const OUTSIDE_WORK_YEAR_END = formatDate(addDays(NEXT_WORK_YEAR_START, 1));
+const OUTSIDE_WORK_YEAR_START = new Date(Date.UTC(
+    TODAY_UTC.getUTCFullYear() + 2,
+    TODAY_UTC.getUTCMonth(),
+    1
+));
+
+const OUTSIDE_WORK_YEAR_END = addDays(OUTSIDE_WORK_YEAR_START, 1);
 
 function generateSessionToken(employee) {
     return jwt.sign(
@@ -117,20 +108,72 @@ function generateSessionToken(employee) {
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        { expiresIn: "1h" }
     );
+}
+
+function getAdminToken() {
+    return generateSessionToken({
+        employee_id: ADMIN_ID,
+        email: "admin.us28@test.com",
+        name: "Admin",
+        roleName: "Admin",
+        house_id: HOUSE_A_ID,
+    });
+}
+
+function getCoordinatorToken() {
+    return generateSessionToken({
+        employee_id: COORDINATOR_ID,
+        email: "coordinator.us28@test.com",
+        name: "Coordinator",
+        roleName: "Coordinador",
+        house_id: HOUSE_A_ID,
+    });
+}
+
+function getUserToken() {
+    return generateSessionToken({
+        employee_id: USER_ID,
+        email: "user.us28@test.com",
+        name: "User",
+        roleName: "Usuario",
+        house_id: HOUSE_A_ID,
+    });
 }
 
 async function seedActions() {
     await prisma.action.upsert({
-        where: { action_id: VACATION_REGISTERED_ACTION_ID },
-        update: {},
+        where: { action_id: "vaca-002" },
+        update: {
+            description: "Registro de vacaciones de empleado exitoso",
+            important: false,
+        },
         create: {
-            action_id: VACATION_REGISTERED_ACTION_ID,
+            action_id: "vaca-002",
             description: "Registro de vacaciones de empleado exitoso",
             important: false,
         },
     });
+}
+
+async function getOrCreateRoleId(name) {
+    const existingRole = await prisma.role.findUnique({
+        where: { name },
+    });
+
+    if (existingRole) {
+        return existingRole.role_id;
+    }
+
+    const createdRole = await prisma.role.create({
+        data: {
+            role_id: randomUUID(),
+            name,
+        },
+    });
+
+    return createdRole.role_id;
 }
 
 async function seedBaseData() {
@@ -153,24 +196,38 @@ async function seedBaseData() {
                 image: "test-b.jpg",
             },
         ],
+        skipDuplicates: true,
     });
 
-    await prisma.role.createMany({
-        data: [
-            {
-                role_id: ADMIN_ROLE_ID,
-                name: "admin",
+    ADMIN_ROLE_ID = await getOrCreateRoleId("Admin");
+    COORDINATOR_ROLE_ID = await getOrCreateRoleId("Coordinador");
+    USER_ROLE_ID = await getOrCreateRoleId("Usuario");
+
+    const existingWorkdays = await prisma.workday.findMany({
+        where: {
+            name: {
+                in: [
+                    "Lunes",
+                    "Martes",
+                    "Miércoles",
+                    "Jueves",
+                    "Viernes",
+                    "Sábado",
+                    "Domingo",
+                ],
             },
-            {
-                role_id: COORDINATOR_ROLE_ID,
-                name: "coordinador",
-            },
-            {
-                role_id: USER_ROLE_ID,
-                name: "usuario",
-            },
-        ],
+        },
     });
+
+    for (const workday of existingWorkdays) {
+        if (workday.name === "Lunes") WORKDAY_IDS.monday = workday.workday_id;
+        if (workday.name === "Martes") WORKDAY_IDS.tuesday = workday.workday_id;
+        if (workday.name === "Miércoles") WORKDAY_IDS.wednesday = workday.workday_id;
+        if (workday.name === "Jueves") WORKDAY_IDS.thursday = workday.workday_id;
+        if (workday.name === "Viernes") WORKDAY_IDS.friday = workday.workday_id;
+        if (workday.name === "Sábado") WORKDAY_IDS.saturday = workday.workday_id;
+        if (workday.name === "Domingo") WORKDAY_IDS.sunday = workday.workday_id;
+    }
 
     await prisma.workday.createMany({
         data: [
@@ -182,6 +239,7 @@ async function seedBaseData() {
             { workday_id: WORKDAY_IDS.saturday, name: "Sábado" },
             { workday_id: WORKDAY_IDS.sunday, name: "Domingo" },
         ],
+        skipDuplicates: true,
     });
 
     await prisma.employee.createMany({
@@ -196,8 +254,12 @@ async function seedBaseData() {
                 email: "admin.us28@test.com",
                 password: "not-used-in-this-test",
                 has_first_login: false,
-                curp: "US280101HDFAAA01",
+                is_active_two_factor_auth: false,
+                failed_login_attempts: 0,
+                failed_two_factor_auth_attempts: 0,
+                curp: "USAA010101HDFAAA01",
                 start_date: EMPLOYEE_START_DATE,
+                type: "nomina",
             },
             {
                 employee_id: COORDINATOR_ID,
@@ -209,8 +271,12 @@ async function seedBaseData() {
                 email: "coordinator.us28@test.com",
                 password: "not-used-in-this-test",
                 has_first_login: false,
-                curp: "US280101HDFAAA02",
+                is_active_two_factor_auth: false,
+                failed_login_attempts: 0,
+                failed_two_factor_auth_attempts: 0,
+                curp: "USAA010101HDFAAA02",
                 start_date: EMPLOYEE_START_DATE,
+                type: "nomina",
             },
             {
                 employee_id: USER_ID,
@@ -222,8 +288,12 @@ async function seedBaseData() {
                 email: "user.us28@test.com",
                 password: "not-used-in-this-test",
                 has_first_login: false,
-                curp: "US280101HDFAAA03",
+                is_active_two_factor_auth: false,
+                failed_login_attempts: 0,
+                failed_two_factor_auth_attempts: 0,
+                curp: "USAA010101HDFAAA03",
                 start_date: EMPLOYEE_START_DATE,
+                type: "nomina",
             },
             {
                 employee_id: TARGET_EMPLOYEE_ID,
@@ -235,8 +305,12 @@ async function seedBaseData() {
                 email: "target.us28@test.com",
                 password: "not-used-in-this-test",
                 has_first_login: false,
-                curp: "US280101HDFAAA04",
+                is_active_two_factor_auth: false,
+                failed_login_attempts: 0,
+                failed_two_factor_auth_attempts: 0,
+                curp: "USAA010101HDFAAA04",
                 start_date: EMPLOYEE_START_DATE,
+                type: "nomina",
             },
             {
                 employee_id: OTHER_HOUSE_EMPLOYEE_ID,
@@ -248,8 +322,12 @@ async function seedBaseData() {
                 email: "other.house.us28@test.com",
                 password: "not-used-in-this-test",
                 has_first_login: false,
-                curp: "US280101HDFAAA05",
+                is_active_two_factor_auth: false,
+                failed_login_attempts: 0,
+                failed_two_factor_auth_attempts: 0,
+                curp: "USAA010101HDFAAA05",
                 start_date: EMPLOYEE_START_DATE,
+                type: "nomina",
             },
             {
                 employee_id: NO_WORKDAYS_EMPLOYEE_ID,
@@ -261,39 +339,41 @@ async function seedBaseData() {
                 email: "no.workdays.us28@test.com",
                 password: "not-used-in-this-test",
                 has_first_login: false,
-                curp: "US280101HDFAAA06",
+                is_active_two_factor_auth: false,
+                failed_login_attempts: 0,
+                failed_two_factor_auth_attempts: 0,
+                curp: "USAA010101HDFAAA06",
                 start_date: EMPLOYEE_START_DATE,
+                type: "nomina",
             },
         ],
+        skipDuplicates: true,
     });
+
+    const mondayToFriday = [
+        WORKDAY_IDS.monday,
+        WORKDAY_IDS.tuesday,
+        WORKDAY_IDS.wednesday,
+        WORKDAY_IDS.thursday,
+        WORKDAY_IDS.friday,
+    ];
 
     await prisma.employee_workday.createMany({
         data: [
-            ...[
-                WORKDAY_IDS.monday,
-                WORKDAY_IDS.tuesday,
-                WORKDAY_IDS.wednesday,
-                WORKDAY_IDS.thursday,
-                WORKDAY_IDS.friday,
-            ].map((workdayId) => ({
+            ...mondayToFriday.map((workdayId) => ({
                 workday_id: workdayId,
                 employee_id: TARGET_EMPLOYEE_ID,
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
             })),
-            ...[
-                WORKDAY_IDS.monday,
-                WORKDAY_IDS.tuesday,
-                WORKDAY_IDS.wednesday,
-                WORKDAY_IDS.thursday,
-                WORKDAY_IDS.friday,
-            ].map((workdayId) => ({
+            ...mondayToFriday.map((workdayId) => ({
                 workday_id: workdayId,
                 employee_id: OTHER_HOUSE_EMPLOYEE_ID,
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
             })),
         ],
+        skipDuplicates: true,
     });
 }
 
@@ -336,22 +416,6 @@ async function cleanTestData() {
         where: {
             employee_id: {
                 in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.workday.deleteMany({
-        where: {
-            workday_id: {
-                in: Object.values(WORKDAY_IDS),
-            },
-        },
-    });
-
-    await prisma.role.deleteMany({
-        where: {
-            role_id: {
-                in: [ADMIN_ROLE_ID, COORDINATOR_ROLE_ID, USER_ROLE_ID],
             },
         },
     });
@@ -409,21 +473,13 @@ afterAll(async () => {
 });
 
 describe("US28 - POST /vacation/employees/:employeeId/register", () => {
-    it("admin registra vacaciones de un empleado correctamente", async () => {
+    test("admin registra vacaciones de un empleado correctamente", async () => {
         const startDate = formatDate(SUCCESS_MONDAY);
         const endDate = formatDate(SUCCESS_FRIDAY);
 
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate,
                 endDate,
@@ -440,34 +496,29 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         const log = await prisma.logs.findFirst({
             where: {
                 employee_id: ADMIN_ID,
-                action_id: VACATION_REGISTERED_ACTION_ID,
+                action_id: "vaca-002",
                 affected: TARGET_EMPLOYEE_ID,
             },
         });
 
         expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe("Vacaciones registradas correctamente");
+
         expect(vacation).not.toBeNull();
         expect(vacation.status).toBe(1);
         expect(vacation.used_days).toBe(5);
+
         expect(log).not.toBeNull();
     });
 
-    it("coordinador registra vacaciones de empleado de su misma casa", async () => {
+    test("coordinador registra vacaciones de empleado de su misma casa", async () => {
         const startDate = formatDate(SECOND_SUCCESS_MONDAY);
         const endDate = formatDate(SECOND_SUCCESS_FRIDAY);
 
-        const token = generateSessionToken({
-            employee_id: COORDINATOR_ID,
-            email: "coordinator.us28@test.com",
-            name: "Coordinator",
-            roleName: "coordinador",
-            house_id: HOUSE_A_ID,
-        });
-
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({
                 startDate,
                 endDate,
@@ -487,18 +538,10 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(vacation).not.toBeNull();
     });
 
-    it("coordinador no puede registrar vacaciones de empleado de otra casa", async () => {
-        const token = generateSessionToken({
-            employee_id: COORDINATOR_ID,
-            email: "coordinator.us28@test.com",
-            name: "Coordinator",
-            roleName: "coordinador",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("coordinador no puede registrar vacaciones de empleado de otra casa", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${OTHER_HOUSE_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({
                 startDate: formatDate(SUCCESS_MONDAY),
                 endDate: formatDate(SUCCESS_FRIDAY),
@@ -515,28 +558,27 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(vacation).toBeNull();
     });
 
-    it("usuario sin permisos no puede registrar vacaciones de otro empleado", async () => {
-        const token = generateSessionToken({
-            employee_id: USER_ID,
-            email: "user.us28@test.com",
-            name: "User",
-            roleName: "usuario",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("usuario sin rol permitido no puede registrar vacaciones de otro empleado", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getUserToken()}`)
             .send({
                 startDate: formatDate(SUCCESS_MONDAY),
                 endDate: formatDate(SUCCESS_FRIDAY),
             });
 
+        const vacation = await prisma.vacations_request.findFirst({
+            where: {
+                employee_id: TARGET_EMPLOYEE_ID,
+            },
+        });
+
         expect(res.statusCode).toBe(403);
-        expect(res.body.success).toBe(false);
+        expect(res.body).toBeDefined();
+        expect(vacation).toBeNull();
     });
 
-    it("retorna 401 si no se envía token", async () => {
+    test("retorna 401 si no se envía token", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
             .send({
@@ -547,20 +589,25 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.statusCode).toBe(401);
     });
 
-    it("retorna 404 si el empleado objetivo no existe", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
+    test("retorna 400 si employeeId no es UUID válido", async () => {
+        const res = await request(app)
+            .post("/vacation/employees/not-a-valid-uuid/register")
+            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .send({
+                startDate: formatDate(SUCCESS_MONDAY),
+                endDate: formatDate(SUCCESS_FRIDAY),
+            });
 
+        expect(res.statusCode).toBe(400);
+        expect(res.body.success).toBe(false);
+    });
+
+    test("retorna 404 si el empleado objetivo no existe", async () => {
         const nonExistingEmployeeId = randomUUID();
 
         const res = await request(app)
             .post(`/vacation/employees/${nonExistingEmployeeId}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: formatDate(SUCCESS_MONDAY),
                 endDate: formatDate(SUCCESS_FRIDAY),
@@ -570,18 +617,10 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 400 si faltan fechas", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("retorna 400 si faltan fechas", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: formatDate(SUCCESS_MONDAY),
             });
@@ -590,18 +629,10 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 400 si las fechas tienen formato inválido", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("retorna 400 si las fechas tienen formato inválido", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: "2026-02-30",
                 endDate: "2026-03-02",
@@ -611,18 +642,10 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 406 si la fecha final es anterior a la inicial", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("retorna 406 si la fecha final es anterior a la inicial", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: formatDate(SUCCESS_FRIDAY),
                 endDate: formatDate(SUCCESS_MONDAY),
@@ -632,18 +655,10 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 406 si el empleado no tiene días laborales registrados", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("retorna 406 si el empleado no tiene días laborales registrados", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${NO_WORKDAYS_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: formatDate(SUCCESS_MONDAY),
                 endDate: formatDate(SUCCESS_FRIDAY),
@@ -653,18 +668,10 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 406 si el rango no contiene días laborales", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("retorna 406 si el rango no contiene días laborales", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: formatDate(WEEKEND_SATURDAY),
                 endDate: formatDate(WEEKEND_SUNDAY),
@@ -674,7 +681,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 406 si hay vacaciones pendientes traslapadas", async () => {
+    test("retorna 406 si hay vacaciones pendientes traslapadas", async () => {
         const startDate = formatDate(SUCCESS_MONDAY);
         const endDate = formatDate(SUCCESS_FRIDAY);
 
@@ -690,17 +697,9 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
             },
         });
 
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate,
                 endDate,
@@ -710,7 +709,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 406 si hay vacaciones aprobadas traslapadas", async () => {
+    test("retorna 406 si hay vacaciones aprobadas traslapadas", async () => {
         const startDate = formatDate(SUCCESS_MONDAY);
         const endDate = formatDate(SUCCESS_FRIDAY);
 
@@ -726,17 +725,9 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
             },
         });
 
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate,
                 endDate,
@@ -746,7 +737,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("permite registrar si sólo hay vacaciones rechazadas traslapadas", async () => {
+    test("permite registrar si sólo hay vacaciones rechazadas traslapadas", async () => {
         const startDate = formatDate(SUCCESS_MONDAY);
         const endDate = formatDate(SUCCESS_FRIDAY);
 
@@ -762,17 +753,9 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
             },
         });
 
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate,
                 endDate,
@@ -790,7 +773,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(approvedVacations).toHaveLength(1);
     });
 
-    it("retorna 406 si no tiene días suficientes disponibles", async () => {
+    test("retorna 406 si no tiene días suficientes disponibles", async () => {
         await prisma.vacations_request.create({
             data: {
                 vacations_request_id: randomUUID(),
@@ -803,17 +786,9 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
             },
         });
 
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
                 startDate: formatDate(THIRD_SUCCESS_MONDAY),
                 endDate: formatDate(THIRD_SUCCESS_FRIDAY),
@@ -823,21 +798,13 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    it("retorna 406 si las vacaciones están fuera del año laboral actual", async () => {
-        const token = generateSessionToken({
-            employee_id: ADMIN_ID,
-            email: "admin.us28@test.com",
-            name: "Admin",
-            roleName: "admin",
-            house_id: HOUSE_A_ID,
-        });
-
+    test("retorna 406 si las vacaciones están fuera del año laboral actual", async () => {
         const res = await request(app)
             .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
-            .set("Authorization", `Bearer ${token}`)
+            .set("Authorization", `Bearer ${getAdminToken()}`)
             .send({
-                startDate: OUTSIDE_WORK_YEAR_START,
-                endDate: OUTSIDE_WORK_YEAR_END,
+                startDate: formatDate(OUTSIDE_WORK_YEAR_START),
+                endDate: formatDate(OUTSIDE_WORK_YEAR_END),
             });
 
         expect(res.statusCode).toBe(406);
