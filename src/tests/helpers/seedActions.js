@@ -127,6 +127,16 @@ const ACTIONS = [
             "Fallo de cambio de contraseña por contraseña actual incorrecta",
         important: false,
     },
+    {
+        action_id: "vaca-001",
+        description: "Creación de solicitud de vacaciones exitosa",
+        important: false,
+    },
+    {
+        action_id: "vaca-002",
+        description: "Registro de vacaciones de empleado exitoso",
+        important: false,
+    },
 ];
 
 async function seedActions(db = prisma) {

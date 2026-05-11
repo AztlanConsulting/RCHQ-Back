@@ -1,0 +1,148 @@
+@startuml
+title US28 - Admin/Coordinador registra vacaciones de un empleado
+
+actor "Admin/Coordinador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "create.controller.js" as Controller
+control "create.service.js" as Service
+database "employee/get.model.js" as EmployeeGetModel
+database "vacation/get.model.js" as VacationGetModel
+database "event/get.model.js" as EventGetModel
+database "vacation/create.model.js" as VacationCreateModel
+database "log.model.js" as LogModel
+database "PostgreSQL" as DB
+
+autonumber
+
+Usuario -> Frontend : Captura empleado, fecha inicio y fecha fin
+Frontend -> Router : POST /vacation/employees/:employeeId/register\nAuthorization: Bearer token\n{ startDate, endDate }
+
+Router -> Router : apiLimiter
+Router -> Router : verifyToken
+Router -> Router : requireRole("Admin", "Coordinador")
+Router -> Controller : registerEmployeeVacation(req, res)
+
+Controller -> Controller : Obtener targetEmployeeId de params
+Controller -> Controller : Obtener actorEmployeeId de req.user.id
+Controller -> Controller : Obtener clientIp con getClientIp(req)
+
+Controller -> Service : registerEmployeeVacation({\n actorEmployeeId,\n targetEmployeeId,\n rawStartDate,\n rawEndDate,\n ipAddress\n})
+
+Service -> Service : dateRangeSchema.safeParse({ startDate, endDate })
+
+alt Fechas con formato inválido
+Service --> Controller : RESPONSES.DATES.WRONG_FORMAT
+Controller --> Frontend : 400 Bad Request\n"Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD"
+else Fechas válidas
+Service -> Service : stringToDate(startDate), stringToDate(endDate)
+end
+
+alt endDate < startDate
+Service --> Controller : RESPONSES.DATES.BAD_DATES
+Controller --> Frontend : 406 Not Acceptable\n"No se puede tener una fecha de inicio posterior a la de finalización"
+end
+
+alt startDate < todayUTC
+Service --> Controller : RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED
+Controller --> Frontend : 406 Not Acceptable\n"No se pueden registrar vacaciones en fechas pasadas"
+end
+
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : prisma.employee.findUnique({\n where: { employee_id: actorEmployeeId },\n include: { role: true, house: true }\n})
+DB --> EmployeeGetModel : actorEmployee
+EmployeeGetModel --> Service : actorEmployee
+
+alt Actor no existe
+Service --> Controller : RESPONSES.USER.NOT_ACCESS
+Controller --> Frontend : 401 Unauthorized\n"Usuario no autenticado"
+end
+
+alt Actor no es Admin ni Coordinador
+Service --> Controller : RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Forbidden\n"No tienes permisos para registrar vacaciones de otros empleados"
+end
+
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
+EmployeeGetModel -> DB : prisma.employee.findUnique({\n where: { employee_id: targetEmployeeId },\n include: { role: true, house: true }\n})
+DB --> EmployeeGetModel : targetEmployee
+EmployeeGetModel --> Service : targetEmployee
+
+alt Empleado no existe
+Service --> Controller : RESPONSES.EMPLOYEE.NOT_FOUND
+Controller --> Frontend : 404 Not Found\n"Empleado no encontrado"
+end
+
+alt Actor es Coordinador y targetEmployee.house_id != actorEmployee.house_id
+Service --> Controller : RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 403 Forbidden\n"No puedes registrar vacaciones para empleados fuera de tu casa hogar"
+end
+
+Service -> EmployeeGetModel : getWorkDays(targetEmployeeId)
+EmployeeGetModel -> DB : prisma.employee_workday.findMany({\n where: { employee_id: targetEmployeeId },\n include: { workday: true }\n})
+DB --> EmployeeGetModel : workDays
+EmployeeGetModel --> Service : workDays
+
+alt workDays.length == 0
+Service --> Controller : RESPONSES.VACATION.WITHOUT_DATES
+Controller --> Frontend : 406 Not Acceptable\n"Se ocupan tener registrados los días de trabajo"
+end
+
+Service -> Service : getRemainingVacations(targetEmployeeId)
+Service -> EmployeeGetModel : getStartDate(targetEmployeeId)
+EmployeeGetModel -> DB : prisma.employee.findUnique({\n where: { employee_id: targetEmployeeId },\n select: { start_date: true }\n})
+DB --> EmployeeGetModel : start_date
+EmployeeGetModel --> Service : employeeStartDate
+
+Service -> Service : Calcular periodo laboral vigente\nanniversaryStartDate / anniversaryEndDate
+
+alt Rango fuera del periodo laboral vigente
+Service --> Controller : RESPONSES.VACATION.OUT_OF_RANGE
+Controller --> Frontend : 406 Not Acceptable\n"No se pueden registrar vacaciones fuera del periodo actual de trabajo"
+end
+
+Service -> EventGetModel : getGlobalEventsInRange(startDate, endDate)
+EventGetModel -> DB : prisma.global_event.findMany({\n where: { date: { gte: startDate, lte: endDate } }\n})
+DB --> EventGetModel : globalEvents
+EventGetModel --> Service : globalEvents
+
+Service -> Service : calculateUsedDays(workDays, startDate, endDate, globalEvents)
+
+alt usedDays == 0
+Service --> Controller : RESPONSES.VACATION.NULL_DATES
+Controller --> Frontend : 406 Not Acceptable\n"Dentro del rango seleccionado no hay ningún día hábil de vacaciones"
+end
+
+Service -> VacationGetModel : getVacationsInRange(targetEmployeeId, startDate, endDate)
+VacationGetModel -> DB : prisma.vacations_request.findMany({\n where: {\n  employee_id: targetEmployeeId,\n  status: { not: 2 },\n  start: { lte: endDate },\n  end: { gte: startDate }\n }\n})
+DB --> VacationGetModel : overlappingVacations
+VacationGetModel --> Service : overlappingVacations
+
+alt overlappingVacations.length > 0
+Service --> Controller : RESPONSES.VACATION.ALREADY_REQUEST
+Controller --> Frontend : 406 Not Acceptable\n"Ya hay una solicitud de vacaciones cubriendo los días solicitados"
+end
+
+Service -> Service : Calcular remainingVacations
+
+alt usedDays > remainingVacations
+Service --> Controller : RESPONSES.VACATION.INSUFFICIENT_DATES
+Controller --> Frontend : 406 Not Acceptable\n"No se tienen suficientes días disponibles para solicitar las vacaciones"
+end
+
+Service -> VacationCreateModel : registerEmployeeVacation(vacationId,\n targetEmployeeId,\n startDate,\n endDate,\n usedDays)
+VacationCreateModel -> DB : prisma.vacations_request.create({\n status: 1,\n used_days: usedDays,\n created_at: new Date()\n})
+DB --> VacationCreateModel : vacationRequest
+VacationCreateModel --> Service : vacationRequest
+
+Service -> LogModel : createLog(actorEmployeeId,\n LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,\n ipAddress,\n targetEmployeeId)
+LogModel -> DB : prisma.logs.create({ data })
+DB --> LogModel : log
+LogModel --> Service : log
+
+Service --> Controller : RESPONSES.VACATION.REGISTERED
+Controller --> Frontend : 201 Created\n"Vacaciones registradas correctamente"
+
+Frontend --> Usuario : Mostrar confirmación
+
+@enduml
