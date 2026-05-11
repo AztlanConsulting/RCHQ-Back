@@ -4,7 +4,7 @@ const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
-const app = require("../../../app");
+const app = require("../../../index");
 const { seedActions } = require("../../helpers/seedActions");
 
 const prisma = new PrismaClient();
