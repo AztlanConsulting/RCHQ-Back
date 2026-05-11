@@ -22,13 +22,15 @@ const employeeAddController = require("../controller/employee/create.controller"
 const employeeUpdateController = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
-const { getAll, getWorkDays } = require("../controller/employee/get.controller");
+const { getWorkDays } = require("../controller/employee/get.controller");
+
 router.get(
   "/update-form",
   apiLimiter,
   verifyToken,
   requireRole("Admin", "Coordinador"),
   requirePrivileges("manageEmployees"),
+  authorize(employeePolicy, (req) => ({ houseId: req.user.houseId })),
   employeeGetController.getUpdateForm,
 );
 

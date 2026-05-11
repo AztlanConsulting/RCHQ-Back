@@ -14,6 +14,7 @@ const {
     getAllWorkdays,
     getAllHouses,
     getFrecuencyPaymentOptions,
+    getEmployeesWithWorkdays,
 } = require("../../model/employee/get.model");
 const { getHouseById } = require("../../model/house/get.model");
 const { decryptValue } = require("../../utils/password");
@@ -174,12 +175,27 @@ exports.getWorkDays = async (employeeId) => {
     return workDays;
 }
 
-exports.getUpdateFormData = async (user) => {
-  const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
-    getAllRoles(),
-    getAllHouses(),
-    getAllWorkdays(),
-    getFrecuencyPaymentOptions(),
-  ]);
-  return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
+exports.getUpdateFormData = async (houseId, excludeEmployeeId = null) => {
+    const [roles, houses, workdays, frecuencyOptions, rawEmployees] = await Promise.all([
+        getAllRoles(),
+        getAllHouses(),
+        getAllWorkdays(),
+        getFrecuencyPaymentOptions(),
+        getEmployeesWithWorkdays(houseId),
+    ]);
+ 
+    const employees = rawEmployees
+        .filter((e) => e.employee_id !== excludeEmployeeId)
+        .map((e) => ({
+            employeeId: e.employee_id,
+            name: e.name,
+            surname: e.surname,
+            workdays: e.employee_workday.map((w) => ({
+                workdayId: w.workday_id,
+                start: String(w.start).slice(11, 16),
+                end: String(w.end).slice(11, 16),
+            })),
+        }));
+ 
+    return { roles, houses, workdays, frecuencyOptions, houseId, employees };
 };

@@ -166,11 +166,16 @@ exports.getWorkDays = async (req, res) => {
 }
 
 exports.getUpdateForm = async (req, res) => {
-  try {
-    const data = await getUpdateFormData(req.user);
-    return res.status(200).json({ success: true, ...data });
-  } catch (err) {
-    console.error("getUpdateForm error:", err);
-    return res.status(500).json({ success: false, message: "Error cargando datos del formulario" });
-  }
+    try {
+        const { houseId } = req.user;
+        const excludeEmployeeId = req.query.excludeEmployeeId ?? null;
+ 
+        const data = await getUpdateFormData(houseId, excludeEmployeeId);
+        return res.status(200).json({ success: true, ...data });
+    } catch (err) {
+        console.error("getUpdateForm error:", err);
+        return res
+            .status(500)
+            .json({ success: false, message: "Error cargando datos del formulario" });
+    }
 };

@@ -268,3 +268,18 @@ exports.getAllHouses = async () => {
         location: h.location,
     }));
 };
+
+exports.getEmployeesWithWorkdays = async (houseId) => {
+    return await prisma.employee.findMany({
+        where: { house_id: houseId, is_active: true },
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            employee_workday: {
+                include: { workday: true },
+            },
+        },
+        orderBy: { name: "asc" },
+    });
+};
