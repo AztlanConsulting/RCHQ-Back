@@ -266,7 +266,7 @@ describe("US28 - registerEmployeeVacation service", () => {
             });
 
             expect(result).toEqual({
-                code: RESPONSES.EMPLOYEE.NOT_FOUND,
+                code: RESPONSES.EMPLOYEE.NOT_PROVIDED,
             });
 
             expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();

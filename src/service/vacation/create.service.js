@@ -160,7 +160,7 @@ exports.registerEmployeeVacation = async ({
 
     if (!targetEmployeeId) {
         return {
-            code: RESPONSES.EMPLOYEE.NOT_FOUND,
+            code: RESPONSES.EMPLOYEE.NOT_PROVIDED,
         };
     }
 
