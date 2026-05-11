@@ -22,13 +22,13 @@ exports.getAllAbsences = async (page, limit, where) => {
   try {
     const [absences, total] = await prisma.$transaction([
       prisma.absence.findMany({
-        where,         // ← usa el where recibido
+        where,         
         select,
         skip:    offset,
         take:    limit,
         orderBy: { start: "desc" },
       }),
-      prisma.absence.count({ where }),  // ← mismo where para el total
+      prisma.absence.count({ where }),
     ]);
 
     return {
