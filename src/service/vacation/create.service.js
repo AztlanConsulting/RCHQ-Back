@@ -244,6 +244,12 @@ exports.registerEmployeeVacation = async ({
         usedDays
     );
 
+    if (!vacationRequest) {
+        return {
+            code: RESPONSES.VACATION.ALREADY_REQUEST,
+        };
+    }
+
     await createLog(
         actorEmployeeId,
         LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,
