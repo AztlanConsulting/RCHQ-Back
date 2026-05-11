@@ -7,3 +7,8 @@ exports.getHouseById = async (houseId) => {
     });
     return mapHouse(house);
 };
+
+exports.getAllHouses = async () => {
+    const houses = await prisma.house.findMany();
+    return houses.map(mapHouse);
+};

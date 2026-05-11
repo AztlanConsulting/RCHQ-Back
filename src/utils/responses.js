@@ -59,7 +59,11 @@ const RESPONSES = {
     FOUND: "Ausencias encontradas correctamente",
     BAD_REQUEST: "Faltan datos requeridos o tienen un formato incorrecto",
     NOT_FOUND: "No se encontraron ausencias",
-  }
+  },
+  HOUSE:{
+    FOUND: "Casas encontradas correctamente",
+     NOT_FOUND: "No se encontraron casas",
+  },
 };
 
 module.exports = RESPONSES;
