@@ -51,20 +51,3 @@ exports.getActiveVacationsInRange = async (employeeId, startDate, endDate) => {
         },
     });
 };
-
-exports.getCommittedVacationsInRange = async (employeeId, startDate, endDate) => {
-    return await prisma.vacations_request.findMany({
-        where: {
-            employee_id: employeeId,
-            status: {
-                in: ACTIVE_VACATION_STATUSES,
-            },
-            start: {
-                lte: endDate,
-            },
-            end: {
-                gte: startDate,
-            },
-        },
-    });
-};
