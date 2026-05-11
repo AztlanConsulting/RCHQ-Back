@@ -57,9 +57,9 @@ const canRegisterEmployeeVacation = async (req, res, next) => {
         const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
 
         if (!targetEmployee) {
-            return res.status(404).json({
+            return res.status(403).json({
                 success: false,
-                message: "Empleado no encontrado",
+                message: "No puede acceder a este recurso",
             });
         }
 

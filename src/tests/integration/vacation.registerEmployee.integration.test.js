@@ -748,7 +748,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
                 endDate: formatDate(SUCCESS_FRIDAY),
             });
 
-        expect(res.statusCode).toBe(404);
+        expect(res.statusCode).toBe(403);
         expect(res.body.success).toBe(false);
     });
 
@@ -945,7 +945,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.statusCode).toBe(406);
         expect(res.body.success).toBe(false);
     });
-    
+
     test("protege contra registros concurrentes traslapados para el mismo empleado", async () => {
         const targetEmployeeId = TARGET_EMPLOYEE_ID;
 
