@@ -525,6 +525,34 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(randomUUID).not.toHaveBeenCalled();
         });
 
+        test("retorna ALREADY_REQUEST si registerVacation detecta traslape atómico en la transacción", async () => {
+            registerVacation.mockResolvedValueOnce(null);
+
+            const result = await callRegisterVacation();
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.ALREADY_REQUEST,
+            });
+
+            expect(getActiveVacationsInRange).toHaveBeenCalledWith(
+                targetEmployeeId,
+                parsedValidStartDate,
+                parsedValidEndDate
+            );
+
+            expect(randomUUID).toHaveBeenCalledTimes(1);
+
+            expect(registerVacation).toHaveBeenCalledWith(
+                vacationId,
+                targetEmployeeId,
+                parsedValidStartDate,
+                parsedValidEndDate,
+                5
+            );
+
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
         test("llama getActiveVacationsInRange con el empleado objetivo y no con el actor", async () => {
             const result = await callRegisterVacation();
 

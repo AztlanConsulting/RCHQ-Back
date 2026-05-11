@@ -20,6 +20,9 @@ const TARGET_EMPLOYEE_ID = randomUUID();
 const OTHER_HOUSE_EMPLOYEE_ID = randomUUID();
 const NO_WORKDAYS_EMPLOYEE_ID = randomUUID();
 
+const { ACTIVE_VACATION_STATUSES } = require("../../utils/vacationStatus");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+
 const WORKDAY_IDS = {
     monday: randomUUID(),
     tuesday: randomUUID(),
@@ -942,4 +945,87 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.statusCode).toBe(406);
         expect(res.body.success).toBe(false);
     });
+    
+    test("protege contra registros concurrentes traslapados para el mismo empleado", async () => {
+        const targetEmployeeId = TARGET_EMPLOYEE_ID;
+
+        const concurrentStartA = addDays(THIRD_SUCCESS_MONDAY, 14);
+        const concurrentEndA = addDays(concurrentStartA, 2);
+        const concurrentStartB = addDays(concurrentStartA, 1);
+        const concurrentEndB = addDays(concurrentStartA, 3);
+
+        const payloadA = {
+            startDate: formatDate(concurrentStartA),
+            endDate: formatDate(concurrentEndA),
+        };
+
+        const payloadB = {
+            startDate: formatDate(concurrentStartB),
+            endDate: formatDate(concurrentEndB),
+        };
+
+        const responses = await Promise.allSettled([
+            request(app)
+                .post(`/vacation/employees/${targetEmployeeId}/register`)
+                .set("Authorization", `Bearer ${getAdminToken()}`)
+                .send(payloadA),
+
+            request(app)
+                .post(`/vacation/employees/${targetEmployeeId}/register`)
+                .set("Authorization", `Bearer ${getAdminToken()}`)
+                .send(payloadB),
+        ]);
+
+        const fulfilledResponses = responses.map((result) => result.value);
+
+        const statuses = fulfilledResponses
+            .map((response) => response.status)
+            .sort();
+
+        expect(statuses).toEqual([201, 406]);
+
+        const successResponse = fulfilledResponses.find(
+            (response) => response.status === 201
+        );
+
+        const rejectedResponse = fulfilledResponses.find(
+            (response) => response.status === 406
+        );
+
+        expect(successResponse.body).toMatchObject({
+            success: true,
+            message: "Vacaciones registradas correctamente",
+        });
+
+        expect(rejectedResponse.body).toMatchObject({
+            success: false,
+            message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
+        });
+
+        const activeVacations = await prisma.vacations_request.findMany({
+            where: {
+                employee_id: targetEmployeeId,
+                status: {
+                    in: ACTIVE_VACATION_STATUSES,
+                },
+                start: {
+                    lte: toDbDate(payloadB.endDate),
+                },
+                end: {
+                    gte: toDbDate(payloadA.startDate),
+                },
+            },
+        });
+
+        expect(activeVacations).toHaveLength(1);
+
+        const logs = await prisma.logs.findMany({
+            where: {
+                action_id: LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,
+                affected: targetEmployeeId,
+            },
+        });
+
+        expect(logs).toHaveLength(1);
+    }); 
 });
