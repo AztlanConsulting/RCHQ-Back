@@ -184,6 +184,24 @@ exports.getUpdateFormData = async (houseId, excludeEmployeeId = null) => {
         getEmployeesWithWorkdays(houseId),
     ]);
  
+    // ✅ Función segura para extraer la hora en formato "HH:mm"
+    const formatTime = (timeData) => {
+        if (!timeData) return "";
+        
+        // Si Prisma devuelve un objeto Date nativo
+        if (timeData instanceof Date) {
+            return timeData.toISOString().substring(11, 16);
+        }
+        
+        // Si por alguna razón devuelve un String (ej. "1970-01-01T08:00:00.000Z" o "08:00:00")
+        const timeStr = String(timeData);
+        if (timeStr.includes("T")) {
+            return timeStr.split("T")[1].substring(0, 5);
+        }
+        
+        return timeStr.substring(0, 5);
+    };
+
     const employees = rawEmployees
         .filter((e) => e.employee_id !== excludeEmployeeId)
         .map((e) => ({
@@ -192,8 +210,9 @@ exports.getUpdateFormData = async (houseId, excludeEmployeeId = null) => {
             surname: e.surname,
             workdays: e.employee_workday.map((w) => ({
                 workdayId: w.workday_id,
-                start: String(w.start).slice(11, 16),
-                end: String(w.end).slice(11, 16),
+                name: w.workday.name,
+                start: formatTime(w.start), 
+                end: formatTime(w.end),    
             })),
         }));
  

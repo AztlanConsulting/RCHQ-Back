@@ -13,6 +13,7 @@ jest.mock("../../model/employee/get.model", () => ({
   getAllWorkdays:     jest.fn(),
   getAllHouses:       jest.fn(),
   getFrecuencyPaymentOptions: jest.fn(),
+  getEmployeesWithWorkdays: jest.fn(),
 }));
 
 jest.mock("../../utils/password", () => ({
@@ -35,6 +36,7 @@ const {
   getAllWorkdays,
   getAllHouses,
   getFrecuencyPaymentOptions,
+  getEmployeesWithWorkdays,
  } = require("../../model/employee/get.model");
 const { encryptValue }         = require("../../utils/password");
 
@@ -89,31 +91,56 @@ beforeEach(() => {
   getAllHouses.mockResolvedValue([{ houseId: "h1", name: "Casa Test" }]);
   getAllWorkdays.mockResolvedValue([{ workdayId: "wd1", name: "Lunes" }]);
   getFrecuencyPaymentOptions.mockResolvedValue([{ id: "f1", name: "Quincenal" }]);
+  getEmployeesWithWorkdays.mockResolvedValue([
+    { employee_id: EMPLOYEE_ID, name: "Juan", surname: "Pérez", employee_workday: [{ workday_id: "wd1", workday: { name: "Lunes" }, start: "08:00", end: "17:00" }] }
+  ]);
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
 // getUpdateFormData
+// ═════════════════════════════════════════════════════════════════════════════════
+
 // ══════════════════════════════════════════════════════════════════════════════
+// getUpdateFormData
+// ═════════════════════════════════════════════════════════════════════════════════
 
 describe("getUpdateFormData", () => {
-  it("retorna roles, casas, workdays y houseId del usuario", async () => {
-    const result = await getUpdateFormData({ houseId: "h1" });
+  it("retorna roles, casas, workdays, opciones de pago, houseId y empleados formateados", async () => {
+    const result = await getUpdateFormData("h1"); 
+    
     expect(result).toEqual({
       roles:    [{ roleId: "r1", name: "Admin" }],
       houses:   [{ houseId: "h1", name: "Casa Test" }],
       workdays: [{ workdayId: "wd1", name: "Lunes" }],
       houseId:  "h1",
       frecuencyOptions: [{ id: "f1", name: "Quincenal" }],
+      employees: [
+        {
+          employeeId: EMPLOYEE_ID,
+          name: "Juan",
+          surname: "Pérez",
+          workdays: [
+            { 
+              workdayId: "wd1", 
+              name: "Lunes", 
+              start: "08:00", 
+              end: "17:00" 
+            }
+          ]
+        }
+      ]
     });
+    
     expect(getAllRoles).toHaveBeenCalledTimes(1);
     expect(getAllHouses).toHaveBeenCalledTimes(1);
     expect(getAllWorkdays).toHaveBeenCalledTimes(1);
     expect(getFrecuencyPaymentOptions).toHaveBeenCalledTimes(1);
+    expect(getEmployeesWithWorkdays).toHaveBeenCalledWith("h1");
   });
 
   it("propaga el error si algún modelo falla", async () => {
     getAllRoles.mockRejectedValue(new Error("DB error"));
-    await expect(getUpdateFormData({ houseId: "h1" })).rejects.toThrow("DB error");
+    await expect(getUpdateFormData("h1")).rejects.toThrow("DB error");
   });
 });
 
