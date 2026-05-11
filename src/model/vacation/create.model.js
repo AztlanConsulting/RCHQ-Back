@@ -1,6 +1,19 @@
 const prisma = require("../../prisma");
 const { VACATION_STATUS, ACTIVE_VACATION_STATUSES } = require("../../utils/vacationStatus");
 
+function getUtcNow() {
+    const now = new Date();
+    return new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        now.getUTCHours(),
+        now.getUTCMinutes(),
+        now.getUTCSeconds(),
+        now.getUTCMilliseconds()
+    ));
+}
+
 exports.requestVacation = async (vacationId, employeeId, startDate, endDate, usedDays) => {
     return await prisma.vacations_request.create({
         data: {
@@ -10,7 +23,7 @@ exports.requestVacation = async (vacationId, employeeId, startDate, endDate, use
             end: endDate,
             status: VACATION_STATUS.PENDING,
             used_days: usedDays,
-            created_at: new Date()
+            created_at: getUtcNow()
         }
     })
 }
@@ -48,7 +61,7 @@ exports.registerVacation = async (vacationId, employeeId, startDate, endDate, us
                 end: endDate,
                 status: VACATION_STATUS.APPROVED,
                 used_days: usedDays,
-                created_at: new Date(),
+                created_at: getUtcNow(),
             },
         });
     });
