@@ -1,14 +1,14 @@
-const vacationCreateService = require("../../service/vacation/create.service");
+const vacationCreateService = require("../../../service/vacation/create.service");
 
-jest.mock("../../service/vacation/get.service");
-jest.mock("../../model/employee/get.model");
-jest.mock("../../model/event/get.model");
-jest.mock("../../model/vacation/get.model");
-jest.mock("../../model/vacation/create.model");
-jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
-jest.mock("../../utils/dates", () => {
-    const actual = jest.requireActual("../../utils/dates");
+jest.mock("../../../service/vacation/get.service");
+jest.mock("../../../model/employee/get.model");
+jest.mock("../../../model/event/get.model");
+jest.mock("../../../model/vacation/get.model");
+jest.mock("../../../model/vacation/create.model");
+jest.mock("../../../model/log.model");
+jest.mock("../../../utils/ip");
+jest.mock("../../../utils/dates", () => {
+    const actual = jest.requireActual("../../../utils/dates");
 
     return {
         ...actual,
@@ -16,15 +16,15 @@ jest.mock("../../utils/dates", () => {
     };
 });
 
-const vacationGetService = require("../../service/vacation/get.service");
-const employeeModel = require("../../model/employee/get.model");
-const eventsModel = require("../../model/event/get.model");
-const vacationGetModel = require("../../model/vacation/get.model");
-const vacationAddModel = require("../../model/vacation/create.model");
-const logModel = require("../../model/log.model");
-const ipUtils = require("../../utils/ip");
-const RESPONSES = require("../../utils/responses");
-const datesUtils = require("../../utils/dates");
+const vacationGetService = require("../../../service/vacation/get.service");
+const employeeModel = require("../../../model/employee/get.model");
+const eventsModel = require("../../../model/event/get.model");
+const vacationGetModel = require("../../../model/vacation/get.model");
+const vacationAddModel = require("../../../model/vacation/create.model");
+const logModel = require("../../../model/log.model");
+const ipUtils = require("../../../utils/ip");
+const RESPONSES = require("../../../utils/responses");
+const datesUtils = require("../../../utils/dates");
 
 const EMPLOYEE_ID = 1;
 const TODAY = new Date();

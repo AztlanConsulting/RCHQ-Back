@@ -1,9 +1,9 @@
 // src/tests/unit/profile.service.test.js
-const { getUserProfile } = require("../../service/user/profile.service");
+const { getUserProfile } = require("../../../service/user/profile.service");
 
-jest.mock("../../model/user/profile.model");
-const profileModel = require("../../model/user/profile.model");
-const RESPONSES = require("../../utils/responses");
+jest.mock("../../../model/user/profile.model");
+const profileModel = require("../../../model/user/profile.model");
+const RESPONSES = require("../../../utils/responses");
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 const MOCK_PROFILE = {

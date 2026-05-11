@@ -1,5 +1,5 @@
-const { workday } = require("../../prisma");
-const datesUtil = require("../../utils/dates");
+const { workday } = require("../../../prisma");
+const datesUtil = require("../../../utils/dates");
 
 const START_DATE = new Date("2026-05-01");
 const END_DATE = new Date("2026-05-05");

@@ -1,4 +1,4 @@
-jest.mock("../../model/auth/auth.model", () => ({
+jest.mock("../../../model/auth/auth.model", () => ({
     findEmployeeByEmail: jest.fn(),
     getEmployeeById: jest.fn(),
     incrementFailedAttempts: jest.fn(),
@@ -13,31 +13,31 @@ jest.mock("../../model/auth/auth.model", () => ({
     disableTwoFactor: jest.fn(),
 }));
 
-jest.mock("../../utils/password", () => ({
+jest.mock("../../../utils/password", () => ({
     verifyPassword: jest.fn(),
 }));
 
-jest.mock("../../model/log.model", () => ({
+jest.mock("../../../model/log.model", () => ({
     createLog: jest.fn(),
 }));
 
-jest.mock("../../utils/ip", () => ({
+jest.mock("../../../utils/ip", () => ({
     getClientIp: jest.fn(),
 }));
 
-jest.mock("../../utils/auth/authTokens", () => ({
+jest.mock("../../../utils/auth/authTokens", () => ({
     buildSessionToken: jest.fn(),
     buildFirstLoginJwt: jest.fn(),
     buildPreTwoFactorAuthJwt: jest.fn(),
 }));
 
-jest.mock("../../utils/auth/authGuards", () => ({
+jest.mock("../../../utils/auth/authGuards", () => ({
     isBlockedUntil: jest.fn(),
     clearExpiredLoginBlock: jest.fn(),
     clearExpiredTwoFactorAuthBlock: jest.fn(),
 }));
 
-jest.mock("../../prisma", () => ({
+jest.mock("../../../prisma", () => ({
     $transaction: jest.fn((cb) =>
         cb({ employee: { findUnique: jest.fn(), update: jest.fn() } }),
     ),
@@ -54,20 +54,20 @@ jest.mock("qrcode", () => ({
     toDataURL: jest.fn(),
 }));
 
-const { verifyPassword } = require("../../utils/password");
-const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
+const { verifyPassword } = require("../../../utils/password");
+const { createLog } = require("../../../model/log.model");
+const { getClientIp } = require("../../../utils/ip");
 const {
     buildSessionToken,
     buildFirstLoginJwt,
     buildPreTwoFactorAuthJwt,
-} = require("../../utils/auth/authTokens");
+} = require("../../../utils/auth/authTokens");
 const {
     isBlockedUntil,
     clearExpiredLoginBlock,
     clearExpiredTwoFactorAuthBlock,
-} = require("../../utils/auth/authGuards");
-const prisma = require("../../prisma");
+} = require("../../../utils/auth/authGuards");
+const prisma = require("../../../prisma");
 
 const {
     login,
@@ -76,17 +76,17 @@ const {
     validateTwoFactorAuth,
     getTwoFactorAuthStatus,
     disableTwoFactorAuth,
-} = require("../../service/auth/auth.service");
+} = require("../../../service/auth/auth.service");
 
 // ─── Mocks ────────────────────────────────────────────────
 
-jest.mock("../../model/auth/auth.model");
-jest.mock("../../utils/password");
-jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
-jest.mock("../../utils/auth/authTokens");
-jest.mock("../../utils/auth/authGuards");
-jest.mock("../../prisma", () => ({
+jest.mock("../../../model/auth/auth.model");
+jest.mock("../../../utils/password");
+jest.mock("../../../model/log.model");
+jest.mock("../../../utils/ip");
+jest.mock("../../../utils/auth/authTokens");
+jest.mock("../../../utils/auth/authGuards");
+jest.mock("../../../prisma", () => ({
     $transaction: jest.fn((cb) =>
         cb({ employee: { findUnique: jest.fn(), update: jest.fn() } }),
     ),
@@ -94,7 +94,7 @@ jest.mock("../../prisma", () => ({
 jest.mock("speakeasy");
 jest.mock("qrcode");
 
-const auth = require("../../model/auth/auth.model");
+const auth = require("../../../model/auth/auth.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
 

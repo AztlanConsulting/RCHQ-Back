@@ -1,11 +1,11 @@
 // tests/backend/profile.controller.test.js
 const {
     getUserProfile: controllerFn,
-} = require("../../controller/user/profile.controller");
+} = require("../../../controller/user/profile.controller");
 
-jest.mock("../../service/user/profile.service");
-const profileService = require("../../service/user/profile.service");
-const RESPONSES = require("../../utils/responses");
+jest.mock("../../../service/user/profile.service");
+const profileService = require("../../../service/user/profile.service");
+const RESPONSES = require("../../../utils/responses");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const buildRes = () => {

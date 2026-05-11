@@ -2,7 +2,7 @@
 const request = require("supertest");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
-const app = require("../../app");
+const app = require("../../../app");
 const {
     prisma,
     seedDb,
@@ -10,7 +10,7 @@ const {
     disconnectDb,
     IDS,
     SEED,
-} = require("../helpers/dbSetup");
+} = require("../../helpers/dbSetup");
 
 // ─── Constantes del empleado sujeto ───────────────────────────────────────────
 const TEST_SUBJECT_EMPLOYEE_ID = randomUUID();

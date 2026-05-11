@@ -3,7 +3,7 @@ const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
-const app = require("../../index");
+const app = require("../../../index");
 
 const prisma = new PrismaClient({
     datasources: { db: { url: process.env.TEST_DATABASE_URL } },

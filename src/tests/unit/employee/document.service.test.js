@@ -1,24 +1,24 @@
 // tests/unit/document.unit.test.js
-const { uploadDocument } = require("../../service/employee/create.service");
-const { updateDocument } = require("../../service/employee/update.service");
-const { deleteDocument } = require("../../service/employee/delete.service");
-const { getDocumentsByEmployee } = require("../../service/employee/get.service");
-const RESPONSES = require("../../utils/responses");
+const { uploadDocument } = require("../../../service/employee/create.service");
+const { updateDocument } = require("../../../service/employee/update.service");
+const { deleteDocument } = require("../../../service/employee/delete.service");
+const { getDocumentsByEmployee } = require("../../../service/employee/get.service");
+const RESPONSES = require("../../../utils/responses");
 
 // ─── Mocks ────────────────────────────────────────────────
-jest.mock("../../model/employee/get.model");
-jest.mock("../../model/employee/create.model");
-jest.mock("../../model/employee/delete.model");
-jest.mock("../../model/employee/update.model");
+jest.mock("../../../model/employee/get.model");
+jest.mock("../../../model/employee/create.model");
+jest.mock("../../../model/employee/delete.model");
+jest.mock("../../../model/employee/update.model");
 
-const readModel  = require("../../model/employee/get.model");
-const createModel = require("../../model/employee/create.model");
-const deleteModel = require("../../model/employee/delete.model");
-const updateModel = require("../../model/employee/update.model");
+const readModel  = require("../../../model/employee/get.model");
+const createModel = require("../../../model/employee/create.model");
+const deleteModel = require("../../../model/employee/delete.model");
+const updateModel = require("../../../model/employee/update.model");
 
 // Evitar que deleteFileIfExists explote en unit tests
-jest.mock("../../utils/deleteFile", () => ({ deleteFileIfExists: jest.fn() }));
-const { deleteFileIfExists } = require("../../utils/deleteFile");
+jest.mock("../../../utils/deleteFile", () => ({ deleteFileIfExists: jest.fn() }));
+const { deleteFileIfExists } = require("../../../utils/deleteFile");
 
 // ─── Fixtures ─────────────────────────────────────────────
 const EMP_ID   = "emp-uuid-123";

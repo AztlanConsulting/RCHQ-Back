@@ -1,30 +1,30 @@
-const employee = require("../../model/employee/create.model");
-const { createLog } = require("../../model/log.model");
-const consult = require("../../model/employee/get.model");
+const employee = require("../../../model/employee/create.model");
+const { createLog } = require("../../../model/log.model");
+const consult = require("../../../model/employee/get.model");
 
 // =====================================================
 // MOCKS
 // =====================================================
 
-jest.mock("../../model/employee/get.model", () => ({
+jest.mock("../../../model/employee/get.model", () => ({
     findByCurp: jest.fn(),
     findById: jest.fn(),
     getAllRoles: jest.fn(),
 }));
 
-jest.mock("../../model/employee/create.model", () => ({
+jest.mock("../../../model/employee/create.model", () => ({
     create: jest.fn(),
 }));
 
-jest.mock("../../model/log.model", () => ({
+jest.mock("../../../model/log.model", () => ({
     createLog: jest.fn(),
 }));
 
-jest.mock("../../utils/ip", () => ({
+jest.mock("../../../utils/ip", () => ({
     getClientIp: jest.fn(() => "127.0.0.1"),
 }));
 
-const { createEmployee } = require("../../service/employee/create.service");
+const { createEmployee } = require("../../../service/employee/create.service");
 
 // =====================================================
 // TEST SUITE

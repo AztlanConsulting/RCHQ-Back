@@ -1,8 +1,8 @@
 const request = require("supertest");
-const app     = require("../../app");
-const prisma  = require("../../prisma");
-const { hashPassword } = require("../../utils/password");
-const { buildSessionToken } = require("../../utils/auth/authTokens");
+const app     = require("../../../app");
+const prisma  = require("../../../prisma");
+const { hashPassword } = require("../../../utils/password");
+const { buildSessionToken } = require("../../../utils/auth/authTokens");
 
 // ─── IDs fijos ────────────────────────────────────────────────────────────────
 

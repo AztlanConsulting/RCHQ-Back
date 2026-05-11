@@ -1,13 +1,13 @@
-const { getEmployeeDetail } = require("../../service/employee/get.service");
-const EmployeeModel = require("../../model/employee/get.model");
-const HouseModel = require("../../model/house/get.model");
-const RESPONSES = require("../../utils/responses");
+const { getEmployeeDetail } = require("../../../service/employee/get.service");
+const EmployeeModel = require("../../../model/employee/get.model");
+const HouseModel = require("../../../model/house/get.model");
+const RESPONSES = require("../../../utils/responses");
 
-jest.mock("../../utils/password", () => ({
+jest.mock("../../../utils/password", () => ({
     decryptValue: jest.fn(() => "12000"),
 }));
 
-jest.mock("../../model/employee/get.model", () => ({
+jest.mock("../../../model/employee/get.model", () => ({
     getEmployeeById: jest.fn(),
     getEmployeeAddress: jest.fn(),
     getEmployeeFaults: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock("../../model/employee/get.model", () => ({
     getEmployeeVacationRequests: jest.fn(),
 }));
 
-jest.mock("../../model/house/get.model", () => ({
+jest.mock("../../../model/house/get.model", () => ({
     getHouseById: jest.fn(),
 }));
 

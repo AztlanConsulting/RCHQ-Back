@@ -3,9 +3,9 @@ const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const { randomUUID } = require("crypto");
-const app = require("../../app");
-const { LOG_ACTIONS } = require("../../utils/logActions");
-const { seedActions } = require("../helpers/seedActions");
+const app = require("../../../app");
+const { LOG_ACTIONS } = require("../../../utils/logActions");
+const { seedActions } = require("../../helpers/seedActions");
 
 const prisma = new PrismaClient();
 

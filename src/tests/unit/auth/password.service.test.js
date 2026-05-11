@@ -1,40 +1,40 @@
-jest.mock("../../prisma", () => ({
+jest.mock("../../../prisma", () => ({
     $transaction: jest.fn(),
 }));
 
-jest.mock("../../model/auth/auth.model", () => ({
+jest.mock("../../../model/auth/auth.model", () => ({
     getEmployeeById: jest.fn(),
     updatePassword: jest.fn(),
     updatePasswordAndClearFirstLogin: jest.fn(),
 }));
 
-jest.mock("../../model/log.model", () => ({
+jest.mock("../../../model/log.model", () => ({
     createLog: jest.fn(),
 }));
 
-jest.mock("../../utils/password", () => ({
+jest.mock("../../../utils/password", () => ({
     verifyPassword: jest.fn(),
     hashPassword: jest.fn(),
 }));
 
-jest.mock("../../utils/auth/authTokens", () => ({
+jest.mock("../../../utils/auth/authTokens", () => ({
     buildSessionToken: jest.fn(),
     buildPreTwoFactorAuthJwt: jest.fn(),
 }));
 
-const prisma = require("../../prisma");
-const auth = require("../../model/auth/auth.model");
-const { createLog } = require("../../model/log.model");
-const { verifyPassword, hashPassword } = require("../../utils/password");
+const prisma = require("../../../prisma");
+const auth = require("../../../model/auth/auth.model");
+const { createLog } = require("../../../model/log.model");
+const { verifyPassword, hashPassword } = require("../../../utils/password");
 const {
     buildSessionToken,
     buildPreTwoFactorAuthJwt,
-} = require("../../utils/auth/authTokens");
+} = require("../../../utils/auth/authTokens");
 
 const {
     changePassword,
     changePasswordFirstLogin,
-} = require("../../service/auth/password.service");
+} = require("../../../service/auth/password.service");
 
 const mockEmployee = {
     employeeId: "emp-123",

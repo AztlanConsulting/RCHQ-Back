@@ -1,13 +1,13 @@
 // src/tests/unit/update.service.test.js
 
-jest.mock("../../model/employee/update.model", () => ({
+jest.mock("../../../model/employee/update.model", () => ({
   updateBasicInfo:   jest.fn(),
   updateContactInfo: jest.fn(),
   updateAdminInfo:   jest.fn(),
   upsertWorkdays:    jest.fn(),
 }));
 
-jest.mock("../../model/employee/get.model", () => ({
+jest.mock("../../../model/employee/get.model", () => ({
   findById:    jest.fn(),
   getAllRoles:  jest.fn(),
   getAllWorkdays:     jest.fn(),
@@ -15,11 +15,11 @@ jest.mock("../../model/employee/get.model", () => ({
   getFrecuencyPaymentOptions: jest.fn(),
 }));
 
-jest.mock("../../utils/password", () => ({
+jest.mock("../../../utils/password", () => ({
   encryptValue: jest.fn((v) => `encrypted(${v})`),
 }));
 
-jest.mock("../../utils/ip.js", () => ({
+jest.mock("../../../utils/ip.js", () => ({
   getClientIp: jest.fn(() => "127.0.0.1"),
 }));
 
@@ -28,25 +28,25 @@ const {
   updateContactInfo,
   updateAdminInfo,
   upsertWorkdays,
-} = require("../../model/employee/update.model");
+} = require("../../../model/employee/update.model");
 const { 
   findById, 
   getAllRoles,
   getAllWorkdays,
   getAllHouses,
   getFrecuencyPaymentOptions,
- } = require("../../model/employee/get.model");
-const { encryptValue }         = require("../../utils/password");
+ } = require("../../../model/employee/get.model");
+const { encryptValue }         = require("../../../utils/password");
 
 const {
   updateBasicInfoService,
   updateContactInfoService,
   updateAdminInfoService,
-} = require("../../service/employee/update.service");
+} = require("../../../service/employee/update.service");
 
-const { getUpdateFormData } = require("../../service/employee/get.service");
+const { getUpdateFormData } = require("../../../service/employee/get.service");
 
-const RESPONSES = require("../../utils/responses");
+const RESPONSES = require("../../../utils/responses");
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 

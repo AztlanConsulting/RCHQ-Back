@@ -1,14 +1,14 @@
 // tests/backend/profile.model.test.js
-const { findEmployeeProfile } = require("../../model/user/profile.model");
+const { findEmployeeProfile } = require("../../../model/user/profile.model");
 
 // Mock de Prisma
-jest.mock("../../prisma", () => ({
+jest.mock("../../../prisma", () => ({
     employee: {
         findUnique: jest.fn(),
     },
 }));
 
-const prisma = require("../../prisma");
+const prisma = require("../../../prisma");
 
 // ─── Fixture ────────────────────────────────────────────────────────────────
 const EMPLOYEE_ID = "uuid-empleado-001";

@@ -2,9 +2,9 @@
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
-const app = require("../../app");
+const app = require("../../../app");
 const jwt = require("jsonwebtoken");
-const {deleteFileIfExists} = require("../../utils/deleteFile")
+const {deleteFileIfExists} = require("../../../utils/deleteFile")
 const fs = require("fs");
 const path = require("path");
 

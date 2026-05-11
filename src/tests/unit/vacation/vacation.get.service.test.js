@@ -1,13 +1,13 @@
-const vacationGetService = require("../../service/vacation/get.service");
+const vacationGetService = require("../../../service/vacation/get.service");
 
-jest.mock("../../model/employee/get.model");
-jest.mock("../../model/event/get.model");
-jest.mock("../../model/vacation/get.model");
-jest.mock("../../model/vacation/create.model");
-jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
-jest.mock("../../utils/dates", () => {
-    const actual = jest.requireActual("../../utils/dates");
+jest.mock("../../../model/employee/get.model");
+jest.mock("../../../model/event/get.model");
+jest.mock("../../../model/vacation/get.model");
+jest.mock("../../../model/vacation/create.model");
+jest.mock("../../../model/log.model");
+jest.mock("../../../utils/ip");
+jest.mock("../../../utils/dates", () => {
+    const actual = jest.requireActual("../../../utils/dates");
 
     return {
         ...actual,
@@ -15,9 +15,9 @@ jest.mock("../../utils/dates", () => {
     };
 });
 
-const employeeModel = require("../../model/employee/get.model");
-const vacationGetModel = require("../../model/vacation/get.model");
-const RESPONSES = require("../../utils/responses");
+const employeeModel = require("../../../model/employee/get.model");
+const vacationGetModel = require("../../../model/vacation/get.model");
+const RESPONSES = require("../../../utils/responses");
 
 const EMPLOYEE_ID = 1;
 
