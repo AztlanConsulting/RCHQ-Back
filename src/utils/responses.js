@@ -17,18 +17,36 @@ const RESPONSES = {
     FOUND: "PROFILE_FOUND",
     NOT_FOUND: "PROFILE_NOT_FOUND",
   },
-    DOCUMENTS: {
-        NOT_FOUND: "Documento no encontrado",
-        OK: "Documento obtenido",
-        DELETED: "Documento borrado",
-        EMPTY: "No hay documentos",
-        NOT_ALLOW: "Tipo de documento invalido",
-        UPLOADED: "Se subió correctamente",
-        ALREADY_EXISTS: "El documento ya existe",
+  DOCUMENTS: {
+      NOT_FOUND: "Documento no encontrado",
+      OK: "Documento obtenido",
+      DELETED: "Documento borrado",
+      EMPTY: "No hay documentos",
+      NOT_ALLOW: "Tipo de documento invalido",
+      UPLOADED: "Se subió correctamente",
+      ALREADY_EXISTS: "El documento ya existe",
   },
   USER: {
-    NOT_FOUND: "Usuario no encontrado",
-    NOT_ACCESS: "Acceso bloqueado",
+      NOT_FOUND: "Usuario no encontrado",
+      NOT_ACCESS: "Acceso bloqueado",
+  },
+  VACATION: {
+      PAST_REQUEST_NOT_ALLOWED: "No se pueden pedir vacaciones en el pasado ni para el mismo día",
+      REMAINING_VACATIONS_FOUND: "Las vacaciones restantes fueron encontradas",
+      NULL_DATES: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
+      OUT_OF_RANGE: "No se pueden solicitar vacaciones fuera del periodo actual de trabajo",
+      WITHOUT_DATES: "Se ocupan tener registrados los días de trabajo",
+      INSUFFICIENT_DATES: "No se tienen suficientes días disponibles para solicitar las vacaciones",
+      ALREADY_REQUEST: "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
+      REQUESTED: "Se solicitaron las vacaciones de forma correcta",
+      WITHOUT_START_DATE: "El empleado no tiene una fecha de inicio asociada",
+  },
+  DATES: {
+      BAD_DATES: "No se puede tener una fecha de inicio posterior a la de finalización",
+      WRONG_FORMAT: "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
+  },
+  EVENTS: {
+      FOUND: 'EVENTS_FOUND_CORRECTLY'
   },
   EMPLOYEE: {
     BAD_REQUEST: "BAD_REQUEST",

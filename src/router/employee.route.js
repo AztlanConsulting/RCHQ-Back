@@ -2,10 +2,14 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
-const { authorize } = require("../middleware/abac");
 const { resolveEmployeeHouse } = require("../middleware/resolvers");
 const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
+const {
+    authorize,
+    isAllowed
+} = require("../middleware/abac");
+
 const {
     employeePolicy,
     viewDocuments,
@@ -18,6 +22,7 @@ const employeeAddController = require("../controller/employee/create.controller"
 const employeeUpdateController = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 
+const { getAll, getWorkDays } = require("../controller/employee/get.controller");
 router.get(
   "/update-form",
   apiLimiter,
@@ -53,6 +58,13 @@ router.get(
   requireRole("Admin", "Coordinador"),
   requirePrivileges("viewEmployees"),
   employeeGetController.getEmployeeDetail,
+);
+
+router.get("/getWorkDays/:id",
+  apiLimiter,
+  verifyToken,
+  isAllowed,
+  getWorkDays
 );
 
 router.post(

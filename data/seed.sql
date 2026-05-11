@@ -178,12 +178,124 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('auth-020', 'Cambio de contraseña exitoso', false),
 ('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
 ('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false),
+('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
 ('empl-004', 'Documento de empleado eliminado', false),
 ('empl-005', 'Información de empleado actualizada', false)
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.workday (workday_id, name)
+VALUES
+('c0000001-0000-4000-8000-000000000001', 'Lunes'),
+('c0000001-0000-4000-8000-000000000002', 'Martes'),
+('c0000001-0000-4000-8000-000000000003', 'Miércoles'),
+('c0000001-0000-4000-8000-000000000004', 'Jueves'),
+('c0000001-0000-4000-8000-000000000005', 'Viernes'),
+('c0000001-0000-4000-8000-000000000006', 'Sábado'),
+('c0000001-0000-4000-8000-000000000007', 'Domingo');
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALUES
+('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+
+INSERT INTO public.event_type (event_type_id, name)
+VALUES
+('b1000000-0000-4000-8000-000000000001', 'General')
+ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO public.global_event (
+  global_event_id,
+  event_type_id,
+  date,
+  start,
+  "end",
+  name,
+  description,
+  is_free_day
+)
+VALUES (
+  'c1000000-0000-4000-8000-000000000001',
+  'b1000000-0000-4000-8000-000000000001',
+  '2026-05-01',
+  '09:00:00',
+  '17:00:00',
+  'Aniversario',
+  'Aniversario de la red de casas hogar',
+  false
+);
+
+INSERT INTO public.house_event (
+  house_event_id,
+  event_type_id,
+  house_id,
+  date,
+  start,
+  "end",
+  name,
+  description
+)
+VALUES (
+  'c2000000-0000-4000-8000-000000000002',
+  'b1000000-0000-4000-8000-000000000001',
+  (SELECT house_id FROM public.house WHERE name = 'Desarrollo'),
+  '2026-05-03',
+  '10:00:00',
+  '12:00:00',
+  'Visita DIF',
+  'Visita por parte del DIF para ver las instalaciones'
+);
+
+INSERT INTO public.personal_event (
+  personal_event_id,
+  event_type_id,
+  start,
+  "end",
+  name,
+  description
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000003',
+  'b1000000-0000-4000-8000-000000000001',
+  '2026-05-04 15:00:00',
+  '2026-05-04 16:00:00',
+  'Visita médica',
+  'Se tiene que llevar a Juan Pérez al doctor'
+);
+
+INSERT INTO public.employee_personal_event (
+  personal_event_id,
+  employee_id
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000003',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com')
+);
+
+INSERT INTO public.vacations_request (
+  vacations_request_id,
+  employee_id,
+  start,
+  "end",
+  status,
+  feedback,
+  created_at,
+  used_days
+)
+VALUES (
+  'c4000000-0000-4000-8000-000000000004',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
+  '2026-06-10',
+  '2026-06-15',
+  0,
+  NULL,
+  NOW(),
+  4
+);
 
 -- =========================
 -- DOCUMENTOS
@@ -217,25 +329,245 @@ VALUES
 ('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación')
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.house (
+  house_id,
+  name,
+  location,
+  phone_number,
+  description,
+  image
+)
+VALUES (
+  'a0000001-0000-4000-8000-000000000001',
+  'Desarrollo',
+  'Campus Monterrey, Av. Eugenio Garza Sada 2501, Monterrey',
+  '524424792232',
+  'Casa de desarrollo y pruebas del sistema',
+  'https://placehold.co/100x100/e2e8f0/64748b?text=Dev'
+)
+ON CONFLICT (house_id) DO UPDATE SET
+  name = EXCLUDED.name,
+  location = EXCLUDED.location,
+  phone_number = EXCLUDED.phone_number,
+  description = EXCLUDED.description,
+  image = EXCLUDED.image;
+
+INSERT INTO public.house (
+  house_id,
+  name,
+  location,
+  phone_number,
+  description,
+  image
+)
+VALUES (
+  'b0000001-0000-4000-8000-000000000001',
+  'Operaciones CDMX',
+  'Insurgentes Sur 1000, Ciudad de México',
+  '525555100200',
+  'Casa de operaciones central',
+  'https://placehold.co/100x100/dbeafe/1e40af?text=OP'
+)
+ON CONFLICT (house_id) DO UPDATE SET
+  name = EXCLUDED.name,
+  location = EXCLUDED.location,
+  phone_number = EXCLUDED.phone_number,
+  description = EXCLUDED.description,
+  image = EXCLUDED.image;
+
+INSERT INTO public.fault (fault_id, date, description)
+VALUES
+  (
+    'd0000001-0000-4000-8000-000000000001',
+    CURRENT_DATE - INTERVAL '12 days',
+    'Retraso a reunión de equipo (15 min)'
+  ),
+  (
+    'd0000002-0000-4000-8000-000000000002',
+    CURRENT_DATE - INTERVAL '45 days',
+    'Falta justificada con certificado médico'
+  )
+ON CONFLICT (fault_id) DO UPDATE SET
+  date = EXCLUDED.date,
+  description = EXCLUDED.description;
+
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  end_date,
+  phone_number,
+  nss,
+  bank_account
+)
+SELECT
+  'e0000001-0000-4000-8000-000000000001',
+  'b0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
+  'María',
+  'González',
+  true,
+  'maria.operaciones@example.com',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  true,
+  false,
+  0,
+  0,
+  NULL,
+  'GAMR850101MDFNPL08',
+  NULL,
+  '1985-01-15',
+  NULL,
+  '2025-01-20',
+  NULL,
+  '+52 55 5555 1002',
+  NULL,
+  NULL
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.employee WHERE employee_id = 'e0000001-0000-4000-8000-000000000001'
+);
+
+UPDATE public.employee
+SET
+  house_id = COALESCE(
+    (SELECT house_id FROM public.house WHERE house_id = 'a0000001-0000-4000-8000-000000000001'),
+    house_id
+  ),
+  phone_number = COALESCE(phone_number, '+52 442 479 2232')
+WHERE email = 'andre@gmail.com';
+
+INSERT INTO public.employee_address (
+  employee_address_id,
+  employee_id,
+  url,
+  street,
+  municipio,
+  city,
+  postal_code,
+  date
+)
+VALUES (
+  'f0000001-0000-4000-8000-000000000001',
+  'e0000001-0000-4000-8000-000000000001',
+  'https://maps.google.com/?q=19.4300,-99.2011',
+  'Av. Insurgentes Sur 1000',
+  'Benito Juárez',
+  'Ciudad de México',
+  '03100',
+  NOW()
+)
+ON CONFLICT (employee_address_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  url = EXCLUDED.url,
+  street = EXCLUDED.street,
+  municipio = EXCLUDED.municipio,
+  city = EXCLUDED.city,
+  postal_code = EXCLUDED.postal_code,
+  date = EXCLUDED.date;
+
+INSERT INTO public.employee_address (
+  employee_address_id,
+  employee_id,
+  url,
+  street,
+  municipio,
+  city,
+  postal_code,
+  date
+)
+SELECT
+  'f0000002-0000-4000-8000-000000000002',
+  e.employee_id,
+  'https://maps.google.com/?q=25.6516,-100.2890',
+  'Av. Eugenio Garza Sada 2501',
+  'Monterrey',
+  'Monterrey',
+  '64850',
+  NOW()
+FROM public.employee e
+WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (employee_address_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  url = EXCLUDED.url,
+  street = EXCLUDED.street,
+  municipio = EXCLUDED.municipio,
+  city = EXCLUDED.city,
+  postal_code = EXCLUDED.postal_code,
+  date = EXCLUDED.date;
+
+INSERT INTO public.employee_fault (fault_id, employee_id)
+SELECT 'd0000001-0000-4000-8000-000000000001', e.employee_id
+FROM public.employee e
+WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (fault_id, employee_id) DO NOTHING;
+
+INSERT INTO public.employee_fault (fault_id, employee_id)
+SELECT 'd0000002-0000-4000-8000-000000000002', e.employee_id
+FROM public.employee e
+WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (fault_id, employee_id) DO NOTHING;
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '09:00:00', '18:00:00'
+FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '07:00:00', '16:00:00'
+FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '10:00:00', '19:00:00'
+FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.vacations_request (
+  vacations_request_id,
+  employee_id,
+  start,
+  "end",
+  status,
+  feedback,
+  created_at,
+  used_days
+)
+VALUES (
+  'c4000000-0000-4000-8000-000000000005',
+  (SELECT employee_id FROM public.employee WHERE email = 'maria.operaciones@example.com'),
+  '2026-06-10',
+  '2026-06-15',
+  0,
+  NULL,
+  NOW(),
+  4
+);
 INSERT INTO public.absence_type (absence_type_id, name)
 VALUES
 ('a0000001-0000-4000-8000-000000000001', 'Médica'),
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
 ('a0000001-0000-4000-8000-000000000003', 'Maternidad')
 ON CONFLICT DO NOTHING;
-
-INSERT INTO public.workday (workday_id, name)
-VALUES
-  ('c0000001-0000-4000-8000-000000000001', 'Lunes'),
-  ('c0000001-0000-4000-8000-000000000002', 'Martes'),
-  ('c0000001-0000-4000-8000-000000000003', 'Miércoles'),
-  ('c0000001-0000-4000-8000-000000000004', 'Jueves'),
-  ('c0000001-0000-4000-8000-000000000005', 'Viernes'),
-  ('c0000001-0000-4000-8000-000000000006', 'Sábado'),
-  ('c0000001-0000-4000-8000-000000000007', 'Domingo')
-ON CONFLICT (workday_id) DO UPDATE SET
-  name = EXCLUDED.name;
-
 
 INSERT INTO PUBLIC.frecuency_of_payment (
   frecuency_of_payment_id,
