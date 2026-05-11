@@ -42,7 +42,6 @@ beforeAll(async () => {
   await prisma.absence_type.deleteMany({ where: { absence_type_id: ABS_TYPE_ID } });
   await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
 
-  // catálogos
   await prisma.house.create({
     data: {
       house_id: HOUSE_ID, name: "Casa Test Ausencias",
@@ -91,7 +90,6 @@ beforeAll(async () => {
     ],
   });
 
-  // 10 ausencias variadas para paginación y filtros
   await prisma.absence.createMany({
     data: ABS_IDS.map((id, i) => ({
       absence_id:      id,
@@ -101,7 +99,7 @@ beforeAll(async () => {
       end:             new Date(`2026-0${(i % 9) + 1}-05`),
       description:     `Ausencia ${i + 1}`,
       url:             i % 2 === 0 ? `uploads/evidencia_${i}.pdf` : null,
-      is_deleted:      i === 9, // la última está "eliminada"
+      is_deleted:      i === 9,
     })),
   });
 
@@ -445,7 +443,6 @@ describe("GET /absence/all — seguridad", () => {
   it("ignora evidence con valor no permitido y devuelve resultados sin filtro de evidencia", async () => {
     const res = await get("/absence/all?page=1&limit=6&evidence=hackeado");
     expect(res.statusCode).toBe(200);
-    // no aplica filtro de evidencia inválido — devuelve resultados normales
   });
 
   it("no acepta token con algoritmo none (alg:none attack)", async () => {
