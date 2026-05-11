@@ -30,8 +30,9 @@ const RESPONSES = {
       NOT_FOUND: "Usuario no encontrado",
       NOT_ACCESS: "Acceso bloqueado",
   },
-  VACATION: {
+    VACATION: {
       PAST_REQUEST_NOT_ALLOWED: "No se pueden pedir vacaciones en el pasado ni para el mismo día",
+      PAST_REGISTER_NOT_ALLOWED: "No se pueden registrar vacaciones en fechas pasadas",
       REMAINING_VACATIONS_FOUND: "Las vacaciones restantes fueron encontradas",
       NULL_DATES: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
       OUT_OF_RANGE: "No se pueden solicitar vacaciones fuera del periodo actual de trabajo",
@@ -39,7 +40,10 @@ const RESPONSES = {
       INSUFFICIENT_DATES: "No se tienen suficientes días disponibles para solicitar las vacaciones",
       ALREADY_REQUEST: "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
       REQUESTED: "Se solicitaron las vacaciones de forma correcta",
+      REGISTERED: "Vacaciones registradas correctamente",
       WITHOUT_START_DATE: "El empleado no tiene una fecha de inicio asociada",
+      INSUFFICIENT_PERMISSIONS: "INSUFFICIENT_PERMISSIONS",
+      EMPLOYEE_OUT_OF_SCOPE: "EMPLOYEE_OUT_OF_SCOPE",
   },
   DATES: {
       BAD_DATES: "No se puede tener una fecha de inicio posterior a la de finalización",
@@ -51,6 +55,7 @@ const RESPONSES = {
   EMPLOYEE: {
     BAD_REQUEST: "BAD_REQUEST",
     NOT_FOUND: "EMPLOYEE_NOT_FOUND",
+    NOT_PROVIDED: "EMPLOYEE_NOT_PROVIDED",
     FOUND: "EMPLOYEE_DATA_FOUND",
     UPDATED: "EMPLOYEE_UPDATED",
     VALIDATION_ERROR: "EMPLOYEE_VALIDATION_ERROR",
