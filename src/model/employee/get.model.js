@@ -268,3 +268,15 @@ exports.getAllHouses = async () => {
         location: h.location,
     }));
 };
+
+exports.findByIdWithRoleAndHouse = async (employeeId) => {
+    return await prisma.employee.findUnique({
+        where: {
+            employee_id: employeeId,
+        },
+        include: {
+            role: true,
+            house: true,
+        },
+    });
+};

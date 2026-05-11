@@ -131,6 +131,11 @@ const SEED_ACTIONS = [
         description: "Solicitud de vacaciones creada",
         important: false,
     },
+    {
+        action_id: "vaca-002",
+        description: "Registro de vacaciones de empleado exitoso",
+        important: false,
+    },
 ];
 
 // ─── Datos de prueba ─────────────────────────────────────────────────────────
