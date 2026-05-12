@@ -12,4 +12,6 @@ const {
 
 router.get("/range/:id/:startDate/:endDate", apiLimiter, verifyToken, isAllowed, getEventsInRange);
 
+router.get("/get", apiLimiter, verifyToken, getAllEventTypes);
+
 module.exports = router;
