@@ -1,7 +1,7 @@
 const { getAllEventTypes, getEventsInRange } = require("../../service/event/get.service")
 const RESPONSES = require("../../utils/responses");
 
-exports.getEventTypes = async (req, res) => {
+exports.getAllEventTypes = async (req, res) => {
     try {
         const result = await getAllEventTypes();
 
