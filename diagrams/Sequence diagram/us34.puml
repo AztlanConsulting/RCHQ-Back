@@ -29,11 +29,17 @@ Router -> Middleware : validate(approveVacationRequestSchema, "all")
 
 alt Middleware rechaza request
 Middleware --> Frontend : 400/401/403
-else Request válida
+else Request HTTP válida
 Router -> Controller : approveVacationRequest(req, res)
 
 Controller -> Service : approveVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
 
+Service -> Service : Validar contrato interno con schema de caso de uso
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Error de validación
+else Entrada interna válida
 Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
 VacationGetModel -> DB : SELECT vacations_request
 DB --> VacationGetModel : Solicitud
@@ -92,6 +98,7 @@ DB --> LogModel : Log creado
 Service --> Controller : VACATION_APPROVED
 Controller --> Frontend : 200 Solicitud aprobada correctamente
 Frontend --> Usuario : Mostrar confirmación
+end
 end
 end
 end

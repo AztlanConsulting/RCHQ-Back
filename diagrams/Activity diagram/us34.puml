@@ -33,9 +33,17 @@ else (No)
 stop
 endif
 
-:Validar formato de vacationRequestId;
+:Validar request HTTP con schema;
 
-if (¿ID válido?) then (Sí)
+if (¿Request válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Validar contrato de entrada del caso de uso;
+
+if (¿Entrada válida?) then (Sí)
 else (No)
 :Mostrar error de validación;
 stop
