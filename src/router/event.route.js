@@ -7,9 +7,11 @@ const {
 } = require("../middleware/abac");
 
 const {
-    getEventsInRange
+    getAllEventTypes, getEventsInRange
 } = require("../controller/event/get.controller")
 
 router.get("/range/:id/:startDate/:endDate", apiLimiter, verifyToken, isAllowed, getEventsInRange);
+
+router.get("/getAllTypes", apiLimiter, verifyToken, getAllEventTypes);
 
 module.exports = router;

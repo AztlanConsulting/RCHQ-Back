@@ -6,11 +6,29 @@ const {
     findById 
 } = require("../../model/employee/get.model");
 const {
+    getAllEventTypes,
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
 } = require("../../model/event/get.model");
 const RESPONSES = require("../../utils/responses");
+
+exports.getAllEventTypes = async () => {
+    const result = await getAllEventTypes();
+
+    if (!result || result.length <= 0) {
+        return {
+            code: RESPONSES.EVENTS.NOT_FOUND,
+        }
+    }
+
+    return {
+        code: RESPONSES.EVENTS.FOUND,
+        data: {
+            eventTypes: result,
+        }
+    };
+};
 
 exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const validation = dateRangeSchema.safeParse({

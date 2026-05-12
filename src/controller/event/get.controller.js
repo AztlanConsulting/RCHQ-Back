@@ -1,5 +1,33 @@
-const { getEventsInRange } = require("../../service/event/get.service")
+const { getAllEventTypes, getEventsInRange } = require("../../service/event/get.service")
 const RESPONSES = require("../../utils/responses");
+
+exports.getAllEventTypes = async (req, res) => {
+    try {
+        const result = await getAllEventTypes();
+
+        if (result.code == RESPONSES.EVENTS.NOT_FOUND) {
+            return res.status(204).json({
+                success: false,
+                message: "Error al buscar los tipos de eventos o no hubo",
+            });
+        }
+
+        if (result.code == RESPONSES.EVENTS.FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    eventTypes: result.data.eventTypes,
+                }
+            });
+        }
+
+    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        })
+    }
+}
 
 exports.getEventsInRange = async (req, res) => {
     try {

@@ -50,6 +50,7 @@ const RESPONSES = {
       WRONG_FORMAT: "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
   },
   EVENTS: {
+      NOT_FOUND: 'No hubo eventos encontrados',
       FOUND: 'EVENTS_FOUND_CORRECTLY'
   },
   EMPLOYEE: {
