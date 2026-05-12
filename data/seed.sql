@@ -206,7 +206,10 @@ INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALU
 
 INSERT INTO public.event_type (event_type_id, name)
 VALUES
-('b1000000-0000-4000-8000-000000000001', 'General')
+('b1000000-0000-4000-8000-000000000001', 'General'),
+('b1000000-0000-4000-8000-000000000002', 'Visita'),
+('b1000000-0000-4000-8000-000000000003', 'Tarea'),
+('b1000000-0000-4000-8000-000000000001', 'Vacaciones')
 ON CONFLICT (name) DO NOTHING;
 
 INSERT INTO public.global_event (
