@@ -22,7 +22,7 @@ exports.getAllEventTypes = async (req, res) => {
         }
 
     } catch {
-        return res.status().json({
+        return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
         })
