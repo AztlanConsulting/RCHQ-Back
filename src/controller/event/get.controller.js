@@ -6,14 +6,14 @@ exports.getAllEventTypes = async (req, res) => {
         const result = await getAllEventTypes();
 
         if (result.code == RESPONSES.EVENTS.NOT_FOUND) {
-            return res.status().json({
+            return res.status(204).json({
                 success: false,
                 message: "Error al buscar los tipos de eventos o no hubo",
             });
         }
 
         if (result.code == RESPONSES.EVENTS.FOUND) {
-            return res.status().json({
+            return res.status(200).json({
                 success: true,
                 data: {
                     eventTypes: result.data.eventTypes,
