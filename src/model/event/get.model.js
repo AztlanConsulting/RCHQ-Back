@@ -1,5 +1,9 @@
 const prisma = require("../../prisma");
 
+exports.getAllEventTypes = async () => {
+    return await prisma.event_type.findMany();
+}
+
 exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
     return await prisma.house_event.findMany({
         where: {
