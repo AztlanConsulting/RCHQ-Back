@@ -22,10 +22,16 @@ describe("vacation.create.model — registerVacation", () => {
         jest.clearAllMocks();
 
         tx = {
-            $executeRaw: jest.fn(),
+            $queryRaw: jest.fn(),
             vacations_request: {
+                findUnique: jest.fn(),
                 findFirst: jest.fn(),
+                findMany: jest.fn(),
+                update: jest.fn(),
                 create: jest.fn(),
+            },
+            employee: {
+                findUnique: jest.fn(),
             },
         };
 
@@ -57,7 +63,7 @@ describe("vacation.create.model — registerVacation", () => {
         );
 
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-        expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+        expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
 
         expect(tx.vacations_request.findFirst).toHaveBeenCalledWith({
             where: {
@@ -107,7 +113,7 @@ describe("vacation.create.model — registerVacation", () => {
         );
 
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-        expect(tx.$executeRaw).toHaveBeenCalledTimes(1);
+        expect(tx.$queryRaw).toHaveBeenCalledTimes(1);
         expect(tx.vacations_request.findFirst).toHaveBeenCalledTimes(1);
         expect(tx.vacations_request.create).not.toHaveBeenCalled();
         expect(result).toBeNull();

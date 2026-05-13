@@ -48,7 +48,7 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
         jest.clearAllMocks();
 
         transaction = {
-            $executeRaw: jest.fn(),
+            $queryRaw: jest.fn(),
             vacations_request: {
                 findUnique: jest.fn(),
                 findFirst: jest.fn(),
@@ -99,7 +99,7 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
         const result = await callApprove();
 
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-        expect(transaction.$executeRaw).toHaveBeenCalledTimes(1);
+        expect(transaction.$queryRaw).toHaveBeenCalledTimes(1);
 
         expect(transaction.vacations_request.findUnique).toHaveBeenCalledWith({
             where: {
