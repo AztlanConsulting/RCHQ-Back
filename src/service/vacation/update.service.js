@@ -10,6 +10,7 @@ const {
 } = require("../../model/event/get.model");
 const {
     approveVacationRequestAtomically,
+    rejectVacationRequestAtomically,
 } = require("../../model/vacation/update.model");
 const {
     calculateUsedDays,
@@ -20,6 +21,7 @@ const RESPONSES = require("../../utils/responses");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
 const {
     approveVacationRequestInputSchema,
+    rejectVacationRequestInputSchema,
 } = require("../../schemas/vacation/update.schemas");
 const { getVacationYearInfoForApproval } = require("./get.service");
 
@@ -173,6 +175,111 @@ exports.approveVacationRequest = async ({
         code: RESPONSES.VACATION.APPROVED,
         data: {
             vacationRequest: approvalResult.data.vacationRequest,
+        },
+    };
+};
+
+exports.rejectVacationRequest = async ({
+    actorEmployeeId,
+    vacationRequestId,
+    feedback,
+    ipAddress,
+}) => {
+    const validation = rejectVacationRequestInputSchema.safeParse({
+        actorEmployeeId,
+        vacationRequestId,
+        feedback,
+        ipAddress,
+    });
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.VACATION.VALIDATION_ERROR,
+        };
+    }
+
+    const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
+
+    if (!actorEmployee) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorRoleName = actorEmployee.role?.name;
+
+    if (actorRoleName !== "Coordinador") {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    const vacationRequest = await getVacationRequestById(vacationRequestId);
+
+    if (!vacationRequest) {
+        return {
+            code: RESPONSES.VACATION.REQUEST_NOT_FOUND,
+        };
+    }
+
+    if (vacationRequest.status !== VACATION_STATUS.PENDING) {
+        return {
+            code: RESPONSES.VACATION.REQUEST_ALREADY_REVIEWED,
+        };
+    }
+
+    const targetEmployeeId = vacationRequest.employee_id;
+
+    const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
+
+    if (!targetEmployee) {
+        return {
+            code: RESPONSES.EMPLOYEE.NOT_FOUND,
+        };
+    }
+
+    const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+
+    if (targetRoleName === "admin") {
+        return {
+            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        };
+    }
+
+    if (actorEmployee.house_id !== targetEmployee.house_id) {
+        return {
+            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        };
+    }
+
+    const rejectionResult = await rejectVacationRequestAtomically({
+        vacationRequestId,
+        employeeId: targetEmployeeId,
+        actorHouseId: actorEmployee.house_id,
+        feedback: validation.data.feedback,
+    });
+
+    if (!rejectionResult.success) {
+        return {
+            code: rejectionResult.code,
+        };
+    }
+
+    try {
+        await createLog(
+            actorEmployeeId,
+            LOG_ACTIONS.VACATION_REJECTED_SUCCESS,
+            ipAddress,
+            targetEmployeeId
+        );
+    } catch (error) {
+        console.error("Error creando log de rechazo de vacaciones:", error);
+    }
+
+    return {
+        code: RESPONSES.VACATION.REJECTED,
+        data: {
+            vacationRequest: rejectionResult.data.vacationRequest,
         },
     };
 };
