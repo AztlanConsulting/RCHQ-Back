@@ -493,36 +493,6 @@ afterAll(async () => {
 });
 
 describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
-    test("admin aprueba una solicitud pendiente correctamente", async () => {
-        const vacation = await createPendingVacation();
-
-        const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
-            .send({});
-
-        const updatedVacation = await prisma.vacations_request.findUnique({
-            where: {
-                vacations_request_id: vacation.vacations_request_id,
-            },
-        });
-
-        const log = await prisma.logs.findFirst({
-            where: {
-                employee_id: ADMIN_ID,
-                action_id: "vaca-003",
-                affected: TARGET_EMPLOYEE_ID,
-            },
-        });
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe("Solicitud aprobada correctamente");
-
-        expect(updatedVacation.status).toBe(1);
-        expect(updatedVacation.used_days).toBe(5);
-        expect(log).not.toBeNull();
-    });
 
     test("coordinador aprueba solicitud de empleado de su misma casa", async () => {
         const vacation = await createPendingVacation({
@@ -630,7 +600,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
     test("retorna 400 si vacationRequestId no es UUID válido", async () => {
         const res = await request(app)
             .patch("/vacation/requests/not-a-valid-uuid/approve")
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         expect(res.statusCode).toBe(400);
@@ -640,7 +610,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
     test("retorna 404 si la solicitud no existe", async () => {
         const res = await request(app)
             .patch(`/vacation/requests/${randomUUID()}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         expect(res.statusCode).toBe(404);
@@ -661,7 +631,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         expect(res.statusCode).toBe(406);
@@ -682,7 +652,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         expect(res.statusCode).toBe(406);
@@ -709,7 +679,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${pendingVacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         const updatedVacation = await prisma.vacations_request.findUnique({
@@ -744,7 +714,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${pendingVacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         const updatedVacation = await prisma.vacations_request.findUnique({
@@ -765,7 +735,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         expect(res.statusCode).toBe(406);
@@ -781,7 +751,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         const updatedVacation = await prisma.vacations_request.findUnique({
@@ -804,7 +774,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const res = await request(app)
             .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-            .set("Authorization", `Bearer ${getAdminToken()}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
         expect(res.statusCode).toBe(406);
@@ -817,11 +787,11 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         const responses = await Promise.allSettled([
             request(app)
                 .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-                .set("Authorization", `Bearer ${getAdminToken()}`)
+                .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
             request(app)
                 .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
-                .set("Authorization", `Bearer ${getAdminToken()}`)
+                .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
         ]);
 
@@ -866,11 +836,11 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         const responses = await Promise.allSettled([
             request(app)
                 .patch(`/vacation/requests/${vacationA.vacations_request_id}/approve`)
-                .set("Authorization", `Bearer ${getAdminToken()}`)
+                .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
             request(app)
                 .patch(`/vacation/requests/${vacationB.vacations_request_id}/approve`)
-                .set("Authorization", `Bearer ${getAdminToken()}`)
+                .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
         ]);
 

@@ -84,7 +84,6 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
         return await approveVacationRequestAtomically({
             vacationRequestId: options.vacationRequestId ?? vacationRequestId,
             employeeId: options.employeeId ?? employeeId,
-            actorRoleName: options.actorRoleName ?? "Admin",
             actorHouseId: options.actorHouseId ?? actorHouseId,
             usedDays: options.usedDays ?? 5,
             anniversaryStartDate:
@@ -217,9 +216,7 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
             },
         });
 
-        const result = await callApprove({
-            actorRoleName: "Coordinador",
-        });
+        const result = await callApprove();
 
         expect(result).toEqual({
             success: false,
@@ -235,9 +232,7 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
             house_id: "house-2",
         });
 
-        const result = await callApprove({
-            actorRoleName: "Coordinador",
-        });
+        const result = await callApprove();
 
         expect(result).toEqual({
             success: false,

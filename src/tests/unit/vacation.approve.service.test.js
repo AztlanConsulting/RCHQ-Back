@@ -124,7 +124,7 @@ describe("US34 - approveVacationRequest service", () => {
     ];
 
     function mockHappyPath({
-        actor = adminActor,
+        actor = coordinatorActor,
         target = targetEmployee,
         request = vacationRequest,
         workDays = mondayToFridayWorkDays,
@@ -166,7 +166,7 @@ describe("US34 - approveVacationRequest service", () => {
 
     async function callApprove(options = {}) {
         return await approveVacationRequest({
-            actorEmployeeId: options.actorEmployeeId ?? actorAdminId,
+            actorEmployeeId: options.actorEmployeeId ?? actorCoordinatorId,
             vacationRequestId: options.vacationRequestId ?? vacationRequestId,
             ipAddress,
         });
@@ -178,20 +178,19 @@ describe("US34 - approveVacationRequest service", () => {
     });
 
     describe("happy paths", () => {
-        test("admin aprueba una solicitud pendiente correctamente", async () => {
+        test("coordinador aprueba una solicitud pendiente correctamente", async () => {
             const result = await callApprove();
 
             expect(result.code).toBe(RESPONSES.VACATION.APPROVED);
             expect(result.data.vacationRequest).toEqual(approvedVacationRequest);
 
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(actorAdminId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(actorCoordinatorId);
             expect(getVacationRequestById).toHaveBeenCalledWith(vacationRequestId);
             expect(getWorkDays).toHaveBeenCalledWith(targetEmployeeId);
 
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
-                actorRoleName: "Admin",
                 actorHouseId: "house-1",
                 usedDays: 5,
                 anniversaryStartDate,
@@ -200,7 +199,7 @@ describe("US34 - approveVacationRequest service", () => {
             });
 
             expect(createLog).toHaveBeenCalledWith(
-                actorAdminId,
+                actorCoordinatorId,
                 LOG_ACTIONS.VACATION_APPROVED_SUCCESS,
                 ipAddress,
                 targetEmployeeId
@@ -223,7 +222,6 @@ describe("US34 - approveVacationRequest service", () => {
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
-                actorRoleName: "Coordinador",
                 actorHouseId: "house-1",
                 usedDays: 5,
                 anniversaryStartDate,
@@ -234,6 +232,23 @@ describe("US34 - approveVacationRequest service", () => {
     });
 
     describe("validaciones de input y permisos", () => {
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor es Admin porque US34 solo permite Coordinador", async () => {
+            findByIdWithRoleAndHouse.mockReset();
+            findByIdWithRoleAndHouse.mockResolvedValueOnce(adminActor);
+
+            const result = await callApprove({
+                actorEmployeeId: actorAdminId,
+            });
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+            });
+
+            expect(getVacationRequestById).not.toHaveBeenCalled();
+            expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
         test("retorna VALIDATION_ERROR si actorEmployeeId no es UUID válido", async () => {
             const result = await callApprove({
                 actorEmployeeId: "invalid-id",
@@ -274,7 +289,7 @@ describe("US34 - approveVacationRequest service", () => {
             expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
         });
 
-        test("retorna INSUFFICIENT_PERMISSIONS si el actor no es Admin ni Coordinador", async () => {
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor no es Coordinador", async () => {
             findByIdWithRoleAndHouse.mockReset();
             findByIdWithRoleAndHouse.mockResolvedValueOnce({
                 employee_id: actorAdminId,
@@ -386,7 +401,7 @@ describe("US34 - approveVacationRequest service", () => {
         test("retorna EMPLOYEE.NOT_FOUND si el empleado dueño de la solicitud no existe", async () => {
             findByIdWithRoleAndHouse.mockReset();
             findByIdWithRoleAndHouse
-                .mockResolvedValueOnce(adminActor)
+                .mockResolvedValueOnce(coordinatorActor)
                 .mockResolvedValueOnce(null);
 
             const result = await callApprove();
@@ -395,7 +410,9 @@ describe("US34 - approveVacationRequest service", () => {
                 code: RESPONSES.EMPLOYEE.NOT_FOUND,
             });
 
+            expect(getVacationRequestById).toHaveBeenCalledWith(vacationRequestId);
             expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
         });
     });
 
