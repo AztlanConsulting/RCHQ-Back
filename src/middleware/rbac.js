@@ -81,7 +81,6 @@ const requireRole = (...allowedRoles) => {
       }
 
       if (!allowedRoles.includes(req.user.role)) {
-        console.log("all didn't work")
         return res.status(403).json({ message: "Role not allowed" });
       }
       next();
