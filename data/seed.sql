@@ -278,7 +278,8 @@ INSERT INTO public.employee_personal_event (
 VALUES (
   'c3000000-0000-4000-8000-000000000003',
   (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com')
-);
+)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO public.vacations_request (
   vacations_request_id,
