@@ -80,11 +80,8 @@ const requireRole = (...allowedRoles) => {
         return res.status(401).json({ message: "User not authenticated" });
       }
 
-      if (allowedRoles === "all" && !allRoles.includes(req.user.role)) {
-        return res.status(403).json({ message: "Role not allowed" });
-      }
-
       if (!allowedRoles.includes(req.user.role)) {
+        console.log("all didn't work")
         return res.status(403).json({ message: "Role not allowed" });
       }
       next();
@@ -95,6 +92,7 @@ const requireRole = (...allowedRoles) => {
 };
 
 module.exports = {
+    allRoles,
     requirePrivileges,
     requireAnyPrivilege,
     requireRole,
