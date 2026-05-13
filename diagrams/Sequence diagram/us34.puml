@@ -1,0 +1,107 @@
+@startuml
+title US34 - Coordinador/Administrador aprueba solicitud de vacaciones
+
+actor "Coordinador/Administrador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "auth/rbac/validate middleware" as Middleware
+control "update.controller.js" as Controller
+control "update.service.js" as Service
+database "vacation/get.model.js" as VacationGetModel
+database "employee/get.model.js" as EmployeeGetModel
+database "event/get.model.js" as EventGetModel
+database "vacation/update.model.js" as VacationUpdateModel
+database "log.model.js" as LogModel
+database "Base de datos" as DB
+
+autonumber
+
+Usuario -> Frontend : Selecciona solicitud pendiente
+Usuario -> Frontend : Confirma aprobación
+
+Frontend -> Router : PATCH /vacation/requests/:vacationRequestId/approve\nAuthorization: Bearer token
+
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Admin, Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(approveVacationRequestSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : approveVacationRequest(req, res)
+
+Controller -> Service : approveVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
+
+Service -> Service : Validar contrato interno con schema de caso de uso
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Error de validación
+else Entrada interna válida
+Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
+VacationGetModel -> DB : SELECT vacations_request
+DB --> VacationGetModel : Solicitud
+VacationGetModel --> Service : Solicitud
+
+alt Solicitud no existe
+Service --> Controller : VACATION_REQUEST_NOT_FOUND
+Controller --> Frontend : 404 Solicitud no encontrada
+else Solicitud no pendiente
+Service --> Controller : VACATION_REQUEST_ALREADY_REVIEWED
+Controller --> Frontend : 406 Solicitud ya revisada
+else Solicitud pendiente
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Empleado
+EmployeeGetModel --> Service : Empleado
+
+alt Empleado no existe
+Service --> Controller : EMPLOYEE_NOT_FOUND
+Controller --> Frontend : 404 Empleado no encontrado
+else Coordinador fuera de alcance
+Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 403 No puede acceder a este recurso
+else Actor autorizado
+Service -> EmployeeGetModel : getWorkDays(targetEmployeeId)
+EmployeeGetModel -> DB : SELECT employee_workday
+DB --> EmployeeGetModel : Días laborales
+
+Service -> EventGetModel : getGlobalEventsInRange(start, end)
+EventGetModel -> DB : SELECT global_event
+DB --> EventGetModel : Eventos globales
+
+Service -> Service : Recalcular usedDays
+Service -> Service : Validar año laboral y días disponibles
+
+Service -> VacationUpdateModel : approveVacationRequestAtomically({\nvacationRequestId,\ntargetEmployeeId,\nstartDate,\nendDate,\nusedDays\n})
+
+VacationUpdateModel -> DB : BEGIN TRANSACTION
+VacationUpdateModel -> DB : pg_advisory_xact_lock(employeeId)
+VacationUpdateModel -> DB : Releer solicitud
+VacationUpdateModel -> DB : Validar que sigue pendiente
+VacationUpdateModel -> DB : Buscar vacaciones aprobadas traslapadas
+VacationUpdateModel -> DB : UPDATE status = APPROVED, used_days = usedDays
+DB --> VacationUpdateModel : Solicitud aprobada
+VacationUpdateModel -> DB : COMMIT
+VacationUpdateModel --> Service : Solicitud aprobada
+
+alt Transacción detecta solicitud ya revisada o traslape
+Service --> Controller : ALREADY_REVIEWED / OVERLAP
+Controller --> Frontend : 406 Error de aprobación
+else Aprobación exitosa
+Service -> LogModel : createLog(actorEmployeeId,\nVACATION_APPROVED_SUCCESS,\nipAddress,\ntargetEmployeeId)
+LogModel -> DB : INSERT logs
+DB --> LogModel : Log creado
+
+Service --> Controller : VACATION_APPROVED
+Controller --> Frontend : 200 Solicitud aprobada correctamente
+Frontend --> Usuario : Mostrar confirmación
+end
+end
+end
+end
+end
+
+@enduml

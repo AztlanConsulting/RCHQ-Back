@@ -30,8 +30,11 @@ exports.requestVacation = async (vacationId, employeeId, startDate, endDate, use
 
 exports.registerVacation = async (vacationId, employeeId, startDate, endDate, usedDays) => {
     return await prisma.$transaction(async (tx) => {
-        await tx.$executeRaw`
-            SELECT pg_advisory_xact_lock(hashtext(${employeeId}), 0)
+        await tx.$queryRaw`
+            SELECT employee_id
+            FROM employee
+            WHERE employee_id = ${employeeId}::uuid
+            FOR UPDATE
         `;
 
         const overlappingVacation = await tx.vacations_request.findFirst({

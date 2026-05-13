@@ -51,3 +51,11 @@ exports.getActiveVacationsInRange = async (employeeId, startDate, endDate) => {
         },
     });
 };
+
+exports.getVacationRequestById = async (vacationRequestId) => {
+    return await prisma.vacations_request.findUnique({
+        where: {
+            vacations_request_id: vacationRequestId,
+        },
+    });
+};
