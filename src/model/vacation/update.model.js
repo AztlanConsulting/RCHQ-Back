@@ -8,7 +8,6 @@ const {
 exports.approveVacationRequestAtomically = async ({
     vacationRequestId,
     employeeId,
-    actorRoleName,
     actorHouseId,
     usedDays,
     anniversaryStartDate,
@@ -59,18 +58,16 @@ exports.approveVacationRequestAtomically = async ({
             };
         }
 
-        if (actorRoleName === "Coordinador") {
-            const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
 
-            if (
-                targetRoleName === "admin" ||
-                targetEmployee.house_id !== actorHouseId
-            ) {
-                return {
-                    success: false,
-                    code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
-                };
-            }
+        if (
+            targetRoleName === "admin" ||
+            targetEmployee.house_id !== actorHouseId
+        ) {
+            return {
+                success: false,
+                code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+            };
         }
 
         if (vacationRequest.status !== VACATION_STATUS.PENDING) {

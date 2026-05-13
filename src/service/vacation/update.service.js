@@ -50,7 +50,7 @@ exports.approveVacationRequest = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== "Admin" && actorRoleName !== "Coordinador") {
+    if (actorRoleName !== "Coordinador") {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -82,18 +82,16 @@ exports.approveVacationRequest = async ({
 
     const targetRoleName = targetEmployee.role?.name?.toLowerCase();
 
-    if (actorRoleName === "Coordinador") {
-        if (targetRoleName === "admin") {
-            return {
-                code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
-            };
-        }
+    if (targetRoleName === "admin") {
+        return {
+            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        };
+    }
 
-        if (actorEmployee.house_id !== targetEmployee.house_id) {
-            return {
-                code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
-            };
-        }
+    if (actorEmployee.house_id !== targetEmployee.house_id) {
+        return {
+            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        };
     }
 
     const vacationYearResult =
@@ -147,7 +145,6 @@ exports.approveVacationRequest = async ({
     const approvalResult = await approveVacationRequestAtomically({
         vacationRequestId,
         employeeId: targetEmployeeId,
-        actorRoleName,
         actorHouseId: actorEmployee.house_id,
         usedDays,
         anniversaryStartDate,
