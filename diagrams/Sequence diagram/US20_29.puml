@@ -165,6 +165,9 @@ PostgreSQL -->> absence.model: result
 deactivate PostgreSQL
 absence.model -->> event.service: absences
 deactivate absence.model
+
+event.service ->> event.service: foreach((absence) => calculateWorkDays(events))
+
 event.service -> event.service: Parsear y agregar al arreglo de eventos
 
 event.service -->> event.controller : events
