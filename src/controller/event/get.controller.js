@@ -36,7 +36,6 @@ exports.getEventsInRange = async (req, res) => {
         const endDate = req.params.endDate;
 
         const result = await getEventsInRange(employeeId, startDate, endDate);
-        console.log("events in range: ", result);
 
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
             return res.status(400).json({
