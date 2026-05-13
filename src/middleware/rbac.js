@@ -1,3 +1,17 @@
+const allRoles = [
+    "Coordinador", "Admin", "Mantenimiento", 
+    "Lavandería", "Responsable del cuidado de NNA", 
+    "Psicóloga", "Psicólogo", "Trabajador Social",
+    "Coordinador Operativo", "Coordinador Administrativo",
+    "Coordinador de Programa", "Dirección Operativa",
+    "Dirección Administrativa", "Dirección de Programa",
+    "Procuración de Fondos", "Enfermera", "Terapeuta",
+    "Asistente de Dirección", "Asistente de Finanzas",
+    "Auxiliar de Limpieza", "Auxiliar de Lavandería",
+    "Chofer", "Cocinera",
+]
+
+
 const requirePrivileges = (...requiredPrivileges) => {
     return (req, res, next) => {
         try {
@@ -64,6 +78,10 @@ const requireRole = (...allowedRoles) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      if (allowedRoles === "all" && !allRoles.includes(req.user.role)) {
+        return res.status(403).json({ message: "Role not allowed" });
       }
 
       if (!allowedRoles.includes(req.user.role)) {

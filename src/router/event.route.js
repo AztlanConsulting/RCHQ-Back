@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { apiLimiter } = require("../utils/rateLimit");
+const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const {
     isAllowed
 } = require("../middleware/abac");
@@ -10,7 +11,15 @@ const {
     getAllEventTypes, getEventsInRange
 } = require("../controller/event/get.controller")
 
-router.get("/range/:id/:startDate/:endDate", apiLimiter, verifyToken, isAllowed, getEventsInRange);
+router.get(
+    "/range/:id/:startDate/:endDate", 
+    apiLimiter, 
+    verifyToken,
+    requireRole("all"),
+    requirePrivileges("viewEvents"),
+    isAllowed,
+    getEventsInRange
+);
 
 router.get("/getAllTypes", apiLimiter, verifyToken, getAllEventTypes);
 
