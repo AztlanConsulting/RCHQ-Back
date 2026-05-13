@@ -34,6 +34,7 @@ exports.getHouseEmployeesByEmployeeId = async (employeeId) => {
         select: {
             employee_id: true,
             name: true,
+            surname: true,
             curp: true,
             is_active: true,
         },

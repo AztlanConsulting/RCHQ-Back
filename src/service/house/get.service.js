@@ -45,7 +45,7 @@ exports.getHouseEmployeesForEmployee = async (employeeId) => {
         data: {
             employees: employees.map((employee) => ({
                 employeeId: employee.employee_id,
-                name: employee.name,
+                name: `${employee.name} ${employee.surname}`.trim(),
                 curp: employee.curp,
                 isActive: employee.is_active,
             })),

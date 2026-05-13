@@ -38,13 +38,15 @@ describe("house.get.service — getHouseEmployeesForEmployee", () => {
         getHouseEmployeesByEmployeeId.mockResolvedValue([
             {
                 employee_id: "emp-1",
-                name: "Luis Martínez",
+                name: "Luis",
+                surname: "Martínez",
                 curp: "MALR900205HDFRRS09",
                 is_active: true,
             },
             {
                 employee_id: "emp-2",
-                name: "María González",
+                name: "María",
+                surname: "González",
                 curp: "GOMM900205MDFRRA01",
                 is_active: false,
             },
