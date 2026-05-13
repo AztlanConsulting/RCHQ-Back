@@ -16,9 +16,12 @@ exports.approveVacationRequestAtomically = async ({
     maxDays,
 }) => {
     return await prisma.$transaction(async (transaction) => {
-        await transaction.$executeRaw`
-            SELECT pg_advisory_xact_lock(hashtext(${employeeId}), 0)
-        `;
+        await transaction.$queryRaw`
+        SELECT employee_id
+        FROM employee
+        WHERE employee_id = ${employeeId}::uuid
+        FOR UPDATE
+    `;
 
         const vacationRequest = await transaction.vacations_request.findUnique({
             where: {
