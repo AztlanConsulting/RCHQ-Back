@@ -29,6 +29,7 @@ const LOG_ACTIONS = {
     VACATION_REGISTERED_SUCCESS: "vaca-002",
     VACATION_APPROVED_SUCCESS: "vaca-003",
     EMPLOYEE_UPDATED: "empl-005",
+    BLACKLIST_ADDED: "blck-001",
 };
 
 module.exports = { LOG_ACTIONS };
