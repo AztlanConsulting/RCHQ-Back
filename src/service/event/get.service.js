@@ -69,50 +69,74 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             startDate,
             endDate,
         );
+        console.log("house events: ", houseEvents);
         houseEvents.forEach((event) => {
             events.push({
                 start: combineDateAndTime(event.date, event.start),
                 end: combineDateAndTime(event.date, event.end),
+                date: event.date,
                 name: event.name,
                 type: event.event_type.name,
+                subtitle: event.subtitle || "",
+                focus: "eventos",
+                scope: "house",
+                type: event.event_type.name,
+                description: event.description,
                 color: "#09dbe6",
                 link: "",
                 lastsAllDay: false,
             });
         });
     }
+    // console.log("events after house: ", events);
 
     const personalEvents = await getPersonalEventsInRange(
         employeeId,
         startDate,
         endDate,
     );
+    // console.log("personal events: ", personalEvents);
     personalEvents.forEach((event) => {
         events.push({
             start: event.personal_event.start,
             end: event.personal_event.end,
+            date: "",
             name: event.personal_event.name,
             type: event.personal_event.event_type.name,
+            subtitle: event.subtitle || "",
+            focus: "eventos",
+            scope: "personal",
+            // type: event.event_type.name,
+            description: event.description,
             color: "#09dbe6",
             link: "",
             lastsAllDay: false,
         });
     });
+    // console.log("events after personal: ", events);
 
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
+    console.log("global events: ", globalEvents);
     globalEvents.forEach((event) => {
         events.push({
             start: combineDateAndTime(event.date, event.start),
             end: combineDateAndTime(event.date, event.end),
+            date: event.date,
             name: event.name,
+            subtitle: event.subtitle || "",
+            focus: "eventos",
+            scope: "global",
             type: event.event_type.name,
+            description: event.description,
             color: "#09dbe6",
             link: "",
             lastsAllDay: false,
         });
     });
+    console.log("events after global: ", events);
 
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
+    console.log("vacations: ", vacations);
     vacations.forEach((vacation) => {
         const vacationEnd = new Date(vacation.end);
         vacationEnd.setUTCDate(vacationEnd.getUTCDate() + 1);
@@ -122,6 +146,12 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             end: vacationEnd,
             name: "Vacaciones",
             type: "Vacaciones",
+            // subtitle: event?.subtitle,
+            focus: "vacaciones",
+            scope: "personal",
+            // type: event.event_type.name,
+            status: vacation.status,
+            // description: event.description,
             color: vacation.status == 0 ? "#86d982" : "#55c94f",
             link: "",
             lastsAllDay: true,
