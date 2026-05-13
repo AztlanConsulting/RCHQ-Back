@@ -1,4 +1,8 @@
-const { getAllEventTypes, getEventsInRange } = require("../../service/event/get.service")
+const {
+    getAllEventTypes,
+    getEventsInRange,
+    getHouseAbsencesInRange,
+} = require("../../service/event/get.service")
 const RESPONSES = require("../../utils/responses");
 
 exports.getAllEventTypes = async (req, res) => {
@@ -60,6 +64,58 @@ exports.getEventsInRange = async (req, res) => {
             });
         }
 
+    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+}
+
+exports.getHouseAbsencesInRange = async (req, res) => {
+    try {
+        const requesterHouseId = req.resolvedRequester?.houseId;
+        const startDate = req.params.startDate;
+        const endDate = req.params.endDate;
+
+        if (!requesterHouseId) {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        }
+
+        const result = await getHouseAbsencesInRange(
+            requesterHouseId,
+            startDate,
+            endDate,
+        );
+
+        if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
+            return res.status(400).json({
+                success: false,
+                message: "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
+            });
+        }
+
+        if (result.code == RESPONSES.DATES.BAD_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "No se puede tener una fecha de inicio posterior a la de finalización",
+            });
+        }
+
+        if (result.code == RESPONSES.EVENTS.FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    events: result.data.events,
+                },
+                message: result.data.events.length === 0
+                    ? "Sin ausencias registradas"
+                    : "Ausencias obtenidas correctamente",
+            });
+        }
     } catch {
         return res.status(500).json({
             success: false,
