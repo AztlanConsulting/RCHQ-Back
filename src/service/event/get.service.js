@@ -79,9 +79,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 subtitle: event.subtitle || "",
                 focus: "eventos",
                 scope: "house",
-                type: event.event_type.name,
                 description: event.description,
-                color: "#09dbe6",
+                color: "#7FD447",
                 link: "",
                 lastsAllDay: false,
             });
@@ -104,7 +103,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             focus: "eventos",
             scope: "personal",
             description: event.description,
-            color: "#09dbe6",
+            color: "#EFBF22",
             link: "",
             lastsAllDay: false,
         });
@@ -122,7 +121,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             scope: "global",
             type: event.event_type.name,
             description: event.description,
-            color: "#09dbe6",
+            color: "#C524FF",
             link: "",
             lastsAllDay: false,
         });
