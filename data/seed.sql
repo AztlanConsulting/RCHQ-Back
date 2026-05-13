@@ -151,7 +151,7 @@ VALUES (
   'XAXX010101HDFXXX01',
   NULL,
   '2003-10-04',
-  'boop',
+  'uploads/1776813289924.png',
   '2026-04-09',
   NULL,
   NULL,
@@ -194,7 +194,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
 ('empl-004', 'Documento de empleado eliminado', false),
-('empl-005', 'Información de empleado actualizada', false)
+('empl-005', 'Información de empleado actualizada', false),
+('blck-001', 'Empleado agregado a la lista negra', true)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.workday (workday_id, name)
@@ -593,5 +594,55 @@ INSERT INTO PUBLIC.frecuency_of_payment (
   ('f0000003-0000-4000-8000-000000000003', 'mensual')
 ON CONFLICT DO NOTHING;
 
+-- =========================
+-- EMPLEADO DE PRUEBA BLACKLIST
+-- ID fijo para usar en pruebas: e0000002-0000-4000-8000-000000000002
+-- Coordinador puede agregarlo a la blacklist (misma casa que andre@gmail.com)
+-- =========================
+
+INSERT INTO public.employee (
+    employee_id,
+    house_id,
+    role_id,
+    name,
+    surname,
+    is_active,
+    email,
+    password,
+    has_first_login,
+    is_active_two_factor_auth,
+    failed_login_attempts,
+    failed_two_factor_auth_attempts,
+    totp_secret,
+    curp,
+    rfc,
+    birth_date,
+    picture,
+    start_date,
+    type
+)
+SELECT
+    'e0000002-0000-4000-8000-000000000002',
+    (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+    (SELECT role_id  FROM public.role  WHERE name = 'Mantenimiento' LIMIT 1),
+    'Luis',
+    'Pérez',
+    true,
+    'luis.prueba.blacklist@example.com',
+    '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+    false,
+    false,
+    0,
+    0,
+    NULL,
+    'PELM900101HDFRZS09',
+    NULL,
+    '1990-01-01',
+    NULL,
+    '2025-01-01',
+    'nomina'
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.employee WHERE employee_id = 'e0000002-0000-4000-8000-000000000002'
+);
 
 COMMIT;

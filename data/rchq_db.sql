@@ -96,7 +96,6 @@ CREATE TABLE IF NOT EXISTS public.frecuency_of_payment (
     CONSTRAINT frecuency_of_payment_pk PRIMARY KEY (frecuency_of_payment_id)
 );
 
-
 -- =============================================================
 -- 2. EMPLOYEE (depende de house y role)
 -- =============================================================
@@ -338,4 +337,13 @@ CREATE TABLE IF NOT EXISTS public.absence (
     CONSTRAINT absence_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
     CONSTRAINT absence_absence_type_fk FOREIGN KEY (absence_type_id) REFERENCES public.absence_type(absence_type_id)
 
+);
+
+CREATE TABLE IF NOT EXISTS public.blacklist (
+    blacklist_id uuid        NOT NULL DEFAULT gen_random_uuid(),
+    employee_id  uuid        NOT NULL,
+    curp         varchar(18) NOT NULL UNIQUE,
+    created_at   timestamp   NOT NULL,
+    CONSTRAINT blacklist_pk          PRIMARY KEY (blacklist_id),
+    CONSTRAINT blacklist_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id) ON DELETE NO ACTION ON UPDATE NO ACTION
 );
