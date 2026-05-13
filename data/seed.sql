@@ -64,7 +64,8 @@ VALUES
 ('00000001-0000-4000-8000-000000000003', 'manageEmployees'),
 ('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
-('00000001-0000-4000-8000-000000000006', 'viewLogs')
+('00000001-0000-4000-8000-000000000006', 'viewLogs'),
+('00000001-0000-4000-8000-000000000007', 'viewEvents')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -96,6 +97,14 @@ WHERE r.name IN (
 )
 AND p.name = 'viewDocuments'
 ON CONFLICT DO NOTHING;
+
+-- Todos los roles pueden ver eventos
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'viewEvents'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Coordinadores de área — ver empleados y documentos
 INSERT INTO public.role_privilege (role_id, privilege_id)
