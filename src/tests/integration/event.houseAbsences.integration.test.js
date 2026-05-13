@@ -468,6 +468,7 @@ describe("GET /event/house/range/:startDate/:endDate", () => {
             name: "Ana CasaA",
             description: "Ausencia casa A",
             link: "https://example.com/a.pdf",
+            isDeleted: false,
             focus: "ausencias",
             scope: "house",
             lastsAllDay: true,

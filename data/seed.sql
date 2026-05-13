@@ -456,6 +456,59 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.employee WHERE employee_id = 'e0000001-0000-4000-8000-000000000001'
 );
 
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  end_date,
+  phone_number,
+  nss,
+  bank_account,
+  type
+)
+SELECT
+  'e0000001-0000-4000-8000-000000000002',
+  'b0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Luis',
+  'Martínez',
+  true,
+  'luis.coordinacion@example.com',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  true,
+  false,
+  0,
+  0,
+  NULL,
+  'MALR900205HDFRRS09',
+  NULL,
+  '1990-02-05',
+  NULL,
+  '2025-02-03',
+  NULL,
+  '+52 55 5555 1003',
+  NULL,
+  NULL,
+  'nomina'
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.employee WHERE employee_id = 'e0000001-0000-4000-8000-000000000002'
+);
+
 UPDATE public.employee
 SET
   house_id = COALESCE(
@@ -556,6 +609,31 @@ SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '10:00:00', '19:00
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000003', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
 INSERT INTO public.vacations_request (
   vacations_request_id,
   employee_id,
@@ -582,6 +660,66 @@ VALUES
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
 ('a0000001-0000-4000-8000-000000000003', 'Maternidad')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
+  'a1000001-0000-4000-8000-000000000001',
+  e.employee_id,
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-05-12',
+  '2026-05-14',
+  'Incapacidad médica de seguimiento para revisión postoperatoria.',
+  'https://example.com/justificante-medico-maria',
+  false
+FROM public.employee e
+WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
+  'a1000001-0000-4000-8000-000000000002',
+  e.employee_id,
+  'a0000001-0000-4000-8000-000000000002',
+  '2026-05-18',
+  '2026-05-22',
+  'Permiso por paternidad del coordinador de la casa de Operaciones CDMX.',
+  'https://example.com/permiso-paternidad-luis',
+  false
+FROM public.employee e
+WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
 
 INSERT INTO PUBLIC.frecuency_of_payment (
   frecuency_of_payment_id,

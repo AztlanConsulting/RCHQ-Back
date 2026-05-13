@@ -38,6 +38,7 @@ describe("event.service — getHouseAbsencesInRange", () => {
                 end: new Date("2026-05-15T00:00:00.000Z"),
                 description: "Consulta médica",
                 url: "https://example.com/evidence.pdf",
+                is_deleted: false,
                 absence_type: {
                     name: "Permiso",
                 },
@@ -78,6 +79,7 @@ describe("event.service — getHouseAbsencesInRange", () => {
             subtitle: "LOPA000000MDFXXX00",
             description: "Consulta médica",
             link: "https://example.com/evidence.pdf",
+            isDeleted: false,
             usedDays: 1,
             focus: "ausencias",
             scope: "house",

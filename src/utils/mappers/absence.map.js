@@ -15,6 +15,7 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
         subtitle: absence.employee.curp,
         description: absence.description || "",
         link: absence.url || "",
+        isDeleted: absence.is_deleted,
         usedDays,
         focus: "ausencias",
         scope: "house",
