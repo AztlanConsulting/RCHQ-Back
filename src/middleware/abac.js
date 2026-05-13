@@ -1,18 +1,18 @@
 const { getHome, findByIdWithRoleAndHouse } = require("../model/employee/get.model");
 
-const canAccess = (user, policyFn, resource) => {
+exports.canAccess = (user, policyFn, resource) => {
     if (!user) return false;
     return policyFn(user, resource);
 };
 
-const authorize = (policyFn, getResource) => async (req, res, next) => {
+exports.authorize = (policyFn, getResource) => async (req, res, next) => {
     try {
         const resource =
             typeof getResource === "function"
                 ? await getResource(req)
                 : getResource;
 
-        if (canAccess(req.user, policyFn, resource)) {
+        if (exports.canAccess(req.user, policyFn, resource)) {
             return next();
         }
 
@@ -22,7 +22,7 @@ const authorize = (policyFn, getResource) => async (req, res, next) => {
     }
 };
 
-const isAllowed = async (req, res, next) => {
+exports.isAllowed = async (req, res, next) => {
     try {
         const targetId = req.params.employeeId || req.params.id || "";
 
@@ -50,7 +50,7 @@ const isAllowed = async (req, res, next) => {
     }
 };
 
-const canRegisterEmployeeVacation = async (req, res, next) => {
+exports.canRegisterEmployeeVacation = async (req, res, next) => {
     try {
         const targetEmployeeId = req.params.employeeId;
 
@@ -99,9 +99,47 @@ const canRegisterEmployeeVacation = async (req, res, next) => {
     }
 };
 
-module.exports = {
-    authorize,
-    canAccess,
-    isAllowed,
-    canRegisterEmployeeVacation,
+exports.canAddToBlacklist = async (req, res, next) => {
+    try {
+        const targetEmployee = await findByIdWithRoleAndHouse(req.params.employeeId);
+
+        if (!targetEmployee) {
+            return res.status(400).json({
+                success: false,
+                message: "Empleado no encontrado",
+            });
+        }
+
+        if (req.user.role === "Admin") return next();
+
+        if (req.user.role !== "Coordinador") {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        }
+
+        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+
+        if (targetRoleName === "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        }
+
+        if (req.user.houseId !== targetEmployee.house_id) {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        }
+
+        return next();
+    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Error del servidor",
+        });
+    }
 };
