@@ -169,7 +169,7 @@ afterAll(async () => {
 
 // ─── Tests ────────────────────────────────────────────────
 
-describe("POST /api/blacklist/:employeeId - integración", () => {
+describe("POST /blacklist/:employeeId - integración", () => {
     it("retorna 200 y agrega al empleado a la lista negra", async () => {
         // Arrange
         await createTargetEmployee();
@@ -177,7 +177,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         const res = await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -194,7 +194,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -211,7 +211,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -229,7 +229,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -249,7 +249,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         const res = await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`);
+            .post(`/blacklist/${TEST_TARGET_ID}`);
 
         // Assert
         expect(res.statusCode).toBe(401);
@@ -262,7 +262,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         const res = await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -287,7 +287,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         const res = await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -303,7 +303,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         const res = await request(app)
-            .post(`/api/blacklist/${idInexistente}`)
+            .post(`/blacklist/${idInexistente}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
@@ -316,7 +316,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
         const token = await loginAndGetToken();
 
         await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Reactivar para poder intentar de nuevo
@@ -327,7 +327,7 @@ describe("POST /api/blacklist/:employeeId - integración", () => {
 
         // Act
         const res = await request(app)
-            .post(`/api/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
         // Assert
