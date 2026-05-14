@@ -71,9 +71,9 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         );
         houseEvents.forEach((event) => {
             events.push({
-                start: combineDateAndTime(event.date, event.start),
-                end: combineDateAndTime(event.date, event.end),
-                date: event.date,
+                start: event.start,
+                end: event.end,
+                date: "",
                 name: event.name,
                 type: event.event_type.name,
                 subtitle: event.subtitle || "",
@@ -94,9 +94,9 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     );
     personalEvents.forEach((event) => {
         events.push({
-            start: event.personal_event.start,
-            end: event.personal_event.end,
-            date: "",
+            start: combineDateAndTime(event.personal_event.date, event.personal_event.start),
+            end: combineDateAndTime(event.personal_event.date, event.personal_event.end),
+            date: event.date,
             name: event.personal_event.name,
             type: event.personal_event.event_type.name,
             subtitle: event.subtitle || "",
@@ -112,9 +112,9 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
     globalEvents.forEach((event) => {
         events.push({
-            start: combineDateAndTime(event.date, event.start),
-            end: combineDateAndTime(event.date, event.end),
-            date: event.date,
+            start: event.start,
+            end: event.end,
+            date: "",
             name: event.name,
             subtitle: event.subtitle || "",
             focus: "eventos",
