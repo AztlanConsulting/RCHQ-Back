@@ -12,7 +12,7 @@ exports.getAllEventTypes = async (req, res) => {
         if (result.code == RESPONSES.EVENTS.NOT_FOUND) {
             return res.status(204).json({
                 success: false,
-                message: "Error al buscar los tipos de eventos o no hubo",
+                message: "Error al buscar los tipos de eventos o no son existentes",
             });
         }
 
