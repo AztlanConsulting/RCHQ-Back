@@ -11,7 +11,7 @@ const {
 } = require("../../model/employee/get.model");
 const {
     getAllEventTypes,
-    getHouseCalendarRecordsInRange,
+    getHouseCalendarAbsenceInRange,
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
@@ -184,7 +184,7 @@ exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDat
         };
     }
 
-    const absences = await getHouseCalendarRecordsInRange(houseId, startDate, endDate);
+    const absences = await getHouseCalendarAbsenceInRange(houseId, startDate, endDate);
 
     if (absences.length <= 0) {
         return {
