@@ -1,0 +1,121 @@
+@startuml
+title US80 - Coordinador consulta solicitudes de vacaciones pendientes y revisadas
+
+actor "Coordinador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "auth/rbac/validate middleware" as Middleware
+control "get.controller.js" as Controller
+control "get.service.js" as Service
+database "vacation/get.model.js" as VacationGetModel
+database "employee/get.model.js" as EmployeeGetModel
+database "event/get.model.js" as EventGetModel
+database "Base de datos" as DB
+
+autonumber
+
+Usuario -> Frontend : Entra al módulo de solicitudes de vacaciones
+
+alt Consulta solicitudes pendientes
+Frontend -> Router : GET /vacation/requests/pending?page&limit&search&startDate&endDate\nAuthorization: Bearer token
+
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(getPendingVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : getPendingVacationRequests(req, res)
+
+Controller -> Service : getPendingVacationRequests({\nactorEmployeeId,\nhouseId,\nquery\n})
+
+Service -> Service : Validar contrato interno
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Error de validación
+else Entrada interna válida
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Coordinador
+EmployeeGetModel --> Service : Coordinador
+
+alt Coordinador no existe o no tiene casa
+Service --> Controller : USER_NOT_ACCESS / EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 401/403
+else Coordinador válido
+Service -> VacationGetModel : getPendingVacationRequestsByHouse({\nhouseId,\nsearch,\nstartDate,\nendDate,\nskip,\ntake\n})
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status = PENDING AND employee.house_id = houseId
+DB --> VacationGetModel : Solicitudes pendientes + total
+VacationGetModel --> Service : Solicitudes pendientes
+
+loop Por cada solicitud pendiente
+Service -> EmployeeGetModel : getVacationYearInfo / getRemainingVacations(employeeId)
+EmployeeGetModel -> DB : SELECT employee.start_date
+DB --> EmployeeGetModel : start_date
+EmployeeGetModel --> Service : Periodo laboral y días máximos
+
+Service -> EventGetModel : getGlobalEventsInRange(start, end)
+EventGetModel -> DB : SELECT global_event
+DB --> EventGetModel : Eventos globales
+
+Service -> Service : Calcular días naturales, días hábiles,\ndías disponibles y días restantes si se aprueba
+end
+
+Service --> Controller : PENDING_VACATION_REQUESTS_FOUND
+Controller --> Frontend : 200 Solicitudes pendientes + paginación
+Frontend --> Usuario : Mostrar tabla de pendientes
+end
+end
+
+else Consulta solicitudes revisadas
+Frontend -> Router : GET /vacation/requests/reviewed?page&limit&search&status&startDate&endDate\nAuthorization: Bearer token
+
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(getReviewedVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : getReviewedVacationRequests(req, res)
+
+Controller -> Service : getReviewedVacationRequests({\nactorEmployeeId,\nhouseId,\nquery\n})
+
+Service -> Service : Validar contrato interno
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Error de validación
+else Entrada interna válida
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Coordinador
+EmployeeGetModel --> Service : Coordinador
+
+alt Coordinador no existe o no tiene casa
+Service --> Controller : USER_NOT_ACCESS / EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 401/403
+else Coordinador válido
+Service -> VacationGetModel : getReviewedVacationRequestsByHouse({\nhouseId,\nsearch,\nstatus,\nstartDate,\nendDate,\nskip,\ntake\n})
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status IN (APPROVED, REJECTED)\nAND employee.house_id = houseId
+DB --> VacationGetModel : Solicitudes revisadas + total
+VacationGetModel --> Service : Solicitudes revisadas
+
+Service -> Service : Mapear status a etiqueta\nAprobada/Rechazada
+
+Service --> Controller : REVIEWED_VACATION_REQUESTS_FOUND
+Controller --> Frontend : 200 Solicitudes revisadas + paginación
+Frontend --> Usuario : Mostrar tabla de revisadas
+end
+end
+end
+end
+end
+
+@enduml

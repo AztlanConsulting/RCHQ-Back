@@ -1,0 +1,92 @@
+@startuml
+title US80 - Consultar solicitudes de vacaciones pendientes y revisadas
+
+|Usuario|
+start
+:Entrar al módulo de solicitudes de vacaciones;
+
+|Sistema|
+:Aplicar rate limit;
+:Validar token de sesión;
+
+if (¿Token válido?) then (Sí)
+else (No)
+:Mostrar error "Token no proporcionado o inválido";
+stop
+endif
+
+:Validar rol Coordinador;
+
+if (¿Rol permitido?) then (Sí)
+else (No)
+:Mostrar error "Rol no permitido";
+stop
+endif
+
+:Validar privilegio para gestionar empleados/vacaciones;
+
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+:Mostrar error "Permisos insuficientes";
+stop
+endif
+
+|Usuario|
+if (¿Quiere consultar pendientes o revisadas?) then (Pendientes)
+:Entrar a vista de solicitudes pendientes;
+
+|Sistema|
+:Validar query params con schema;
+if (¿Query válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Obtener houseId del Coordinador autenticado;
+
+if (¿Coordinador tiene casa hogar?) then (Sí)
+else (No)
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+:Consultar solicitudes pendientes de empleados de la misma casa hogar;
+:Aplicar filtros de búsqueda, rango de fechas y paginación;
+:Calcular datos necesarios para tabla y modal;
+:Devolver solicitudes pendientes;
+
+|Usuario|
+:Visualizar tabla de solicitudes pendientes;
+:Puede abrir detalle, aprobar o rechazar solicitud;
+stop
+
+else (Revisadas)
+:Entrar a vista de solicitudes revisadas;
+
+|Sistema|
+:Validar query params con schema;
+if (¿Query válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Obtener houseId del Coordinador autenticado;
+
+if (¿Coordinador tiene casa hogar?) then (Sí)
+else (No)
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+:Consultar solicitudes aprobadas y rechazadas de empleados de la misma casa hogar;
+:Aplicar filtros de búsqueda, estado, rango de fechas y paginación;
+:Devolver solicitudes revisadas;
+
+|Usuario|
+:Visualizar tabla de solicitudes revisadas;
+stop
+endif
+
+@enduml
