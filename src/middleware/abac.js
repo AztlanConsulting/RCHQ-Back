@@ -101,7 +101,16 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
 
 exports.canAddToBlacklist = async (req, res, next) => {
     try {
-        const targetEmployee = await findByIdWithRoleAndHouse(req.params.employeeId);
+        const targetEmployeeId = req.params.employeeId;
+
+        if (req.user.id && String(req.user.id) === String(targetEmployeeId)) {
+            return res.status(403).json({
+                success: false,
+                message: "Acción denegada: No puedes agregarte a ti mismo a la lista negra.",
+            });
+        }
+        
+        const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
 
         if (!targetEmployee) {
             return res.status(400).json({
@@ -109,8 +118,6 @@ exports.canAddToBlacklist = async (req, res, next) => {
                 message: "Empleado no encontrado",
             });
         }
-
-        if (req.user.role === "Admin") return next();
 
         if (req.user.role !== "Coordinador") {
             return res.status(403).json({
