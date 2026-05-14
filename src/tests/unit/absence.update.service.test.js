@@ -37,6 +37,24 @@ describe("absence.update.service — updateAbsence", () => {
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
     });
 
+    it("retorna validation error si la descripción tiene caracteres no permitidos", async () => {
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: { description: "Texto inválido!!! ¿vale? 😀 #123" },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
+        expect(result.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    campo: "body.description",
+                    mensaje: "La descripción solo puede contener letras, números, espacios y signos de interrogación o exclamación",
+                }),
+            ]),
+        );
+    });
+
     it("retorna NOT_FOUND si la ausencia no existe", async () => {
         findByIdWithRoleAndHouse.mockResolvedValue({
             employee_id: "actor-1",

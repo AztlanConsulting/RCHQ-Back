@@ -2,6 +2,7 @@ const { z } = require("zod");
 const { isValidDate } = require("../../utils/dates");
 
 const UUID_SCHEMA = z.string().uuid("ID inválido");
+const ABSENCE_DESCRIPTION_PATTERN = /^[\p{L}\p{N}\s¿?¡!]+$/u;
 
 const emptyToNull = (value) => value === "" ? null : value;
 
@@ -13,7 +14,12 @@ const absenceUpdateBodySchema = z.object({
     absenceTypeId: UUID_SCHEMA.optional(),
     description: z.string()
         .trim()
+        .max(200, "La descripción no puede exceder 200 caracteres")
         .transform(emptyToNull)
+        .refine(
+            (value) => value === null || ABSENCE_DESCRIPTION_PATTERN.test(value),
+            "La descripción solo puede contener letras, números, espacios y signos de interrogación o exclamación",
+        )
         .nullable()
         .optional(),
     startDate: dateField.optional(),
@@ -36,4 +42,3 @@ exports.absenceUpdateInputSchema = z.object({
     absenceId: UUID_SCHEMA,
     body: absenceUpdateBodySchema,
 });
-
