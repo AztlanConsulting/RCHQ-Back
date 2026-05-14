@@ -59,3 +59,81 @@ exports.getVacationRequestById = async (vacationRequestId) => {
         },
     });
 };
+
+exports.getPendingVacationRequestsByHouse = async ({
+    where,
+    skip,
+    take,
+}) => {
+    const [requests, total] = await Promise.all([
+        prisma.vacations_request.findMany({
+            where,
+            include: {
+                employee: {
+                    select: {
+                        employee_id: true,
+                        name: true,
+                        surname: true,
+                        curp: true,
+                        picture: true,
+                        start_date: true,
+                        house: {
+                            select: {
+                                house_id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: [
+                { created_at: "desc" },
+                { start: "asc" },
+            ],
+            skip,
+            take,
+        }),
+        prisma.vacations_request.count({ where }),
+    ]);
+
+    return { requests, total };
+};
+
+exports.getReviewedVacationRequestsByHouse = async ({
+    where,
+    skip,
+    take,
+}) => {
+    const [requests, total] = await Promise.all([
+        prisma.vacations_request.findMany({
+            where,
+            include: {
+                employee: {
+                    select: {
+                        employee_id: true,
+                        name: true,
+                        surname: true,
+                        curp: true,
+                        picture: true,
+                        start_date: true,
+                        house: {
+                            select: {
+                                house_id: true,
+                                name: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: [
+                { created_at: "desc" },
+                { start: "desc" },
+            ],
+            skip,
+            take,
+        }),
+        prisma.vacations_request.count({ where }),
+    ]);
+
+    return { requests, total };
+};

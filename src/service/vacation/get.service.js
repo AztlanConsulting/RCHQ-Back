@@ -1,7 +1,24 @@
-const { getStartDate } = require("../../model/employee/get.model");
-const { getVacationsInRange } = require("../../model/vacation/get.model")
+const { getStartDate,
+    findByIdWithRoleAndHouse,
+} = require("../../model/employee/get.model");
+const { getVacationsInRange,
+    getPendingVacationRequestsByHouse,
+    getReviewedVacationRequestsByHouse
+} = require("../../model/vacation/get.model");
 const { getVacationDays } = require("../../utils/vacationDays");
 const RESPONSES = require("../../utils/responses");
+const { parsePagination, buildPagination } = require("../../utils/pagination");
+const {
+    buildVacationListWhere,
+} = require("../../utils/vacationFilters");
+const {
+    mapReviewedStatus,
+    mapVacationRequestForList,
+} = require("../../utils/mappers/vacation.map");
+const { VACATION_STATUS } = require("../../utils/vacationStatus");
+const {
+    getVacationRequestsInputSchema,
+} = require("../../schemas/vacation/get.schemas");
 
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
@@ -98,6 +115,146 @@ exports.getVacationYearInfoForApproval = async (employeeId) => {
             startDate,
             endDate,
             maxDays,
+        },
+    };
+};
+
+exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
+    const validation = getVacationRequestsInputSchema.safeParse({
+        actorEmployeeId,
+        query,
+    });
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.VACATION.VALIDATION_ERROR,
+        };
+    }
+
+    query = validation.data.query;
+
+    if (!actorEmployeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
+
+    if (!actorEmployee) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorRoleName = actorEmployee.role?.name;
+
+    if (actorRoleName !== "Coordinador") {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    const { page, limit, skip, take } = parsePagination(
+        query.page,
+        query.limit
+    );
+
+    const search = query.search?.trim() || "";
+
+    const where = buildVacationListWhere({
+        houseId: actorEmployee.house_id,
+        search,
+        startDate: query.startDate,
+        endDate: query.endDate,
+        statusFilter: VACATION_STATUS.PENDING,
+    });
+
+    const { requests, total } = await getPendingVacationRequestsByHouse({
+        where,
+        skip,
+        take,
+    });
+
+    return {
+        code: RESPONSES.VACATION.REQUESTS_FOUND,
+        data: {
+            requests: requests.map(mapVacationRequestForList),
+            pagination: buildPagination({ page, limit, total }),
+        },
+    };
+};
+
+exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
+    const validation = getVacationRequestsInputSchema.safeParse({
+        actorEmployeeId,
+        query,
+    });
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.VACATION.VALIDATION_ERROR,
+        };
+    }
+
+    query = validation.data.query;
+
+    if (!actorEmployeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
+
+    if (!actorEmployee) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorRoleName = actorEmployee.role?.name;
+
+    if (actorRoleName !== "Coordinador") {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    const { page, limit, skip, take } = parsePagination(
+        query.page,
+        query.limit
+    );
+
+    const search = query.search?.trim() || "";
+    const mappedStatus = mapReviewedStatus(query.status || "all");
+
+    const statusFilter =
+        mappedStatus === "all"
+            ? {
+                in: [VACATION_STATUS.APPROVED, VACATION_STATUS.REJECTED],
+            }
+            : mappedStatus;
+
+    const where = buildVacationListWhere({
+        houseId: actorEmployee.house_id,
+        search,
+        startDate: query.startDate,
+        endDate: query.endDate,
+        statusFilter,
+    });
+
+    const { requests, total } = await getReviewedVacationRequestsByHouse({
+        where,
+        skip,
+        take,
+    });
+
+    return {
+        code: RESPONSES.VACATION.REQUESTS_FOUND,
+        data: {
+            requests: requests.map(mapVacationRequestForList),
+            pagination: buildPagination({ page, limit, total }),
         },
     };
 };
