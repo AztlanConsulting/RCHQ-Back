@@ -501,7 +501,7 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
             ).toBeDefined();
         });
 
-        it("no truena si el empleado tiene ausencias pero no tiene workdays", async () => {
+        it("Retorna 0 si el empleado tiene ausencias pero no tiene días de trabajo", async () => {
             const res = await request(app)
                 .get(route(IDS.noWorkdaysEmployee))
                 .set("Authorization", `Bearer ${sign()}`);
@@ -514,7 +514,7 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
             });
         });
 
-        it("incluye eventos de casa ordinarios sin descontarlos si no vienen marcados como is_free_day", async () => {
+        it("normaliza house_event sin is_free_day como false y no lo descuenta", async () => {
             const res = await request(app)
                 .get(route())
                 .set("Authorization", `Bearer ${sign()}`);
@@ -533,6 +533,7 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
             expect(houseEvent).toMatchObject({
                 name: "Evento ordinario casa",
                 scope: "house",
+                is_free_day: false,
             });
             expect(mainAbsence.usedDays).toBe(2);
         });

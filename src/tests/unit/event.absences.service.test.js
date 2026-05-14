@@ -59,12 +59,6 @@ const makeAbsence = ({
         url: "https://example.com/absence.pdf",
         is_deleted: false,
         absence_type: { name: "Medica" },
-        employee: {
-            employee_id: EMPLOYEE_ID,
-            name: "Ana",
-            surname: "Ruiz",
-            curp: "CURPTEST123456",
-        },
     };
 };
 
@@ -157,9 +151,9 @@ describe("event.get.service", () => {
         expect(absenceEvent).toMatchObject({
             absenceId: "absence-id",
             employeeId: EMPLOYEE_ID,
-            name: "Ana Ruiz",
+            name: "Ausencia",
             type: "Medica",
-            subtitle: "CURPTEST123456",
+            subtitle: "",
             description: "Consulta",
             link: "https://example.com/absence.pdf",
             usedDays: 2,
@@ -261,6 +255,49 @@ describe("event.get.service", () => {
             "2026-05-08",
         );
 
+        expect(getAbsenceEvent(result)).toMatchObject({
+            usedDays: 3,
+        });
+    });
+
+    it("normaliza is_free_day undefined o null como false sin descontar dias", async () => {
+        const globalWithoutFreeDay = makeGlobalEvent({
+            date: makeUTCDate(2026, 5, 4),
+            name: "Global sin bandera",
+        });
+        globalWithoutFreeDay.is_free_day = undefined;
+
+        getGlobalEventsInRange.mockResolvedValue([globalWithoutFreeDay]);
+
+        getHouseEventsInRange.mockResolvedValue([
+            makeHouseEvent({
+                date: makeUTCDate(2026, 5, 5),
+                name: "Casa con bandera null",
+                isFreeDay: null,
+            }),
+        ]);
+
+        getAbsencesInRange.mockResolvedValue([makeAbsence()]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        const globalEvent = result.data.events.find(
+            (event) => event.name === "Global sin bandera",
+        );
+        const houseEvent = result.data.events.find(
+            (event) => event.name === "Casa con bandera null",
+        );
+
+        expect(globalEvent).toMatchObject({
+            is_free_day: false,
+        });
+        expect(houseEvent).toMatchObject({
+            is_free_day: false,
+        });
         expect(getAbsenceEvent(result)).toMatchObject({
             usedDays: 3,
         });

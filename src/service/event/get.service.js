@@ -92,7 +92,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 color: "#7FD447",
                 link: "",
                 lastsAllDay: false,
-                is_free_day: event.is_free_day,
+                is_free_day: event.is_free_day || false,
             });
         });
     }
@@ -134,7 +134,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             color: "#C524FF",
             link: "",
             lastsAllDay: false,
-            is_free_day: event.is_free_day,
+            is_free_day: event.is_free_day || false,
         });
     });
 
@@ -158,16 +158,6 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     });
 
     const absences = await getAbsencesInRange(employeeId, startDate, endDate);
-
-    if (absences.length === 0) {
-        return {
-            code: RESPONSES.EVENTS.FOUND,
-            data: {
-                events: events,
-            },
-        };
-    }
-
     const workDays = await getWorkDays(employeeId);
 
     absences.forEach((absence) => {
