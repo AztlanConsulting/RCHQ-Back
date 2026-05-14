@@ -13,10 +13,14 @@ jest.mock("../../model/event/get.model", () => ({
     getHouseEventsInRange: jest.fn(),
     getPersonalEventsInRange: jest.fn(),
     getGlobalEventsInRange: jest.fn(),
+}));
+
+jest.mock("../../model/absence/get.model", () => ({
     getAbsencesInRange: jest.fn(),
 }));
 
 const { getVacationsInRange } = require("../../model/vacation/get.model");
+const { getAbsencesInRange } = require("../../model/absence/get.model");
 const {
     getHome,
     findById,
@@ -26,7 +30,6 @@ const {
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
-    getAbsencesInRange,
 } = require("../../model/event/get.model");
 const { getEventsInRange } = require("../../service/event/get.service");
 const RESPONSES = require("../../utils/responses");
@@ -40,6 +43,60 @@ const makeUTCDate = (year, month, day) => {
 
 const makeUTCTime = (hour, minute = 0) => {
     return new Date(Date.UTC(1970, 0, 1, hour, minute));
+};
+
+const makeAbsence = ({
+    absenceId = "absence-id",
+    start = makeUTCDate(2026, 5, 1),
+    end = makeUTCDate(2026, 5, 5),
+} = {}) => {
+    return {
+        absence_id: absenceId,
+        employee_id: EMPLOYEE_ID,
+        start,
+        end,
+        description: "Consulta",
+        url: "https://example.com/absence.pdf",
+        is_deleted: false,
+        absence_type: { name: "Medica" },
+        employee: {
+            employee_id: EMPLOYEE_ID,
+            name: "Ana",
+            surname: "Ruiz",
+            curp: "CURPTEST123456",
+        },
+    };
+};
+
+const makeGlobalEvent = ({
+    date,
+    name = "Evento global",
+    isFreeDay = true,
+} = {}) => {
+    return {
+        date,
+        start: makeUTCTime(9),
+        end: makeUTCTime(18),
+        name,
+        description: "",
+        is_free_day: isFreeDay,
+        event_type: { name: "Festivo" },
+    };
+};
+
+const makeHouseEvent = ({ date, name = "Evento de casa" } = {}) => {
+    return {
+        date,
+        start: makeUTCTime(9),
+        end: makeUTCTime(18),
+        name,
+        description: "",
+        event_type: { name: "General" },
+    };
+};
+
+const getAbsenceEvent = (result, absenceId = "absence-id") => {
+    return result.data.events.find((event) => event.absenceId === absenceId);
 };
 
 describe("event.get.service", () => {
@@ -65,44 +122,17 @@ describe("event.get.service", () => {
         const endDate = makeUTCDate(2026, 5, 8);
 
         getGlobalEventsInRange.mockResolvedValue([
-            {
+            makeGlobalEvent({
                 date: makeUTCDate(2026, 5, 4),
-                start: makeUTCTime(9),
-                end: makeUTCTime(18),
                 name: "Descanso global",
-                description: "",
-                is_free_day: true,
-                event_type: { name: "Festivo" },
-            },
-            {
+            }),
+            makeGlobalEvent({
                 date: makeUTCDate(2026, 5, 7),
-                start: makeUTCTime(9),
-                end: makeUTCTime(18),
                 name: "Fuera de ausencia",
-                description: "",
-                is_free_day: true,
-                event_type: { name: "Festivo" },
-            },
+            }),
         ]);
 
-        getAbsencesInRange.mockResolvedValue([
-            {
-                absence_id: "absence-id",
-                employee_id: EMPLOYEE_ID,
-                start: makeUTCDate(2026, 5, 1),
-                end: makeUTCDate(2026, 5, 5),
-                description: "Consulta",
-                url: "https://example.com/absence.pdf",
-                is_deleted: false,
-                absence_type: { name: "Medica" },
-                employee: {
-                    employee_id: EMPLOYEE_ID,
-                    name: "Ana",
-                    surname: "Ruiz",
-                    curp: "CURPTEST123456",
-                },
-            },
-        ]);
+        getAbsencesInRange.mockResolvedValue([makeAbsence()]);
 
         const result = await getEventsInRange(
             EMPLOYEE_ID,
@@ -110,9 +140,7 @@ describe("event.get.service", () => {
             "2026-05-08",
         );
 
-        const absenceEvent = result.data.events.find(
-            (event) => event.focus === "ausencias",
-        );
+        const absenceEvent = getAbsenceEvent(result);
 
         expect(result.code).toBe(RESPONSES.EVENTS.FOUND);
         expect(getAbsencesInRange).toHaveBeenCalledWith(
@@ -138,6 +166,111 @@ describe("event.get.service", () => {
         expect(absenceEvent.startDate).toEqual(makeUTCDate(2026, 5, 1));
         expect(absenceEvent.endDate).toEqual(makeUTCDate(2026, 5, 5));
         expect(absenceEvent.end).toEqual(makeUTCDate(2026, 5, 6));
+    });
+
+    it("descuenta eventos de casa como dias no laborables de la ausencia", async () => {
+        getHouseEventsInRange.mockResolvedValue([
+            makeHouseEvent({
+                date: makeUTCDate(2026, 5, 5),
+                name: "Actividad de casa",
+            }),
+        ]);
+
+        getGlobalEventsInRange.mockResolvedValue([
+            makeGlobalEvent({
+                date: makeUTCDate(2026, 5, 4),
+                name: "Descanso global",
+            }),
+        ]);
+
+        getAbsencesInRange.mockResolvedValue([makeAbsence()]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        expect(getAbsenceEvent(result)).toMatchObject({
+            usedDays: 1,
+        });
+    });
+
+    it("no descuenta dos veces si hay evento global y de casa el mismo dia", async () => {
+        getHouseEventsInRange.mockResolvedValue([
+            makeHouseEvent({
+                date: makeUTCDate(2026, 5, 4),
+            }),
+        ]);
+
+        getGlobalEventsInRange.mockResolvedValue([
+            makeGlobalEvent({
+                date: makeUTCDate(2026, 5, 4),
+            }),
+        ]);
+
+        getAbsencesInRange.mockResolvedValue([makeAbsence()]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        expect(getAbsenceEvent(result)).toMatchObject({
+            usedDays: 2,
+        });
+    });
+
+    it("no descuenta globales no libres ni eventos personales", async () => {
+        getGlobalEventsInRange.mockResolvedValue([
+            makeGlobalEvent({
+                date: makeUTCDate(2026, 5, 4),
+                isFreeDay: false,
+            }),
+        ]);
+
+        getPersonalEventsInRange.mockResolvedValue([
+            {
+                personal_event: {
+                    start: new Date("2026-05-05T15:00:00.000Z"),
+                    end: new Date("2026-05-05T16:00:00.000Z"),
+                    name: "Evento personal",
+                    event_type: { name: "General" },
+                },
+            },
+        ]);
+
+        getAbsencesInRange.mockResolvedValue([makeAbsence()]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        expect(getAbsenceEvent(result)).toMatchObject({
+            usedDays: 3,
+        });
+    });
+
+    it("calcula cero dias habiles si la ausencia cae solo en dias no laborales", async () => {
+        getAbsencesInRange.mockResolvedValue([
+            makeAbsence({
+                start: makeUTCDate(2026, 5, 2),
+                end: makeUTCDate(2026, 5, 3),
+            }),
+        ]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        expect(getAbsenceEvent(result)).toMatchObject({
+            usedDays: 0,
+        });
     });
 
     it("retorna EMPLOYEE.NOT_FOUND si el empleado no existe", async () => {

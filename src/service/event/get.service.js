@@ -169,16 +169,23 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const workDays = await getWorkDays(employeeId);
 
     absences.forEach((absence) => {
-        const absenceFreeDays = events.filter((event) => {
-            return (
-                event.scope === "global" &&
-                event.scope === "house" &&
-                event.is_free_day === true &&
-                event.date instanceof Date &&
-                event.date >= absence.start &&
-                event.date <= absence.end
-            );
-        });
+        const absenceFreeDays = events
+            .filter((event) => {
+                const discountsAbsenceDay =
+                    (event.scope === "global" || event.scope === "house" && 
+                        event.is_free_day === true)
+
+                return (
+                    discountsAbsenceDay &&
+                    event.date instanceof Date &&
+                    event.date >= absence.start &&
+                    event.date <= absence.end
+                );
+            })
+            .map((event) => ({
+                ...event,
+                is_free_day: true,
+            }));
 
         const usedDays = calculateUsedDays(
             workDays,
