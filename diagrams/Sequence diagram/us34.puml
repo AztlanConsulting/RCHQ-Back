@@ -19,7 +19,7 @@ autonumber
 Usuario -> Frontend : Selecciona solicitud pendiente
 Usuario -> Frontend : Confirma aprobación
 
-Frontend -> Router : PATCH /vacation/requests/:vacationRequestId/approve\nAuthorization: Bearer token
+Frontend -> Router : PATCH /vacation/request/:vacationRequestId/approve\nAuthorization: Bearer token
 
 Router -> Middleware : apiLimiter
 Router -> Middleware : verifyToken

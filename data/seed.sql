@@ -190,6 +190,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
+('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -602,6 +603,63 @@ VALUES
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
 ('a0000001-0000-4000-8000-000000000003', 'Maternidad')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
+  absence_seed.absence_id,
+  e.employee_id,
+  absence_seed.absence_type_id,
+  absence_seed.start,
+  absence_seed."end",
+  absence_seed.description,
+  absence_seed.url,
+  false
+FROM public.employee e
+CROSS JOIN (
+  VALUES
+    (
+      'ab000001-0000-4000-8000-000000000001'::uuid,
+      'a0000001-0000-4000-8000-000000000001'::uuid,
+      '2026-05-01'::date,
+      '2026-05-05'::date,
+      'Consulta medica y reposo indicado',
+      'https://example.com/ausencias/andre-consulta-medica.pdf'
+    ),
+    (
+      'ab000001-0000-4000-8000-000000000002'::uuid,
+      'a0000001-0000-4000-8000-000000000002'::uuid,
+      '2026-05-12'::date,
+      '2026-05-12'::date,
+      'Permiso por tramite familiar',
+      'https://example.com/ausencias/andre-permiso-familiar.pdf'
+    ),
+    (
+      'ab000001-0000-4000-8000-000000000003'::uuid,
+      'a0000001-0000-4000-8000-000000000001'::uuid,
+      '2026-06-18'::date,
+      '2026-06-19'::date,
+      'Seguimiento medico programado',
+      'https://example.com/ausencias/andre-seguimiento-medico.pdf'
+    )
+) AS absence_seed(absence_id, absence_type_id, start, "end", description, url)
+WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
 
 INSERT INTO PUBLIC.frecuency_of_payment (
   frecuency_of_payment_id,
