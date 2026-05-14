@@ -1,0 +1,111 @@
+@startuml HU - Coordinador registra evento de casa
+
+actor Navegador
+boundary "event.house.routes" as routes
+boundary "React (calendarModal.jsx)" as ReactView
+control "event.house.controller" as controller
+control event.service
+entity event.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> routes : GET /events/house/add
+activate routes
+
+routes -> controller : getAllEventTypes(request, response)
+deactivate routes
+activate controller
+
+controller -> event.service : getAllEventTypes()
+activate event.service
+event.service -> event.model : getAllEventTypes()
+activate event.model
+event.model -> PostgreSQL : prisma.event_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> event.model : eventTypes[]
+deactivate PostgreSQL
+event.model -->> event.service : eventTypes[]
+deactivate event.model
+event.service -->> controller : eventTypes[]
+deactivate event.service
+
+controller -> ReactView : response.send(Modal React, { eventTypes })
+deactivate controller
+activate ReactView
+
+ReactView -> Navegador : Mostrar modal de creación
+Navegador -> ReactView : Seleccionar opción "Casa"
+
+loop Mientras falten campos obligatorios
+    Navegador -> ReactView : Ingresa datos obligatorios: (name, start, end)
+    
+    alt all_day?
+        ReactView -> ReactView : Ocultar selectores de hora
+    else No
+        ReactView -> ReactView : Mostrar selectores de hora
+    end
+
+    Navegador -> ReactView : Ingresa datos opcionales: (description, is_free_day)
+
+    ReactView -> ReactView : Validar campos obligatorios
+end
+
+Navegador -> routes : POST /events/house/add
+activate routes
+
+routes -> controller : postAdd(request, response)
+deactivate routes
+activate controller
+
+controller -> event.service : validateAvailability(data)
+activate event.service
+
+event.service -> event.model : findOverlappingEvents(data)
+activate event.model
+event.model -> PostgreSQL : prisma.event.findMany(overlap_query)
+activate PostgreSQL
+PostgreSQL -->> event.model : collisionList
+deactivate PostgreSQL
+event.model -->> event.service : collisions[]
+deactivate event.model
+
+event.service -->> controller : collisionFound / clear
+deactivate event.service
+
+alt ¿Existe empalme? AND !forceOverlap
+    controller -> ReactView : response.status(409).send("Conflicto")
+    ReactView -> Navegador : Mostrar alerta de empalme
+    
+    alt No desea traslape
+        Navegador -> ReactView : Selecciona "No"
+        ReactView -> Navegador : Regresa a editar datos
+    else Si desea traslape (forceOverlap = true)
+        Navegador -> ReactView : Selecciona "Si"
+        ReactView -> routes : POST /events/house/add { ..., forceOverlap: true }
+        activate routes
+        routes -> controller : postAdd(request, response)
+        deactivate routes
+    end
+    
+else No existe empalme OR forceOverlap == true
+    controller -> event.service : createEvent(data)
+    activate event.service
+    event.service -> event.model : create(data)
+    activate event.model
+    event.model -> PostgreSQL : prisma.event.create()
+    activate PostgreSQL
+    PostgreSQL -->> event.model : eventCreated
+    deactivate PostgreSQL
+    event.model -->> event.service : success
+    deactivate event.model
+    event.service -->> controller : success
+    deactivate event.service
+
+    controller -> ReactView : response.status(200).send("Creado")
+    deactivate controller
+    ReactView -> Navegador : Actualizar calendario y cerrar modal
+    deactivate ReactView
+end
+
+@enduml
