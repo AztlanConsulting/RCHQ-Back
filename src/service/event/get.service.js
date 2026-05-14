@@ -11,7 +11,7 @@ const {
 } = require("../../model/employee/get.model");
 const {
     getAllEventTypes,
-    getHouseAbsencesInRange: getHouseAbsenceRecordsInRange,
+    getHouseCalendarRecordsInRange,
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
@@ -163,7 +163,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
 
 };
 
-exports.getHouseAbsencesInRange = async (houseId, rawStartDate, rawEndDate) => {
+exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDate) => {
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -184,7 +184,7 @@ exports.getHouseAbsencesInRange = async (houseId, rawStartDate, rawEndDate) => {
         };
     }
 
-    const absences = await getHouseAbsenceRecordsInRange(houseId, startDate, endDate);
+    const absences = await getHouseCalendarRecordsInRange(houseId, startDate, endDate);
 
     if (absences.length <= 0) {
         return {

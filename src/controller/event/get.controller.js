@@ -1,7 +1,7 @@
 const {
     getAllEventTypes,
     getEventsInRange,
-    getHouseAbsencesInRange,
+    getHouseCalendarRecordsInRange,
 } = require("../../service/event/get.service")
 const RESPONSES = require("../../utils/responses");
 
@@ -25,7 +25,13 @@ exports.getAllEventTypes = async (req, res) => {
             });
         }
 
-    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al obtener tipos de eventos",
+        });
+
+    } catch(error) {
+        console.error("getAllEventTypes error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
@@ -64,7 +70,13 @@ exports.getEventsInRange = async (req, res) => {
             });
         }
 
-    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al obtener eventos",
+        });
+
+    } catch(error) {
+        console.error("getEventsInRange error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
@@ -72,7 +84,7 @@ exports.getEventsInRange = async (req, res) => {
     }
 }
 
-exports.getHouseAbsencesInRange = async (req, res) => {
+exports.getHouseCalendarRecordsInRange = async (req, res) => {
     try {
         const requesterHouseId = req.resolvedRequester?.houseId;
         const startDate = req.params.startDate;
@@ -85,7 +97,7 @@ exports.getHouseAbsencesInRange = async (req, res) => {
             });
         }
 
-        const result = await getHouseAbsencesInRange(
+        const result = await getHouseCalendarRecordsInRange(
             requesterHouseId,
             startDate,
             endDate,
@@ -116,7 +128,13 @@ exports.getHouseAbsencesInRange = async (req, res) => {
                     : "Ausencias obtenidas correctamente",
             });
         }
-    } catch {
+
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al obtener registros del calendario de la casa",
+        });
+    } catch(error) {
+        console.error("getHouseCalendarRecordsInRange error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

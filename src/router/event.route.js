@@ -13,7 +13,7 @@ const {
 const {
     getAllEventTypes,
     getEventsInRange,
-    getHouseAbsencesInRange,
+    getHouseCalendarRecordsInRange,
 } = require("../controller/event/get.controller")
 
 router.get(
@@ -34,7 +34,7 @@ router.get(
     requireRole("Admin", "Coordinador"),
     requirePrivileges("viewEvents"),
     authorize(employeePolicy, (req) => ({ houseId: req.resolvedRequester.houseId })),
-    getHouseAbsencesInRange,
+    getHouseCalendarRecordsInRange,
 );
 
 router.get("/getAllTypes", apiLimiter, verifyToken, getAllEventTypes);

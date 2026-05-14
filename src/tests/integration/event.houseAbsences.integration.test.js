@@ -36,6 +36,7 @@ const IDS = {
 const STATE = {
     createdCoordinatorRole: false,
     createdPrivilege: false,
+    createdCoordinatorViewEventsRelation: false,
     createdWorkdays: {
         monday: false,
         tuesday: false,
@@ -111,19 +112,24 @@ const seed = async () => {
         data: { role_id: IDS.employeeRole, name: `Empleado-${IDS.employeeRole.slice(0, 8)}` },
     });
 
-    await prisma.role_privilege.upsert({
+    const existingRolePrivilege = await prisma.role_privilege.findUnique({
         where: {
             role_id_privilege_id: {
                 role_id: IDS.coordinatorRole,
                 privilege_id: IDS.viewEventsPrivilege,
             },
         },
-        update: {},
-        create: {
-            role_id: IDS.coordinatorRole,
-            privilege_id: IDS.viewEventsPrivilege,
-        },
     });
+
+    if (!existingRolePrivilege) {
+        STATE.createdCoordinatorViewEventsRelation = true;
+        await prisma.role_privilege.create({
+            data: {
+                role_id: IDS.coordinatorRole,
+                privilege_id: IDS.viewEventsPrivilege,
+            },
+        });
+    }
 
     await prisma.employee.createMany({
         data: [
@@ -341,12 +347,14 @@ const clean = async () => {
             },
         },
     });
-    await prisma.role_privilege.deleteMany({
-        where: {
-            role_id: IDS.coordinatorRole,
-            privilege_id: IDS.viewEventsPrivilege,
-        },
-    });
+    if (STATE.createdCoordinatorViewEventsRelation) {
+        await prisma.role_privilege.deleteMany({
+            where: {
+                role_id: IDS.coordinatorRole,
+                privilege_id: IDS.viewEventsPrivilege,
+            },
+        });
+    }
     await prisma.absence_type.deleteMany({
         where: { absence_type_id: IDS.absenceType },
     });

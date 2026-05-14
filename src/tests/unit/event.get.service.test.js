@@ -7,11 +7,11 @@ jest.mock("../../model/event/get.model");
 const eventModel = require("../../model/event/get.model");
 const RESPONSES = require("../../utils/responses");
 
-describe("event.service — getHouseAbsencesInRange", () => {
+describe("event.service — getHouseCalendarRecordsInRange", () => {
     beforeEach(() => jest.clearAllMocks());
 
     it("retorna error si las fechas vienen en formato inválido", async () => {
-        const result = await eventGetService.getHouseAbsencesInRange(
+        const result = await eventGetService.getHouseCalendarRecordsInRange(
             "house-1",
             "2026/05/01",
             "2026-05-10",
@@ -21,7 +21,7 @@ describe("event.service — getHouseAbsencesInRange", () => {
     });
 
     it("retorna error si la fecha final es menor a la inicial", async () => {
-        const result = await eventGetService.getHouseAbsencesInRange(
+        const result = await eventGetService.getHouseCalendarRecordsInRange(
             "house-1",
             "2026-05-10",
             "2026-05-01",
@@ -31,7 +31,7 @@ describe("event.service — getHouseAbsencesInRange", () => {
     });
 
     it("mapea las ausencias de la casa para el calendario", async () => {
-        eventModel.getHouseAbsencesInRange.mockResolvedValue([
+        eventModel.getHouseCalendarRecordsInRange.mockResolvedValue([
             {
                 absence_id: "absence-1",
                 start: new Date("2026-05-14T00:00:00.000Z"),
@@ -62,7 +62,7 @@ describe("event.service — getHouseAbsencesInRange", () => {
         ]);
         eventModel.getGlobalEventsInRange.mockResolvedValue([]);
 
-        const result = await eventGetService.getHouseAbsencesInRange(
+        const result = await eventGetService.getHouseCalendarRecordsInRange(
             "house-1",
             "2026-05-01",
             "2026-05-31",

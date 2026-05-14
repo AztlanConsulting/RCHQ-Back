@@ -61,7 +61,7 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
     });
 }
 
-exports.getHouseAbsencesInRange = async (houseId, startDate, endDate) => {
+exports.getHouseCalendarRecordsInRange = async (houseId, startDate, endDate) => {
     return await prisma.absence.findMany({
         where: {
             start: {

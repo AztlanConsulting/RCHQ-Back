@@ -1,6 +1,6 @@
 const prisma = require("../../src/prisma");
 
-const resolveEmployeeHouse = async (req, res, next) => {
+exports.resolveEmployeeHouse = async (req, res, next) => {
   try {
     const employeeId = req.params.id || req.params.employeeId;
     const employee = await prisma.employee.findUnique({
@@ -16,12 +16,12 @@ const resolveEmployeeHouse = async (req, res, next) => {
   }
 };
 
-const resolveRequesterHouse = async (req, res, next) => {
+exports.resolveRequesterHouse = async (req, res, next) => {
   try {
     const requesterId = req.user?.id;
 
     if (!requesterId) {
-      return res.status(401).json({ message: "User not authenticated" });
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
     const employee = await prisma.employee.findUnique({
@@ -42,7 +42,7 @@ const resolveRequesterHouse = async (req, res, next) => {
     });
 
     if (!employee) {
-      return res.status(404).json({ message: "Coordinador no encontrado" });
+      return res.status(404).json({ message: "Empleado no encontrado" });
     }
 
     req.resolvedRequester = { houseId: employee.house_id };
@@ -56,9 +56,4 @@ const resolveRequesterHouse = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
-
-module.exports = {
-  resolveEmployeeHouse,
-  resolveRequesterHouse,
 };
