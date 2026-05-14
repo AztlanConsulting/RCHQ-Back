@@ -92,6 +92,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 color: "#7FD447",
                 link: "",
                 lastsAllDay: false,
+                is_free_day: event.is_free_day,
             });
         });
     }
@@ -133,6 +134,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             color: "#C524FF",
             link: "",
             lastsAllDay: false,
+            is_free_day: event.is_free_day,
         });
     });
 
@@ -169,23 +171,18 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const workDays = await getWorkDays(employeeId);
 
     absences.forEach((absence) => {
-        const absenceFreeDays = events
-            .filter((event) => {
-                const discountsAbsenceDay =
-                    (event.scope === "global" || event.scope === "house" && 
-                        event.is_free_day === true)
+        const absenceFreeDays = events.filter((event) => {
+            const discountsAbsenceDay =
+                (event.scope === "global" || event.scope === "house") &&
+                event.is_free_day === true;
 
-                return (
-                    discountsAbsenceDay &&
-                    event.date instanceof Date &&
-                    event.date >= absence.start &&
-                    event.date <= absence.end
-                );
-            })
-            .map((event) => ({
-                ...event,
-                is_free_day: true,
-            }));
+            return (
+                discountsAbsenceDay &&
+                event.date instanceof Date &&
+                event.date >= absence.start &&
+                event.date <= absence.end
+            );
+        });
 
         const usedDays = calculateUsedDays(
             workDays,

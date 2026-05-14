@@ -84,13 +84,18 @@ const makeGlobalEvent = ({
     };
 };
 
-const makeHouseEvent = ({ date, name = "Evento de casa" } = {}) => {
+const makeHouseEvent = ({
+    date,
+    name = "Evento de casa",
+    isFreeDay = true,
+} = {}) => {
     return {
         date,
         start: makeUTCTime(9),
         end: makeUTCTime(18),
         name,
         description: "",
+        is_free_day: isFreeDay,
         event_type: { name: "General" },
     };
 };
@@ -223,6 +228,13 @@ describe("event.get.service", () => {
     });
 
     it("no descuenta globales no libres ni eventos personales", async () => {
+        getHouseEventsInRange.mockResolvedValue([
+            makeHouseEvent({
+                date: makeUTCDate(2026, 5, 5),
+                isFreeDay: false,
+            }),
+        ]);
+
         getGlobalEventsInRange.mockResolvedValue([
             makeGlobalEvent({
                 date: makeUTCDate(2026, 5, 4),
