@@ -203,6 +203,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
+('ausn-001', 'Actualización de ausencia exitosa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -726,6 +727,26 @@ SELECT
   false
 FROM public.employee e
 WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
   absence_seed.absence_id,
   e.employee_id,
   absence_seed.absence_type_id,

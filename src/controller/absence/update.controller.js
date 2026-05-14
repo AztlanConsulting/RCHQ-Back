@@ -1,5 +1,8 @@
 const { updateAbsence } = require("../../service/absence/update.service");
 const RESPONSES = require("../../utils/responses");
+const { createLog } = require("../../model/log.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { getClientIp } = require("../../utils/ip");
 
 exports.updateAbsence = async (req, res) => {
     try {
@@ -64,6 +67,17 @@ exports.updateAbsence = async (req, res) => {
         }
 
         if (result.code === RESPONSES.ABSENCE.UPDATED) {
+            try {
+                await createLog(
+                    actorEmployeeId,
+                    LOG_ACTIONS.ABSENCE_UPDATED,
+                    getClientIp(req),
+                    result.data.absence.employeeId,
+                );
+            } catch (logError) {
+                console.error("Error creando log updateAbsence:", logError);
+            }
+
             return res.status(200).json({
                 success: true,
                 message: "Ausencia actualizada correctamente",
