@@ -65,7 +65,9 @@ VALUES
 ('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
 ('00000001-0000-4000-8000-000000000006', 'viewLogs'),
-('00000001-0000-4000-8000-000000000007', 'viewEvents')
+('00000001-0000-4000-8000-000000000007', 'viewEvents'),
+('00000001-0000-4000-8000-000000000008', 'editAbsences'),
+('00000001-0000-4000-8000-000000000009', 'deleteAbsences')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -83,6 +85,30 @@ INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
 WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'editAbsences'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000002', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'editAbsences'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'deleteAbsences'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000002', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'deleteAbsences'
 ON CONFLICT DO NOTHING;
 
 -- Roles que solo ven documentos
@@ -190,6 +216,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
+('ausn-001', 'Actualización de ausencia exitosa', false),
+('ausn-002', 'Eliminación de ausencia exitosa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -713,6 +741,26 @@ SELECT
   false
 FROM public.employee e
 WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
   absence_seed.absence_id,
   e.employee_id,
   absence_seed.absence_type_id,
