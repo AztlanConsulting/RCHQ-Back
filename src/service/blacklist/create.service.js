@@ -1,5 +1,5 @@
 const { findEmployeeById } = require("../../model/blacklist/get.model");
-const { transactionalBlacklistInsert } = require("../../model/blacklist/create.model");
+const { transactionalBlacklistInsert } = require("../../model/blacklist/patch.model");
 const RESPONSES = require("../../utils/responses");
 
 exports.insertIntoBlacklist = async (employeeId) => {

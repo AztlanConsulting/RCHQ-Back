@@ -4,7 +4,7 @@ const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
 
-exports.insertIntoBlacklistController = async (req, res) => {
+exports.insertIntoBlacklist = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const executorId = req.user.id;
