@@ -1,21 +1,22 @@
 const prisma = require("../../prisma");
 
 exports.getAllEventTypes = async () => {
-    const result = await prisma.event_type.findMany({
+    return await prisma.event_type.findMany({
         select: {
             name: true,
         },
     });
-    return result;
 };
 
 exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
     return await prisma.house_event.findMany({
         where: {
             house_id: houseId,
-            date: {
-                gte: startDate,
+            start: {
                 lte: endDate,
+            },
+            end: {
+                gte: startDate,
             },
         },
         include: {
@@ -29,11 +30,9 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
         where: {
             employee_id: employeeId,
             personal_event: {
-                start: {
-                    lte: endDate,
-                },
-                end: {
+                date: {
                     gte: startDate,
+                    lte: endDate,
                 },
             },
         },
@@ -50,9 +49,11 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
 exports.getGlobalEventsInRange = async (startDate, endDate) => {
     return await prisma.global_event.findMany({
         where: {
-            date: {
-                gte: startDate,
+            start: {
                 lte: endDate,
+            },
+            end: {
+                gte: startDate,
             },
         },
         include: {

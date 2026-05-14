@@ -36,7 +36,11 @@ const makeUTCDate = (year, month, day) => {
 };
 
 const makeUTCTime = (hour, minute = 0) => {
-    return new Date(Date.UTC(1970, 0, 1, hour, minute));
+    return new Date(Date.UTC(2026, 0, 1, hour, minute));
+};
+
+const makeUTCDateTime = (year, month, day, hour, minute = 0) => {
+    return new Date(Date.UTC(year, month - 1, day, hour, minute));
 };
 
 const sign = (overrides = {}) => {
@@ -309,31 +313,31 @@ const seed = async () => {
             {
                 global_event_id: IDS.freeGlobalA,
                 event_type_id: IDS.eventType,
-                date: makeUTCDate(2026, 5, 4),
-                start: makeUTCTime(9),
-                end: makeUTCTime(18),
+                start: makeUTCDateTime(2026, 5, 4, 9),
+                end: makeUTCDateTime(2026, 5, 4, 18),
                 name: "Descanso global libre",
                 description: "Debe descontar un dia habil",
+                all_day: false,
                 is_free_day: true,
             },
             {
                 global_event_id: IDS.freeGlobalDuplicate,
                 event_type_id: IDS.eventType,
-                date: makeUTCDate(2026, 5, 4),
-                start: makeUTCTime(10),
-                end: makeUTCTime(12),
+                start: makeUTCDateTime(2026, 5, 4, 10),
+                end: makeUTCDateTime(2026, 5, 4, 12),
                 name: "Descanso global duplicado",
                 description: "No debe descontar dos veces el mismo dia",
+                all_day: false,
                 is_free_day: true,
             },
             {
                 global_event_id: IDS.nonFreeGlobal,
                 event_type_id: IDS.eventType,
-                date: makeUTCDate(2026, 5, 5),
-                start: makeUTCTime(10),
-                end: makeUTCTime(12),
+                start: makeUTCDateTime(2026, 5, 5, 10),
+                end: makeUTCDateTime(2026, 5, 5, 12),
                 name: "Global no libre",
                 description: "No debe descontar dias",
+                all_day: false,
                 is_free_day: false,
             },
         ],
@@ -344,11 +348,12 @@ const seed = async () => {
             house_event_id: IDS.ordinaryHouseEvent,
             event_type_id: IDS.eventType,
             house_id: IDS.houseA,
-            date: makeUTCDate(2026, 5, 1),
-            start: makeUTCTime(8),
-            end: makeUTCTime(10),
+            start: makeUTCDateTime(2026, 5, 5, 8),
+            end: makeUTCDateTime(2026, 5, 5, 10),
             name: "Evento ordinario casa",
             description: "No descuenta mientras no tenga is_free_day",
+            all_day: false,
+            is_free_day: false,
         },
     });
 
