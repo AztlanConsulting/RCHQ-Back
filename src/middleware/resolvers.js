@@ -57,3 +57,32 @@ exports.resolveRequesterHouse = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.resolveAbsenceHouse = async (req, res, next) => {
+  try {
+    const absenceId = req.params.absenceId;
+
+    const absence = await prisma.absence.findUnique({
+      where: { absence_id: absenceId },
+      select: {
+        employee: {
+          select: {
+            house_id: true,
+          },
+        },
+      },
+    });
+
+    if (!absence) {
+      return res.status(404).json({
+        success: false,
+        message: "Ausencia no encontrada",
+      });
+    }
+
+    req.resolvedAbsence = { houseId: absence.employee.house_id };
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
