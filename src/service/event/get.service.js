@@ -1,5 +1,6 @@
 const { getVacationsInRange } = require("../../model/vacation/get.model");
 const { dateRangeSchema } = require("../../schemas/dates.schemas");
+const { getAbsencesInRange } = require("../../model/absence/get.model");
 const {
     calculateUsedDays,
     combineDateAndTime,
@@ -15,7 +16,6 @@ const {
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
-    getAbsencesInRange,
 } = require("../../model/event/get.model");
 const {
     mapEmployeeAbsenceCalendarEvent,
