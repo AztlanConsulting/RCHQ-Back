@@ -19,7 +19,7 @@ Usuario -> Frontend : Selecciona solicitud pendiente
 Usuario -> Frontend : Confirma rechazo
 Usuario -> Frontend : Opcionalmente escribe feedback
 
-Frontend -> Router : PATCH /vacation/requests/:vacationRequestId/reject\nAuthorization: Bearer token\n{ feedback? }
+Frontend -> Router : PATCH /vacation/request/:vacationRequestId/reject\nAuthorization: Bearer token\n{ feedback? }
 
 Router -> Middleware : apiLimiter
 Router -> Middleware : verifyToken
@@ -102,6 +102,7 @@ DB --> LogModel : Log creado
 Service --> Controller : VACATION_REJECTED
 Controller --> Frontend : 200 Solicitud rechazada correctamente
 Frontend --> Usuario : Mostrar confirmación
+end
 end
 end
 end

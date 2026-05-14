@@ -44,7 +44,7 @@ router.post(
 );
 
 router.patch(
-    "/requests/:vacationRequestId/approve",
+    "/request/:vacationRequestId/approve",
     apiLimiter,
     verifyToken,
     requireRole("Coordinador"),
@@ -54,7 +54,7 @@ router.patch(
 );
 
 router.patch(
-    "/requests/:vacationRequestId/reject",
+    "/request/:vacationRequestId/reject",
     apiLimiter,
     verifyToken,
     requireRole("Coordinador"),

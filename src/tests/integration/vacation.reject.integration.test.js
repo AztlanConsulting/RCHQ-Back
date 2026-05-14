@@ -14,7 +14,7 @@ jest.mock("../../../src/model/vacation/get.model");
 jest.mock("../../../src/model/vacation/update.model");
 jest.mock("../../../src/model/log.model");
 
-describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
+describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
     const OLD_ENV = process.env;
 
     const actorEmployeeId = "e3500000-0000-4000-8000-000000000001";
@@ -121,7 +121,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
 
     it("regresa 401 si no se manda token", async () => {
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .send({});
 
         expect(response.status).toBe(401);
@@ -131,7 +131,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
 
     it("regresa 401 si el token es inválido", async () => {
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", "Bearer token_invalido")
             .send({});
 
@@ -144,7 +144,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         const token = buildToken(employeeTokenPayload);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -156,7 +156,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         const token = buildToken(adminTokenPayload);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -168,7 +168,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         const token = buildToken(coordinatorTokenPayload);
 
         const response = await request(app)
-            .patch("/vacation/requests/no-es-uuid/reject")
+            .patch("/vacation/request/no-es-uuid/reject")
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -183,7 +183,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         const longFeedback = "x".repeat(501);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({
                 feedback: longFeedback,
@@ -199,7 +199,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         const token = buildToken(coordinatorTokenPayload);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({
                 feedback: "Texto válido",
@@ -215,7 +215,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         const token = buildToken(coordinatorTokenPayload);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({
                 feedback: 123,
@@ -234,7 +234,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce(null);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -253,7 +253,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         });
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -272,7 +272,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         });
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -294,7 +294,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -311,7 +311,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         });
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({});
 
@@ -331,7 +331,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         });
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({
                 feedback,
@@ -359,7 +359,7 @@ describe("US35 - PATCH /vacation/requests/:vacationRequestId/reject", () => {
         });
 
         const response = await request(app)
-            .patch(`/vacation/requests/${vacationRequestId}/reject`)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
             .set("Authorization", `Bearer ${token}`)
             .send({
                 feedback: "Rechazo concurrente",
