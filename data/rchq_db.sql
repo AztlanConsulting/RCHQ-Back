@@ -341,7 +341,7 @@ CREATE TABLE IF NOT EXISTS public.absence (
 
 CREATE TABLE IF NOT EXISTS public.blacklist (
     blacklist_id uuid        NOT NULL DEFAULT gen_random_uuid(),
-    employee_id  uuid        NOT NULL,
+    employee_id  uuid        NOT NULL UNIQUE,
     curp         varchar(18) NOT NULL UNIQUE,
     created_at   timestamp   NOT NULL,
     CONSTRAINT blacklist_pk          PRIMARY KEY (blacklist_id),
