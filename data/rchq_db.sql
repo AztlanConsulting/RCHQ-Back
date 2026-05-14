@@ -295,6 +295,7 @@ CREATE TABLE IF NOT EXISTS public.house_event (
     name varchar(70) NOT NULL,
     description text NULL,
     all_day boolean NOT NULL,
+    is_free_day boolean NOT NULL,
     CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),
     CONSTRAINT house_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id),
     CONSTRAINT house_event_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id)

@@ -225,61 +225,80 @@ ON CONFLICT (name) DO NOTHING;
 INSERT INTO public.global_event (
   global_event_id,
   event_type_id,
-  date,
   start,
   "end",
   name,
   description,
+  all_day,
   is_free_day
 )
 VALUES (
   'c1000000-0000-4000-8000-000000000001',
   'b1000000-0000-4000-8000-000000000001',
-  '2026-05-01',
-  '09:00:00',
-  '17:00:00',
+  '2026-05-01 09:00:00',
+  '2026-05-01 17:00:00',
   'Aniversario',
   'Aniversario de la red de casas hogar',
+  false,
   false
-);
+)
+ON CONFLICT (global_event_id) DO NOTHING;
 
 INSERT INTO public.house_event (
   house_event_id,
   event_type_id,
   house_id,
-  date,
   start,
   "end",
   name,
-  description
+  description,
+  all_day,
+  is_free_day
 )
 VALUES (
   'c2000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Desarrollo'),
-  '2026-05-03',
-  '10:00:00',
-  '12:00:00',
+  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  '2026-05-03 10:00:00',
+  '2026-05-03 12:00:00',
   'Visita DIF',
-  'Visita por parte del DIF para ver las instalaciones'
-);
+  'Visita por parte del DIF para ver las instalaciones',
+  false,
+  false
+)
+ON CONFLICT (house_event_id) DO NOTHING;
 
 INSERT INTO public.personal_event (
   personal_event_id,
   event_type_id,
+  date,
   start,
   "end",
   name,
-  description
+  description,
+  all_day
 )
 VALUES (
   'c3000000-0000-4000-8000-000000000003',
   'b1000000-0000-4000-8000-000000000001',
-  '2026-05-04 15:00:00',
-  '2026-05-04 16:00:00',
+  '2026-05-04',
+  '15:00:00',
+  '16:00:00',
   'Visita médica',
-  'Se tiene que llevar a Juan Pérez al doctor'
-);
+  'Se tiene que llevar a Juan Pérez al doctor',
+  false
+)
+ON CONFLICT (personal_event_id) DO NOTHING;
+
+INSERT INTO public.employee_personal_event (
+  personal_event_id,
+  employee_id
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000003',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1)
+)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO public.employee_personal_event (
   personal_event_id,
