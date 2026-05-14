@@ -4,44 +4,41 @@ const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
 
-exports.insertIntoBlacklist = async (req, res) => {
+exports.insertIntoBlacklistController = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const executorId = req.user.id;
 
         const result = await insertIntoBlacklist(employeeId);
 
-        if (result.type === RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND) {
+        if (result.code === RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND) {
             return res.status(400).json({
                 success: false,
                 message: "Empleado no encontrado",
             });
         }
 
-        if (result.type === RESPONSES.BLACKLIST.DEACTIVATION_FAILED) {
-            return res.status(400).json({
-                success: false,
-                message: "Fallo al desactivar la cuenta del empleado",
-            });
-        }
-
-        if (result.type === RESPONSES.BLACKLIST.INSERT_FAILED) {
+        if (result.code === RESPONSES.BLACKLIST.INSERT_FAILED) {
             return res.status(400).json({
                 success: false,
                 message: "Fallo al insertar al empleado a la lista negra",
             });
         }
 
-        if (result.type === RESPONSES.BLACKLIST.ADDED) {
+        if (result.code === RESPONSES.BLACKLIST.ADDED) {
             try {
                 await createLog(
                     executorId,
                     LOG_ACTIONS.BLACKLIST_ADDED,
                     getClientIp(req),
-                    `${result.data.employeeFullName} - ${result.data.curp}`,
+                    `${result.data.employeeFullName} - ${result.data.curp}`
                 );
             } catch (err) {
                 console.error("Error creando log insertIntoBlacklist:", err);
+                return res.status(400).json({
+                    success: false,
+                    message: "Fallo al generar el log de la acción ejecutada",
+                });
             }
 
             return res.status(200).json({
@@ -51,7 +48,12 @@ exports.insertIntoBlacklist = async (req, res) => {
             });
         }
 
-    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor",
+        });
+
+    } catch (error) {
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor",
