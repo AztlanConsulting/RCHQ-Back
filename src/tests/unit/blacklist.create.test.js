@@ -2,17 +2,13 @@ jest.mock("../../model/blacklist/get.model", () => ({
     findEmployeeById: jest.fn(),
 }));
 
+// Mockeamos la nueva función transaccional en lugar de las funciones separadas
 jest.mock("../../model/blacklist/patch.model", () => ({
-    deactivateEmployee: jest.fn(),
-}));
-
-jest.mock("../../model/blacklist/create.model", () => ({
-    insertBlacklist: jest.fn(),
+    transactionalBlacklistInsert: jest.fn(),
 }));
 
 const { findEmployeeById } = require("../../model/blacklist/get.model");
-const { deactivateEmployee } = require("../../model/blacklist/patch.model");
-const { insertBlacklist } = require("../../model/blacklist/create.model");
+const { transactionalBlacklistInsert } = require("../../model/blacklist/patch.model");
 const { insertIntoBlacklist } = require("../../service/blacklist/create.service");
 const RESPONSES = require("../../utils/responses");
 
@@ -47,73 +43,42 @@ describe("insertIntoBlacklist", () => {
 
         const result = await insertIntoBlacklist("id-inexistente");
 
-        expect(result.type).toBe(RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND);
-        expect(deactivateEmployee).not.toHaveBeenCalled();
-        expect(insertBlacklist).not.toHaveBeenCalled();
+        // Cambiado de result.type a result.code según el estándar del Service Layer
+        expect(result.code).toBe(RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND);
+        expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
     });
 
-    it("retorna DEACTIVATION_FAILED si falla la desactivación del empleado", async () => {
+    it("retorna INSERT_FAILED si falla la transacción en base de datos", async () => {
         findEmployeeById.mockResolvedValue(mockEmployee);
-        deactivateEmployee.mockResolvedValue(null);
+        // Simulamos que la transacción falla y retorna null
+        transactionalBlacklistInsert.mockResolvedValue(null);
 
         const result = await insertIntoBlacklist(mockEmployee.employeeId);
 
-        expect(result.type).toBe(RESPONSES.BLACKLIST.DEACTIVATION_FAILED);
-        expect(insertBlacklist).not.toHaveBeenCalled();
+        expect(result.code).toBe(RESPONSES.BLACKLIST.INSERT_FAILED);
     });
 
-    it("retorna INSERT_FAILED si falla la inserción en la lista negra", async () => {
+    it("retorna ADDED con data correcta cuando la transacción es exitosa", async () => {
         findEmployeeById.mockResolvedValue(mockEmployee);
-        deactivateEmployee.mockResolvedValue(true);
-        insertBlacklist.mockResolvedValue(null);
+        transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
 
         const result = await insertIntoBlacklist(mockEmployee.employeeId);
 
-        expect(result.type).toBe(RESPONSES.BLACKLIST.INSERT_FAILED);
-    });
-
-    it("retorna ADDED con data correcta cuando todo es exitoso", async () => {
-        findEmployeeById.mockResolvedValue(mockEmployee);
-        deactivateEmployee.mockResolvedValue(true);
-        insertBlacklist.mockResolvedValue(mockBlacklistEntry);
-
-        const result = await insertIntoBlacklist(mockEmployee.employeeId);
-
-        expect(result.type).toBe(RESPONSES.BLACKLIST.ADDED);
+        expect(result.code).toBe(RESPONSES.BLACKLIST.ADDED);
         expect(result.data.employeeFullName).toBe("Luis Pérez");
         expect(result.data.curp).toBe(mockEmployee.curp);
         expect(result.data.blacklistEntry).toEqual(mockBlacklistEntry);
     });
 
-    it("llama a insertBlacklist con el employeeId y curp correctos", async () => {
+    it("llama a transactionalBlacklistInsert con el employeeId y curp correctos", async () => {
         findEmployeeById.mockResolvedValue(mockEmployee);
-        deactivateEmployee.mockResolvedValue(true);
-        insertBlacklist.mockResolvedValue(mockBlacklistEntry);
+        transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
 
         await insertIntoBlacklist(mockEmployee.employeeId);
 
-        expect(insertBlacklist).toHaveBeenCalledWith(
+        expect(transactionalBlacklistInsert).toHaveBeenCalledWith(
             mockEmployee.employeeId,
             mockEmployee.curp,
         );
-    });
-
-    it("llama a deactivateEmployee con el employeeId correcto", async () => {
-        findEmployeeById.mockResolvedValue(mockEmployee);
-        deactivateEmployee.mockResolvedValue(true);
-        insertBlacklist.mockResolvedValue(mockBlacklistEntry);
-
-        await insertIntoBlacklist(mockEmployee.employeeId);
-
-        expect(deactivateEmployee).toHaveBeenCalledWith(mockEmployee.employeeId);
-    });
-
-    it("no llama a insertBlacklist si la desactivación falla", async () => {
-        findEmployeeById.mockResolvedValue(mockEmployee);
-        deactivateEmployee.mockResolvedValue(null);
-
-        await insertIntoBlacklist(mockEmployee.employeeId);
-
-        expect(insertBlacklist).not.toHaveBeenCalled();
     });
 });
