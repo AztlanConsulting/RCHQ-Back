@@ -3,8 +3,10 @@ const eventGetService = require("../../service/event/get.service");
 jest.mock("../../model/employee/get.model");
 jest.mock("../../model/vacation/get.model");
 jest.mock("../../model/event/get.model");
+jest.mock("../../model/absence/get.model");
 
 const eventModel = require("../../model/event/get.model");
+const absenceModel = require("../../model/absence/get.model");
 const RESPONSES = require("../../utils/responses");
 
 describe("event.service — getHouseCalendarRecordsInRange", () => {
@@ -31,7 +33,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
     });
 
     it("mapea las ausencias de la casa para el calendario", async () => {
-        eventModel.getHouseCalendarRecordsInRange.mockResolvedValue([
+        absenceModel.getHouseCalendarAbsenceInRange.mockResolvedValue([
             {
                 absence_id: "absence-1",
                 start: new Date("2026-05-14T00:00:00.000Z"),
