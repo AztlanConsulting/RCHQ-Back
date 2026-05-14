@@ -48,10 +48,10 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
         }
 
         const eventStart = event.start;
-        const eventEnd = event.end ?? event.start;
+        const eventEnd = event.end;
 
         if (!eventStart || !eventEnd) {
-            return;
+            throw new Error("No se encontraron fechas válidas para el evento");
         }
 
         let currentEventDay = new Date(Date.UTC(
