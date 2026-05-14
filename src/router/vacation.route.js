@@ -17,6 +17,7 @@ const {
 } = require("../controller/vacation/create.controller");
 const {
     approveVacationRequest,
+    rejectVacationRequest,
 } = require("../controller/vacation/update.controller");
 
 const {
@@ -24,6 +25,7 @@ const {
 } = require("../schemas/vacation/create.schemas");
 const {
     approveVacationRequestSchema,
+    rejectVacationRequestSchema,
 } = require("../schemas/vacation/update.schemas");
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
@@ -42,13 +44,23 @@ router.post(
 );
 
 router.patch(
-    "/requests/:vacationRequestId/approve",
+    "/request/:vacationRequestId/approve",
     apiLimiter,
     verifyToken,
     requireRole("Coordinador"),
     requirePrivileges("manageEmployees"),
     validate(approveVacationRequestSchema, "all"),
     approveVacationRequest,
+);
+
+router.patch(
+    "/request/:vacationRequestId/reject",
+    apiLimiter,
+    verifyToken,
+    requireRole("Coordinador"),
+    requirePrivileges("manageEmployees"),
+    validate(rejectVacationRequestSchema, "all"),
+    rejectVacationRequest,
 );
 
 module.exports = router;

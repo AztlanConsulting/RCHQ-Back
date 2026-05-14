@@ -492,7 +492,7 @@ afterAll(async () => {
     await prisma.$disconnect();
 });
 
-describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
+describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
 
     test("coordinador aprueba solicitud de empleado de su misma casa", async () => {
         const vacation = await createPendingVacation({
@@ -501,7 +501,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -522,7 +522,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -543,7 +543,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -562,7 +562,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         const vacation = await createPendingVacation();
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getUserToken()}`)
             .send({});
 
@@ -580,7 +580,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         const vacation = await createPendingVacation();
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .send({});
 
         expect(res.statusCode).toBe(401);
@@ -590,7 +590,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         const vacation = await createPendingVacation();
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", "Bearer token_invalido")
             .send({});
 
@@ -599,7 +599,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
     test("retorna 400 si vacationRequestId no es UUID válido", async () => {
         const res = await request(app)
-            .patch("/vacation/requests/not-a-valid-uuid/approve")
+            .patch("/vacation/request/not-a-valid-uuid/approve")
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -609,7 +609,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
     test("retorna 404 si la solicitud no existe", async () => {
         const res = await request(app)
-            .patch(`/vacation/requests/${randomUUID()}/approve`)
+            .patch(`/vacation/request/${randomUUID()}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -630,7 +630,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -651,7 +651,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -678,7 +678,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${pendingVacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${pendingVacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -713,7 +713,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${pendingVacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${pendingVacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -734,7 +734,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -750,7 +750,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -773,7 +773,7 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -786,11 +786,11 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const responses = await Promise.allSettled([
             request(app)
-                .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+                .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
             request(app)
-                .patch(`/vacation/requests/${vacation.vacations_request_id}/approve`)
+                .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
         ]);
@@ -835,11 +835,11 @@ describe("US34 - PATCH /vacation/requests/:vacationRequestId/approve", () => {
 
         const responses = await Promise.allSettled([
             request(app)
-                .patch(`/vacation/requests/${vacationA.vacations_request_id}/approve`)
+                .patch(`/vacation/request/${vacationA.vacations_request_id}/approve`)
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
             request(app)
-                .patch(`/vacation/requests/${vacationB.vacations_request_id}/approve`)
+                .patch(`/vacation/request/${vacationB.vacations_request_id}/approve`)
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
         ]);

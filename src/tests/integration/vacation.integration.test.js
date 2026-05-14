@@ -661,11 +661,11 @@ describe("Flujo integración /vacation/request", () => {
                 data: {
                     global_event_id: randomUUID(),
                     event_type_id: eventTypeId,
-                    date: new Date(Date.UTC(2026, 10, 19)),
-                    start: new Date("1970-01-01T00:00:00Z"),
-                    end: new Date("1970-01-01T23:59:00Z"),
+                    start: new Date("2026-11-19T00:00:00Z"),
+                    end: new Date("2026-11-19T23:59:00Z"),
                     name: "Día de testeo",
                     description: "Día para testear el endpoint",
+                    all_day: false,
                     is_free_day: true,
                 },
             });
@@ -674,11 +674,11 @@ describe("Flujo integración /vacation/request", () => {
                 data: {
                     global_event_id: randomUUID(),
                     event_type_id: eventTypeId,
-                    date: new Date(Date.UTC(2026, 10, 20)),
-                    start: new Date("1970-01-01T00:00:00Z"),
-                    end: new Date("1970-01-01T23:59:00Z"),
+                    start: new Date("2026-11-20T00:00:00Z"),
+                    end: new Date("2026-11-20T23:59:00Z"),
                     name: "Rev Mex",
                     description: "Día para testear el endpoint",
+                    all_day: false,
                     is_free_day: true,
                 },
             });
