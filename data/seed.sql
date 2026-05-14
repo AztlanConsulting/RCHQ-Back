@@ -726,6 +726,43 @@ SELECT
   false
 FROM public.employee e
 WHERE e.email = 'luis.coordinacion@example.com'
+  absence_seed.absence_id,
+  e.employee_id,
+  absence_seed.absence_type_id,
+  absence_seed.start,
+  absence_seed."end",
+  absence_seed.description,
+  absence_seed.url,
+  false
+FROM public.employee e
+CROSS JOIN (
+  VALUES
+    (
+      'ab000001-0000-4000-8000-000000000001'::uuid,
+      'a0000001-0000-4000-8000-000000000001'::uuid,
+      '2026-05-01'::date,
+      '2026-05-05'::date,
+      'Consulta medica y reposo indicado',
+      'https://example.com/ausencias/andre-consulta-medica.pdf'
+    ),
+    (
+      'ab000001-0000-4000-8000-000000000002'::uuid,
+      'a0000001-0000-4000-8000-000000000002'::uuid,
+      '2026-05-12'::date,
+      '2026-05-12'::date,
+      'Permiso por tramite familiar',
+      'https://example.com/ausencias/andre-permiso-familiar.pdf'
+    ),
+    (
+      'ab000001-0000-4000-8000-000000000003'::uuid,
+      'a0000001-0000-4000-8000-000000000001'::uuid,
+      '2026-06-18'::date,
+      '2026-06-19'::date,
+      'Seguimiento medico programado',
+      'https://example.com/ausencias/andre-seguimiento-medico.pdf'
+    )
+) AS absence_seed(absence_id, absence_type_id, start, "end", description, url)
+WHERE e.email = 'andre@gmail.com'
 ON CONFLICT (absence_id) DO UPDATE SET
   employee_id = EXCLUDED.employee_id,
   absence_type_id = EXCLUDED.absence_type_id,

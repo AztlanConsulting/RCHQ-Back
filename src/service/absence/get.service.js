@@ -4,7 +4,7 @@ const RESPONSES = require("../../utils/responses");
 exports.getAbsenceTypes = async () => {
     const absenceTypes = await getAllAbsenceTypes();
 
-    if (!absenceTypes || absenceTypes.length <= 0) {
+    if (absenceTypes.length === 0) {
         return {
             code: RESPONSES.EVENTS.NOT_FOUND,
         };

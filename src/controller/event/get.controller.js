@@ -21,7 +21,7 @@ exports.getAllEventTypes = async (req, res) => {
                 success: true,
                 data: {
                     eventTypes: result.data.eventTypes,
-                }
+                },
             });
         }
 
@@ -35,9 +35,9 @@ exports.getAllEventTypes = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
-        })
+        });
     }
-}
+};
 
 exports.getEventsInRange = async (req, res) => {
     try {
@@ -50,14 +50,23 @@ exports.getEventsInRange = async (req, res) => {
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
             return res.status(400).json({
                 success: false,
-                message: "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD"
+                message:
+                    "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD",
             });
         }
 
         if (result.code == RESPONSES.DATES.BAD_DATES) {
             return res.status(406).json({
                 success: false,
-                message: "No se puede tener una fecha de inicio posterior a la de finalización"
+                message:
+                    "No se puede tener una fecha de inicio posterior a la de finalización",
+            });
+        }
+
+        if (result.code == RESPONSES.EMPLOYEE.NOT_FOUND) {
+            return res.status(404).json({
+                success: false,
+                message: "Empleado no encontrado",
             });
         }
 
@@ -65,8 +74,8 @@ exports.getEventsInRange = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 data: {
-                    events: result.data.events
-                }
+                    events: result.data.events,
+                },
             });
         }
 
@@ -140,4 +149,4 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
             message: "Error interno del servidor. Por favor intente más tarde.",
         });
     }
-}
+};
