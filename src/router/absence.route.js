@@ -3,11 +3,8 @@ const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const { apiLimiter } = require("../utils/rateLimit");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
-const { authorize } = require("../middleware/abac");
-const { modifyEmployee } = require("../policies/employee.policies");
 const {
     resolveRequesterHouse,
-    resolveAbsenceHouse,
 } = require("../middleware/resolvers");
 const { getAbsenceTypes } = require("../controller/absence/get.controller");
 const { updateAbsence } = require("../controller/absence/update.controller");
@@ -56,10 +53,6 @@ router.delete(
     requireRole("Admin", "Coordinador"),
     requirePrivileges("deleteAbsences"),
     validate(absenceDeleteSchema, "all"),
-    resolveAbsenceHouse,
-    authorize(modifyEmployee, (req) => ({
-        houseId: req.resolvedAbsence.houseId,
-    })),
     deleteAbsence,
 );
 

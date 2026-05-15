@@ -272,10 +272,38 @@ const seed = async () => {
     });
 };
 
+const resetAbsences = async () => {
+    await prisma.absence.updateMany({
+        where: {
+            absence_id: {
+                in: [IDS.absenceA, IDS.absenceB],
+            },
+        },
+        data: {
+            is_deleted: false,
+        },
+    });
+
+    await prisma.absence.update({
+        where: { absence_id: IDS.absenceDeleted },
+        data: {
+            is_deleted: true,
+        },
+    });
+};
+
 const cleanup = async () => {
     await prisma.absence.deleteMany({
         where: {
             absence_id: { in: [IDS.absenceA, IDS.absenceB, IDS.absenceDeleted] },
+        },
+    });
+
+    await prisma.logs.deleteMany({
+        where: {
+            employee_id: {
+                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+            },
         },
     });
 
@@ -345,6 +373,10 @@ beforeAll(async () => {
     await seed();
 });
 
+beforeEach(async () => {
+    await resetAbsences();
+});
+
 afterAll(async () => {
     await cleanup();
     await prisma.$disconnect();
@@ -397,15 +429,26 @@ describe("DELETE /absence/:absenceId", () => {
     });
 
     it("403 si el usuario no tiene el privilegio deleteAbsences", async () => {
+        await prisma.role_privilege.deleteMany({
+            where: {
+                role_id: IDS.coordinatorRole,
+                privilege_id: IDS.deleteAbsencesPrivilege,
+            },
+        });
+
         const res = await request(app)
             .delete(`/absence/${IDS.absenceA}`)
-            .set(
-                "Authorization",
-                `Bearer ${sign({ privileges: ["editAbsences"] })}`,
-            );
+            .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(403);
         expect(res.body.message).toBe("Insufficient privileges");
+
+        await prisma.role_privilege.create({
+            data: {
+                role_id: IDS.coordinatorRole,
+                privilege_id: IDS.deleteAbsencesPrivilege,
+            },
+        });
     });
 
     it("404 si la ausencia no existe", async () => {
