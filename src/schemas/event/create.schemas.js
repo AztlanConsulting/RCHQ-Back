@@ -10,12 +10,12 @@ const dateOnlyToUtcDate = (value) => new Date(`${value}T00:00:00.000Z`);
 
 const houseEventCreateSchema = z
     .object({
-        event_type_id: z
-            .string({ error: "El event_type_id debe de ser obligatorio" })
+        eventTypeId: z
+            .string({ error: "El eventTypeId debe de ser obligatorio" })
             .uuid({ message: "El identificador del evento no es válido." }),
 
-        house_id: z
-            .string({ error: "El house_id debe de ser obligatorio" })
+        houseId: z
+            .string({ error: "El houseId debe de ser obligatorio" })
             .uuid({ message: "El identificador de casa no es válido." }),
 
         name: z
@@ -36,16 +36,16 @@ const houseEventCreateSchema = z
             error: "La fecha de fin es obligatoria.",
         }),
 
-        all_day: z
+        allDay: z
             .boolean({
-                error: "El campo all_day debe ser verdadero o falso.",
+                error: "El campo allDay debe ser verdadero o falso.",
             })
             .optional()
             .default(false),
 
-        is_free_day: z
+        isFreeDay: z
             .boolean({
-                error: "El campo is_free_day debe ser verdadero o falso.",
+                error: "El campo isFreeDay debe ser verdadero o falso.",
             })
             .optional()
             .default(false),
@@ -71,7 +71,7 @@ const houseEventCreateSchema = z
             .default(false),
     })
     .superRefine((data, ctx) => {
-        if (data.all_day) {
+        if (data.allDay) {
             if (!DATE_ONLY_REGEX.test(data.start)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -115,13 +115,10 @@ const houseEventCreateSchema = z
         let start;
         let end;
 
-        if (data.all_day) {
+        if (data.allDay) {
             start = dateOnlyToUtcDate(data.start);
             end = dateOnlyToUtcDate(data.end);
 
-            // Para eventos all_day, end es exclusivo: sumamos un día
-            // para que el rango represente correctamente la duración real.
-            // Ejemplo: usuario manda "15 al 15" → BD guarda [15T00:00, 16T00:00).
             if (!isNaN(end.getTime())) {
                 end = new Date(end.getTime() + ONE_DAY_MS);
             }

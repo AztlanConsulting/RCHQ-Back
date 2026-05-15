@@ -9,7 +9,7 @@ const {
 
 const validateAvailability = async (data) => {
     return await createModel.findOverlappingHouseEvents({
-        house_id: data.house_id,
+        houseId: data.houseId,
         start: data.start,
         end: data.end,
     });
@@ -33,7 +33,7 @@ exports.createHouseEvent = async (data, user, req) => {
     const validData = parsed.data;
 
     const collisions = await validateAvailability({
-        house_id: validData.house_id,
+        houseId: validData.houseId,
         start: validData.start,
         end: validData.end,
     });
@@ -46,13 +46,13 @@ exports.createHouseEvent = async (data, user, req) => {
     }
 
     const houseEvent = await createModel.createHouseEvent({
-        house_id: validData.house_id,
-        event_type_id: validData.event_type_id,
+        houseId: validData.houseId,
+        eventTypeId: validData.eventTypeId,
         name: validData.name,
         start: validData.start,
         end: validData.end,
-        all_day: validData.all_day,
-        is_free_day: validData.is_free_day,
+        allDay: validData.allDay,
+        isFreeDay: validData.isFreeDay,
         description: validData.description ?? null,
     });
 
@@ -63,7 +63,7 @@ exports.createHouseEvent = async (data, user, req) => {
             user.id,
             LOG_ACTIONS.HOUSE_EVENT_CREATED,
             getClientIp(req),
-            houseEvent.house_event_id,
+            houseEvent.houseEventId,
         );
     } catch (error) {
         console.error("Error creando log de evento:", error);

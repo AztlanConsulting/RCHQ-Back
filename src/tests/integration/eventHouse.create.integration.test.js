@@ -33,7 +33,6 @@ const generateToken = (
         id: TEST_COORDINATOR_ID,
         role: "Coordinador",
         houseId: TEST_HOUSE_ID,
-        house_id: TEST_HOUSE_ID,
         tokenType: "SESSION",
         privileges: ["createEvent", "viewEvents"],
     };
@@ -46,12 +45,12 @@ const generateToken = (
 };
 
 const buildValidEventBody = (overrides = {}) => ({
-    event_type_id: TEST_EVENT_TYPE_ID,
+    eventTypeId: TEST_EVENT_TYPE_ID,
     name: "Reunión de coordinación",
     start: "2026-06-15T09:00:00-06:00",
     end: "2026-06-15T11:00:00-06:00",
-    all_day: false,
-    is_free_day: false,
+    allDay: false,
+    isFreeDay: false,
     description: "Reunión semanal del equipo",
     ...overrides,
 });
@@ -78,7 +77,10 @@ const getOrCreatePrivilegeId = async (name, fallbackPrivilegeId) => {
 
 const seedDependencies = async () => {
     // ─── Roles ──────────────────────────────────
-    const coordinatorRoleId = await getOrCreateRoleId("Coordinador", TEST_ROLE_ID);
+    const coordinatorRoleId = await getOrCreateRoleId(
+        "Coordinador",
+        TEST_ROLE_ID,
+    );
     const adminRoleId = await getOrCreateRoleId("Admin", TEST_ADMIN_ROLE_ID);
     const employeeRoleId = await getOrCreateRoleId(
         "Mantenimiento",
@@ -252,7 +254,6 @@ const seedDependencies = async () => {
 };
 
 const cleanDb = async () => {
-    // Orden importa: primero las tablas con FKs, luego las padre
     await prisma.logs.deleteMany({
         where: {
             employee_id: {
@@ -367,19 +368,19 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
 
             const inDb = await prisma.house_event.findUnique({
                 where: {
-                    house_event_id: res.body.data.houseEvent.house_event_id,
+                    house_event_id: res.body.data.houseEvent.houseEventId,
                 },
             });
             expect(inDb).not.toBeNull();
             expect(inDb.house_id).toBe(TEST_HOUSE_ID);
         });
 
-        it("crea un evento all_day de un solo día y suma un día al end en BD", async () => {
+        it("crea un evento allDay de un solo día y suma un día al end en BD", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 start: "2026-06-15",
                 end: "2026-06-15",
-                all_day: true,
+                allDay: true,
             });
 
             const res = await request(app)
@@ -391,19 +392,19 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
 
             const inDb = await prisma.house_event.findUnique({
                 where: {
-                    house_event_id: res.body.data.houseEvent.house_event_id,
+                    house_event_id: res.body.data.houseEvent.houseEventId,
                 },
             });
             expect(inDb.start.toISOString()).toBe("2026-06-15T00:00:00.000Z");
             expect(inDb.end.toISOString()).toBe("2026-06-16T00:00:00.000Z");
         });
 
-        it("crea un evento all_day de varios días", async () => {
+        it("crea un evento allDay de varios días", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 start: "2026-06-15",
                 end: "2026-06-17",
-                all_day: true,
+                allDay: true,
             });
 
             const res = await request(app)
@@ -415,7 +416,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
 
             const inDb = await prisma.house_event.findUnique({
                 where: {
-                    house_event_id: res.body.data.houseEvent.house_event_id,
+                    house_event_id: res.body.data.houseEvent.houseEventId,
                 },
             });
             expect(inDb.start.toISOString()).toBe("2026-06-15T00:00:00.000Z");
@@ -436,10 +437,10 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             expect(res.body.data.houseEvent.description).toBeNull();
         });
 
-        it("aplica all_day=false por defecto si no se envía", async () => {
+        it("aplica allDay=false por defecto si no se envía", async () => {
             const token = generateToken();
             const body = buildValidEventBody();
-            delete body.all_day;
+            delete body.allDay;
 
             const res = await request(app)
                 .post(API_ROUTE)
@@ -447,7 +448,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .send(body);
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.data.houseEvent.all_day).toBe(false);
+            expect(res.body.data.houseEvent.allDay).toBe(false);
         });
 
         it("registra un log en BD al crear el evento", async () => {
@@ -476,7 +477,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
     //  2. FUZZING Y MANIPULACIÓN DE PARÁMETROS
     // ──────────────────────────────────────────────────────
     describe("2. Fuzzing y Manipulación de Parámetros (Inputs destructivos)", () => {
-        it("retorna 400 si el body está vacío", async () => {
+        it("retorna 422 si el body está vacío", async () => {
             const token = generateToken();
 
             const res = await request(app)
@@ -484,10 +485,10 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send({});
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna 400 si el name excede 70 caracteres", async () => {
+        it("retorna 422 si el name excede 70 caracteres", async () => {
             const token = generateToken();
             const body = buildValidEventBody({ name: "a".repeat(71) });
 
@@ -496,7 +497,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
         it("rechaza un name con caracteres maliciosos (XSS attempt)", async () => {
@@ -510,7 +511,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
         it("rechaza un description con caracteres de SQL injection", async () => {
@@ -524,25 +525,25 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna 400 si event_type_id no es un UUID válido", async () => {
+        it("retorna 422 si eventTypeId no es un UUID válido", async () => {
             const token = generateToken();
-            const body = buildValidEventBody({ event_type_id: "no-es-uuid" });
+            const body = buildValidEventBody({ eventTypeId: "no-es-uuid" });
 
             const res = await request(app)
                 .post(API_ROUTE)
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna error si event_type_id es UUID válido pero no existe", async () => {
+        it("retorna error si eventTypeId es UUID válido pero no existe", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
-                event_type_id: randomUUID(),
+                eventTypeId: randomUUID(),
             });
 
             const res = await request(app)
@@ -558,7 +559,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             expect(count).toBe(0);
         });
 
-        it("retorna 400 si start no tiene timezone con evento por hora", async () => {
+        it("retorna 422 si start no tiene timezone con evento por hora", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 start: "2026-06-15T09:00:00",
@@ -569,15 +570,15 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna 400 si start es YYYY-MM-DD pero all_day es false", async () => {
+        it("retorna 422 si start es YYYY-MM-DD pero allDay es false", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 start: "2026-06-15",
                 end: "2026-06-15",
-                all_day: false,
+                allDay: false,
             });
 
             const res = await request(app)
@@ -585,10 +586,10 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna 400 si end es anterior a start", async () => {
+        it("retorna 422 si end es anterior a start", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 start: "2026-06-15T11:00:00-06:00",
@@ -600,10 +601,10 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna 400 si la fecha es imposible (mes 13)", async () => {
+        it("retorna 422 si la fecha es imposible (mes 13)", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 start: "2026-13-15T09:00:00-06:00",
@@ -614,10 +615,10 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
-        it("retorna 400 si description excede 250 caracteres", async () => {
+        it("retorna 422 si description excede 250 caracteres", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 description: "a".repeat(251),
@@ -628,7 +629,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
 
         it("ignora campos extra en el body (no los persiste)", async () => {
@@ -645,7 +646,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .send(body);
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.data.houseEvent.house_event_id).not.toBe(
+            expect(res.body.data.houseEvent.houseEventId).not.toBe(
                 "FAKE_ID_INJECTION",
             );
         });
@@ -662,7 +663,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(body);
 
-            expect(res.statusCode).toBe(400);
+            expect(res.statusCode).toBe(422);
         });
     });
 
@@ -891,7 +892,6 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             const adminToken = generateToken({
                 role: "Admin",
                 houseId: TEST_OTHER_HOUSE_ID,
-                house_id: TEST_OTHER_HOUSE_ID,
             });
 
             const res = await request(app)
@@ -900,13 +900,13 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .send(buildValidEventBody());
 
             expect(res.statusCode).toBe(201);
-            expect(res.body.data.houseEvent.house_id).toBe(TEST_OTHER_HOUSE_ID);
+            expect(res.body.data.houseEvent.houseId).toBe(TEST_OTHER_HOUSE_ID);
         });
 
-        it("el house_id del token tiene precedencia sobre el body (no se puede falsificar)", async () => {
+        it("el houseId del token tiene precedencia sobre el body (no se puede falsificar)", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
-                house_id: TEST_OTHER_HOUSE_ID,
+                houseId: TEST_OTHER_HOUSE_ID,
             });
 
             const res = await request(app)
@@ -915,7 +915,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .send(body);
 
             if (res.statusCode === 201) {
-                expect(res.body.data.houseEvent.house_id).toBe(TEST_HOUSE_ID);
+                expect(res.body.data.houseEvent.houseId).toBe(TEST_HOUSE_ID);
             } else {
                 expect(res.statusCode).toBeGreaterThanOrEqual(400);
             }
@@ -980,7 +980,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
 
             const inDb = await prisma.house_event.findUnique({
                 where: {
-                    house_event_id: res.body.data.houseEvent.house_event_id,
+                    house_event_id: res.body.data.houseEvent.houseEventId,
                 },
             });
 

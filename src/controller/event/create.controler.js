@@ -5,30 +5,34 @@ exports.createHouseEvent = async (req, res) => {
     try {
         const { houseId } = req.user;
         const {
-            event_type_id,
+            eventTypeId,
             name,
             start,
             end,
-            all_day,
-            is_free_day,
+            allDay,
+            isFreeDay,
             description,
             forceOverlap,
         } = req.body;
 
-        const result = await createService.createHouseEvent({
-            house_id: houseId,
-            event_type_id,
-            name,
-            start,
-            end,
-            all_day,
-            is_free_day,
-            description,
-            forceOverlap,
-        }, req.user, req);
+        const result = await createService.createHouseEvent(
+            {
+                houseId,
+                eventTypeId,
+                name,
+                start,
+                end,
+                allDay,
+                isFreeDay,
+                description,
+                forceOverlap,
+            },
+            req.user,
+            req,
+        );
 
         if (result.code == RESPONSES.EVENTS.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos. Verifique los campos.",
                 data: {

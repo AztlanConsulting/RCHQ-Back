@@ -163,6 +163,8 @@ Los eventos tienen dos modos según `all_day`:
 
 **Convención de almacenamiento: rango `[start, end)`** (inicio inclusivo, fin exclusivo). El `end` representa el momento en que el evento deja de estar activo, no el último instante activo. Es la convención estándar de iCal/Google Calendar y permite que la detección de empalmes sea limpia.
 
+Calendarios y eventos. (s. f.). Google For Developers. https://developers.google.com/workspace/calendar/api/concepts/events-calendars?hl=es-419
+
 **Transformación al guardar (en el schema Zod):**
 
 - Eventos con hora: se guardan tal cual, Prisma los convierte a UTC.

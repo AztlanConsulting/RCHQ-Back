@@ -29,7 +29,7 @@ deactivate event.model
 event.service -->> controller : eventTypes[]
 deactivate event.service
 
-controller -->> routes : response.send({ eventTypes })
+controller -->> routes : response.status(200).send({ eventTypes })
 deactivate controller
 
 routes -> ReactView : render(Modal con datos)
@@ -55,7 +55,7 @@ end
 ReactView -> ReactView : Validar campos obligatorios
 
 alt Campos incompletos
-    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes"
+    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes" (400)
     deactivate ReactView
 else Campos completos
     Navegador -> routes : POST /events/house/add
@@ -81,7 +81,7 @@ else Campos completos
     deactivate event.service
 
     alt ¿Existe empalme? AND !forceOverlap
-        controller -->> routes : response.status(409)
+        controller -->> routes : response.status(409).send("Conflicto")
         activate routes
         routes -->> ReactView : send("Conflicto")
         deactivate routes
@@ -118,7 +118,7 @@ else Campos completos
         event.service -->> controller : success
         deactivate event.service
 
-        controller -->> routes : response.status(201)
+        controller -->> routes : response.status(201).send("Creado")
         deactivate controller
         activate routes
         routes -->> ReactView : send("Creado")
