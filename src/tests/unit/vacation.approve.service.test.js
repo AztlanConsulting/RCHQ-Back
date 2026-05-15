@@ -478,7 +478,8 @@ describe("US34 - approveVacationRequest service", () => {
         test("descuenta eventos globales como días no usados", async () => {
             getGlobalEventsInRange.mockResolvedValueOnce([
                 {
-                    date: makeUTCDate(2026, 6, 24),
+                    start: makeUTCDate(2026, 6, 24),
+                    end: makeUTCDate(2026, 6, 24),
                     is_free_day: true,
                 },
             ]);

@@ -1,0 +1,147 @@
+@startuml
+title US35 - Rechazar una solicitud de vacaciones
+
+|Usuario|
+start
+:Entrar al módulo de solicitudes de vacaciones;
+:Seleccionar una solicitud pendiente;
+:Dar clic en rechazar solicitud;
+:Opcionalmente escribir feedback de rechazo;
+
+|Sistema|
+:Aplicar rate limit;
+:Validar token de sesión;
+
+if (¿Token válido?) then (Sí)
+else (No)
+:Mostrar error "Token no proporcionado o inválido";
+stop
+endif
+
+:Validar rol Coordinador;
+
+if (¿Rol permitido?) then (Sí)
+else (No)
+:Mostrar error "Rol no permitido";
+stop
+endif
+
+:Validar privilegio para gestionar empleados/vacaciones;
+
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+:Mostrar error "Permisos insuficientes";
+stop
+endif
+
+:Validar request HTTP con schema;
+
+if (¿Request válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Validar contrato de entrada del caso de uso;
+
+if (¿Entrada válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Buscar actor coordinador por ID con rol y casa;
+
+if (¿Actor existe?) then (Sí)
+else (No)
+:Mostrar error "Usuario no autenticado";
+stop
+endif
+
+if (¿Actor es Coordinador?) then (Sí)
+else (No)
+:Mostrar error "No tienes permisos para rechazar solicitudes de vacaciones";
+stop
+endif
+
+:Buscar solicitud de vacaciones;
+
+if (¿Solicitud existe?) then (Sí)
+else (No)
+:Mostrar error "Solicitud de vacaciones no encontrada";
+stop
+endif
+
+if (¿Solicitud sigue pendiente?) then (Sí)
+else (No)
+:Mostrar error "La solicitud ya fue revisada";
+stop
+endif
+
+:Buscar empleado dueño de la solicitud;
+
+if (¿Empleado existe?) then (Sí)
+else (No)
+:Mostrar error "Empleado no encontrado";
+stop
+endif
+
+if (¿Empleado es Admin?) then (Sí)
+:Mostrar error "No puede acceder a este recurso";
+stop
+else (No)
+endif
+
+:Validar que el Coordinador pertenezca a la misma casa hogar que el empleado;
+
+if (¿Misma casa hogar?) then (Sí)
+else (No)
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+:Iniciar transacción;
+:Bloquear operaciones concurrentes de vacaciones del empleado;
+:Releer solicitud dentro de la transacción;
+
+if (¿Solicitud existe?) then (Sí)
+else (No)
+:Cancelar rechazo;
+:Mostrar error "Solicitud de vacaciones no encontrada";
+stop
+endif
+
+if (¿Solicitud pertenece al empleado esperado?) then (Sí)
+else (No)
+:Cancelar rechazo;
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+if (¿Solicitud sigue pendiente?) then (Sí)
+else (No)
+:Cancelar rechazo;
+:Mostrar error "La solicitud ya fue revisada";
+stop
+endif
+
+:Releer empleado dentro de la transacción;
+
+if (¿Empleado existe y sigue dentro de la casa del Coordinador?) then (Sí)
+else (No)
+:Cancelar rechazo;
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+:Actualizar solicitud con status = REJECTED;
+:Guardar feedback si fue proporcionado;
+:Confirmar transacción;
+:Guardar log de rechazo;
+:Mostrar mensaje "Solicitud rechazada correctamente";
+
+|Usuario|
+:Continuar revisando solicitudes;
+stop
+
+@enduml
