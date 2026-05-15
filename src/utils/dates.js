@@ -43,10 +43,42 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const freeDays = [];
     
     events.forEach(event => {
-        const eventDay = event.date.getUTCDay();
-        const eventDate =event.date.toISOString().split("T")[0];
-        if (event.is_free_day == true && days.includes(eventDay) && !freeDays.includes(eventDate)) {
-            freeDays.push(eventDate)
+        if (event.is_free_day !== true) {
+            return;
+        }
+
+        const eventStart = event.start;
+        const eventEnd = event.end;
+
+        if (!eventStart || !eventEnd) {
+            throw new Error("No se encontraron fechas válidas para el evento");
+        }
+
+        let currentEventDay = new Date(Date.UTC(
+            eventStart.getUTCFullYear(),
+            eventStart.getUTCMonth(),
+            eventStart.getUTCDate()
+        ));
+        const lastEventDay = new Date(Date.UTC(
+            eventEnd.getUTCFullYear(),
+            eventEnd.getUTCMonth(),
+            eventEnd.getUTCDate()
+        ));
+
+        while (currentEventDay <= lastEventDay) {
+            const eventDate = currentEventDay.toISOString().split("T")[0];
+            const eventDay = currentEventDay.getUTCDay();
+
+            if (
+                currentEventDay >= startDate &&
+                currentEventDay <= endDate &&
+                days.includes(eventDay) &&
+                !freeDays.includes(eventDate)
+            ) {
+                freeDays.push(eventDate)
+            }
+
+            currentEventDay.setUTCDate(currentEventDay.getUTCDate() + 1);
         }
     });
     let usedDays = 0;
