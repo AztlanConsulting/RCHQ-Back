@@ -17,7 +17,8 @@ exports.authorize = (policyFn, getResource) => async (req, res, next) => {
         }
 
         return res.status(403).json({ error: "Acceso denegado" });
-    } catch {
+    } catch (error) {
+        console.error("Error en middleware authorize:", error);
         return res.status(500).json({ message: "Error del servidor" });
     }
 };
@@ -42,7 +43,8 @@ exports.isAllowed = async (req, res, next) => {
             success: false,
             message: "No puede acceder a este recurso"
         });
-    } catch {
+    } catch (error) {
+        console.error("Error en middleware isAllowed:", error);
         return res.status(403).json({
             success: false,
             message: "No puede acceder a este recurso"
@@ -91,7 +93,8 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
         }
 
         return next();
-    } catch {
+    } catch (error) {
+        console.error("Error en canRegisterEmployeeVacation:", error);
         return res.status(403).json({
             success: false,
             message: "No puede acceder a este recurso",
@@ -105,6 +108,13 @@ exports.canAddToBlacklist = async (req, res, next) => {
 
         if (!targetCurp) {
             return res.status(400).json({ success: false, message: "CURP no proporcionada" });
+        }
+
+        if (req.user.role !== "Coordinador") {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
         }
 
         let currentUserCurp = req.user.curp;
@@ -129,13 +139,6 @@ exports.canAddToBlacklist = async (req, res, next) => {
             });
         }
 
-        if (req.user.role !== "Coordinador") {
-            return res.status(403).json({
-                success: false,
-                message: "No puede acceder a este recurso",
-            });
-        }
-
         const targetRoleName = targetEmployee.role?.name?.toLowerCase();
 
         if (targetRoleName === "admin") {
@@ -153,7 +156,8 @@ exports.canAddToBlacklist = async (req, res, next) => {
         }
 
         return next();
-    } catch {
+    } catch (error) {
+        console.error("Error en canAddToBlacklist:", error);
         return res.status(500).json({
             success: false,
             message: "Error del servidor",
