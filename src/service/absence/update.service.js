@@ -12,11 +12,13 @@ const {
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
 const RESPONSES = require("../../utils/responses");
 const { stringToDate } = require("../../utils/dates");
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 
 exports.updateAbsence = async ({
     actorEmployeeId,
     absenceId,
     body,
+    file,
 }) => {
     const validation = absenceUpdateInputSchema.safeParse({
         actorEmployeeId,
@@ -25,6 +27,7 @@ exports.updateAbsence = async ({
     });
 
     if (!validation.success) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.ABSENCE.VALIDATION_ERROR,
             errors: validation.error.issues.map((issue) => ({
@@ -37,6 +40,7 @@ exports.updateAbsence = async ({
     const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
 
     if (!actorEmployee) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.USER.NOT_ACCESS,
         };
@@ -45,6 +49,7 @@ exports.updateAbsence = async ({
     const actorRoleName = actorEmployee.role?.name;
 
     if (!["Admin", "Coordinador"].includes(actorRoleName)) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.ABSENCE.INSUFFICIENT_PERMISSIONS,
         };
@@ -53,6 +58,7 @@ exports.updateAbsence = async ({
     const currentAbsence = await getAbsenceById(absenceId);
 
     if (!currentAbsence) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.ABSENCE.NOT_FOUND,
         };
@@ -62,6 +68,7 @@ exports.updateAbsence = async ({
         actorRoleName === "Coordinador" &&
         currentAbsence.employee.house_id !== actorEmployee.house_id
     ) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.ABSENCE.OUT_OF_SCOPE,
         };
@@ -71,6 +78,7 @@ exports.updateAbsence = async ({
         const absenceType = await getAbsenceTypeById(validation.data.body.absenceTypeId);
 
         if (!absenceType) {
+            deleteFileIfExists(file?.path);
             return {
                 code: RESPONSES.ABSENCE.INVALID_TYPE,
             };
@@ -85,6 +93,7 @@ exports.updateAbsence = async ({
         : currentAbsence.end;
 
     if (nextEndDate < nextStartDate) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.DATES.BAD_DATES,
         };
@@ -108,12 +117,27 @@ exports.updateAbsence = async ({
         updateData.end = nextEndDate;
     }
 
-    const updatedAbsence = await updateAbsenceById(absenceId, updateData);
+    const fileUrl = file ? `uploads/documents/${file.filename}` : undefined;
 
-    return {
-        code: RESPONSES.ABSENCE.UPDATED,
-        data: {
-            absence: mapAbsenceDetail(updatedAbsence),
-        },
-    };
+    if (fileUrl !== undefined) {
+        updateData.url = fileUrl;
+    }
+
+    try {
+        const updatedAbsence = await updateAbsenceById(absenceId, updateData);
+
+        if (fileUrl && currentAbsence.url) {
+            deleteFileIfExists(currentAbsence.url);
+        }
+
+        return {
+            code: RESPONSES.ABSENCE.UPDATED,
+            data: {
+                absence: mapAbsenceDetail(updatedAbsence),
+            },
+        };
+    } catch (error) {
+        deleteFileIfExists(fileUrl);
+        throw error;
+    }
 };
