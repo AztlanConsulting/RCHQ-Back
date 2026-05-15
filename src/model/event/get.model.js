@@ -60,4 +60,4 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
             event_type: true,
         },
     });
-};
+}
