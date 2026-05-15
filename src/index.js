@@ -8,6 +8,7 @@ const employeeRouter = require("./router/employee.route");
 const vacationRouter = require("./router/vacation.route");
 const eventRouter = require("./router/event.route");
 const houseRouter = require("./router/house.route");
+const absenceRouter = require("./router/absence.route");
 
 const userRouter = require("./router/user.route");
 
@@ -33,6 +34,7 @@ app.use("/user", userRouter);
 app.use("/vacation", vacationRouter);
 app.use("/event", eventRouter);
 app.use("/house", houseRouter);
+app.use("/absence", absenceRouter);
 
 app.use("/health", (req, res) => {
     res.status(200).json({

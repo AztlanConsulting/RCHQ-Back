@@ -1,6 +1,6 @@
 const { getVacationsInRange } = require("../../model/vacation/get.model");
-const { dateRangeSchema } = require("../../schemas/dates.schemas");
-const { getAbsencesInRange } = require("../../model/absence/get.model");
+const { getHouseCalendarAbsenceInRange,getAbsencesInRange } = require("../../model/absence/get.model");
+const { dateRangeSchema } = require("../../schemas/dates.schemas")
 const {
     calculateUsedDays,
     combineDateAndTime,
@@ -21,6 +21,9 @@ const {
     mapEmployeeAbsenceCalendarEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
+const {
+    mapHouseAbsenceCalendarEvent,
+} = require("../../utils/mappers/absence.map");
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -184,6 +187,77 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         code: RESPONSES.EVENTS.FOUND,
         data: {
             events: events,
+        },
+    };
+};
+
+exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDate) => {
+    const validation = dateRangeSchema.safeParse({
+        startDate: rawStartDate,
+        endDate: rawEndDate,
+    });
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.DATES.WRONG_FORMAT,
+        };
+    }
+
+    const startDate = stringToDate(rawStartDate);
+    const endDate = stringToDate(rawEndDate);
+
+    if (endDate < startDate) {
+        return {
+            code: RESPONSES.DATES.BAD_DATES,
+        };
+    }
+
+    const absences = await getHouseCalendarAbsenceInRange(houseId, startDate, endDate);
+
+    if (absences.length <= 0) {
+        return {
+            code: RESPONSES.EVENTS.FOUND,
+            data: {
+                events: [],
+            },
+        };
+    }
+
+    const supportRangeStart = absences.reduce(
+        (minDate, absence) => absence.start < minDate ? absence.start : minDate,
+        absences[0].start,
+    );
+    const supportRangeEnd = absences.reduce(
+        (maxDate, absence) => absence.end > maxDate ? absence.end : maxDate,
+        absences[0].end,
+    );
+
+    const [houseEvents, globalEvents] = await Promise.all([
+        getHouseEventsInRange(houseId, supportRangeStart, supportRangeEnd),
+        getGlobalEventsInRange(supportRangeStart, supportRangeEnd),
+    ]);
+
+    const freeDays = [...houseEvents, ...globalEvents].filter(
+        (event) => event.is_free_day === true,
+    );
+
+    const events = [];
+
+    absences.forEach((absence) => {
+        const usedDays = calculateUsedDays(
+            absence.employee.employee_workday,
+            absence.start,
+            absence.end,
+            freeDays,
+        );
+
+        events.push(mapHouseAbsenceCalendarEvent(absence, usedDays));
+    });
+
+    return {
+        code: RESPONSES.EVENTS.FOUND,
+        data: {
+            events,
         },
     };
 };
