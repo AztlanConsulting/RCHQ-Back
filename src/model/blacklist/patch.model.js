@@ -23,8 +23,7 @@ exports.transactionalBlacklistInsert = async (curp) => {
             curp: result.curp,
             createdAt: result.created_at,
         };
-    } catch (error) {
-        console.error("Error en transactionalBlacklistInsert:", error);
+    } catch {
         return null; 
     }
 };

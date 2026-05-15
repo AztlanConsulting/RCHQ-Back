@@ -37,7 +37,7 @@ exports.insertIntoBlacklist = async (req, res) => {
             message: "Error interno del servidor",
         });
 
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor",
