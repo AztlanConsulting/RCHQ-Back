@@ -3,15 +3,9 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../../prisma");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
-
-const prisma = new PrismaClient({
-    datasources: {
-        db: { url: process.env.TEST_DATABASE_URL },
-    },
-});
 
 const IDS = {
     houseA: randomUUID(),
@@ -266,17 +260,18 @@ const seed = async () => {
     });
 
     await prisma.global_event.create({
-        data: {
-            global_event_id: IDS.globalFreeDay,
-            event_type_id: IDS.eventType,
-            date: new Date("2026-05-15"),
-            start: new Date("1970-01-01T00:00:00.000Z"),
-            end: new Date("1970-01-01T23:59:00.000Z"),
-            name: "Dia libre global",
-            description: "No laborable",
-            is_free_day: true,
-        },
+    data: {
+        global_event_id: IDS.globalFreeDay,
+        event_type_id: IDS.eventType,
+        start: new Date("2026-05-15T00:00:00.000Z"),
+        end: new Date("2026-05-15T23:59:00.000Z"),
+        name: "Dia libre global",
+        description: "No laborable",
+        is_free_day: true,
+        all_day: true,
+    },
     });
+
 
     await prisma.absence.createMany({
         data: [
