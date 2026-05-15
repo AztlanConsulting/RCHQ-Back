@@ -23,3 +23,21 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
         lastsAllDay: true,
     };
 };
+
+exports.mapAbsenceDetail = (absence) => {
+    if (!absence) return undefined;
+
+    return {
+        absenceId: absence.absence_id,
+        employeeId: absence.employee?.employee_id,
+        absenceTypeId: absence.absence_type_id,
+        name: `${absence.employee?.name || ""} ${absence.employee?.surname || ""}`.trim(),
+        curp: absence.employee?.curp || "",
+        type: absence.absence_type?.name || "",
+        description: absence.description || "",
+        link: absence.url || "",
+        startDate: absence.start,
+        endDate: absence.end,
+        isDeleted: absence.is_deleted,
+    };
+};
