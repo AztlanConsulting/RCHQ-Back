@@ -11,18 +11,17 @@ exports.insertIntoBlacklist = async (curp, executorId, ipAddress) => {
     const blacklistEntry = await transactionalBlacklistInsert(curp);
     if (!blacklistEntry) return { code: RESPONSES.BLACKLIST.INSERT_FAILED };
 
-    if (blacklistEntry) {
-        try {
-                await createLog(
-                    executorId,
-                    LOG_ACTIONS.BLACKLIST_ADDED,
-                    ipAddress,
-                    `${employee.name} ${employee.surname} - ${employee.curp}`
-                );
-            } catch (err) {
-                console.error("Error creando log insertIntoBlacklist:", err);
-                return { code: RESPONSES.BLACKLIST.LOG_FAILED };
-            }
+    let warning = null;
+    try {
+        await createLog(
+            executorId,
+            LOG_ACTIONS.BLACKLIST_ADDED,
+            ipAddress,
+            `${employee.name} ${employee.surname} - ${employee.curp}`
+        );
+    } catch (err) {
+        console.error("Error creando log insertIntoBlacklist:", err);
+        warning = "Empleado agregado a la lista negra, pero falló el registro de auditoría (log).";
     }
 
     return {
@@ -31,6 +30,7 @@ exports.insertIntoBlacklist = async (curp, executorId, ipAddress) => {
             employeeFullName: `${employee.name} ${employee.surname}`,
             curp: employee.curp,
             blacklistEntry,
+            warning,
         },
     };
 };

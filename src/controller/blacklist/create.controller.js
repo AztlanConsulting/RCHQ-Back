@@ -27,7 +27,7 @@ exports.insertIntoBlacklist = async (req, res) => {
         if (result.code === RESPONSES.BLACKLIST.ADDED) {
             return res.status(200).json({
                 success: true,
-                message: "Empleado agregado a la lista negra",
+                message: result.data.warning || "Empleado agregado a la lista negra",
                 data: result.data.blacklistEntry,
             });
         }
@@ -37,7 +37,8 @@ exports.insertIntoBlacklist = async (req, res) => {
             message: "Error interno del servidor",
         });
 
-    } catch {
+    } catch (error) {
+        console.error("Error en insertIntoBlacklist controller:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor",

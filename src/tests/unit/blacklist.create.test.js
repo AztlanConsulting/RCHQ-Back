@@ -58,14 +58,15 @@ describe("insertIntoBlacklist", () => {
         expect(createLog).not.toHaveBeenCalled();
     });
 
-    it("retorna LOG_FAILED si falla la creación del log", async () => {
+    it("retorna ADDED con un warning si falla la creación del log", async () => {
         findEmployeeByCurp.mockResolvedValue(mockEmployee);
         transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
         createLog.mockRejectedValue(new Error("Database error on log"));
 
         const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
 
-        expect(result.code).toBe(RESPONSES.BLACKLIST.LOG_FAILED);
+        expect(result.code).toBe(RESPONSES.BLACKLIST.ADDED);
+        expect(result.data.warning).toBe("Empleado agregado a la lista negra, pero falló el registro de auditoría (log).");
     });
 
     it("debe lanzar o manejar el error si ocurre una excepción inesperada al buscar al empleado", async () => {

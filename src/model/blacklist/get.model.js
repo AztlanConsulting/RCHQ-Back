@@ -20,7 +20,8 @@ exports.findEmployeeByCurp = async (curp) => {
             curp: employee.curp,
             isActive: employee.is_active,
         };
-    } catch {
+    } catch (error) {
+        console.error("Error en findEmployeeByCurp:", error);
         return null;
     }
 };
