@@ -11,7 +11,6 @@ exports.transactionalBlacklistInsert = async (curp) => {
             const entry = await tx.blacklist.create({
                 data: {
                     curp: curp,
-                    created_at: new Date(),
                 },
             });
 

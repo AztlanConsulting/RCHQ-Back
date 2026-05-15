@@ -75,6 +75,7 @@ model employee {
   two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
   temp_totp_secret                String?                         @db.VarChar
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
+  blacklist                       blacklist?
   absence                         absence[]
   frecuency_of_payment            frecuency_of_payment?           @relation(fields: [frequency_of_payment_id], references: [frecuency_of_payment_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_frecuency_of_payment_fk")
   house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
@@ -338,5 +339,6 @@ model frecuency_of_payment {
 model blacklist {
   blacklist_id String   @id(map: "blacklist_pk") @default(uuid()) @db.Uuid
   curp         String   @unique @db.VarChar(18)
-  created_at   DateTime @db.Timestamp(6)
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  employee     employee @relation(fields: [curp], references: [curp], onDelete: Restrict, onUpdate: NoAction, map: "blacklist_employee_fk")
 }
