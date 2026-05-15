@@ -55,7 +55,7 @@ end
 ReactView -> ReactView : Validar campos obligatorios
 
 alt Campos incompletos
-    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes" (400)
+    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes" (422)
     deactivate ReactView
 else Campos completos
     Navegador -> routes : POST /events/house/add
