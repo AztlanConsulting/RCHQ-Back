@@ -59,6 +59,8 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
         eventModel.getHouseEventsInRange.mockResolvedValue([
             {
                 date: new Date("2026-05-15T00:00:00.000Z"),
+                start: new Date("2026-05-15T00:00:00.000Z"),
+                end: new Date("2026-05-15T23:59:00.000Z"),
                 is_free_day: true,
             },
         ]);
