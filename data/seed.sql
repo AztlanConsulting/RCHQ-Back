@@ -65,7 +65,8 @@ VALUES
 ('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
 ('00000001-0000-4000-8000-000000000006', 'viewLogs'),
-('00000001-0000-4000-8000-000000000007', 'viewEvents')
+('00000001-0000-4000-8000-000000000007', 'viewEvents'),
+('00000001-0000-4000-8000-000000000008', 'createEvent')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -122,6 +123,14 @@ FROM public.role r
 CROSS JOIN public.privileges p
 WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Dirección de Programa')
 AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
+ON CONFLICT DO NOTHING;
+
+-- Crear eventos - Casa, Global,
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+JOIN public.privileges p ON p.name = 'createEvent'
+WHERE r.name IN ('Admin', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -191,6 +200,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
 ('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),
+('even-001', 'Evento de casa creado con éxito', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
