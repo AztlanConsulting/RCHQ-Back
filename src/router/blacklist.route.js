@@ -7,7 +7,7 @@ const { canAddToBlacklist } = require("../middleware/abac");
 const { insertIntoBlacklist } = require("../controller/blacklist/create.controller");
 
 router.post(
-    "/:employeeId",
+    "/:curp",
     verifyToken,
     requireRole("Coordinador"),
     canAddToBlacklist,

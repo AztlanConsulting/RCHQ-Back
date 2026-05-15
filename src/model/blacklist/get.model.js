@@ -1,11 +1,10 @@
 const prisma = require("../../prisma");
 
-exports.findEmployeeById = async (employeeId) => {
+exports.findEmployeeByCurp = async (curp) => {
     try {
         const employee = await prisma.employee.findUnique({
-            where: { employee_id: employeeId },
+            where: { curp: curp },
             select: {
-                employee_id: true,
                 name: true,
                 surname: true,
                 curp: true,
@@ -16,7 +15,6 @@ exports.findEmployeeById = async (employeeId) => {
         if (!employee) return null;
 
         return {
-            employeeId: employee.employee_id,
             name: employee.name,
             surname: employee.surname,
             curp: employee.curp,

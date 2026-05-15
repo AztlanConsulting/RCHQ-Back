@@ -1,15 +1,14 @@
 const { insertIntoBlacklist } = require("../../service/blacklist/create.service");
 const RESPONSES = require("../../utils/responses");
-const { createLog } = require("../../model/log.model");
-const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
 
 exports.insertIntoBlacklist = async (req, res) => {
     try {
-        const { employeeId } = req.params;
+        const { curp } = req.params;
         const executorId = req.user.id;
+        const ipAddress = getClientIp(req);
 
-        const result = await insertIntoBlacklist(employeeId);
+        const result = await insertIntoBlacklist(curp, executorId, ipAddress);
 
         if (result.code === RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND) {
             return res.status(400).json({
@@ -26,21 +25,6 @@ exports.insertIntoBlacklist = async (req, res) => {
         }
 
         if (result.code === RESPONSES.BLACKLIST.ADDED) {
-            try {
-                await createLog(
-                    executorId,
-                    LOG_ACTIONS.BLACKLIST_ADDED,
-                    getClientIp(req),
-                    `${result.data.employeeFullName} - ${result.data.curp}`
-                );
-            } catch (err) {
-                console.error("Error creando log insertIntoBlacklist:", err);
-                return res.status(400).json({
-                    success: false,
-                    message: "Fallo al generar el log de la acción ejecutada",
-                });
-            }
-
             return res.status(200).json({
                 success: true,
                 message: "Empleado agregado a la lista negra",

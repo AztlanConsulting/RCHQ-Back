@@ -1,4 +1,4 @@
-const { getHome, findByIdWithRoleAndHouse } = require("../model/employee/get.model");
+const { getHome, findByIdWithRoleAndHouse, findByCurpWithRoleAndHouse } = require("../model/employee/get.model");
 
 exports.canAccess = (user, policyFn, resource) => {
     if (!user) return false;
@@ -101,16 +101,26 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
 
 exports.canAddToBlacklist = async (req, res, next) => {
     try {
-        const targetEmployeeId = req.params.employeeId;
+        const targetCurp = req.params.curp;
 
-        if (req.user.id && String(req.user.id) === String(targetEmployeeId)) {
+        if (!targetCurp) {
+            return res.status(400).json({ success: false, message: "CURP no proporcionada" });
+        }
+
+        let currentUserCurp = req.user.curp;
+        if (!currentUserCurp) {
+            const currentUser = await findByIdWithRoleAndHouse(req.user.id);
+            if (currentUser) currentUserCurp = currentUser.curp;
+        }
+
+        if (currentUserCurp && String(currentUserCurp) === String(targetCurp)) {
             return res.status(403).json({
                 success: false,
                 message: "Acción denegada: No puedes agregarte a ti mismo a la lista negra.",
             });
         }
-        
-        const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
+
+        const targetEmployee = await findByCurpWithRoleAndHouse(targetCurp);
 
         if (!targetEmployee) {
             return res.status(400).json({
