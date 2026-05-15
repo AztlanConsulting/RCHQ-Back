@@ -28,7 +28,7 @@ exports.updateAbsence = async (req, res) => {
         if (result.code === RESPONSES.ABSENCE.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,
-                message: "No tienes permisos para modificar ausencias",
+                message: "No tienes permisos suficientes",
             });
         }
 
@@ -49,7 +49,7 @@ exports.updateAbsence = async (req, res) => {
         if (result.code === RESPONSES.ABSENCE.INVALID_TYPE) {
             return res.status(400).json({
                 success: false,
-                message: "Tipo de ausencia inválido",
+                message: "Tipo de ausencia inválida",
             });
         }
 
