@@ -1,4 +1,4 @@
-@startuml HU - Coordinador registra evento de casa
+@startuml HU77 - Coordinador registra evento de casa
 
 actor Navegador
 boundary "event.house.routes" as routes
@@ -14,14 +14,13 @@ Navegador -> routes : GET /events/house/add
 activate routes
 
 routes -> controller : getAllEventTypes(request, response)
-deactivate routes
 activate controller
 
-controller -> event.service : getAllEventTypes()
+controller ->> event.service : getAllEventTypes()
 activate event.service
-event.service -> event.model : getAllEventTypes()
+event.service ->> event.model : getAllEventTypes()
 activate event.model
-event.model -> PostgreSQL : prisma.event_type.findMany()
+event.model ->> PostgreSQL : prisma.event_type.findMany()
 activate PostgreSQL
 PostgreSQL -->> event.model : eventTypes[]
 deactivate PostgreSQL
@@ -30,82 +29,104 @@ deactivate event.model
 event.service -->> controller : eventTypes[]
 deactivate event.service
 
-controller -> ReactView : response.send(Modal React, { eventTypes })
+controller -->> routes : response.send({ eventTypes })
 deactivate controller
+
+routes -> ReactView : render(Modal con datos)
+deactivate routes
 activate ReactView
 
-ReactView -> Navegador : Mostrar modal de creación
 Navegador -> ReactView : Seleccionar opción "Casa"
 
-loop Mientras falten campos obligatorios
-    Navegador -> ReactView : Ingresa datos obligatorios: (name, start, end)
-    
-    alt all_day?
-        ReactView -> ReactView : Ocultar selectores de hora
-    else No
-        ReactView -> ReactView : Mostrar selectores de hora
-    end
+Navegador -> ReactView : Ingresa datos obligatorios:\n(name, start, end)
 
-    Navegador -> ReactView : Ingresa datos opcionales: (description, is_free_day)
-
-    ReactView -> ReactView : Validar campos obligatorios
+alt all_day?
+    ReactView -> ReactView : Ocultar selectores de hora
+else No
+    ReactView -> ReactView : Mostrar selectores de hora
 end
 
-Navegador -> routes : POST /events/house/add
-activate routes
+alt Ingresar datos opcionales
+    Navegador -> ReactView : Ingresa datos opcionales:\n(description, is_free_day)
+else No
+    ReactView -> ReactView : Continúa sin opcionales
+end
 
-routes -> controller : postAdd(request, response)
-deactivate routes
-activate controller
+ReactView -> ReactView : Validar campos obligatorios
 
-controller -> event.service : validateAvailability(data)
-activate event.service
+alt Campos incompletos
+    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes"
+    deactivate ReactView
+else Campos completos
+    Navegador -> routes : POST /events/house/add
+    activate routes
 
-event.service -> event.model : findOverlappingEvents(data)
-activate event.model
-event.model -> PostgreSQL : prisma.event.findMany(overlap_query)
-activate PostgreSQL
-PostgreSQL -->> event.model : collisionList
-deactivate PostgreSQL
-event.model -->> event.service : collisions[]
-deactivate event.model
+    routes -> controller : postAdd(request, response)
+    deactivate routes
+    activate controller
 
-event.service -->> controller : collisionFound / clear
-deactivate event.service
-
-alt ¿Existe empalme? AND !forceOverlap
-    controller -> ReactView : response.status(409).send("Conflicto")
-    ReactView -> Navegador : Mostrar alerta de empalme
-    
-    alt No desea traslape
-        Navegador -> ReactView : Selecciona "No"
-        ReactView -> Navegador : Regresa a editar datos
-    else Si desea traslape (forceOverlap = true)
-        Navegador -> ReactView : Selecciona "Si"
-        ReactView -> routes : POST /events/house/add { ..., forceOverlap: true }
-        activate routes
-        routes -> controller : postAdd(request, response)
-        deactivate routes
-    end
-    
-else No existe empalme OR forceOverlap == true
-    controller -> event.service : createEvent(data)
+    controller ->> event.service : validateAvailability(data)
     activate event.service
-    event.service -> event.model : create(data)
+
+    event.service ->> event.model : findOverlappingEvents(data)
     activate event.model
-    event.model -> PostgreSQL : prisma.event.create()
+    event.model ->> PostgreSQL : prisma.event.findMany(overlap_query)
     activate PostgreSQL
-    PostgreSQL -->> event.model : eventCreated
+    PostgreSQL -->> event.model : collisionList
     deactivate PostgreSQL
-    event.model -->> event.service : success
+    event.model -->> event.service : collisions[]
     deactivate event.model
-    event.service -->> controller : success
+
+    event.service -->> controller : collisionFound / clear
     deactivate event.service
 
-    controller -> ReactView : response.status(200).send("Creado")
-    deactivate controller
-    ReactView -> Navegador : Actualizar calendario y cerrar modal
-    deactivate ReactView
+    alt ¿Existe empalme? AND !forceOverlap
+        controller -->> routes : response.status(409)
+        activate routes
+        routes -->> ReactView : send("Conflicto")
+        deactivate routes
+        activate ReactView
+        ReactView -> Navegador : Mostrar alerta de empalme
+        deactivate ReactView
+        
+        alt No desea traslape
+            Navegador -> ReactView : Selecciona "No"
+            activate ReactView
+            ReactView -> Navegador : Regresa a editar datos
+            deactivate ReactView
+        else Si desea traslape (forceOverlap = true)
+            Navegador -> ReactView : Selecciona "Si"
+            activate ReactView
+            ReactView -> routes : POST /events/house/add { ..., forceOverlap: true }
+            deactivate ReactView
+            activate routes
+            routes -> controller : postAdd(request, response)
+            deactivate routes
+        end
+        
+    else No existe empalme OR forceOverlap == true
+        controller ->> event.service : createEvent(data)
+        activate event.service
+        event.service ->> event.model : create(data)
+        activate event.model
+        event.model ->> PostgreSQL : prisma.event.create()
+        activate PostgreSQL
+        PostgreSQL -->> event.model : eventCreated
+        deactivate PostgreSQL
+        event.model -->> event.service : success
+        deactivate event.model
+        event.service -->> controller : success
+        deactivate event.service
+
+        controller -->> routes : response.status(201)
+        deactivate controller
+        activate routes
+        routes -->> ReactView : send("Creado")
+        deactivate routes
+        activate ReactView
+        ReactView -> Navegador : Actualizar calendario y cerrar modal
+        deactivate ReactView
+    end
 end
 
 @enduml
