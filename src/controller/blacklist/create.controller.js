@@ -10,7 +10,7 @@ exports.insertIntoBlacklist = async (req, res) => {
 
         const result = await insertIntoBlacklist(curp, executorId, ipAddress);
 
-        if (result.code === RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND) {
+        if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
             return res.status(404).json({
                 success: false,
                 message: "Empleado no encontrado",

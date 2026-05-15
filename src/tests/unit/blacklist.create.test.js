@@ -45,7 +45,7 @@ describe("insertIntoBlacklist", () => {
 
         const result = await insertIntoBlacklist("CURPINEXISTENTE00", mockExecutorId, mockIp);
 
-        expect(result.code).toBe(RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND);
+        expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
         expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
     });
 

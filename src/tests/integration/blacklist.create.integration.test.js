@@ -13,6 +13,7 @@ const TEST_COORDINADOR_ID = randomUUID();
 const TEST_TARGET_ID = randomUUID();
 const TEST_COORDINADOR_ROLE_ID = randomUUID();
 const TEST_TARGET_ROLE_ID = randomUUID();
+const TEST_PRIVILEGE_ID = randomUUID();
 const TEST_PASSWORD = "TestPass123";
 const TEST_COORDINADOR_EMAIL = "coordinador.blacklist@test.com";
 const TEST_TARGET_EMAIL = "target.blacklist@test.com";
@@ -49,6 +50,21 @@ const seedDependencies = async () => {
             role_id: TEST_TARGET_ROLE_ID,
             name: "test-role-blacklist-target",
         },
+    });
+
+    await prisma.privileges.upsert({
+        where: { name: "addToBlacklist" },
+        update: {},
+        create: {
+            privilege_id: TEST_PRIVILEGE_ID,
+            name: "addToBlacklist",
+        },
+    });
+
+    await prisma.role_privilege.upsert({
+        where: { role_id_privilege_id: { role_id: TEST_COORDINADOR_ROLE_ID, privilege_id: TEST_PRIVILEGE_ID } },
+        update: {},
+        create: { role_id: TEST_COORDINADOR_ROLE_ID, privilege_id: TEST_PRIVILEGE_ID },
     });
 
     for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {
@@ -118,7 +134,7 @@ const generateSessionToken = (overrides = {}) => {
             name: "Coordinador Prueba",
             role: "Coordinador",
             houseId: TEST_HOUSE_ID,
-            privileges: [],
+            privileges: ["addToBlacklist"],
             tokenType: "SESSION",
             ...overrides,
         },
@@ -156,6 +172,9 @@ afterAll(async () => {
     await cleanDb();
     await prisma.role.deleteMany({
         where: { role_id: { in: [TEST_COORDINADOR_ROLE_ID, TEST_TARGET_ROLE_ID] } },
+    });
+    await prisma.privileges.deleteMany({
+        where: { name: "addToBlacklist" },
     });
     await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
     await prisma.$disconnect();
@@ -271,24 +290,6 @@ describe("POST /blacklist - integración", () => {
         expect(res.statusCode).toBe(403);
 
         await prisma.house.delete({ where: { house_id: otraHouseId } });
-    });
-
-    it("retorna 403 si se intenta agregar a la lista negra a un empleado con rol Admin", async () => {
-        const adminRoleId = randomUUID();
-        await prisma.role.create({
-            data: { role_id: adminRoleId, name: "Admin" },
-        });
-        await createTargetEmployee({ role_id: adminRoleId });
-        const token = await loginAndGetToken();
-
-        const res = await request(app)
-            .post(`/blacklist`)
-            .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
-
-        expect(res.statusCode).toBe(403);
-        
-        await prisma.role.delete({ where: { role_id: adminRoleId } });
     });
 
     it("retorna 404 si el empleado objetivo no existe", async () => {

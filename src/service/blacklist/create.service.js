@@ -7,7 +7,7 @@ const RESPONSES = require("../../utils/responses");
 exports.insertIntoBlacklist = async (curp, executorId, ipAddress) => {
     try {
         const employee = await findEmployeeByCurp(curp);
-        if (!employee) return { code: RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND };
+        if (!employee) return { code: RESPONSES.EMPLOYEE.NOT_FOUND };
 
         if (employee.isBlacklisted) return { code: RESPONSES.BLACKLIST.ALREADY_EXISTS };
 

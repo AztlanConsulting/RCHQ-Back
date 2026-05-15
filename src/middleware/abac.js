@@ -139,15 +139,6 @@ exports.canAddToBlacklist = async (req, res, next) => {
             });
         }
 
-        const targetRoleName = targetEmployee.role?.name;
-
-        if (targetRoleName === "Admin") {
-            return res.status(403).json({
-                success: false,
-                message: "No puede acceder a este recurso",
-            });
-        }
-
         if (req.user.houseId !== targetEmployee.house_id) {
             return res.status(403).json({
                 success: false,
