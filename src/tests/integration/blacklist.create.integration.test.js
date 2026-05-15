@@ -273,6 +273,24 @@ describe("POST /blacklist - integración", () => {
         await prisma.house.delete({ where: { house_id: otraHouseId } });
     });
 
+    it("retorna 403 si se intenta agregar a la lista negra a un empleado con rol Admin", async () => {
+        const adminRoleId = randomUUID();
+        await prisma.role.create({
+            data: { role_id: adminRoleId, name: "Admin" },
+        });
+        await createTargetEmployee({ role_id: adminRoleId });
+        const token = await loginAndGetToken();
+
+        const res = await request(app)
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
+
+        expect(res.statusCode).toBe(403);
+        
+        await prisma.role.delete({ where: { role_id: adminRoleId } });
+    });
+
     it("retorna 400 si el empleado objetivo no existe", async () => {
         const token = generateSessionToken();
         const curpInexistente = "XXXX999999XXXXXX99";
@@ -309,7 +327,7 @@ describe("POST /blacklist - integración", () => {
         expect(res.body.message).toBe("Este empleado ya se encuentra en la lista negra");
     });
 
-    it("retorna 400 (o 403) si el coordinador intenta agregarse a sí mismo a la lista negra", async () => {
+    it("retorna 403 si el coordinador intenta agregarse a sí mismo a la lista negra", async () => {
         const token = await loginAndGetToken();
 
         const res = await request(app)
@@ -317,7 +335,8 @@ describe("POST /blacklist - integración", () => {
             .set("Authorization", `Bearer ${token}`)
             .send({ curp: TEST_COORDINADOR_CURP });
 
-        expect(res.statusCode).toBe(400); 
+        expect(res.statusCode).toBe(403); 
+        expect(res.body.message).toContain("No puedes agregarte a ti mismo");
     });
 
     it("retorna 400 si el parámetro curp no tiene un formato válido", async () => {

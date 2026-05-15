@@ -79,11 +79,12 @@ describe("insertIntoBlacklist", () => {
         expect(result.data.warning).toBe("Empleado agregado a la lista negra, pero falló el registro de auditoría (log).");
     });
 
-    it("debe lanzar o manejar el error si ocurre una excepción inesperada al buscar al empleado", async () => {
+    it("debe retornar INTERNAL_ERROR si ocurre una excepción inesperada en el servicio", async () => {
         const dbError = new Error("Error fatal de conexión");
         findEmployeeByCurp.mockRejectedValue(dbError);
 
-        await expect(insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp)).rejects.toThrow("Error fatal de conexión");
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+        expect(result.code).toBe(RESPONSES.BLACKLIST.INTERNAL_ERROR);
     });
 
     it("retorna ADDED con data correcta y genera el log cuando todo es exitoso", async () => {
