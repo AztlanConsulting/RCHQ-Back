@@ -41,8 +41,16 @@ const makeUTCDate = (year, month, day) => {
     return new Date(Date.UTC(year, month - 1, day));
 };
 
-const makeUTCTime = (hour, minute = 0) => {
-    return new Date(Date.UTC(1970, 0, 1, hour, minute));
+const makeUTCDateTime = (date, hour, minute = 0) => {
+    return new Date(
+        Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            hour,
+            minute,
+        ),
+    );
 };
 
 const makeAbsence = ({
@@ -63,14 +71,13 @@ const makeAbsence = ({
 };
 
 const makeGlobalEvent = ({
-    date,
+    date = makeUTCDate(2026, 5, 4),
     name = "Evento global",
     isFreeDay = true,
 } = {}) => {
     return {
-        date,
-        start: makeUTCTime(9),
-        end: makeUTCTime(18),
+        start: makeUTCDateTime(date, 9),
+        end: makeUTCDateTime(date, 18),
         name,
         description: "",
         is_free_day: isFreeDay,
@@ -79,14 +86,13 @@ const makeGlobalEvent = ({
 };
 
 const makeHouseEvent = ({
-    date,
+    date = makeUTCDate(2026, 5, 4),
     name = "Evento de casa",
     isFreeDay = true,
 } = {}) => {
     return {
-        date,
-        start: makeUTCTime(9),
-        end: makeUTCTime(18),
+        start: makeUTCDateTime(date, 9),
+        end: makeUTCDateTime(date, 18),
         name,
         description: "",
         is_free_day: isFreeDay,
@@ -239,6 +245,7 @@ describe("event.get.service", () => {
         getPersonalEventsInRange.mockResolvedValue([
             {
                 personal_event: {
+                    date: makeUTCDate(2026, 5, 5),
                     start: new Date("2026-05-05T15:00:00.000Z"),
                     end: new Date("2026-05-05T16:00:00.000Z"),
                     name: "Evento personal",

@@ -3,15 +3,29 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../../prisma");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
+const fs = require("fs");
+const path = require("path");
 
-const prisma = new PrismaClient({
-    datasources: {
-        db: { url: process.env.TEST_DATABASE_URL },
-    },
-});
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/documents");
+const PDF = Buffer.from("%PDF-1.4 absence evidence");
+const TXT = Buffer.from("malicious content");
+const ORIGINAL_ABSENCE_A = {
+    absence_type_id: null,
+    start: new Date("2026-05-05T00:00:00.000Z"),
+    end: new Date("2026-05-09T00:00:00.000Z"),
+    description: "Ausencia casa A",
+    url: "https://example.com/a.pdf",
+};
+const ORIGINAL_ABSENCE_B = {
+    absence_type_id: null,
+    start: new Date("2026-05-12T00:00:00.000Z"),
+    end: new Date("2026-05-14T00:00:00.000Z"),
+    description: "Ausencia casa B",
+    url: "https://example.com/b.pdf",
+};
 
 const IDS = {
     houseA: randomUUID(),
@@ -36,6 +50,9 @@ const STATE = {
     createdPrivilege: false,
 };
 
+ORIGINAL_ABSENCE_A.absence_type_id = IDS.absenceTypeA;
+ORIGINAL_ABSENCE_B.absence_type_id = IDS.absenceTypeA;
+
 const sign = (overrides = {}) =>
     jwt.sign(
         {
@@ -50,6 +67,45 @@ const sign = (overrides = {}) =>
         process.env.JWT_SECRET,
         { expiresIn: "1h" },
     );
+
+const ensureUploadsDir = () => {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+        fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+};
+
+const removeLocalAbsenceFiles = async () => {
+    const absences = await prisma.absence.findMany({
+        where: {
+            absence_id: { in: [IDS.absenceA, IDS.absenceB] },
+        },
+        select: {
+            url: true,
+        },
+    });
+
+    for (const absence of absences) {
+        if (!absence.url || !absence.url.startsWith("uploads/documents/")) continue;
+        const fullPath = path.resolve(process.cwd(), absence.url);
+        if (fs.existsSync(fullPath)) {
+            fs.unlinkSync(fullPath);
+        }
+    }
+};
+
+const resetAbsences = async () => {
+    await removeLocalAbsenceFiles();
+
+    await prisma.absence.update({
+        where: { absence_id: IDS.absenceA },
+        data: ORIGINAL_ABSENCE_A,
+    });
+
+    await prisma.absence.update({
+        where: { absence_id: IDS.absenceB },
+        data: ORIGINAL_ABSENCE_B,
+    });
+};
 
 const seed = async () => {
     await prisma.house.createMany({
@@ -260,6 +316,14 @@ const cleanup = async () => {
         },
     });
 
+    await prisma.logs.deleteMany({
+        where: {
+            employee_id: {
+                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+            },
+        },
+    });
+
     await prisma.employee.deleteMany({
         where: {
             employee_id: {
@@ -319,7 +383,12 @@ const cleanup = async () => {
 };
 
 beforeAll(async () => {
+    ensureUploadsDir();
     await seed();
+});
+
+afterEach(async () => {
+    await resetAbsences();
 });
 
 afterAll(async () => {
@@ -432,5 +501,82 @@ describe("PUT /absence/:absenceId", () => {
             employeeId: IDS.employeeB,
             description: "Editada por admin",
         });
+    });
+
+    it("200 y permite actualizar solo la evidencia con multipart", async () => {
+        const oldFileRelativePath = "uploads/documents/absence-old-evidence.pdf";
+        const oldFileAbsolutePath = path.resolve(process.cwd(), oldFileRelativePath);
+        fs.writeFileSync(oldFileAbsolutePath, PDF);
+
+        await prisma.absence.update({
+            where: { absence_id: IDS.absenceA },
+            data: { url: oldFileRelativePath },
+        });
+
+        const res = await request(app)
+            .put(`/absence/${IDS.absenceA}`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .attach("file", PDF, "absence-new-evidence.pdf");
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.absence.link).toMatch(/^uploads\/documents\/.+\.pdf$/);
+
+        const absenceInDb = await prisma.absence.findUnique({
+            where: { absence_id: IDS.absenceA },
+        });
+
+        expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
+        expect(absenceInDb.url).not.toBe(oldFileRelativePath);
+        expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
+        expect(fs.existsSync(oldFileAbsolutePath)).toBe(false);
+    });
+
+    it("200 y permite actualizar evidencia y datos en la misma petición multipart", async () => {
+        const res = await request(app)
+            .put(`/absence/${IDS.absenceA}`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .field("absenceTypeId", IDS.absenceTypeB)
+            .field("description", "Ausencia con evidencia nueva")
+            .field("startDate", "2026-05-07")
+            .field("endDate", "2026-05-11")
+            .attach("file", PDF, "absence-mixed-update.pdf");
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.absence).toMatchObject({
+            absenceId: IDS.absenceA,
+            employeeId: IDS.employeeA,
+            absenceTypeId: IDS.absenceTypeB,
+            description: "Ausencia con evidencia nueva",
+        });
+        expect(res.body.data.absence.link).toMatch(/^uploads\/documents\/.+\.pdf$/);
+
+        const absenceInDb = await prisma.absence.findUnique({
+            where: { absence_id: IDS.absenceA },
+        });
+
+        expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
+        expect(absenceInDb.description).toBe("Ausencia con evidencia nueva");
+        expect(absenceInDb.start.toISOString()).toBe("2026-05-07T00:00:00.000Z");
+        expect(absenceInDb.end.toISOString()).toBe("2026-05-11T00:00:00.000Z");
+        expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
+        expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
+    });
+
+    it("400 si intenta subir un archivo con tipo inválido", async () => {
+        const res = await request(app)
+            .put(`/absence/${IDS.absenceA}`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .attach("file", TXT, "absence.exe");
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe("Solo se permiten archivos PDF, JPEG, JPG y PNG");
+
+        const absenceInDb = await prisma.absence.findUnique({
+            where: { absence_id: IDS.absenceA },
+        });
+
+        expect(absenceInDb.url).toBe(ORIGINAL_ABSENCE_A.url);
     });
 });

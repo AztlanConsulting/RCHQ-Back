@@ -132,9 +132,6 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
                 data: {
                     events: result.data.events,
                 },
-                message: result.data.events.length === 0
-                    ? "Sin ausencias registradas"
-                    : "Ausencias obtenidas correctamente",
             });
         }
 
