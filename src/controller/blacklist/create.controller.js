@@ -4,7 +4,7 @@ const { getClientIp } = require("../../utils/ip");
 
 exports.insertIntoBlacklist = async (req, res) => {
     try {
-        const { curp } = req.params;
+        const { curp } = req.body;
         const executorId = req.user.id;
         const ipAddress = getClientIp(req);
 
@@ -14,6 +14,13 @@ exports.insertIntoBlacklist = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Empleado no encontrado",
+            });
+        }
+
+        if (result.code === RESPONSES.BLACKLIST.ALREADY_EXISTS) {
+            return res.status(400).json({
+                success: false,
+                message: "Este empleado ya se encuentra en la lista negra",
             });
         }
 

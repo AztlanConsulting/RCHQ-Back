@@ -161,14 +161,15 @@ afterAll(async () => {
     await prisma.$disconnect();
 });
 
-describe("POST /blacklist/:curp - integración", () => {
+describe("POST /blacklist - integración", () => {
     it("retorna 200 y agrega al empleado a la lista negra", async () => {
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
@@ -180,8 +181,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = await loginAndGetToken();
 
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         const employee = await prisma.employee.findUnique({
             where: { employee_id: TEST_TARGET_ID },
@@ -194,8 +196,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = await loginAndGetToken();
 
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         const entry = await prisma.blacklist.findFirst({
             where: { curp: TEST_TARGET_CURP },
@@ -209,8 +212,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = await loginAndGetToken();
 
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         const log = await prisma.logs.findFirst({
             where: {
@@ -226,7 +230,8 @@ describe("POST /blacklist/:curp - integración", () => {
         await createTargetEmployee();
 
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`);
+            .post(`/blacklist`)
+            .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(401);
     });
@@ -236,8 +241,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = generateSessionToken({ role: "Mantenimiento" });
 
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(403);
     });
@@ -258,8 +264,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = generateSessionToken();
 
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(403);
 
@@ -271,8 +278,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const curpInexistente = "XXXX999999XXXXXX99";
 
         const res = await request(app)
-            .post(`/blacklist/${curpInexistente}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: curpInexistente });
 
         expect(res.statusCode).toBe(400);
     });
@@ -282,8 +290,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = await loginAndGetToken();
 
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         await prisma.employee.update({
             where: { employee_id: TEST_TARGET_ID },
@@ -291,19 +300,22 @@ describe("POST /blacklist/:curp - integración", () => {
         });
 
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(400);
         expect(res.body.success).toBe(false);
+        expect(res.body.message).toBe("Este empleado ya se encuentra en la lista negra");
     });
 
     it("retorna 400 (o 403) si el coordinador intenta agregarse a sí mismo a la lista negra", async () => {
         const token = await loginAndGetToken();
 
         const res = await request(app)
-            .post(`/blacklist/${TEST_COORDINADOR_CURP}`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_COORDINADOR_CURP });
 
         expect(res.statusCode).toBe(400); 
     });
@@ -312,8 +324,9 @@ describe("POST /blacklist/:curp - integración", () => {
         const token = await loginAndGetToken();
 
         const res = await request(app)
-            .post(`/blacklist/no-soy-una-curp`)
-            .set("Authorization", `Bearer ${token}`);
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: "no-soy-una-curp" });
 
         expect(res.statusCode).toBe(400);
     });

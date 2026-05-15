@@ -8,6 +8,8 @@ exports.insertIntoBlacklist = async (curp, executorId, ipAddress) => {
     const employee = await findEmployeeByCurp(curp);
     if (!employee) return { code: RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND };
 
+    if (employee.isBlacklisted) return { code: RESPONSES.BLACKLIST.ALREADY_EXISTS };
+
     const blacklistEntry = await transactionalBlacklistInsert(curp);
     if (!blacklistEntry) return { code: RESPONSES.BLACKLIST.INSERT_FAILED };
 

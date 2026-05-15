@@ -23,6 +23,7 @@ const mockEmployee = {
     surname: "Pérez",
     curp: "PELM900101HDFRZS09",
     isActive: true,
+    isBlacklisted: false,
 };
 
 const mockBlacklistEntry = {
@@ -45,6 +46,15 @@ describe("insertIntoBlacklist", () => {
         const result = await insertIntoBlacklist("CURPINEXISTENTE00", mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND);
+        expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
+    });
+
+    it("retorna ALREADY_EXISTS si el empleado ya está en la lista negra", async () => {
+        findEmployeeByCurp.mockResolvedValue({ ...mockEmployee, isBlacklisted: true });
+
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+
+        expect(result.code).toBe(RESPONSES.BLACKLIST.ALREADY_EXISTS);
         expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
     });
 

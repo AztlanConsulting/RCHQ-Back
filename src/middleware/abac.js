@@ -104,7 +104,7 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
 
 exports.canAddToBlacklist = async (req, res, next) => {
     try {
-        const targetCurp = req.params.curp;
+        const targetCurp = req.body.curp;
 
         if (!targetCurp) {
             return res.status(400).json({ success: false, message: "CURP no proporcionada" });
