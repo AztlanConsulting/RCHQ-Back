@@ -11,6 +11,10 @@ jest.mock("../../model/absence/update.model", () => ({
     updateAbsenceById: jest.fn(),
 }));
 
+jest.mock("../../utils/deleteFile", () => ({
+    deleteFileIfExists: jest.fn(),
+}));
+
 const { updateAbsence } = require("../../service/absence/update.service");
 const { findByIdWithRoleAndHouse } = require("../../model/employee/get.model");
 const {
@@ -21,6 +25,7 @@ const {
     updateAbsenceById,
 } = require("../../model/absence/update.model");
 const RESPONSES = require("../../utils/responses");
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 
 describe("absence.update.service — updateAbsence", () => {
     beforeEach(() => {
@@ -53,6 +58,68 @@ describe("absence.update.service — updateAbsence", () => {
                 }),
             ]),
         );
+    });
+
+    it("permite actualizar solo la evidencia del archivo", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "actor-1",
+            house_id: "house-1",
+            role: { name: "Coordinador" },
+        });
+        getAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            absence_type_id: "type-1",
+            start: new Date("2026-05-10T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            description: "Vieja",
+            url: "uploads/documents/evidencia-anterior.pdf",
+            is_deleted: false,
+            absence_type: { name: "Médica" },
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+                name: "Luis",
+                surname: "Martínez",
+                curp: "MALR900205HDFRRS09",
+            },
+        });
+        updateAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            absence_type_id: "type-1",
+            start: new Date("2026-05-10T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            description: "Vieja",
+            url: "uploads/documents/evidencia-nueva.pdf",
+            is_deleted: false,
+            absence_type: { name: "Médica" },
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+                name: "Luis",
+                surname: "Martínez",
+                curp: "MALR900205HDFRRS09",
+            },
+        });
+
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: { hasEvidenceFile: true },
+            file: {
+                filename: "evidencia-nueva.pdf",
+                path: "uploads/documents/evidencia-nueva.pdf",
+            },
+        });
+
+        expect(updateAbsenceById).toHaveBeenCalledWith(
+            "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            {
+                url: "uploads/documents/evidencia-nueva.pdf",
+            },
+        );
+        expect(deleteFileIfExists).toHaveBeenCalledWith("uploads/documents/evidencia-anterior.pdf");
+        expect(result.code).toBe(RESPONSES.ABSENCE.UPDATED);
+        expect(result.data.absence.link).toBe("uploads/documents/evidencia-nueva.pdf");
     });
 
     it("retorna NOT_FOUND si la ausencia no existe", async () => {
@@ -236,5 +303,20 @@ describe("absence.update.service — updateAbsence", () => {
                 },
             },
         });
+    });
+
+    it("limpia el archivo nuevo si falla la validación con multipart", async () => {
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: { hasEvidenceFile: true, description: "Texto inválido!!! ¿vale? 😀 #123" },
+            file: {
+                filename: "evidencia.pdf",
+                path: "uploads/documents/evidencia.pdf",
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
+        expect(deleteFileIfExists).toHaveBeenCalledWith("uploads/documents/evidencia.pdf");
     });
 });

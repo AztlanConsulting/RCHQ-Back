@@ -24,6 +24,7 @@ const absenceUpdateBodySchema = z.object({
         .optional(),
     startDate: dateField.optional(),
     endDate: dateField.optional(),
+    hasEvidenceFile: z.boolean().optional(),
 }).strict().refine(
     (data) => Object.values(data).some((value) => value !== undefined),
     { message: "Debe enviarse al menos un campo para actualizar" },

@@ -9,11 +9,13 @@ exports.updateAbsence = async (req, res) => {
         const actorEmployeeId = req.user?.id;
         const { absenceId } = req.params;
         const body = req.body;
+        const file = req.file;
 
         const result = await updateAbsence({
             actorEmployeeId,
             absenceId,
             body,
+            file,
         });
 
         if (result.code === RESPONSES.USER.NOT_ACCESS) {
