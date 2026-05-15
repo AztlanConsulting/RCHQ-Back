@@ -1,18 +1,21 @@
 jest.mock("../../model/blacklist/get.model", () => ({
-    findEmployeeById: jest.fn(),
+    findEmployeeByCurp: jest.fn(),
 }));
 
-// Mockeamos la nueva función transaccional en lugar de las funciones separadas
 jest.mock("../../model/blacklist/patch.model", () => ({
     transactionalBlacklistInsert: jest.fn(),
 }));
 
-const { findEmployeeById } = require("../../model/blacklist/get.model");
+jest.mock("../../model/log.model", () => ({
+    createLog: jest.fn(),
+}));
+
+const { findEmployeeByCurp } = require("../../model/blacklist/get.model");
 const { transactionalBlacklistInsert } = require("../../model/blacklist/patch.model");
+const { createLog } = require("../../model/log.model");
 const { insertIntoBlacklist } = require("../../service/blacklist/create.service");
 const RESPONSES = require("../../utils/responses");
-
-// ─── Fixtures ─────────────────────────────────────────────
+const { LOG_ACTIONS } = require("../../utils/logActions");
 
 const mockEmployee = {
     employeeId: "e0000002-0000-4000-8000-000000000002",
@@ -24,61 +27,73 @@ const mockEmployee = {
 
 const mockBlacklistEntry = {
     blacklistId: "b0000001-0000-4000-8000-000000000001",
-    employeeId: mockEmployee.employeeId,
     curp: mockEmployee.curp,
     createdAt: new Date("2026-01-01T00:00:00Z"),
 };
 
-// ─── Hooks ────────────────────────────────────────────────
+const mockExecutorId = "admin-123";
+const mockIp = "192.168.1.1";
 
 beforeEach(() => {
     jest.clearAllMocks();
 });
 
-// ─── Tests ────────────────────────────────────────────────
-
 describe("insertIntoBlacklist", () => {
     it("retorna EMPLOYEE_NOT_FOUND si el empleado no existe", async () => {
-        findEmployeeById.mockResolvedValue(null);
+        findEmployeeByCurp.mockResolvedValue(null);
 
-        const result = await insertIntoBlacklist("id-inexistente");
+        const result = await insertIntoBlacklist("CURPINEXISTENTE00", mockExecutorId, mockIp);
 
-        // Cambiado de result.type a result.code según el estándar del Service Layer
         expect(result.code).toBe(RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND);
         expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
     });
 
     it("retorna INSERT_FAILED si falla la transacción en base de datos", async () => {
-        findEmployeeById.mockResolvedValue(mockEmployee);
-        // Simulamos que la transacción falla y retorna null
+        findEmployeeByCurp.mockResolvedValue(mockEmployee);
         transactionalBlacklistInsert.mockResolvedValue(null);
 
-        const result = await insertIntoBlacklist(mockEmployee.employeeId);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.INSERT_FAILED);
+        expect(createLog).not.toHaveBeenCalled();
     });
 
-    it("retorna ADDED con data correcta cuando la transacción es exitosa", async () => {
-        findEmployeeById.mockResolvedValue(mockEmployee);
+    it("retorna LOG_FAILED si falla la creación del log", async () => {
+        findEmployeeByCurp.mockResolvedValue(mockEmployee);
         transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
+        createLog.mockRejectedValue(new Error("Database error on log"));
 
-        const result = await insertIntoBlacklist(mockEmployee.employeeId);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+
+        expect(result.code).toBe(RESPONSES.BLACKLIST.LOG_FAILED);
+    });
+
+    it("debe lanzar o manejar el error si ocurre una excepción inesperada al buscar al empleado", async () => {
+        const dbError = new Error("Error fatal de conexión");
+        findEmployeeByCurp.mockRejectedValue(dbError);
+
+        await expect(insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp)).rejects.toThrow("Error fatal de conexión");
+    });
+
+    it("retorna ADDED con data correcta y genera el log cuando todo es exitoso", async () => {
+        findEmployeeByCurp.mockResolvedValue(mockEmployee);
+        transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
+        createLog.mockResolvedValue(true);
+
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.ADDED);
         expect(result.data.employeeFullName).toBe("Luis Pérez");
         expect(result.data.curp).toBe(mockEmployee.curp);
         expect(result.data.blacklistEntry).toEqual(mockBlacklistEntry);
-    });
+        
+        expect(transactionalBlacklistInsert).toHaveBeenCalledWith(mockEmployee.curp);
 
-    it("llama a transactionalBlacklistInsert con el employeeId y curp correctos", async () => {
-        findEmployeeById.mockResolvedValue(mockEmployee);
-        transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
-
-        await insertIntoBlacklist(mockEmployee.employeeId);
-
-        expect(transactionalBlacklistInsert).toHaveBeenCalledWith(
-            mockEmployee.employeeId,
-            mockEmployee.curp,
+        expect(createLog).toHaveBeenCalledWith(
+            mockExecutorId,
+            LOG_ACTIONS.BLACKLIST_ADDED,
+            mockIp,
+            "Luis Pérez - PELM900101HDFRZS09"
         );
     });
 });

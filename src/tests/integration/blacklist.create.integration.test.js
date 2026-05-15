@@ -8,8 +8,6 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 
 const prisma = new PrismaClient();
 
-// ─── Constantes de prueba ─────────────────────────────────
-
 const TEST_HOUSE_ID = randomUUID();
 const TEST_COORDINADOR_ID = randomUUID();
 const TEST_TARGET_ID = randomUUID();
@@ -20,8 +18,6 @@ const TEST_COORDINADOR_EMAIL = "coordinador.blacklist@test.com";
 const TEST_TARGET_EMAIL = "target.blacklist@test.com";
 const TEST_COORDINADOR_CURP = "COOR900101HDFXXX01";
 const TEST_TARGET_CURP = "TARG900101HDFXXX02";
-
-// ─── Helpers ──────────────────────────────────────────────
 
 const seedDependencies = async () => {
     await prisma.house.upsert({
@@ -139,14 +135,12 @@ const loginAndGetToken = async () => {
 };
 
 const cleanDb = async () => {
-    await prisma.blacklist.deleteMany({ where: { employee_id: TEST_TARGET_ID } });
+    await prisma.blacklist.deleteMany({ where: { curp: TEST_TARGET_CURP } });
     await prisma.logs.deleteMany({ where: { employee_id: TEST_COORDINADOR_ID } });
     await prisma.employee.deleteMany({
         where: { employee_id: { in: [TEST_COORDINADOR_ID, TEST_TARGET_ID] } },
     });
 };
-
-// ─── Hooks ────────────────────────────────────────────────
 
 beforeAll(async () => {
     await cleanDb();
@@ -167,37 +161,28 @@ afterAll(async () => {
     await prisma.$disconnect();
 });
 
-// ─── Tests ────────────────────────────────────────────────
-
-describe("POST /blacklist/:employeeId - integración", () => {
+describe("POST /blacklist/:curp - integración", () => {
     it("retorna 200 y agrega al empleado a la lista negra", async () => {
-        // Arrange
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
-        // Act
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.data).toHaveProperty("curp", TEST_TARGET_CURP);
-        expect(res.body.data).toHaveProperty("employeeId", TEST_TARGET_ID);
     });
 
     it("desactiva la cuenta del empleado en BD al agregarlo a la lista negra", async () => {
-        // Arrange
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
-        // Act
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         const employee = await prisma.employee.findUnique({
             where: { employee_id: TEST_TARGET_ID },
         });
@@ -205,34 +190,28 @@ describe("POST /blacklist/:employeeId - integración", () => {
     });
 
     it("inserta el registro con la curp correcta en la tabla blacklist en BD", async () => {
-        // Arrange
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
-        // Act
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         const entry = await prisma.blacklist.findFirst({
-            where: { employee_id: TEST_TARGET_ID },
+            where: { curp: TEST_TARGET_CURP },
         });
         expect(entry).not.toBeNull();
         expect(entry.curp).toBe(TEST_TARGET_CURP);
     });
 
     it("genera el log de la acción en BD", async () => {
-        // Arrange
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
-        // Act
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         const log = await prisma.logs.findFirst({
             where: {
                 employee_id: TEST_COORDINADOR_ID,
@@ -244,33 +223,26 @@ describe("POST /blacklist/:employeeId - integración", () => {
     });
 
     it("retorna 401 sin token de sesión", async () => {
-        // Arrange
         await createTargetEmployee();
 
-        // Act
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`);
+            .post(`/blacklist/${TEST_TARGET_CURP}`);
 
-        // Assert
         expect(res.statusCode).toBe(401);
     });
 
     it("retorna 403 si el rol no es Coordinador", async () => {
-        // Arrange
         await createTargetEmployee();
         const token = generateSessionToken({ role: "Mantenimiento" });
 
-        // Act
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         expect(res.statusCode).toBe(403);
     });
 
     it("retorna 403 si el empleado objetivo pertenece a otra casa", async () => {
-        // Arrange
         const otraHouseId = randomUUID();
         await prisma.house.create({
             data: {
@@ -285,53 +257,64 @@ describe("POST /blacklist/:employeeId - integración", () => {
         await createTargetEmployee({ house_id: otraHouseId });
         const token = generateSessionToken();
 
-        // Act
         const res = await request(app)
             .post(`/blacklist/${TEST_TARGET_ID}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         expect(res.statusCode).toBe(403);
 
         await prisma.house.delete({ where: { house_id: otraHouseId } });
     });
 
     it("retorna 400 si el empleado objetivo no existe", async () => {
-        // Arrange
         const token = generateSessionToken();
-        const idInexistente = randomUUID();
+        const curpInexistente = "XXXX999999XXXXXX99";
 
-        // Act
         const res = await request(app)
-            .post(`/blacklist/${idInexistente}`)
+            .post(`/blacklist/${curpInexistente}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         expect(res.statusCode).toBe(400);
     });
 
     it("retorna 400 si se intenta agregar dos veces al mismo empleado (curp duplicada)", async () => {
-        // Arrange
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
         await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Reactivar para poder intentar de nuevo
         await prisma.employee.update({
             where: { employee_id: TEST_TARGET_ID },
             data: { is_active: true },
         });
 
-        // Act
         const res = await request(app)
-            .post(`/blacklist/${TEST_TARGET_ID}`)
+            .post(`/blacklist/${TEST_TARGET_CURP}`)
             .set("Authorization", `Bearer ${token}`);
 
-        // Assert
         expect(res.statusCode).toBe(400);
         expect(res.body.success).toBe(false);
+    });
+
+    it("retorna 400 (o 403) si el coordinador intenta agregarse a sí mismo a la lista negra", async () => {
+        const token = await loginAndGetToken();
+
+        const res = await request(app)
+            .post(`/blacklist/${TEST_COORDINADOR_CURP}`)
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(400); 
+    });
+
+    it("retorna 400 si el parámetro curp no tiene un formato válido", async () => {
+        const token = await loginAndGetToken();
+
+        const res = await request(app)
+            .post(`/blacklist/no-soy-una-curp`)
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(400);
     });
 });
