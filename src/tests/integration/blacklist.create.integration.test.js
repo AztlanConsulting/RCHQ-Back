@@ -162,7 +162,7 @@ afterAll(async () => {
 });
 
 describe("POST /blacklist - integración", () => {
-    it("retorna 200 y agrega al empleado a la lista negra", async () => {
+    it("retorna 201 y agrega al empleado a la lista negra", async () => {
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
@@ -171,7 +171,7 @@ describe("POST /blacklist - integración", () => {
             .set("Authorization", `Bearer ${token}`)
             .send({ curp: TEST_TARGET_CURP });
 
-        expect(res.statusCode).toBe(200);
+        expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
         expect(res.body.data).toHaveProperty("curp", TEST_TARGET_CURP);
     });
@@ -291,7 +291,7 @@ describe("POST /blacklist - integración", () => {
         await prisma.role.delete({ where: { role_id: adminRoleId } });
     });
 
-    it("retorna 400 si el empleado objetivo no existe", async () => {
+    it("retorna 404 si el empleado objetivo no existe", async () => {
         const token = generateSessionToken();
         const curpInexistente = "XXXX999999XXXXXX99";
 
@@ -300,10 +300,10 @@ describe("POST /blacklist - integración", () => {
             .set("Authorization", `Bearer ${token}`)
             .send({ curp: curpInexistente });
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(404);
     });
 
-    it("retorna 400 si se intenta agregar dos veces al mismo empleado (curp duplicada)", async () => {
+    it("retorna 409 si se intenta agregar dos veces al mismo empleado (curp duplicada)", async () => {
         await createTargetEmployee();
         const token = await loginAndGetToken();
 
@@ -322,7 +322,7 @@ describe("POST /blacklist - integración", () => {
             .set("Authorization", `Bearer ${token}`)
             .send({ curp: TEST_TARGET_CURP });
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(409);
         expect(res.body.success).toBe(false);
         expect(res.body.message).toBe("Este empleado ya se encuentra en la lista negra");
     });

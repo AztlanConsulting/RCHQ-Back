@@ -11,28 +11,28 @@ exports.insertIntoBlacklist = async (req, res) => {
         const result = await insertIntoBlacklist(curp, executorId, ipAddress);
 
         if (result.code === RESPONSES.BLACKLIST.EMPLOYEE_NOT_FOUND) {
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
                 message: "Empleado no encontrado",
             });
         }
 
         if (result.code === RESPONSES.BLACKLIST.ALREADY_EXISTS) {
-            return res.status(400).json({
+            return res.status(409).json({
                 success: false,
                 message: "Este empleado ya se encuentra en la lista negra",
             });
         }
 
         if (result.code === RESPONSES.BLACKLIST.INSERT_FAILED) {
-            return res.status(400).json({
+            return res.status(500).json({
                 success: false,
                 message: "Fallo al insertar al empleado a la lista negra",
             });
         }
 
         if (result.code === RESPONSES.BLACKLIST.ADDED) {
-            return res.status(200).json({
+            return res.status(201).json({
                 success: true,
                 message: result.data.warning || "Empleado agregado a la lista negra",
                 data: result.data.blacklistEntry,

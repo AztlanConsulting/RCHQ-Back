@@ -9,6 +9,9 @@ exports.findEmployeeByCurp = async (curp) => {
                 surname: true,
                 curp: true,
                 is_active: true,
+                blacklist: {
+                    select: { blacklist_id: true }
+                }
             },
         });
 
@@ -19,6 +22,7 @@ exports.findEmployeeByCurp = async (curp) => {
             surname: employee.surname,
             curp: employee.curp,
             isActive: employee.is_active,
+            isBlacklisted: !!employee.blacklist,
         };
     } catch (error) {
         console.error("Error en findEmployeeByCurp:", error);

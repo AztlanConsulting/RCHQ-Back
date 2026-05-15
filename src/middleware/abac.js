@@ -133,7 +133,7 @@ exports.canAddToBlacklist = async (req, res, next) => {
         const targetEmployee = await findByCurpWithRoleAndHouse(targetCurp);
 
         if (!targetEmployee) {
-            return res.status(400).json({
+            return res.status(404).json({
                 success: false,
                 message: "Empleado no encontrado",
             });
