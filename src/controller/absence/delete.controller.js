@@ -43,7 +43,7 @@ exports.deleteAbsence = async (req, res) => {
         }
 
         if (result.code === RESPONSES.ABSENCE.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos",
                 errors: result.errors,

@@ -6,15 +6,15 @@ const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
 const RESPONSES = require("../../utils/responses");
 
 exports.deleteAbsence = async ({ actorEmployeeId, absenceId }) => {
-    const validation = absenceDeleteInputSchema.safeParse({
+    const validationResult = absenceDeleteInputSchema.safeParse({
         actorEmployeeId,
         absenceId,
     });
 
-    if (!validation.success) {
+    if (!validationResult.success) {
         return {
             code: RESPONSES.ABSENCE.VALIDATION_ERROR,
-            errors: validation.error.issues.map((issue) => ({
+            errors: validationResult.error.issues.map((issue) => ({
                 campo: issue.path.join("."),
                 mensaje: issue.message,
             })),
@@ -30,6 +30,7 @@ exports.deleteAbsence = async ({ actorEmployeeId, absenceId }) => {
     }
 
     const actorRoleName = actorEmployee.role?.name;
+    const actorHouseId = actorEmployee.house_id;
 
     if (!["Admin", "Coordinador"].includes(actorRoleName)) {
         return {
@@ -45,9 +46,11 @@ exports.deleteAbsence = async ({ actorEmployeeId, absenceId }) => {
         };
     }
 
+    const absenceHouseId = currentAbsence.employee.house_id;
+
     if (
         actorRoleName === "Coordinador" &&
-        currentAbsence.employee.house_id !== actorEmployee.house_id
+        absenceHouseId !== actorHouseId
     ) {
         return {
             code: RESPONSES.ABSENCE.OUT_OF_SCOPE,

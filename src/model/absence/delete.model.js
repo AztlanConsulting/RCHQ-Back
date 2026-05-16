@@ -1,28 +1,32 @@
 const prisma = require("../../prisma");
 
 exports.softDeleteAbsenceById = async (absenceId) => {
+    const whereClause = {
+        absence_id: absenceId,
+    };
+    const updateData = {
+        is_deleted: true,
+    };
+    const includeRelations = {
+        absence_type: {
+            select: {
+                name: true,
+            },
+        },
+        employee: {
+            select: {
+                employee_id: true,
+                house_id: true,
+                name: true,
+                surname: true,
+                curp: true,
+            },
+        },
+    };
+
     return await prisma.absence.update({
-        where: {
-            absence_id: absenceId,
-        },
-        data: {
-            is_deleted: true,
-        },
-        include: {
-            absence_type: {
-                select: {
-                    name: true,
-                },
-            },
-            employee: {
-                select: {
-                    employee_id: true,
-                    house_id: true,
-                    name: true,
-                    surname: true,
-                    curp: true,
-                },
-            },
-        },
+        where: whereClause,
+        data: updateData,
+        include: includeRelations,
     });
 };
