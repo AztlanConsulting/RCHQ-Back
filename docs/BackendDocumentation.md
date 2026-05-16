@@ -153,3 +153,31 @@ Extrae la IP real del cliente desde los headers de la request.
 Registra acciones de empleados en la base de datos (empleado, acción, IP).
 
 ---
+
+## Manejo de fechas en eventos
+
+Los eventos tienen dos modos según `all_day`:
+
+- **`all_day: false`** → `start` y `end` deben ser strings ISO 8601 con zona horaria (`2026-06-15T09:00:00-06:00`).
+- **`all_day: true`** → `start` y `end` deben ser strings en formato `YYYY-MM-DD` (`2026-06-15`).
+
+**Convención de almacenamiento: rango `[start, end)`** (inicio inclusivo, fin exclusivo). El `end` representa el momento en que el evento deja de estar activo, no el último instante activo. Es la convención estándar de iCal/Google Calendar y permite que la detección de empalmes sea limpia.
+
+Calendarios y eventos. (s. f.). Google For Developers. https://developers.google.com/workspace/calendar/api/concepts/events-calendars?hl=es-419
+
+**Transformación al guardar (en el schema Zod):**
+
+- Eventos con hora: se guardan tal cual, Prisma los convierte a UTC.
+- Eventos `all_day`: el schema **suma un día al `end`** antes de guardar para respetar la convención exclusiva.
+
+| Input del cliente | Guardado en BD |
+|---|---|
+| `start=15, end=15, all_day=true` | `start=15T00:00Z`, `end=16T00:00Z` (1 día) |
+| `start=15, end=16, all_day=true` | `start=15T00:00Z`, `end=17T00:00Z` (2 días) |
+| `start=15T09:00-06:00, end=15T11:00-06:00, all_day=false` | `start=15T15:00Z`, `end=15T17:00Z` |
+
+**Al consultar (GET):** el backend devuelve los valores crudos de la BD junto con la bandera `all_day`. El cliente es responsable de restar un día al `end` cuando `all_day: true` para mostrar el rango inclusivo al usuario (FullCalendar lo hace automático).
+
+**Reglas:**
+- NUNCA revertir la transformación de `+1 día` en el backend al devolver eventos.
+- SIEMPRE incluir `all_day` en las respuestas para que el cliente sepa cómo interpretar el `end`.

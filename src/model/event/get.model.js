@@ -3,6 +3,7 @@ const prisma = require("../../prisma");
 exports.getAllEventTypes = async () => {
     return await prisma.event_type.findMany({
         select: {
+            event_type_id: true,
             name: true,
         },
     });

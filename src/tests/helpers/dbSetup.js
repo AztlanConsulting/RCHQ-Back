@@ -136,6 +136,11 @@ const SEED_ACTIONS = [
         description: "Registro de vacaciones de empleado exitoso",
         important: false,
     },
+    {
+        action_id: "even-001",
+        description: "Evento de casa creado con éxito",
+        important: false,
+    },
 ];
 
 // ─── Datos de prueba ─────────────────────────────────────────────────────────
