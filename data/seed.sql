@@ -268,20 +268,12 @@ INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALU
 ('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
-SELECT workday_seed.workday_id, e.employee_id, workday_seed.start, workday_seed."end"
-FROM public.employee e
-CROSS JOIN (
-  VALUES
-    ('c0000001-0000-4000-8000-000000000001'::uuid, '09:00:00'::time, '18:00:00'::time),
-    ('c0000001-0000-4000-8000-000000000002'::uuid, '09:00:00'::time, '18:00:00'::time),
-    ('c0000001-0000-4000-8000-000000000003'::uuid, '09:00:00'::time, '18:00:00'::time),
-    ('c0000001-0000-4000-8000-000000000004'::uuid, '09:00:00'::time, '18:00:00'::time),
-    ('c0000001-0000-4000-8000-000000000005'::uuid, '09:00:00'::time, '18:00:00'::time)
-) AS workday_seed(workday_id, start, "end")
-WHERE e.email = 'laura.mantenimiento@gmail.com'
-ON CONFLICT (workday_id, employee_id) DO UPDATE SET
-  start = EXCLUDED.start,
-  "end" = EXCLUDED."end";
+VALUES
+('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00');
 
 INSERT INTO public.event_type (event_type_id, name)
 VALUES
