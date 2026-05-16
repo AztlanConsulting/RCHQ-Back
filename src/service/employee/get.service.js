@@ -29,7 +29,7 @@ exports.getEmployees = async (
     const active = activeQuery === "false" ? false : true;
 
     const page = Number(pageQuery) > 0 ? Number(pageQuery) : 1;
-    const parsedLimit = Number(limitQuery) > 0 ? Number(limitQuery) : 6;
+    const parsedLimit = Number(limitQuery) > 0 ? Number(limitQuery) : 7;
     const limit = Math.min(parsedLimit, 100);
 
     const skip = (page - 1) * limit;
@@ -172,14 +172,14 @@ exports.getWorkDays = async (employeeId) => {
         workDays.push(day.workday.name);
     });
     return workDays;
-}
+};
 
 exports.getUpdateFormData = async (user) => {
-  const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
-    getAllRoles(),
-    getAllHouses(),
-    getAllWorkdays(),
-    getFrecuencyPaymentOptions(),
-  ]);
-  return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
+    const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
+        getAllRoles(),
+        getAllHouses(),
+        getAllWorkdays(),
+        getFrecuencyPaymentOptions(),
+    ]);
+    return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
 };
