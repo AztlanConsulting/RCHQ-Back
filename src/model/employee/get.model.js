@@ -65,10 +65,13 @@ exports.getEmployees = async (houseId, active, search, skip, take) => {
     };
 
     if (search) {
-        where.OR = [
-            { name: { contains: search, mode: "insensitive" } },
-            { surname: { contains: search, mode: "insensitive" } },
-        ];
+        const terms = search.trim().split(/\s+/);
+        where.AND = terms.map((term) => ({
+            OR: [
+                { name: { contains: term, mode: "insensitive" } },
+                { surname: { contains: term, mode: "insensitive" } },
+            ],
+        }));
     }
 
     const [employees, total] = await Promise.all([
