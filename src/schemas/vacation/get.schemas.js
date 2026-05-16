@@ -92,14 +92,29 @@ exports.getReviewedVacationRequestsSchema = z
         body: z.object({}).strict().optional(),
     });
 
-exports.getVacationRequestsInputSchema = z.object({
-    actorEmployeeId: z.string().uuid("ID de actor inválido"),
-    query: z.object({
-        page: z.string().optional(),
-        limit: z.string().optional(),
-        search: z.string().optional(),
-        status: z.enum(["approved", "rejected", "all"]).optional(),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
-    }),
-});
+exports.getVacationRequestsInputSchema = z
+    .object({
+        actorEmployeeId: z.string().uuid("ID de actor inválido"),
+        query: z
+            .object({
+                page: paginationSchema.page,
+                limit: paginationSchema.limit,
+                search: searchSchema,
+                status: reviewedStatusSchema,
+                startDate: optionalDateSchema,
+                endDate: optionalDateSchema,
+            })
+            .strict()
+            .refine(
+                (data) => {
+                    if (!data.startDate || !data.endDate) return true;
+                    return data.startDate <= data.endDate;
+                },
+                {
+                    message:
+                        "La fecha de inicio no puede ser posterior a la fecha de fin",
+                    path: ["startDate"],
+                }
+            ),
+    })
+    .strict();
