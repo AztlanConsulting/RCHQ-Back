@@ -129,6 +129,13 @@ describe("US80 - getPendingVacationRequests service", () => {
             house_id: "a0000001-0000-4000-8000-000000000001",
             role: {
                 name: "Coordinador",
+                role_privilege: [
+                    {
+                        privilege: {
+                            name: "manageEmployees",
+                        },
+                    },
+                ],
             },
         });
 
@@ -184,6 +191,25 @@ describe("US80 - getPendingVacationRequests service", () => {
         ]);
 
         expect(result.data.pagination.total).toBe(1);
+    });
+
+    test("debe regresar INSUFFICIENT_PERMISSIONS si el coordinador no tiene privilegio manageEmployees vigente", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "e8000000-0000-4000-8000-000000000001",
+            house_id: "a0000001-0000-4000-8000-000000000001",
+            role: {
+                name: "Coordinador",
+                role_privilege: [],
+            },
+        });
+
+        const result = await getPendingVacationRequests({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+            query: {},
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
+        expect(getPendingVacationRequestsByHouse).not.toHaveBeenCalled();
     });
 });
 
@@ -266,6 +292,13 @@ describe("US80 - getReviewedVacationRequests service", () => {
             house_id: "a0000001-0000-4000-8000-000000000001",
             role: {
                 name: "Coordinador",
+                role_privilege: [
+                    {
+                        privilege: {
+                            name: "manageEmployees",
+                        },
+                    },
+                ],
             },
         });
 
@@ -313,6 +346,13 @@ describe("US80 - getReviewedVacationRequests service", () => {
             house_id: "a0000001-0000-4000-8000-000000000001",
             role: {
                 name: "Coordinador",
+                role_privilege: [
+                    {
+                        privilege: {
+                            name: "manageEmployees",
+                        },
+                    },
+                ],
             },
         });
 
@@ -344,5 +384,24 @@ describe("US80 - getReviewedVacationRequests service", () => {
             endDate: undefined,
             statusFilter: VACATION_STATUS.APPROVED,
         });
+    });
+
+    test("debe regresar INSUFFICIENT_PERMISSIONS si el coordinador no tiene privilegio manageEmployees vigente", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "e8000000-0000-4000-8000-000000000001",
+            house_id: "a0000001-0000-4000-8000-000000000001",
+            role: {
+                name: "Coordinador",
+                role_privilege: [],
+            },
+        });
+
+        const result = await getReviewedVacationRequests({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+            query: {},
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
+        expect(getReviewedVacationRequestsByHouse).not.toHaveBeenCalled();
     });
 });
