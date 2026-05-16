@@ -1,21 +1,17 @@
-const { updateAbsence } = require("../../service/absence/update.service");
+const { deleteAbsence } = require("../../service/absence/delete.service");
 const RESPONSES = require("../../utils/responses");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
 
-exports.updateAbsence = async (req, res) => {
+exports.deleteAbsence = async (req, res) => {
     try {
         const actorEmployeeId = req.user?.id;
         const { absenceId } = req.params;
-        const body = req.body;
-        const file = req.file;
 
-        const result = await updateAbsence({
+        const result = await deleteAbsence({
             actorEmployeeId,
             absenceId,
-            body,
-            file,
         });
 
         if (result.code === RESPONSES.USER.NOT_ACCESS) {
@@ -28,7 +24,7 @@ exports.updateAbsence = async (req, res) => {
         if (result.code === RESPONSES.ABSENCE.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,
-                message: "No tienes permisos suficientes",
+                message: "No tienes permisos para eliminar ausencias",
             });
         }
 
@@ -46,44 +42,29 @@ exports.updateAbsence = async (req, res) => {
             });
         }
 
-        if (result.code === RESPONSES.ABSENCE.INVALID_TYPE) {
-            return res.status(422).json({
-                success: false,
-                message: "Tipo de ausencia inválida",
-            });
-        }
-
-        if (result.code === RESPONSES.DATES.BAD_DATES) {
-            return res.status(406).json({
-                success: false,
-                message:
-                    "La fecha de fin no puede ser menor a la fecha de inicio",
-            });
-        }
-
         if (result.code === RESPONSES.ABSENCE.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos",
                 errors: result.errors,
             });
         }
 
-        if (result.code === RESPONSES.ABSENCE.UPDATED) {
+        if (result.code === RESPONSES.ABSENCE.DELETED) {
             try {
                 await createLog(
                     actorEmployeeId,
-                    LOG_ACTIONS.ABSENCE_UPDATED,
+                    LOG_ACTIONS.ABSENCE_DELETED,
                     getClientIp(req),
                     result.data.absence.employeeId,
                 );
             } catch (logError) {
-                console.error("Error creando log updateAbsence:", logError);
+                console.error("Error creando log deleteAbsence:", logError);
             }
 
             return res.status(200).json({
                 success: true,
-                message: "Ausencia actualizada correctamente",
+                message: "Ausencia eliminada correctamente",
                 data: {
                     absence: result.data.absence,
                 },
@@ -95,7 +76,7 @@ exports.updateAbsence = async (req, res) => {
             message: "Error interno del servidor. Por favor intente más tarde.",
         });
     } catch (err) {
-        console.error("updateAbsence error:", err);
+        console.error("deleteAbsence error:", err);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

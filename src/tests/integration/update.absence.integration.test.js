@@ -445,8 +445,8 @@ describe("PUT /absence/:absenceId", () => {
                 absenceTypeId: randomUUID(),
             });
 
-        expect(res.statusCode).toBe(400);
-        expect(res.body.message).toBe("Tipo de ausencia inválido");
+        expect(res.statusCode).toBe(422);
+        expect(res.body.message).toBe("Tipo de ausencia inválida");
     });
 
     it("200 y actualiza la ausencia para un coordinador de la misma casa", async () => {
