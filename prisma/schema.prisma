@@ -178,11 +178,11 @@ model fault {
 model global_event {
   global_event_id String     @id(map: "global_event_pk") @db.Uuid
   event_type_id   String     @db.Uuid
-  date            DateTime   @db.Date
-  start           DateTime   @db.Time(6)
-  end             DateTime   @db.Time(6)
+  start           DateTime   @db.Timestamp(6)
+  end             DateTime   @db.Timestamp(6)
   name            String     @db.VarChar(70)
-  description     String?
+  description     String?    @db.VarChar(250)
+  all_day         Boolean
   is_free_day     Boolean
   event_type      event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "global_event_event_type_fk")
 }
@@ -213,11 +213,12 @@ model house_event {
   house_event_id String     @id(map: "house_event_pk") @db.Uuid
   event_type_id  String     @db.Uuid
   house_id       String     @db.Uuid
-  date           DateTime   @db.Date
-  start          DateTime   @db.Time(6)
-  end            DateTime   @db.Time(6)
+  start          DateTime   @db.Timestamp(6)
+  end            DateTime   @db.Timestamp(6)
   name           String     @db.VarChar(70)
-  description    String?
+  description    String?    @db.VarChar(250)
+  all_day        Boolean
+  is_free_day    Boolean
   event_type     event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "house_event_event_type_fk")
   house          house      @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "house_event_house_fk")
 }
@@ -251,10 +252,12 @@ model outside_certification {
 model personal_event {
   personal_event_id       String                    @id(map: "personal_event_pk") @db.Uuid
   event_type_id           String                    @db.Uuid
-  start                   DateTime                  @db.Timestamp(6)
-  end                     DateTime                  @db.Timestamp(6)
+  date                    DateTime                  @db.Date
+  start                   DateTime                  @db.Time(6)
+  end                     DateTime                  @db.Time(6)
   name                    String                    @db.VarChar(70)
-  description             String
+  description             String?                   @db.VarChar(250)
+  all_day                 Boolean
   employee_personal_event employee_personal_event[]
   event_type              event_type                @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "personal_event_event_type_fk")
 }

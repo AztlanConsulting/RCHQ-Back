@@ -1,0 +1,179 @@
+@startuml HU01 - Administrador registra empleado
+
+actor navegador
+boundary employee.routes
+boundary vacation.routes
+boundary event.routes
+control employee.controller
+control vacation.controller
+control event.controller
+control employee.service
+control vacation.service
+control event.service
+entity employee.model
+entity vacation.model
+entity event.model
+entity absence.model
+database PostgreSQL
+
+autonumber
+
+navegador -> employee.routes : GET /employee/getWorkDays
+activate navegador
+activate employee.routes
+employee.routes -> employee.controller : getWorkDays(req, res)
+deactivate employee.routes
+activate employee.controller
+employee.controller ->> employee.service : getWorkDays(employeeId)
+activate employee.service
+employee.service ->> employee.model : getWorkDays(employeeId)
+activate employee.model
+employee.model ->> PostgreSQL : prisma.employee_workday.findMany({\n\twhere: {\n\t\temployee_id: employeeId\n\t}\n\tinclude: {\n\t\tworkday: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.model : result
+deactivate PostgreSQL
+employee.model -->> employee.service : workDays
+deactivate employee.model
+employee.service -->> employee.controller : workDays
+deactivate employee.service
+employee.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tdata: {\n\t\tworkDays: []\n\t}\n}
+deactivate employee.controller
+deactivate navegador
+
+
+
+navegador -> vacation.routes : GET /vacation/remaining
+activate navegador
+activate vacation.routes
+vacation.routes -> vacation.controller : getRemainingVacations(req, res)
+deactivate vacation.routes
+activate vacation.controller
+vacation.controller ->> vacation.service : getRemainingVacations(employeeId)
+activate vacation.service
+
+vacation.service ->> employee.model : getStartDate(employeeId)
+activate employee.model
+employee.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t}\n\tselect: {\n\t\tstart_date: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.model : result
+deactivate PostgreSQL
+employee.model -->> vacation.service : employeeId
+deactivate employee.model
+rnote over vacation.service
+Basándose en el mes y año inicial
+obtiene el año actual de trabajo
+
+ 
+Y lo usa como fechas para obtener
+las vacaciones actuales
+endrnote
+
+vacation.service ->> vacation.model : getVacationsInRange(employeeId, startDate, endDate)
+activate vacation.model
+vacation.model ->> PostgreSQL : psrima.vacation_requests.findMany({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tstart: {\n\t\t\tgte: startDate\n\t\t},\n\t\tend: {\n\t\t\tlte: endDate\n\t\t}\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.model : result
+deactivate PostgreSQL
+vacation.model -->> vacation.service : vacations
+deactivate vacation.model
+rnote over vacation.service
+En base a la fecha de inicio calcula las
+vacaciones que debería de disponer para
+ese año, y le resta las vacaciones usadas
+endrnote
+vacation.service -->> vacation.controller : remainingDays
+deactivate vacation.service
+vacation.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tdata: {\n\t\tremainingDays: number\n\t}\n}
+deactivate vacation.controller
+deactivate navegador
+
+
+
+
+navegador -> event.routes : GET /event/range
+activate navegador
+activate event.routes
+event.routes -> event.controller : getEventsInRange(req, res)
+deactivate event.routes
+activate event.controller
+event.controller ->> event.service : getEventsInRange(employeeId, houseId, startDate, endDate)
+activate event.service
+rnote over event.service 
+Un evento tiene que tener la estructura:
+{
+start: Date,
+end: Date,
+type: String, (Ej; consulta médica, vacación, ausencia, etc.)
+color: String
+link: String (Enlace a evento)
+}
+endrnote
+
+event.service ->> event.model : getHouseEventsInRange(houseId, startDate, endDate)
+activate event.model
+event.model ->> PostgreSQL : prisma.house_event.findMany({\n\twhere: {\n\t\thouse_id: houseId,\n\t\tstart: {\n\t\t\tlte: endDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t},\n\tinclude: {\n\t\tevent_type: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.model : result
+deactivate PostgreSQL
+event.model -->> event.service : houseEvents
+deactivate event.model
+rnote over event.service 
+Apendar al arreglo de eventos
+endrnote
+
+event.service ->> event.model : getPersonalEventsInRange(employeeId, startDate, endDate)
+activate event.model
+event.model ->> PostgreSQL : prisma.employee_personal_event.findMany({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tpersonal_event: {\n\t\t\tstart: {\n\t\t\t\tlte: endDate\n\t\t\t},\n\t\t\tend: { \n\t\t\t\tgte: startDate\n\t\t\t}\n\t\t}\n\t},\n\tinclude: {\n\t\tpersonal_event: {\n\t\t\tinclude: {\n\t\t\t\tevent_type: true\n\t\t\t}\n\t\t}\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.model : result
+deactivate PostgreSQL
+event.model -->> event.service : personalEventsg
+deactivate event.model
+rnote over event.service 
+Apendar al arreglo de eventos
+endrnote
+
+event.service ->> event.model : getGlobalEventsInRange(startDate, endDate)
+activate event.model
+event.model ->> PostgreSQL : prisma.global_event.findMany({\n\twhere: {\n\t\tstart: {\n\t\t\tlte: endDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t},\n\tinclude: {\n\t\tevent_type: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.model : result
+deactivate PostgreSQL
+event.model -->> event.service : globalEvents
+deactivate event.model
+rnote over event.service 
+Apendar al arreglo de eventos
+endrnote
+
+event.service ->> vacation.model : getVacationsInRange(employeeId, startDate, endDate)
+activate vacation.model
+vacation.model ->> PostgreSQL : prisma.vacation_requests.findMany({\n\twhere: {\n\t\temployee_id: employeeId, \n\t\tstart: {\n\t\t\tlte: endDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t})
+activate PostgreSQL
+PostgreSQL -->> vacation.model : result
+deactivate PostgreSQL
+vacation.model -->> event.service : vacations
+deactivate vacation.model
+rnote over event.service
+Parsear y apendar al arreglo de eventos
+endrnote
+
+event.service ->> absence.model: getAbsenceInRange(employeeId, startDate, endDate)
+activate absence.model
+absence.model ->> PostgreSQL: prisma.absence.findMany({\n\twhere: {\n\temployee_id: employeeId, \n\tstart: {\n\t\tlte: endDate \n\t}, \n\tend: {\n\t\tgte: startDate \n\t}, \n\tinclude: {\n\t\tabsence_type: true}\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> absence.model: result
+deactivate PostgreSQL
+absence.model -->> event.service: absences
+deactivate absence.model
+
+event.service ->> event.service: foreach((absence) => calculateWorkDays(events))
+
+event.service -> event.service: Parsear y agregar al arreglo de eventos
+
+event.service -->> event.controller : events
+deactivate event.service
+event.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tdata: {\n\t\tevents: []\n\t}\n}
+deactivate event.controller
+deactivate navegador
+
+@enduml

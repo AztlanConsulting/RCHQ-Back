@@ -65,7 +65,10 @@ VALUES
 ('00000001-0000-4000-8000-000000000004', 'viewDocuments'),
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
 ('00000001-0000-4000-8000-000000000006', 'viewLogs'),
-('00000001-0000-4000-8000-000000000007', 'viewEvents')
+('00000001-0000-4000-8000-000000000007', 'viewEvents'),
+('00000001-0000-4000-8000-000000000008', 'createEvent'),
+('00000001-0000-4000-8000-000000000009', 'editAbsences'),
+('00000001-0000-4000-8000-000000000010', 'deleteAbsences')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -83,6 +86,30 @@ INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
 WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'editAbsences'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000002', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'editAbsences'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'deleteAbsences'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT 'a0000002-0000-4000-8000-000000000002', p.privilege_id
+FROM public.privileges p
+WHERE p.name = 'deleteAbsences'
 ON CONFLICT DO NOTHING;
 
 -- Roles que solo ven documentos
@@ -124,6 +151,14 @@ WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Direcció
 AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
 ON CONFLICT DO NOTHING;
 
+-- Crear eventos - Casa, Global,
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+JOIN public.privileges p ON p.name = 'createEvent'
+WHERE r.name IN ('Admin', 'Coordinador')
+ON CONFLICT DO NOTHING;
+
 -- =========================
 -- EMPLOYEE
 -- Contraseña: Andatti67
@@ -151,7 +186,7 @@ VALUES (
   'XAXX010101HDFXXX01',
   NULL,
   '2003-10-04',
-  'boop',
+  'uploads/1776813289924.png',
   '2026-04-09',
   NULL,
   NULL,
@@ -190,6 +225,10 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
+('ausn-001', 'Actualización de ausencia exitosa', false),
+('ausn-002', 'Eliminación de ausencia exitosa', false),
+('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),
+('even-001', 'Evento de casa creado con éxito', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -225,61 +264,80 @@ ON CONFLICT (name) DO NOTHING;
 INSERT INTO public.global_event (
   global_event_id,
   event_type_id,
-  date,
   start,
   "end",
   name,
   description,
+  all_day,
   is_free_day
 )
 VALUES (
   'c1000000-0000-4000-8000-000000000001',
   'b1000000-0000-4000-8000-000000000001',
-  '2026-05-01',
-  '09:00:00',
-  '17:00:00',
+  '2026-05-01 09:00:00',
+  '2026-05-01 17:00:00',
   'Aniversario',
   'Aniversario de la red de casas hogar',
+  false,
   false
-);
+)
+ON CONFLICT (global_event_id) DO NOTHING;
 
 INSERT INTO public.house_event (
   house_event_id,
   event_type_id,
   house_id,
-  date,
   start,
   "end",
   name,
-  description
+  description,
+  all_day,
+  is_free_day
 )
 VALUES (
   'c2000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Desarrollo'),
-  '2026-05-03',
-  '10:00:00',
-  '12:00:00',
+  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  '2026-05-03 10:00:00',
+  '2026-05-03 12:00:00',
   'Visita DIF',
-  'Visita por parte del DIF para ver las instalaciones'
-);
+  'Visita por parte del DIF para ver las instalaciones',
+  false,
+  false
+)
+ON CONFLICT (house_event_id) DO NOTHING;
 
 INSERT INTO public.personal_event (
   personal_event_id,
   event_type_id,
+  date,
   start,
   "end",
   name,
-  description
+  description,
+  all_day
 )
 VALUES (
   'c3000000-0000-4000-8000-000000000003',
   'b1000000-0000-4000-8000-000000000001',
-  '2026-05-04 15:00:00',
-  '2026-05-04 16:00:00',
+  '2026-05-04',
+  '15:00:00',
+  '16:00:00',
   'Visita médica',
-  'Se tiene que llevar a Juan Pérez al doctor'
-);
+  'Se tiene que llevar a Juan Pérez al doctor',
+  false
+)
+ON CONFLICT (personal_event_id) DO NOTHING;
+
+INSERT INTO public.employee_personal_event (
+  personal_event_id,
+  employee_id
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000003',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1)
+)
+ON CONFLICT DO NOTHING;
 
 INSERT INTO public.employee_personal_event (
   personal_event_id,
@@ -457,6 +515,59 @@ WHERE NOT EXISTS (
   SELECT 1 FROM public.employee WHERE employee_id = 'e0000001-0000-4000-8000-000000000001'
 );
 
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  end_date,
+  phone_number,
+  nss,
+  bank_account,
+  type
+)
+SELECT
+  'e0000001-0000-4000-8000-000000000002',
+  'b0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Luis',
+  'Martínez',
+  true,
+  'luis.coordinacion@example.com',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  true,
+  false,
+  0,
+  0,
+  NULL,
+  'MALR900205HDFRRS09',
+  NULL,
+  '1990-02-05',
+  NULL,
+  '2025-02-03',
+  NULL,
+  '+52 55 5555 1003',
+  NULL,
+  NULL,
+  'nomina'
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.employee WHERE employee_id = 'e0000001-0000-4000-8000-000000000002'
+);
+
 UPDATE public.employee
 SET
   house_id = COALESCE(
@@ -557,6 +668,31 @@ SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '10:00:00', '19:00
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000003', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '08:00:00', '17:00:00'
+FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
+
 INSERT INTO public.vacations_request (
   vacations_request_id,
   employee_id,
@@ -583,6 +719,123 @@ VALUES
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
 ('a0000001-0000-4000-8000-000000000003', 'Maternidad')
 ON CONFLICT DO NOTHING;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
+  'a1000001-0000-4000-8000-000000000001',
+  e.employee_id,
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-05-12',
+  '2026-05-14',
+  'Incapacidad médica de seguimiento para revisión postoperatoria.',
+  'https://example.com/justificante-medico-maria',
+  false
+FROM public.employee e
+WHERE e.email = 'maria.operaciones@example.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
+  'a1000001-0000-4000-8000-000000000002',
+  e.employee_id,
+  'a0000001-0000-4000-8000-000000000002',
+  '2026-05-18',
+  '2026-05-22',
+  'Permiso por paternidad del coordinador de la casa de Operaciones CDMX.',
+  'https://example.com/permiso-paternidad-luis',
+  false
+FROM public.employee e
+WHERE e.email = 'luis.coordinacion@example.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
+
+INSERT INTO public.absence (
+  absence_id,
+  employee_id,
+  absence_type_id,
+  start,
+  "end",
+  description,
+  url,
+  is_deleted
+)
+SELECT
+  absence_seed.absence_id,
+  e.employee_id,
+  absence_seed.absence_type_id,
+  absence_seed.start,
+  absence_seed."end",
+  absence_seed.description,
+  absence_seed.url,
+  false
+FROM public.employee e
+CROSS JOIN (
+  VALUES
+    (
+      'ab000001-0000-4000-8000-000000000001'::uuid,
+      'a0000001-0000-4000-8000-000000000001'::uuid,
+      '2026-05-01'::date,
+      '2026-05-05'::date,
+      'Consulta medica y reposo indicado',
+      'https://example.com/ausencias/andre-consulta-medica.pdf'
+    ),
+    (
+      'ab000001-0000-4000-8000-000000000002'::uuid,
+      'a0000001-0000-4000-8000-000000000002'::uuid,
+      '2026-05-12'::date,
+      '2026-05-12'::date,
+      'Permiso por tramite familiar',
+      'https://example.com/ausencias/andre-permiso-familiar.pdf'
+    ),
+    (
+      'ab000001-0000-4000-8000-000000000003'::uuid,
+      'a0000001-0000-4000-8000-000000000001'::uuid,
+      '2026-06-18'::date,
+      '2026-06-19'::date,
+      'Seguimiento medico programado',
+      'https://example.com/ausencias/andre-seguimiento-medico.pdf'
+    )
+) AS absence_seed(absence_id, absence_type_id, start, "end", description, url)
+WHERE e.email = 'andre@gmail.com'
+ON CONFLICT (absence_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  absence_type_id = EXCLUDED.absence_type_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  description = EXCLUDED.description,
+  url = EXCLUDED.url,
+  is_deleted = EXCLUDED.is_deleted;
 
 INSERT INTO PUBLIC.frecuency_of_payment (
   frecuency_of_payment_id,

@@ -1,0 +1,43 @@
+exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
+    const calendarEnd = new Date(absence.end);
+    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+
+    return {
+        absenceId: absence.absence_id,
+        employeeId: absence.employee.employee_id,
+        name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
+        curp: absence.employee.curp,
+        start: absence.start,
+        end: calendarEnd,
+        startDate: absence.start,
+        endDate: absence.end,
+        type: absence.absence_type.name,
+        subtitle: absence.employee.curp,
+        description: absence.description || "",
+        link: absence.url || "",
+        isDeleted: absence.is_deleted,
+        usedDays,
+        focus: "ausencias",
+        scope: "house",
+        color: "#F97316",
+        lastsAllDay: true,
+    };
+};
+
+exports.mapAbsenceDetail = (absence) => {
+    if (!absence) return undefined;
+
+    return {
+        absenceId: absence.absence_id,
+        employeeId: absence.employee?.employee_id,
+        absenceTypeId: absence.absence_type_id,
+        name: `${absence.employee?.name || ""} ${absence.employee?.surname || ""}`.trim(),
+        curp: absence.employee?.curp || "",
+        type: absence.absence_type?.name || "",
+        description: absence.description || "",
+        link: absence.url || "",
+        startDate: absence.start,
+        endDate: absence.end,
+        isDeleted: absence.is_deleted,
+    };
+};
