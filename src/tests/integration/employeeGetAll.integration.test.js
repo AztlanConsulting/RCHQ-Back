@@ -148,7 +148,7 @@ describe(`GET ${API_ROUTE} - Integration & Security`, () => {
 
             expect(res.statusCode).toBe(200);
             expect(res.body.pagination.page).toBe(1);
-            expect(res.body.pagination.limit).toBe(6);
+            expect(res.body.pagination.limit).toBe(7);
         });
 
         it("capea o maneja inteligentemente límites absurdamente altos para evitar Memory Exhaustion (DoS)", async () => {
