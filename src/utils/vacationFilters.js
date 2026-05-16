@@ -30,30 +30,37 @@ exports.buildVacationDateFilter = (startDate, endDate) => {
 };
 
 exports.buildVacationEmployeeSearchFilter = (search) => {
-    if (!search) return {};
+    const terms = search
+        ?.trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+    if (!terms || terms.length === 0) return {};
 
     return {
         employee: {
-            OR: [
-                {
-                    name: {
-                        contains: search,
-                        mode: "insensitive",
+            AND: terms.map((term) => ({
+                OR: [
+                    {
+                        name: {
+                            contains: term,
+                            mode: "insensitive",
+                        },
                     },
-                },
-                {
-                    surname: {
-                        contains: search,
-                        mode: "insensitive",
+                    {
+                        surname: {
+                            contains: term,
+                            mode: "insensitive",
+                        },
                     },
-                },
-                {
-                    curp: {
-                        contains: search,
-                        mode: "insensitive",
+                    {
+                        curp: {
+                            contains: term,
+                            mode: "insensitive",
+                        },
                     },
-                },
-            ],
+                ],
+            })),
         },
     };
 };
