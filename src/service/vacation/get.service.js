@@ -20,6 +20,12 @@ const {
     getVacationRequestsInputSchema,
 } = require("../../schemas/vacation/get.schemas");
 
+const hasCurrentPrivilege = (employee, privilegeName) => {
+    return employee.role?.role_privilege?.some(
+        (rolePrivilege) => rolePrivilege.privilege?.name === privilegeName
+    );
+};
+
 exports.getRemainingVacations = async (employeeId) => {
     const result = await getStartDate(employeeId);
 
@@ -120,6 +126,12 @@ exports.getVacationYearInfoForApproval = async (employeeId) => {
 };
 
 exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
+    if (!actorEmployeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
     const validation = getVacationRequestsInputSchema.safeParse({
         actorEmployeeId,
         query,
@@ -133,12 +145,6 @@ exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
 
     query = validation.data.query;
 
-    if (!actorEmployeeId) {
-        return {
-            code: RESPONSES.USER.NOT_ACCESS,
-        };
-    }
-
     const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
 
     if (!actorEmployee) {
@@ -150,6 +156,12 @@ exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
     const actorRoleName = actorEmployee.role?.name;
 
     if (actorRoleName !== "Coordinador") {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    if (!hasCurrentPrivilege(actorEmployee, "manageEmployees")) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -186,6 +198,12 @@ exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
 };
 
 exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
+    if (!actorEmployeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
     const validation = getVacationRequestsInputSchema.safeParse({
         actorEmployeeId,
         query,
@@ -199,12 +217,6 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
 
     query = validation.data.query;
 
-    if (!actorEmployeeId) {
-        return {
-            code: RESPONSES.USER.NOT_ACCESS,
-        };
-    }
-
     const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
 
     if (!actorEmployee) {
@@ -216,6 +228,12 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
     const actorRoleName = actorEmployee.role?.name;
 
     if (actorRoleName !== "Coordinador") {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    if (!hasCurrentPrivilege(actorEmployee, "manageEmployees")) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
