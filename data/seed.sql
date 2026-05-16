@@ -187,7 +187,7 @@ VALUES (
   'XAXX010101HDFXXX01',
   NULL,
   '2003-10-04',
-  'boop',
+  'uploads/1776813289924.png',
   '2026-04-09',
   NULL,
   NULL,

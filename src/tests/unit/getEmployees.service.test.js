@@ -46,7 +46,7 @@ describe("Employee Service - getEmployees", () => {
                 true,
                 "",
                 0,
-                6,
+                7,
             );
             expect(result.data[0]).toEqual({
                 employeeId: "1",
@@ -57,7 +57,7 @@ describe("Employee Service - getEmployees", () => {
             });
             expect(result.pagination).toEqual({
                 page: 1,
-                limit: 6,
+                limit: 7,
                 total: 1,
                 totalPages: 1,
             });
@@ -76,7 +76,7 @@ describe("Employee Service - getEmployees", () => {
                 false,
                 "",
                 0,
-                6,
+                7,
             );
         });
 
@@ -150,7 +150,7 @@ describe("Employee Service - getEmployees", () => {
                 true,
                 "",
                 0,
-                6,
+                7,
             );
         });
 
@@ -219,7 +219,7 @@ describe("Employee Service - getEmployees", () => {
                 false,
                 "",
                 0,
-                6,
+                7,
             );
 
             await getEmployees(houseId, "true");
@@ -228,7 +228,7 @@ describe("Employee Service - getEmployees", () => {
                 true,
                 "",
                 0,
-                6,
+                7,
             );
         });
     });
