@@ -47,7 +47,7 @@ exports.updateAbsence = async (req, res) => {
         }
 
         if (result.code === RESPONSES.ABSENCE.INVALID_TYPE) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Tipo de ausencia inválida",
             });

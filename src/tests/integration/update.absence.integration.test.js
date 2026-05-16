@@ -445,7 +445,7 @@ describe("PUT /absence/:absenceId", () => {
                 absenceTypeId: randomUUID(),
             });
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Tipo de ausencia inválida");
     });
 
