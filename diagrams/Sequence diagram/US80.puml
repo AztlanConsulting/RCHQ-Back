@@ -9,7 +9,6 @@ control "get.controller.js" as Controller
 control "get.service.js" as Service
 database "vacation/get.model.js" as VacationGetModel
 database "employee/get.model.js" as EmployeeGetModel
-database "event/get.model.js" as EventGetModel
 database "Base de datos" as DB
 
 autonumber
@@ -30,44 +29,43 @@ Middleware --> Frontend : 400/401/403
 else Request HTTP válida
 Router -> Controller : getPendingVacationRequests(req, res)
 
-Controller -> Service : getPendingVacationRequests({\nactorEmployeeId,\nhouseId,\nquery\n})
+Controller -> Service : getPendingVacationRequests({\nactorEmployeeId,\nquery\n})
 
-Service -> Service : Validar contrato interno
+Service -> Service : Validar contrato interno\ngetVacationRequestsInputSchema
 
 alt Entrada interna inválida
 Service --> Controller : VALIDATION_ERROR
-Controller --> Frontend : 400 Error de validación
+Controller --> Frontend : 400 Datos inválidos
 else Entrada interna válida
 Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
 EmployeeGetModel -> DB : SELECT employee + role + house
-DB --> EmployeeGetModel : Coordinador
-EmployeeGetModel --> Service : Coordinador
+DB --> EmployeeGetModel : Empleado autenticado
+EmployeeGetModel --> Service : actorEmployee
 
-alt Coordinador no existe o no tiene casa
-Service --> Controller : USER_NOT_ACCESS / EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 401/403
-else Coordinador válido
-Service -> VacationGetModel : getPendingVacationRequestsByHouse({\nhouseId,\nsearch,\nstartDate,\nendDate,\nskip,\ntake\n})
-VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status = PENDING AND employee.house_id = houseId
+alt Actor no existe
+Service --> Controller : USER.NOT_ACCESS
+Controller --> Frontend : 401 Usuario no autenticado
+else Actor existe
+alt Actor no es Coordinador
+Service --> Controller : INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Sin permisos
+else Actor es Coordinador
+Service -> Service : parsePagination(page, limit)
+Service -> Service : buildVacationListWhere({\nhouseId,\nsearch,\nstartDate,\nendDate,\nstatusFilter: PENDING\n})
+
+Service -> VacationGetModel : getPendingVacationRequestsByHouse({\nwhere,\nskip,\ntake\n})
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status = PENDING\nAND employee.house_id = houseId\nAND employee.role.name != Admin
 DB --> VacationGetModel : Solicitudes pendientes + total
-VacationGetModel --> Service : Solicitudes pendientes
+VacationGetModel --> Service : { requests, total }
 
-loop Por cada solicitud pendiente
-Service -> EmployeeGetModel : getVacationYearInfo / getRemainingVacations(employeeId)
-EmployeeGetModel -> DB : SELECT employee.start_date
-DB --> EmployeeGetModel : start_date
-EmployeeGetModel --> Service : Periodo laboral y días máximos
+Service -> Service : mapVacationRequestForList(request)
+Service -> Service : buildPagination({ page, limit, total })
 
-Service -> EventGetModel : getGlobalEventsInRange(start, end)
-EventGetModel -> DB : SELECT global_event
-DB --> EventGetModel : Eventos globales
-
-Service -> Service : Calcular días naturales, días hábiles,\ndías disponibles y días restantes si se aprueba
-end
-
-Service --> Controller : PENDING_VACATION_REQUESTS_FOUND
+Service --> Controller : VACATION_REQUESTS_FOUND
 Controller --> Frontend : 200 Solicitudes pendientes + paginación
 Frontend --> Usuario : Mostrar tabla de pendientes
+end
+end
 end
 end
 
@@ -85,31 +83,40 @@ Middleware --> Frontend : 400/401/403
 else Request HTTP válida
 Router -> Controller : getReviewedVacationRequests(req, res)
 
-Controller -> Service : getReviewedVacationRequests({\nactorEmployeeId,\nhouseId,\nquery\n})
+Controller -> Service : getReviewedVacationRequests({\nactorEmployeeId,\nquery\n})
 
-Service -> Service : Validar contrato interno
+Service -> Service : Validar contrato interno\ngetVacationRequestsInputSchema
 
 alt Entrada interna inválida
 Service --> Controller : VALIDATION_ERROR
-Controller --> Frontend : 400 Error de validación
+Controller --> Frontend : 400 Datos inválidos
 else Entrada interna válida
 Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
 EmployeeGetModel -> DB : SELECT employee + role + house
-DB --> EmployeeGetModel : Coordinador
-EmployeeGetModel --> Service : Coordinador
+DB --> EmployeeGetModel : Empleado autenticado
+EmployeeGetModel --> Service : actorEmployee
 
-alt Coordinador no existe o no tiene casa
-Service --> Controller : USER_NOT_ACCESS / EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 401/403
-else Coordinador válido
-Service -> VacationGetModel : getReviewedVacationRequestsByHouse({\nhouseId,\nsearch,\nstatus,\nstartDate,\nendDate,\nskip,\ntake\n})
-VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status IN (APPROVED, REJECTED)\nAND employee.house_id = houseId
+alt Actor no existe
+Service --> Controller : USER.NOT_ACCESS
+Controller --> Frontend : 401 Usuario no autenticado
+else Actor existe
+alt Actor no es Coordinador
+Service --> Controller : INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Sin permisos
+else Actor es Coordinador
+Service -> Service : parsePagination(page, limit)
+Service -> Service : mapReviewedStatus(status)
+Service -> Service : buildVacationListWhere({\nhouseId,\nsearch,\nstartDate,\nendDate,\nstatusFilter\n})
+
+Service -> VacationGetModel : getReviewedVacationRequestsByHouse({\nwhere,\nskip,\ntake\n})
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status IN (APPROVED, REJECTED)\nAND employee.house_id = houseId\nAND employee.role.name != Admin
 DB --> VacationGetModel : Solicitudes revisadas + total
-VacationGetModel --> Service : Solicitudes revisadas
+VacationGetModel --> Service : { requests, total }
 
-Service -> Service : Mapear status a etiqueta\nAprobada/Rechazada
+Service -> Service : mapVacationRequestForList(request)
+Service -> Service : buildPagination({ page, limit, total })
 
-Service --> Controller : REVIEWED_VACATION_REQUESTS_FOUND
+Service --> Controller : VACATION_REQUESTS_FOUND
 Controller --> Frontend : 200 Solicitudes revisadas + paginación
 Frontend --> Usuario : Mostrar tabla de revisadas
 end
