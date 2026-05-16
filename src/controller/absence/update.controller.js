@@ -49,14 +49,15 @@ exports.updateAbsence = async (req, res) => {
         if (result.code === RESPONSES.ABSENCE.INVALID_TYPE) {
             return res.status(400).json({
                 success: false,
-                message: "Tipo de ausencia inválida",
+                message: "Tipo de ausencia inválido",
             });
         }
 
         if (result.code === RESPONSES.DATES.BAD_DATES) {
             return res.status(406).json({
                 success: false,
-                message: "La fecha de fin no puede ser menor a la fecha de inicio",
+                message:
+                    "La fecha de fin no puede ser menor a la fecha de inicio",
             });
         }
 

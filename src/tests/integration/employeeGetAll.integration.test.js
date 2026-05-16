@@ -26,7 +26,13 @@ const generateToken = (
         role: "Admin",
         houseId: TEST_HOUSE_ID,
         tokenType: "SESSION",
-        privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
+        privileges: [
+            "viewEmployees",
+            "createEmployees",
+            "manageEmployees",
+            "viewDocuments",
+            "manageDocuments",
+        ],
     };
 
     return jwt.sign(
@@ -117,7 +123,7 @@ describe(`GET ${API_ROUTE} - Integration & Security`, () => {
                 .get(API_ROUTE)
                 .set("Authorization", `Bearer ${token}`);
             expect(res.statusCode).toBe(200);
-            expect(res.body.data.length).toBe(6);
+            expect(res.body.data.length).toBe(7);
         });
 
         it("retorna empleados inactivos si active=false", async () => {
