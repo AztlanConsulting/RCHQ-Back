@@ -4,6 +4,7 @@
 -- Re-run safe (usa IF NOT EXISTS y ON CONFLICT DO NOTHING)
 -- =============================================================
 
+CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- =============================================================
 -- 1. TABLAS BASE (sin dependencias)
