@@ -860,64 +860,57 @@ INSERT INTO public.absence (
   url,
   is_deleted
 )
-SELECT
-  absence_seed.absence_id,
-  e.employee_id,
-  absence_seed.absence_type_id,
-  absence_seed.start,
-  absence_seed."end",
-  absence_seed.description,
-  absence_seed.url,
+VALUES
+(
+  'ab000001-0000-4000-8000-000000000001',
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-05-01',
+  '2026-05-05',
+  'Consulta medica y reposo indicado',
+  'https://example.com/ausencias/andre-consulta-medica.pdf',
   false
-FROM (
-  VALUES
-    (
-      'andre@gmail.com',
-      'ab000001-0000-4000-8000-000000000001'::uuid,
-      'a0000001-0000-4000-8000-000000000001'::uuid,
-      '2026-05-01'::date,
-      '2026-05-05'::date,
-      'Consulta medica y reposo indicado',
-      'https://example.com/ausencias/andre-consulta-medica.pdf'
-    ),
-    (
-      'andre@gmail.com',
-      'ab000001-0000-4000-8000-000000000002'::uuid,
-      'a0000001-0000-4000-8000-000000000002'::uuid,
-      '2026-05-12'::date,
-      '2026-05-12'::date,
-      'Permiso por tramite familiar',
-      'https://example.com/ausencias/andre-permiso-familiar.pdf'
-    ),
-    (
-      'andre@gmail.com',
-      'ab000001-0000-4000-8000-000000000003'::uuid,
-      'a0000001-0000-4000-8000-000000000001'::uuid,
-      '2026-06-18'::date,
-      '2026-06-19'::date,
-      'Seguimiento medico programado',
-      'https://example.com/ausencias/andre-seguimiento-medico.pdf'
-    ),
-    (
-      'laura.mantenimiento@gmail.com',
-      'ab000001-0000-4000-8000-000000000010'::uuid,
-      'a0000001-0000-4000-8000-000000000001'::uuid,
-      '2026-05-01'::date,
-      '2026-05-08'::date,
-      'Reposo de Laura con cruce de evento global y evento de casa',
-      'https://example.com/ausencias/laura-reposo-mayo.pdf'
-    ),
-    (
-      'laura.mantenimiento@gmail.com',
-      'ab000001-0000-4000-8000-000000000011'::uuid,
-      'a0000001-0000-4000-8000-000000000002'::uuid,
-      '2026-05-20'::date,
-      '2026-05-22'::date,
-      'Permiso de Laura con dos eventos libres de mayo',
-      'https://example.com/ausencias/laura-permiso-mayo.pdf'
-    )
-) AS absence_seed(employee_email, absence_id, absence_type_id, start, "end", description, url)
-JOIN public.employee e ON e.email = absence_seed.employee_email
+),
+(
+  'ab000001-0000-4000-8000-000000000002',
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  'a0000001-0000-4000-8000-000000000002',
+  '2026-05-12',
+  '2026-05-12',
+  'Permiso por tramite familiar',
+  'https://example.com/ausencias/andre-permiso-familiar.pdf',
+  false
+),
+(
+  'ab000001-0000-4000-8000-000000000003',
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-06-18',
+  '2026-06-19',
+  'Seguimiento medico programado',
+  'https://example.com/ausencias/andre-seguimiento-medico.pdf',
+  false
+),
+(
+  'ab000001-0000-4000-8000-000000000010',
+  'b8f54b14-701e-4e87-a019-caef53dcda70',
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-05-01',
+  '2026-05-08',
+  'Reposo de Laura con cruce de evento global y evento de casa',
+  'https://example.com/ausencias/laura-reposo-mayo.pdf',
+  false
+),
+(
+  'ab000001-0000-4000-8000-000000000011',
+  'b8f54b14-701e-4e87-a019-caef53dcda70',
+  'a0000001-0000-4000-8000-000000000002',
+  '2026-05-20',
+  '2026-05-22',
+  'Permiso de Laura con dos eventos libres de mayo',
+  'https://example.com/ausencias/laura-permiso-mayo.pdf',
+  false
+)
 ON CONFLICT (absence_id) DO UPDATE SET
   employee_id = EXCLUDED.employee_id,
   absence_type_id = EXCLUDED.absence_type_id,
