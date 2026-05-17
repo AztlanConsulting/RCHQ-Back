@@ -149,7 +149,7 @@ deactivate router
 
 == Guardar los datos de la ausencia ==
 activate front
-front -> router: POST /absences/add
+front -> router: POST /absence/:employeeId/add
 deactivate front
 activate router
 router -> token: verifyToken(req, res, next)
