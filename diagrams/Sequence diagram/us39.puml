@@ -1,0 +1,345 @@
+@startuml
+title Usuario Registra sus Ausencias — Backend (MVC + Service + Prisma)
+autonumber
+
+actor Cliente as front
+boundary "Router\n(absence.routes.js)" as router
+control "Controller\n(absence.controller.js)" as controller
+control "Service\n(absence.service.js)" as service
+entity "Schema\n(absenceaddSchema.js)" as schema
+entity "Model\n(absence.model.js)" as amodel
+entity "Model\n(house.model.js)" as hmodel
+entity "Model\n(log.model.js)" as lmodel
+database "PostgreSQL\n(via Prisma)" as db
+entity "Middleware\n(verifyToken)" as token
+entity "Middleware\n(resolveRequesterHouse())" as resolve
+entity "Middleware RBAC\n(checkRole)" as role
+entity "Middleware RBAC\n(checkPrivilege)" as priv
+entity "Middleware ABAC\n(authorize)" as auth
+entity "Middleware\n(uploadDoc)" as doc
+entity "Middleware\n(validate())" as val
+
+== Recuperar los datos de la vista ==
+
+activate front
+front -> router: GET /absences/add
+deactivate front
+
+activate router
+router -> token: verifyToken(req, res, next)
+deactivate router
+alt token invalido
+    activate token
+    token -> router: res.status(403).json({success: false, message: "Token invalido"})
+    deactivate token
+    activate router
+    router -> front: res.status(403)\n\t.json({success: false, message: "Token invalido"})
+    deactivate router
+else token valido
+    activate token
+    token -> router: next()
+    deactivate token
+end
+
+activate router
+router ->> resolve: resolveRequesterHouse(req, res, next)
+alt Usuario no autenticado
+    activate resolve
+    resolve -->> router: res.status(401).json({message: "Usuario no autenticado"})
+    deactivate resolve
+    activate router
+    router -> front:res.status(401).json({message: "Usuario no autenticado"})
+    deactivate router
+else Empleado no encontrado
+    activate resolve
+    resolve -->> router: res.status(404).json({message: "Usuario no autenticado"})
+    deactivate resolve
+    activate router
+    router -> front:res.status(404).json({message: "Usuario no autenticado"})
+    deactivate router
+else Empleado encontrado
+activate resolve
+    resolve -->> router: next()
+    deactivate resolve
+    activate router
+end
+
+router -> role: requireRole("Admin", "Coordinador")
+deactivate router
+
+alt Rol invalido
+    activate role 
+    role -> router: res.status(403).json({message: "Rol no permitido"})
+    deactivate role
+    activate router
+    router -> front: res.status(403).json({message: "Rol no permitido"})
+    deactivate router
+else Rol valido
+    activate role
+    role -> router: next()
+    deactivate role
+    activate router
+end
+
+router -> priv: requirePrivilege("addAbsences")
+deactivate router
+alt Privilegios insuficientes
+    activate priv 
+    priv -> router: res.status(403).json({message: "Privilegios insuficientes"})
+    deactivate priv
+    activate router
+    router -> front: res.status(403).json({message: "Privilegios insuficientes"})
+    deactivate router
+else Privilegios suficientes
+    activate priv
+    priv -> router: next()
+    deactivate priv
+    activate router
+end
+
+router -> auth: authorize(absencePolicy, req)
+deactivate router
+
+alt Acceso Negado
+    activate auth
+    auth -> router: res.status(403).json({error: Accesso denegado})
+    deactivate auth
+    activate router
+    router -> front: res.status(403).json({error: Accesso denegado})
+    deactivate router
+else Acceso autorizado
+    activate auth
+    auth -> router: next()
+    deactivate auth
+    activate router
+end
+
+router -> controller: getEmployeesAndAbsenceTypes(req, res)
+deactivate
+
+activate controller
+controller ->> service: getEmployeesAndAbsenceTypes(req.user.employeeId)
+
+activate service
+service ->> hmodel: getHouseEmployeesByEmployeeId(employeeId)
+
+activate hmodel
+hmodel ->> db: prisma.employee.findMany({\n\twhere: {\n\t\thouse_id: requester.house_id,\n\t},\n\tselect: {\n\t\temployee_id: true,\n\t\thouse_id: true,\n\t\tname: true,\n\t\tsurname: true,\n\t\tcurp: true,\n\t\tis_active: true,\n\t},\n\torderBy: [\n\t\t{ name: "asc" },\n\t\t{ surname: "asc" },\n\t],\n});
+activate db
+db -->> hmodel: employees
+deactivate db
+
+hmodel -->> service: employees
+deactivate hmodel
+
+service ->> amodel: getAllAbsenceTypes()
+
+activate amodel
+amodel ->> db: prisma.absence_type.findMany({\n\tselect: {\n\t\tabsence_type_id: true,\n\t\tname: true,\n\t},\n\torderBy: {\n\t\tname: "asc",\n\t},\n});
+activate db
+db -->> amodel: absenceTypes
+deactivate db
+amodel -->> service: absenceTypes
+deactivate amodel
+service -->> controller: [employees, absenceTypes]
+
+alt Lista de empleados vacia
+    service -->> controller: code: RESPONSES.EMPLOYEES.NOT_FOUND
+    controller -> router: return res\n\t.status(204)\n\t.json({\n\t\tsuccess: false, \n\t\tmessage: "Lista vacia de empleados"})
+    activate router
+    router -> front: return res\n\t.status(204)\n\t.json({\n\t\tsuccess: false, \n\t\tmessage: "Lista vacia de empleados"})
+    deactivate router
+else Lista de tipos de ausencia vacia
+    service -->> controller: code: RESPONSES.EVENTS.NOT_FOUND
+    controller -> router: return res\n\t.status(204)\n\t.json({\n\t\tsuccess: false, \n\t\tmessage: "Lista vacia de ausencias"})
+    activate router
+    router -> front: return res\n\t.status(204)\n\t.json({\n\t\tsuccess: false, \n\t\tmessage: "Lista vacia de ausencias"})
+    deactivate router
+end
+
+deactivate service
+controller -> router: return res\n\t.status(200)\n\t.json({\n\t\tsuccess: true,\n\t\tdata: {\n\t\t\temployees: result.data.employees,\n\t\t\tabsenceTypes: result.data.absenceTypes\n\t\t},\n\t});
+deactivate controller
+activate router
+router -> front: return res\n\t.status(200)\n\t.json({\n\t\tsuccess: true,\n\t\tdata: {\n\t\t\temployees: result.data.employees,\n\t\t\tabsenceTypes: result.data.absenceTypes\n\t\t},\n\t});
+deactivate router
+
+== Guardar los datos de la ausencia ==
+activate front
+front -> router: POST /absences/add
+deactivate front
+activate router
+router -> token: verifyToken(req, res, next)
+deactivate router
+alt token invalido
+    activate token
+    token -> router: res.status(403).json({success: false, message: "Token invalido"})
+    deactivate token
+    activate router
+    router -> front: res.status(403)\n\t.json({success: false, message: "Token invalido"})
+    deactivate router
+else token valido
+    activate token
+    token -> router: next()
+    deactivate token
+end
+
+activate router
+router ->> resolve: resolveRequesterHouse(req, res, next)
+alt Usuario no autenticado
+    activate resolve
+    resolve -->> router: res.status(401).json({message: "Usuario no autenticado"})
+    deactivate resolve
+    activate router
+    router -> front:res.status(401).json({message: "Usuario no autenticado"})
+    deactivate router
+else Empleado no encontrado
+    activate resolve
+    resolve -->> router: res.status(404).json({message: "Usuario no autenticado"})
+    deactivate resolve
+    activate router
+    router -> front:res.status(404).json({message: "Usuario no autenticado"})
+    deactivate router
+else Empleado encontrado
+activate resolve
+    resolve -->> router: next()
+    deactivate resolve
+    activate router
+end
+
+router -> role: requireRole("Admin", "Coordinador")
+deactivate router
+
+alt Rol invalido
+    activate role 
+    role -> router: res.status(403).json({message: "Rol no permitido"})
+    deactivate role
+    activate router
+    router -> front: res.status(403).json({message: "Rol no permitido"})
+    deactivate router
+else Rol valido
+    activate role
+    role -> router: next()
+    deactivate role
+    activate router
+end
+
+router -> priv: requirePrivilege("addAbsences")
+deactivate router
+alt Privilegios insuficientes
+    activate priv 
+    priv -> router: res.status(403).json({message: "Privilegios insuficientes"})
+    deactivate priv
+    activate router
+    router -> front: res.status(403).json({message: "Privilegios insuficientes"})
+    deactivate router
+else Privilegios suficientes
+    activate priv
+    priv -> router: next()
+    deactivate priv
+    activate router
+end
+
+router -> doc: uploadDocs.single("file")
+deactivate router
+
+alt Extensión invalida
+    activate doc
+    doc -> router: new Error("Solo se permiten archivos .pdf, .jpg, .jpeg, .png")
+else Extensión validate
+    doc -> router: next()
+    deactivate doc
+    activate router
+end
+
+router -> auth: authorize(absencePolicy, req)
+deactivate router
+
+alt Acceso Negado
+    activate auth
+    auth -> router: res.status(403).json({error: Accesso denegado})
+    deactivate auth
+    activate router
+    router -> front: res.status(403).json({error: Accesso denegado})
+    deactivate router
+else Acceso autorizado
+    activate auth
+    auth -> router: next()
+    deactivate auth
+    activate router
+end
+
+router -> val: validate(absenceAddSchema, "all")
+deactivate router
+
+alt Error de validación
+    activate val
+    val -> router: res.status(400).json({message: "Error de validación"})
+    deactivate val
+    activate router
+    router -> front: res.status(400).json({message: "Error de validación"})
+    deactivate router
+else Validación exitosa
+    activate val
+    val -> router: next()
+    deactivate val
+    activate router
+end
+
+router -> controller: addAbsence(req, res)
+deactivate router
+
+activate controller
+controller ->> service: addAbsence(req)
+
+activate service
+service ->> schema: safeParse(absence)
+
+alt Validacion fallida
+    activate schema
+    schema -->> service: code: VALIDATION_ERROR
+    deactivate schema
+    service -->> controller: return {success: false, type: VALIDATION_ERROR, message}
+    deactivate service
+    controller -> router: res.status(400).json({success: false, message})
+    activate router
+    router -> front: res.status(400).json({success: false, message})
+    deactivate router
+else Validación exitosa
+    activate service
+    service -> service: absence = {\n\treq.body.employee_id,\n\treq.body.house_id,\n\treq.body.start,\n\treq.body.end,\n\tdescription,\n\treq.file.url,\n\tis_deleted = false\n}
+end
+
+service ->> amodel: create(absence)
+activate amodel
+amodel ->> db: prisma.absence.create({absence_id: uuid(), absence});
+activate db
+db -->> amodel: return {success, data: absence}
+deactivate db
+
+alt Success != true
+    amodel -->> service: return {\n\tsuccess: false, \n\tstatus: 500, \n\tmessage: "Error al registrar la ausencia"\n}
+    service -->> controller: return res.status(500).json{\n\tsuccess: false, \n\tmessage: "Error al registrar la ausencia"\n}
+    controller -> router: res.status(500).json{\n\tsuccess: false, \n\tmessage: "Error al registrar la ausencia"\n}
+    activate router
+    router -> front: res.status(500).json{\n\tsuccess: false, \n\tmessage: "Error al registrar la ausencia"\n}
+    deactivate router
+else Success === true
+    service ->> lmodel: createLog(\n\treq.user.id, \n\tLOG_ACTIONS.ABSENCE_CREATED, \n\tgetClientIP(req), \n\tresult.data.absence.employeeId)
+    activate lmodel
+end
+lmodel ->> db: prisma.logs.create({\n\tlog_id: uuid(), \n\temployee_id,\n\tmoment: new Date(), \n\taction_id: actionId, affected, ip_address: hashIp(ipAddress) \n})
+activate db
+db -->> lmodel: success = true
+deactivate db
+
+lmodel -->> service: return res\n\t.status(201)\n\t.json(success: true)
+deactivate lmodel
+service -->> controller: res\n\t.status(201)\n\t.json(success: true, message: "Ausencia creada con éxito")
+deactivate service
+controller -> router: res\n\t.status(201)\n\t.json(success: true, message: "Ausencia creada con éxito")
+deactivate controller
+activate router 
+router -> front: res\n\t.status(201)\n\t.json(success: true, message: "Ausencia creada con éxito")
+deactivate router
+@enduml
