@@ -10,10 +10,6 @@ database PostgreSQL
 
 autonumber
 
-' ==============================
-' Obtener tipos de evento
-' ==============================
-
 Navegador -> routes : GET /events/personal/add
 activate routes
 
@@ -39,11 +35,6 @@ deactivate controller
 routes -> ReactView : render(Modal con eventTypes)
 deactivate routes
 activate ReactView
-
-
-' ==============================
-' Obtener empleados
-' ==============================
 
 Navegador -> routes : GET /events/personal/employees?search=
 activate routes
