@@ -1,4 +1,5 @@
 const { VACATION_STATUS } = require("../vacationStatus");
+const { getNaturalDays } = require("../vacationDateHelpers");
 
 exports.getVacationStatusLabel = (status) => {
     if (status === VACATION_STATUS.APPROVED) return "Aprobada";
@@ -11,24 +12,6 @@ exports.mapReviewedStatus = (status) => {
     if (status === "approved") return VACATION_STATUS.APPROVED;
     if (status === "rejected") return VACATION_STATUS.REJECTED;
     return "all";
-};
-
-exports.getNaturalDays = (startDate, endDate) => {
-    const msPerDay = 24 * 60 * 60 * 1000;
-
-    const start = Date.UTC(
-        startDate.getUTCFullYear(),
-        startDate.getUTCMonth(),
-        startDate.getUTCDate()
-    );
-
-    const end = Date.UTC(
-        endDate.getUTCFullYear(),
-        endDate.getUTCMonth(),
-        endDate.getUTCDate()
-    );
-
-    return Math.floor((end - start) / msPerDay) + 1;
 };
 
 exports.mapVacationEmployee = (employee) => {
@@ -47,7 +30,7 @@ exports.mapVacationEmployee = (employee) => {
 };
 
 exports.mapVacationRequestForList = (request) => {
-    const naturalDays = exports.getNaturalDays(request.start, request.end);
+    const naturalDays = getNaturalDays(request.start, request.end);
 
     return {
         vacationRequestId: request.vacations_request_id,
