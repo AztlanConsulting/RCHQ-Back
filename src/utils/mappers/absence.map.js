@@ -24,6 +24,25 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
     };
 };
 
+exports.mapHouseEmployeeForAbsence = (employee) => {
+    if (!employee) return undefined;
+
+    return {
+        employeeId: employee.employee_id,
+        houseId: employee.house_id,
+        name: `${employee.name} ${employee.surname}`.trim(),
+    };
+};
+
+exports.mapAbsenceType = (absenceType) => {
+    if (!absenceType) return undefined;
+
+    return {
+        absenceTypeId: absenceType.absence_type_id,
+        name: absenceType.name,
+    };
+};
+
 exports.mapAbsenceDetail = (absence) => {
     if (!absence) return undefined;
 

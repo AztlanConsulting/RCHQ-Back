@@ -69,7 +69,8 @@ VALUES
 ('00000001-0000-4000-8000-000000000007', 'viewEvents'),
 ('00000001-0000-4000-8000-000000000008', 'createEvent'),
 ('00000001-0000-4000-8000-000000000009', 'editAbsences'),
-('00000001-0000-4000-8000-000000000010', 'deleteAbsences')
+('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
+('00000001-0000-4000-8000-000000000011', 'addAbsences')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -157,6 +158,14 @@ INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 JOIN public.privileges p ON p.name = 'createEvent'
+WHERE r.name IN ('Admin', 'Coordinador')
+ON CONFLICT DO NOTHING;
+
+-- Crear ausencias - Admin y Coordinador
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+JOIN public.privileges p ON p.name = 'addAbsences'
 WHERE r.name IN ('Admin', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
@@ -249,10 +258,13 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
+('ausn-003', 'Creación de ausencia exitosa', false),
 ('ausn-001', 'Actualización de ausencia exitosa', false),
 ('ausn-002', 'Eliminación de ausencia exitosa', false),
 ('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),
 ('even-001', 'Evento de casa creado con éxito', false),
+('even-002', 'Evento personal creado con éxito', false),
+('even-003', 'Evento personal asignado a empleado', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -391,8 +403,8 @@ VALUES (
   'c3000000-0000-4000-8000-000000000003',
   'b1000000-0000-4000-8000-000000000001',
   '2026-05-04',
-  '15:00:00',
-  '16:00:00',
+  '2026-01-01 21:00:00',
+  '2026-01-01 22:00:00',
   'Visita médica',
   'Se tiene que llevar a Juan Pérez al doctor',
   false

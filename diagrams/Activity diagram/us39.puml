@@ -1,0 +1,47 @@
+@startuml
+title US39 - Coordinador registra ausencias
+
+| Coordinador |
+:Selecciona la opción de crear evento;
+
+| Sistema |
+:Carga el componente para crear eventos;
+:Muestra el componente al usuario;
+
+| Coordinador |
+:Selecciona la opción de "ausencias";
+
+| Sistema |
+:Consulta la tabla de empleados;
+:Manda la información de la tabla \nde empleados que coincidan con \nel house_id del coordinador: \n\t-id del empleado. \n\t-nombre del empleado. \n\t-id de la casa del empleado;
+:Consulta la tabla de tipo de ausencias;
+:Manda la información de la \ntabla de tipos de ausencias: \n\t-id del tipo de ausencia. \n\t-nombre del tipo de ausencia;
+:Carga el componente de agregar \nausencias con la información de: \n\t-empleados. \n\t-tipo de ausencias;
+:Muestra el componente al usuario;
+
+| Coordinador |
+:Rellena los datos de la ausencia: \n\t- empleado. \n\t- tipo de ausencia. \n\t- fecha de inicio. \n\t- fecha de fin. \n\t- descripción. \n\t- evidencia;
+
+| Sistema |
+if (usuario con rol de coordinador) then (si)
+    if (usuario con permisos para registrar ausencias) then (si)
+        :Permite guardar los datos;
+    else (no)
+        :Muestra mensaje de permisos insuficientes;
+        stop
+    endif
+else (no)
+    :Muestra mensaje de permisos insuficientes;
+    stop
+endif
+
+:Guarda los datos en la tabla de ausencias: \n\t- id de la ausencia: uuid. \n\t- id del empleado. \n\t- id del tipo de ausencia. \n\t- fecha de inicio. \n\t- fecha de fin. \n\t- descripcion. \n\t- url. \n\t- is_deleted: false;
+if (ocurrió un error) then (si)
+    :Mostrar mensaje de error al usuario;
+else (no)
+    :Mostrar mensaje de éxito al usuario;
+endif
+
+stop
+
+@enduml
