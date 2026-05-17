@@ -33,6 +33,7 @@ const LOG_ACTIONS = {
     VACATION_REJECTED_SUCCESS: "vaca-004",
     HOUSE_EVENT_CREATED: "even-001",
     EMPLOYEE_UPDATED: "empl-005",
+    VACATION_UPDATED_SUCCESS: "vaca-005",
 };
 
 module.exports = { LOG_ACTIONS };

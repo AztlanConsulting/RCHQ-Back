@@ -257,7 +257,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
 ('empl-004', 'Documento de empleado eliminado', false),
-('empl-005', 'Información de empleado actualizada', false)
+('empl-005', 'Información de empleado actualizada', false),
+('vaca-005', 'Modificación de vacaciones exitosa', false)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.workday (workday_id, name)
