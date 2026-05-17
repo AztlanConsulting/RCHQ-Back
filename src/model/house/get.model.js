@@ -33,6 +33,7 @@ exports.getHouseEmployeesByEmployeeId = async (employeeId) => {
         },
         select: {
             employee_id: true,
+            house_id: true,
             name: true,
             surname: true,
             curp: true,
