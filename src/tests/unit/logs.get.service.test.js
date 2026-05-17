@@ -212,17 +212,26 @@ describe("logs.get.service", () => {
                 action_id: {
                     in: ["empl-001", "ausn-001"],
                 },
-                OR: [
+                AND: [
                     {
-                        employee_id: {
-                            in: ["emp-1"],
-                        },
-                    },
-                    {
-                        affected: {
-                            contains: "Car",
-                            mode: "insensitive",
-                        },
+                        OR: [
+                            {
+                                employee_id: {
+                                    in: ["emp-1"],
+                                },
+                            },
+                            {
+                                affected: {
+                                    in: ["emp-1"],
+                                },
+                            },
+                            {
+                                affected: {
+                                    contains: "Car",
+                                    mode: "insensitive",
+                                },
+                            },
+                        ],
                     },
                 ],
             },

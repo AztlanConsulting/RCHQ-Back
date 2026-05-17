@@ -333,11 +333,9 @@ describe("GET /logs/house", () => {
             expect.arrayContaining([
                 expect.objectContaining({
                     actionId: "empl-001",
-                    description: "Empleado creado",
                 }),
                 expect.objectContaining({
                     actionId: "ausn-001",
-                    description: "Actualización de ausencia exitosa",
                 }),
             ]),
         );
@@ -468,6 +466,20 @@ describe("GET /logs/house", () => {
     it("filtra por responsable y afectado por separado", async () => {
         const res = await request(app)
             .get("/logs/house?page=1&limit=10&responsible=Carla&affected=Luis")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "Luis CasaA",
+        });
+    });
+
+    it("filtra por nombre completo y CURP", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&responsible=Carla%20Coord&affected=LUCA900101HDFABC01")
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);

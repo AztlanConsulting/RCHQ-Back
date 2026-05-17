@@ -1,5 +1,13 @@
 const prisma = require("../../prisma");
 
+const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñç";
+const SEARCHABLE_REPLACEMENT_CHARS = "aeiouaeiouaeiouaeiounc";
+
+const normalizeSearchTerm = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
 const logInclude = {
     action: {
         select: {
@@ -52,28 +60,53 @@ exports.getEmployeeIdsBySearch = async (houseId, search) => {
         return [];
     }
 
-    const employees = await prisma.employee.findMany({
-        where: {
-            house_id: houseId,
-            OR: [
-                {
-                    name: {
-                        contains: search,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    surname: {
-                        contains: search,
-                        mode: "insensitive",
-                    },
-                },
-            ],
-        },
-        select: {
-            employee_id: true,
-        },
+    const searchTerms = String(search)
+        .trim()
+        .split(/\s+/)
+        .map(normalizeSearchTerm)
+        .filter(Boolean);
+
+    if (searchTerms.length === 0) {
+        return [];
+    }
+
+    const queryParams = [houseId];
+    const searchConditions = searchTerms.map((term) => {
+        const normalizedLike = `%${term}%`;
+        queryParams.push(
+            SEARCHABLE_ACCENTED_CHARS,
+            SEARCHABLE_REPLACEMENT_CHARS,
+            normalizedLike,
+            SEARCHABLE_ACCENTED_CHARS,
+            SEARCHABLE_REPLACEMENT_CHARS,
+            normalizedLike,
+        );
+
+        const firstParamIndex = queryParams.length - 5;
+        const secondParamIndex = queryParams.length - 2;
+
+        return `(
+            translate(
+                lower(coalesce(name, '') || ' ' || coalesce(surname, '')),
+                $${firstParamIndex},
+                $${firstParamIndex + 1}
+            ) LIKE $${firstParamIndex + 2}
+            OR translate(
+                lower(coalesce(curp, '')),
+                $${secondParamIndex},
+                $${secondParamIndex + 1}
+            ) LIKE $${secondParamIndex + 2}
+        )`;
     });
+
+    const query = `
+        SELECT employee_id
+        FROM employee
+        WHERE house_id::text = $1
+        AND ${searchConditions.join(" AND ")}
+    `;
+
+    const employees = await prisma.$queryRawUnsafe(query, ...queryParams);
 
     return employees.map((employee) => employee.employee_id);
 };
