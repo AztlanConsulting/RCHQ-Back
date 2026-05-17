@@ -1,6 +1,8 @@
 const prisma = require("../../prisma");
 const { Prisma } = require("@prisma/client");
 const { mapPersonalEventOverlap } = require("../../utils/mappers/event.map");
+const personalEventTimeToUtc = (date, time) =>
+    new Date(`${date}T${time}-06:00`);
 
 exports.getAllEventTypes = async () => {
     return await prisma.event_type.findMany({
@@ -128,16 +130,10 @@ exports.findOverlappingEmployees = async ({
             personal_event: {
                 date: new Date(date),
                 start: {
-                    lt: new Date(
-                        new Date(`2026-01-01T${end}Z`).getTime() +
-                            6 * 60 * 60 * 1000,
-                    ),
+                    lt: personalEventTimeToUtc(date, end),
                 },
                 end: {
-                    gt: new Date(
-                        new Date(`2026-01-01T${start}Z`).getTime() +
-                            6 * 60 * 60 * 1000,
-                    ),
+                    gt: personalEventTimeToUtc(date, start),
                 },
             },
         },

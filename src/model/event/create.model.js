@@ -4,9 +4,8 @@ const {
     mapHouseEvent,
     mapPersonalEvent,
 } = require("../../utils/mappers/event.map");
-const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
-const toUtc = (time) =>
-    new Date(new Date(`2026-01-01T${time}Z`).getTime() + SIX_HOURS_MS);
+const personalEventTimeToUtc = (date, time) =>
+    new Date(`${date}T${time}-06:00`);
 
 exports.findOverlappingHouseEvents = async ({ houseId, start, end }) => {
     const houseEvents = await prisma.house_event.findMany({
@@ -51,8 +50,8 @@ exports.createPersonalEvent = async (data) => {
                 personal_event_id: data.personalEventId,
                 event_type_id: data.eventTypeId,
                 date: new Date(data.date),
-                start: toUtc(data.start),
-                end: toUtc(data.end),
+                start: personalEventTimeToUtc(data.date, data.start),
+                end: personalEventTimeToUtc(data.date, data.end),
                 name: data.name,
                 description: data.description ?? null,
                 all_day: data.allDay,
