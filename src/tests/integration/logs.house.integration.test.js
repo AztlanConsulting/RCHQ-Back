@@ -415,4 +415,25 @@ describe("GET /logs/house", () => {
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
     });
+
+    it("genera un reporte pdf de los logs de la casa", async () => {
+        const res = await request(app)
+            .get("/logs/house/report/pdf?month=5&year=2026")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.headers["content-type"]).toContain("application/pdf");
+        expect(res.headers["content-disposition"]).toContain(".pdf");
+        expect(Buffer.isBuffer(res.body)).toBe(true);
+        expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
+    });
+
+    it("retorna 422 si la fecha del reporte es inválida", async () => {
+        const res = await request(app)
+            .get("/logs/house/report/pdf?month=13&year=2026")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(422);
+        expect(res.body.message).toBe("Fecha inválida");
+    });
 });
