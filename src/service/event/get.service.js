@@ -118,16 +118,16 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     personalEvents.forEach((event) => {
         events.push({
             start: combineDateAndTime(
-                event.personal_event.date,
-                event.personal_event.start,
+                event.personalEvent.date,
+                event.personalEvent.start,
             ),
             end: combineDateAndTime(
-                event.personal_event.date,
-                event.personal_event.end,
+                event.personalEvent.date,
+                event.personalEvent.end,
             ),
             date: event.date,
-            name: event.personal_event.name,
-            type: event.personal_event.event_type.name,
+            name: event.personalEvent.name,
+            type: event.personalEvent.event_type.name,
             subtitle: event.subtitle || "",
             focus: "eventos",
             scope: "personal",
