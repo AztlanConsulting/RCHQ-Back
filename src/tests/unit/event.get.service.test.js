@@ -47,6 +47,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
 
     it("retorna error si la fecha final es menor a la inicial", async () => {
         const result = await eventGetService.getHouseCalendarRecordsInRange(
+            "employee-1",
             "house-1",
             "2026-05-10",
             "2026-05-01",
@@ -90,6 +91,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
         eventModel.getGlobalEventsInRange.mockResolvedValue([]);
 
         const result = await eventGetService.getHouseCalendarRecordsInRange(
+            "employee-1",
             "house-1",
             "2026-05-01",
             "2026-05-31",

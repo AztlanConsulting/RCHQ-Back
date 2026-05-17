@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 
 exports.apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
-    max: 10000,
+    max: 100,
     message: {
         success: false,
         message:

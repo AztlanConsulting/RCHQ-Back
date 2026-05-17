@@ -33,6 +33,7 @@ const {
 } = require("../../model/event/get.model");
 const { getEventsInRange } = require("../../service/event/get.service");
 const RESPONSES = require("../../utils/responses");
+const { employee } = require("../../prisma");
 
 const EMPLOYEE_ID = "employee-id";
 const HOUSE_ID = "house-id";
@@ -67,6 +68,7 @@ const makeAbsence = ({
         url: "https://example.com/absence.pdf",
         is_deleted: false,
         absence_type: { name: "Medica" },
+        employee: { name: "John", surname: "Smith" }
     };
 };
 
@@ -157,7 +159,7 @@ describe("event.get.service", () => {
         expect(absenceEvent).toMatchObject({
             absenceId: "absence-id",
             employeeId: EMPLOYEE_ID,
-            name: "Ausencia",
+            name: "John Smith",
             type: "Medica",
             subtitle: "",
             description: "Consulta",
