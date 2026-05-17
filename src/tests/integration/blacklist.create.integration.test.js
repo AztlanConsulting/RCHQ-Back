@@ -8,17 +8,20 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 
 const prisma = new PrismaClient();
 
-const TEST_HOUSE_ID = randomUUID();
-const TEST_COORDINADOR_ID = randomUUID();
-const TEST_TARGET_ID = randomUUID();
-const TEST_COORDINADOR_ROLE_ID = randomUUID();
-const TEST_TARGET_ROLE_ID = randomUUID();
-const TEST_PRIVILEGE_ID = randomUUID();
+const TEST_HOUSE_ID = "f0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3c";
+const TEST_COORDINADOR_ID = "f0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3d";
+const TEST_TARGET_ID = "f0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3e";
+const TEST_COORDINADOR_ROLE_ID = "f0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3f";
+const TEST_TARGET_ROLE_ID = "f0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b40";
+const TEST_PRIVILEGE_ID = "f0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b41";
 const TEST_PASSWORD = "TestPass123";
 const TEST_COORDINADOR_EMAIL = "coordinador.blacklist@test.com";
 const TEST_TARGET_EMAIL = "target.blacklist@test.com";
 const TEST_COORDINADOR_CURP = "COOR900101HDFXXX01";
 const TEST_TARGET_CURP = "TARG900101HDFXXX02";
+
+let testCoordinadorRoleId;
+let testTargetRoleId;
 
 const seedDependencies = async () => {
     await prisma.house.upsert({
@@ -34,23 +37,25 @@ const seedDependencies = async () => {
         },
     });
 
-    await prisma.role.upsert({
-        where: { role_id: TEST_COORDINADOR_ROLE_ID },
+    const coordRole = await prisma.role.upsert({
+        where: { name: "Coordinador" },
         update: {},
         create: {
             role_id: TEST_COORDINADOR_ROLE_ID,
             name: "Coordinador",
         },
     });
+    testCoordinadorRoleId = coordRole.role_id;
 
-    await prisma.role.upsert({
-        where: { role_id: TEST_TARGET_ROLE_ID },
+    const targetRole = await prisma.role.upsert({
+        where: { name: "test-role-blacklist-target" },
         update: {},
         create: {
             role_id: TEST_TARGET_ROLE_ID,
             name: "test-role-blacklist-target",
         },
     });
+    testTargetRoleId = targetRole.role_id;
 
     await prisma.privileges.upsert({
         where: { name: "addToBlacklist" },
@@ -62,9 +67,9 @@ const seedDependencies = async () => {
     });
 
     await prisma.role_privilege.upsert({
-        where: { role_id_privilege_id: { role_id: TEST_COORDINADOR_ROLE_ID, privilege_id: TEST_PRIVILEGE_ID } },
+        where: { role_id_privilege_id: { role_id: testCoordinadorRoleId, privilege_id: TEST_PRIVILEGE_ID } },
         update: {},
-        create: { role_id: TEST_COORDINADOR_ROLE_ID, privilege_id: TEST_PRIVILEGE_ID },
+        create: { role_id: testCoordinadorRoleId, privilege_id: TEST_PRIVILEGE_ID },
     });
 
     for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {
@@ -86,7 +91,7 @@ const createCoordinador = async () => {
         data: {
             employee_id: TEST_COORDINADOR_ID,
             house_id: TEST_HOUSE_ID,
-            role_id: TEST_COORDINADOR_ROLE_ID,
+            role_id: testCoordinadorRoleId,
             name: "Coordinador",
             surname: "Prueba",
             email: TEST_COORDINADOR_EMAIL,
@@ -108,7 +113,7 @@ const createTargetEmployee = async (overrides = {}) => {
         data: {
             employee_id: TEST_TARGET_ID,
             house_id: TEST_HOUSE_ID,
-            role_id: TEST_TARGET_ROLE_ID,
+            role_id: testTargetRoleId,
             name: "Luis",
             surname: "Pérez",
             email: TEST_TARGET_EMAIL,
@@ -171,7 +176,7 @@ beforeEach(async () => {
 afterAll(async () => {
     await cleanDb();
     await prisma.role.deleteMany({
-        where: { role_id: { in: [TEST_COORDINADOR_ROLE_ID, TEST_TARGET_ROLE_ID] } },
+        where: { role_id: { in: [testCoordinadorRoleId, testTargetRoleId].filter(Boolean) } },
     });
     await prisma.privileges.deleteMany({
         where: { name: "addToBlacklist" },
