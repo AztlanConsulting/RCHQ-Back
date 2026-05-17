@@ -1,9 +1,11 @@
-const { getStartDate,
+const {
+    getStartDate,
     findByIdWithRoleAndHouse,
 } = require("../../model/employee/get.model");
-const { getVacationsInRange,
+const {
+    getVacationsInRange,
     getPendingVacationRequestsByHouse,
-    getReviewedVacationRequestsByHouse
+    getReviewedVacationRequestsByHouse,
 } = require("../../model/vacation/get.model");
 const { getVacationDays } = require("../../utils/vacationDays");
 const RESPONSES = require("../../utils/responses");
@@ -22,7 +24,7 @@ const {
 
 const hasCurrentPrivilege = (employee, privilegeName) => {
     return employee.role?.role_privilege?.some(
-        (rolePrivilege) => rolePrivilege.privilege?.name === privilegeName
+        (rolePrivilege) => rolePrivilege.privilege?.name === privilegeName,
     );
 };
 
@@ -31,10 +33,10 @@ exports.getRemainingVacations = async (employeeId) => {
 
     if (!result) {
         return {
-            code: RESPONSES.VACATION.WITHOUT_START_DATE
-        }
+            code: RESPONSES.VACATION.WITHOUT_START_DATE,
+        };
     }
-    
+
     const baseDate = result.start_date;
     const baseDay = baseDate.getUTCDate();
     const baseMonth = baseDate.getUTCMonth();
@@ -44,16 +46,22 @@ exports.getRemainingVacations = async (employeeId) => {
     const currentDay = currentDate.getUTCDate();
     const currentMonth = currentDate.getUTCMonth();
     const currentYear = currentDate.getUTCFullYear();
-    
+
     let anniversaryAlreadyPassed = false;
-    
-    if ((currentMonth == baseMonth && currentDay >= baseDay) || currentMonth > baseMonth) {
+
+    if (
+        (currentMonth === baseMonth && currentDay >= baseDay) ||
+        currentMonth > baseMonth
+    ) {
         anniversaryAlreadyPassed = true;
     }
-    
-    let startYear = anniversaryAlreadyPassed ? currentDate.getUTCFullYear() : currentDate.getUTCFullYear() - 1;
-    let endYear = startYear + 1;
-    
+
+    const startYear = anniversaryAlreadyPassed
+        ? currentDate.getUTCFullYear()
+        : currentDate.getUTCFullYear() - 1;
+
+    const endYear = startYear + 1;
+
     const startDate = new Date(Date.UTC(startYear, baseMonth, baseDay));
     const endDate = new Date(Date.UTC(endYear, baseMonth, baseDay - 1));
 
@@ -61,21 +69,23 @@ exports.getRemainingVacations = async (employeeId) => {
 
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
 
-    vacations.forEach(vacation => {
+    vacations.forEach((vacation) => {
         usedDays += vacation.used_days;
     });
 
-    const yearsWorked = currentYear - baseYear - (!anniversaryAlreadyPassed ? 1 : 0);
+    const yearsWorked =
+        currentYear - baseYear - (!anniversaryAlreadyPassed ? 1 : 0);
+
     const maxDays = getVacationDays(yearsWorked);
-    
+
     return {
         code: RESPONSES.VACATION.REMAINING_VACATIONS_FOUND,
         data: {
             remainingDays: maxDays - usedDays,
-            startDate: startDate,
-            endDate: endDate
-        }
-    }
+            startDate,
+            endDate,
+        },
+    };
 };
 
 exports.getVacationYearInfoForApproval = async (employeeId) => {
@@ -169,23 +179,34 @@ exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const { page, limit, skip, take } = parsePagination(
         query.page,
-        query.limit
+        query.limit,
     );
 
     const search = query.search?.trim() || "";
 
     const where = buildVacationListWhere({
         houseId: actorEmployee.house_id,
-        search,
+        search: "",
         startDate: query.startDate,
         endDate: query.endDate,
         statusFilter: VACATION_STATUS.PENDING,
     });
 
+    const searchFilters = search
+        ? {
+            houseId: actorEmployee.house_id,
+            statusFilter: VACATION_STATUS.PENDING,
+            search,
+            startDate: query.startDate,
+            endDate: query.endDate,
+        }
+        : null;
+
     const { requests, total } = await getPendingVacationRequestsByHouse({
         where,
         skip,
         take,
+        searchFilters,
     });
 
     return {
@@ -241,7 +262,7 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const { page, limit, skip, take } = parsePagination(
         query.page,
-        query.limit
+        query.limit,
     );
 
     const search = query.search?.trim() || "";
@@ -256,16 +277,27 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const where = buildVacationListWhere({
         houseId: actorEmployee.house_id,
-        search,
+        search: "",
         startDate: query.startDate,
         endDate: query.endDate,
         statusFilter,
     });
 
+    const searchFilters = search
+        ? {
+            houseId: actorEmployee.house_id,
+            statusFilter,
+            search,
+            startDate: query.startDate,
+            endDate: query.endDate,
+        }
+        : null;
+
     const { requests, total } = await getReviewedVacationRequestsByHouse({
         where,
         skip,
         take,
+        searchFilters,
     });
 
     return {
