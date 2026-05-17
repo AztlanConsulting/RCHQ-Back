@@ -22,7 +22,10 @@ const {
     createHouseEvent,
     createPersonalEvent,
 } = require("../controller/event/create.controller");
-const { houseEventPolicy } = require("../policies/event.policies");
+const {
+    houseEventPolicy,
+    personalEventPolicy,
+} = require("../policies/event.policies");
 const { ROLES } = require("../utils/roles");
 
 router.get(
@@ -82,6 +85,9 @@ router.post(
     verifyToken,
     requireRole(...allRoles),
     requirePrivileges("createEvent"),
+    authorize(personalEventPolicy, (req) => ({
+        forceOverlap: req.body?.forceOverlap,
+    })),
     createPersonalEvent,
 );
 
