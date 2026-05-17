@@ -1,5 +1,5 @@
 const { stringToDate } = require("./dates");
-const { buildAccentVariants, splitSearchTerms } = require("./search");
+const { splitSearchTerms } = require("./search");
 
 exports.buildVacationDateFilter = (startDate, endDate) => {
     if (!startDate && !endDate) return {};
@@ -37,32 +37,28 @@ exports.buildVacationEmployeeSearchFilter = (search) => {
 
     return {
         employee: {
-            AND: terms.map((term) => {
-                const termVariants = buildAccentVariants(term);
-
-                return {
-                    OR: [
-                        ...termVariants.map((variant) => ({
-                            name: {
-                                contains: variant,
-                                mode: "insensitive",
-                            },
-                        })),
-                        ...termVariants.map((variant) => ({
-                            surname: {
-                                contains: variant,
-                                mode: "insensitive",
-                            },
-                        })),
-                        {
-                            curp: {
-                                contains: term,
-                                mode: "insensitive",
-                            },
+            AND: terms.map((term) => ({
+                OR: [
+                    {
+                        name: {
+                            contains: term,
+                            mode: "insensitive",
                         },
-                    ],
-                };
-            }),
+                    },
+                    {
+                        surname: {
+                            contains: term,
+                            mode: "insensitive",
+                        },
+                    },
+                    {
+                        curp: {
+                            contains: term,
+                            mode: "insensitive",
+                        },
+                    },
+                ],
+            })),
         },
     };
 };
