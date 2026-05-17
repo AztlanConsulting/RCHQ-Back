@@ -1,4 +1,5 @@
 const { stringToDate } = require("./dates");
+const { buildAccentVariants, splitSearchTerms } = require("./search");
 
 exports.buildVacationDateFilter = (startDate, endDate) => {
     if (!startDate && !endDate) return {};
@@ -30,37 +31,38 @@ exports.buildVacationDateFilter = (startDate, endDate) => {
 };
 
 exports.buildVacationEmployeeSearchFilter = (search) => {
-    const terms = search
-        ?.trim()
-        .split(/\s+/)
-        .filter(Boolean);
+    const terms = splitSearchTerms(search);
 
-    if (!terms || terms.length === 0) return {};
+    if (!terms.length) return {};
 
     return {
         employee: {
-            AND: terms.map((term) => ({
-                OR: [
-                    {
-                        name: {
-                            contains: term,
-                            mode: "insensitive",
+            AND: terms.map((term) => {
+                const termVariants = buildAccentVariants(term);
+
+                return {
+                    OR: [
+                        ...termVariants.map((variant) => ({
+                            name: {
+                                contains: variant,
+                                mode: "insensitive",
+                            },
+                        })),
+                        ...termVariants.map((variant) => ({
+                            surname: {
+                                contains: variant,
+                                mode: "insensitive",
+                            },
+                        })),
+                        {
+                            curp: {
+                                contains: term,
+                                mode: "insensitive",
+                            },
                         },
-                    },
-                    {
-                        surname: {
-                            contains: term,
-                            mode: "insensitive",
-                        },
-                    },
-                    {
-                        curp: {
-                            contains: term,
-                            mode: "insensitive",
-                        },
-                    },
-                ],
-            })),
+                    ],
+                };
+            }),
         },
     };
 };
@@ -77,7 +79,7 @@ exports.buildVacationListWhere = ({
 
     const dateFilter = exports.buildVacationDateFilter(
         parsedStartDate,
-        parsedEndDate
+        parsedEndDate,
     );
 
     const searchFilter = exports.buildVacationEmployeeSearchFilter(search);
