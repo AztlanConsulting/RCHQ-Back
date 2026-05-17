@@ -51,13 +51,13 @@ CREATE TABLE IF NOT EXISTS public.role (
     CONSTRAINT role_pk PRIMARY KEY (role_id)
 );
 
-CREATE TABLE public.privileges (
+CREATE TABLE IF NOT EXISTS public.privileges (
   privilege_id  uuid        NOT NULL,
   name          varchar(50) NOT NULL UNIQUE,
   CONSTRAINT privileges_pk PRIMARY KEY (privilege_id)
 );
 
-CREATE TABLE public.role_privilege (
+CREATE TABLE IF NOT EXISTS public.role_privilege (
   role_id       uuid NOT NULL,
   privilege_id  uuid NOT NULL,
   CONSTRAINT role_privilege_pk PRIMARY KEY (role_id, privilege_id),
@@ -65,7 +65,7 @@ CREATE TABLE public.role_privilege (
   CONSTRAINT role_privilege_privilege_fk FOREIGN KEY (privilege_id) REFERENCES public.privileges(privilege_id) ON DELETE CASCADE
 );
 
-CREATE TABLE public.event_type (
+CREATE TABLE IF NOT EXISTS public.event_type (
 	event_type_id uuid NOT NULL,
 	name varchar(30) NOT NULL UNIQUE,
 	CONSTRAINT event_type_pk PRIMARY KEY (event_type_id)
@@ -322,7 +322,7 @@ CREATE TABLE IF NOT EXISTS public.employee_personal_event (
     CONSTRAINT employee_personal_event_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
 );
 
-CREATE TABLE public.absence_type (
+CREATE TABLE IF NOT EXISTS public.absence_type (
 	absence_type_id uuid NOT NULL,
 	name varchar(30) NOT NULL UNIQUE,
 	CONSTRAINT absence_type_pk PRIMARY KEY (absence_type_id)
