@@ -1,8 +1,12 @@
-const { PrismaClient } = require("@prisma/client");
+const prisma = require("../../prisma");
 const { randomUUID } = require("crypto");
-const { mapHouseEvent } = require("../../utils/mappers/event.map");
-
-const prisma = new PrismaClient();
+const {
+    mapHouseEvent,
+    mapPersonalEvent,
+} = require("../../utils/mappers/event.map");
+const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
+const toUtc = (time) =>
+    new Date(new Date(`2026-01-01T${time}Z`).getTime() + SIX_HOURS_MS);
 
 exports.findOverlappingHouseEvents = async ({ houseId, start, end }) => {
     const houseEvents = await prisma.house_event.findMany({
@@ -38,4 +42,36 @@ exports.createHouseEvent = async (data) => {
     });
 
     return mapHouseEvent(houseEvent);
+};
+
+exports.createPersonalEvent = async (data) => {
+    return prisma.$transaction(async (transaction) => {
+        const event = await transaction.personal_event.create({
+            data: {
+                personal_event_id: data.personalEventId,
+                event_type_id: data.eventTypeId,
+                date: new Date(data.date),
+                start: toUtc(data.start),
+                end: toUtc(data.end),
+                name: data.name,
+                description: data.description ?? null,
+                all_day: data.allDay,
+            },
+        });
+
+        await transaction.employee_personal_event.createMany({
+            data: data.employeeIds.map((employeeId) => ({
+                personal_event_id: data.personalEventId,
+                employee_id: employeeId,
+            })),
+            skipDuplicates: true,
+        });
+
+        return mapPersonalEvent(event, {
+            date: data.date,
+            start: data.start,
+            end: data.end,
+            employeeIds: data.employeeIds,
+        });
+    });
 };
