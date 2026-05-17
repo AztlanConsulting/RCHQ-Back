@@ -21,8 +21,8 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
     return {
         absenceId: absence.absence_id,
         employeeId: absence.employee_id,
-        name: "Ausencia",
-        curp: absence.employee?.curp || "",
+        name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
+        curp: absence.employee.curp,
         start: absence.start,
         end: calendarEnd,
         startDate: absence.start,

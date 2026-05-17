@@ -432,8 +432,8 @@ INSERT INTO public.vacations_request (
 VALUES (
   'c4000000-0000-4000-8000-000000000004',
   (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
-  '2026-06-10',
-  '2026-06-15',
+  '2026-05-06',
+  '2026-05-12',
   0,
   NULL,
   NOW(),

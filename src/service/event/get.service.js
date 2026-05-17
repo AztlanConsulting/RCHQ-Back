@@ -196,7 +196,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     };
 };
 
-exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDate) => {
+exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDate, rawEndDate) => {
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -217,16 +217,7 @@ exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDat
         };
     }
 
-    const absences = await getHouseCalendarAbsenceInRange(houseId, startDate, endDate);
-
-    if (absences.length <= 0) {
-        return {
-            code: RESPONSES.EVENTS.FOUND,
-            data: {
-                events: [],
-            },
-        };
-    }
+    const absences = await getHouseCalendarAbsenceInRange(requesterId, houseId, startDate, endDate);
 
     const supportRangeStart = absences.reduce(
         (minDate, absence) => absence.start < minDate ? absence.start : minDate,

@@ -28,7 +28,7 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Coordinador"),
+    requireRole("Admin", "Coordinador"),
     getAbsenceTypes,
 );
 
