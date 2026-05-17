@@ -137,6 +137,26 @@ const ACTIONS = [
         description: "Registro de vacaciones de empleado exitoso",
         important: false,
     },
+    {
+        action_id: "ausn-001",
+        description: "Actualización de ausencia exitosa",
+        important: false,
+    },
+    {
+        action_id: "ausn-002",
+        description: "Eliminación de ausencia exitosa",
+        important: false,
+    },
+    {
+        action_id: "empl-005",
+        description: "Información de empleado actualizada",
+        important: false,
+    },
+    {
+        action_id: "even-001",
+        description: "Evento de casa creado con éxito",
+        important: false,
+    },
 ];
 
 async function seedActions(db = prisma) {

@@ -182,7 +182,7 @@ model global_event {
   start           DateTime   @db.Timestamp(6)
   end             DateTime   @db.Timestamp(6)
   name            String     @db.VarChar(70)
-  description     String?
+  description     String?    @db.VarChar(250)
   all_day         Boolean
   is_free_day     Boolean
   event_type      event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "global_event_event_type_fk")
@@ -217,7 +217,7 @@ model house_event {
   start          DateTime   @db.Timestamp(6)
   end            DateTime   @db.Timestamp(6)
   name           String     @db.VarChar(70)
-  description    String?
+  description    String?    @db.VarChar(250)
   all_day        Boolean
   is_free_day    Boolean
   event_type     event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "house_event_event_type_fk")
@@ -257,7 +257,7 @@ model personal_event {
   start                   DateTime                  @db.Time(6)
   end                     DateTime                  @db.Time(6)
   name                    String                    @db.VarChar(70)
-  description             String?
+  description             String?                   @db.VarChar(250)
   all_day                 Boolean
   employee_personal_event employee_personal_event[]
   event_type              event_type                @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "personal_event_event_type_fk")

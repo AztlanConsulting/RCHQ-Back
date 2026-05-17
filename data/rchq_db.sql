@@ -4,6 +4,7 @@
 -- Re-run safe (usa IF NOT EXISTS y ON CONFLICT DO NOTHING)
 -- =============================================================
 
+CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- =============================================================
 -- 1. TABLAS BASE (sin dependencias)
@@ -279,7 +280,7 @@ CREATE TABLE IF NOT EXISTS public.personal_event (
     start time NOT NULL,
     "end" time NOT NULL,
     name varchar(70) NOT NULL,
-    description text NULL,
+    description varchar(250) NULL,
     all_day boolean NOT NULL,
     CONSTRAINT personal_event_pk PRIMARY KEY (personal_event_id),
     CONSTRAINT personal_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id)
@@ -292,7 +293,7 @@ CREATE TABLE IF NOT EXISTS public.house_event (
     start timestamp NOT NULL,
     "end" timestamp NOT NULL,
     name varchar(70) NOT NULL,
-    description text NULL,
+    description varchar(250) NULL,
     all_day boolean NOT NULL,
     is_free_day boolean NOT NULL,
     CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),
@@ -306,7 +307,7 @@ CREATE TABLE IF NOT EXISTS public.global_event (
     start timestamp NOT NULL,
     "end" timestamp NOT NULL,
     name varchar(70) NOT NULL,
-    description text NULL,
+    description varchar(250) NULL,
     all_day boolean NOT NULL,
     is_free_day boolean NOT NULL,
     CONSTRAINT global_event_pk PRIMARY KEY (global_event_id),

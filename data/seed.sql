@@ -1,6 +1,7 @@
 -- ============================================================
 -- SEED MINIMAL — RCHQ
 -- Login: andre@gmail.com / Andatti67
+-- Login: laura.mantenimiento@gmail.com / Andatti67
 -- Re-run safe: todos los inserts tienen ON CONFLICT DO NOTHING
 -- ============================================================
 
@@ -66,9 +67,10 @@ VALUES
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
 ('00000001-0000-4000-8000-000000000006', 'viewLogs'),
 ('00000001-0000-4000-8000-000000000007', 'viewEvents'),
-('00000001-0000-4000-8000-000000000008', 'editAbsences'),
-('00000001-0000-4000-8000-000000000009', 'deleteAbsences'),
-('00000001-0000-4000-8000-000000000010', 'addToBlacklist')
+('00000001-0000-4000-8000-000000000010', 'addToBlacklist'),
+('00000001-0000-4000-8000-000000000008', 'createEvent'),
+('00000001-0000-4000-8000-000000000009', 'editAbsences'),
+('00000001-0000-4000-8000-000000000010', 'deleteAbsences')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -151,6 +153,14 @@ WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Direcció
 AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
 ON CONFLICT DO NOTHING;
 
+-- Crear eventos - Casa, Global,
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+JOIN public.privileges p ON p.name = 'createEvent'
+WHERE r.name IN ('Admin', 'Coordinador')
+ON CONFLICT DO NOTHING;
+
 -- =========================
 -- EMPLOYEE
 -- Contraseña: Andatti67
@@ -179,6 +189,29 @@ VALUES (
   NULL,
   '2003-10-04',
   'uploads/1776813289924.png',
+  '2026-04-09',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  'b8f54b14-701e-4e87-a019-caef53dcda70',
+  (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT role_id  FROM public.role   WHERE name = 'Mantenimiento' LIMIT 1),
+  'Laura',
+  'Mendoza',
+  true,
+  'laura.mantenimiento@gmail.com',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  0,
+  NULL,
+  'MEML900101MDFNDR01',
+  NULL,
+  '1990-01-01',
+  'boop',
   '2026-04-09',
   NULL,
   NULL,
@@ -220,6 +253,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('ausn-001', 'Actualización de ausencia exitosa', false),
 ('ausn-002', 'Eliminación de ausencia exitosa', false),
 ('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),
+('even-001', 'Evento de casa creado con éxito', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -244,6 +278,14 @@ INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALU
 ('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
 ('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
 ('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+VALUES
+('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00');
 
 INSERT INTO public.event_type (event_type_id, name)
 VALUES
@@ -272,6 +314,24 @@ VALUES (
   'Aniversario de la red de casas hogar',
   false,
   false
+), (
+  'c1000000-0000-4000-8000-000000000010',
+  'b1000000-0000-4000-8000-000000000001',
+  '2026-05-05 09:00:00',
+  '2026-05-05 17:00:00',
+  'Descanso global de prueba',
+  'Evento global libre para validar descuento de ausencias de Laura',
+  true,
+  true
+), (
+  'c1000000-0000-4000-8000-000000000011',
+  'b1000000-0000-4000-8000-000000000001',
+  '2026-05-20 09:00:00',
+  '2026-05-20 17:00:00',
+  'Jornada global libre',
+  'Segundo evento global libre para validar conteo de dias habiles',
+  true,
+  true
 )
 ON CONFLICT (global_event_id) DO NOTHING;
 
@@ -296,6 +356,26 @@ VALUES (
   'Visita por parte del DIF para ver las instalaciones',
   false,
   false
+), (
+  'c2000000-0000-4000-8000-000000000010',
+  'b1000000-0000-4000-8000-000000000001',
+  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  '2026-05-07 09:00:00',
+  '2026-05-07 17:00:00',
+  'Descanso de casa de prueba',
+  'Evento de casa libre para validar descuento de ausencias de Laura',
+  true,
+  true
+), (
+  'c2000000-0000-4000-8000-000000000011',
+  'b1000000-0000-4000-8000-000000000001',
+  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  '2026-05-21 09:00:00',
+  '2026-05-21 17:00:00',
+  'Jornada libre de casa',
+  'Segundo evento de casa libre para validar conteo de dias habiles',
+  true,
+  true
 )
 ON CONFLICT (house_event_id) DO NOTHING;
 
@@ -782,44 +862,57 @@ INSERT INTO public.absence (
   url,
   is_deleted
 )
-SELECT
-  absence_seed.absence_id,
-  e.employee_id,
-  absence_seed.absence_type_id,
-  absence_seed.start,
-  absence_seed."end",
-  absence_seed.description,
-  absence_seed.url,
+VALUES
+(
+  'ab000001-0000-4000-8000-000000000001',
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-05-01',
+  '2026-05-05',
+  'Consulta medica y reposo indicado',
+  'https://example.com/ausencias/andre-consulta-medica.pdf',
   false
-FROM public.employee e
-CROSS JOIN (
-  VALUES
-    (
-      'ab000001-0000-4000-8000-000000000001'::uuid,
-      'a0000001-0000-4000-8000-000000000001'::uuid,
-      '2026-05-01'::date,
-      '2026-05-05'::date,
-      'Consulta medica y reposo indicado',
-      'https://example.com/ausencias/andre-consulta-medica.pdf'
-    ),
-    (
-      'ab000001-0000-4000-8000-000000000002'::uuid,
-      'a0000001-0000-4000-8000-000000000002'::uuid,
-      '2026-05-12'::date,
-      '2026-05-12'::date,
-      'Permiso por tramite familiar',
-      'https://example.com/ausencias/andre-permiso-familiar.pdf'
-    ),
-    (
-      'ab000001-0000-4000-8000-000000000003'::uuid,
-      'a0000001-0000-4000-8000-000000000001'::uuid,
-      '2026-06-18'::date,
-      '2026-06-19'::date,
-      'Seguimiento medico programado',
-      'https://example.com/ausencias/andre-seguimiento-medico.pdf'
-    )
-) AS absence_seed(absence_id, absence_type_id, start, "end", description, url)
-WHERE e.email = 'andre@gmail.com'
+),
+(
+  'ab000001-0000-4000-8000-000000000002',
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  'a0000001-0000-4000-8000-000000000002',
+  '2026-05-12',
+  '2026-05-12',
+  'Permiso por tramite familiar',
+  'https://example.com/ausencias/andre-permiso-familiar.pdf',
+  false
+),
+(
+  'ab000001-0000-4000-8000-000000000003',
+  'b8f54b14-701e-4e87-a019-caef53dcda99',
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-06-18',
+  '2026-06-19',
+  'Seguimiento medico programado',
+  'https://example.com/ausencias/andre-seguimiento-medico.pdf',
+  false
+),
+(
+  'ab000001-0000-4000-8000-000000000010',
+  'b8f54b14-701e-4e87-a019-caef53dcda70',
+  'a0000001-0000-4000-8000-000000000001',
+  '2026-05-01',
+  '2026-05-08',
+  'Reposo de Laura con cruce de evento global y evento de casa',
+  'https://example.com/ausencias/laura-reposo-mayo.pdf',
+  false
+),
+(
+  'ab000001-0000-4000-8000-000000000011',
+  'b8f54b14-701e-4e87-a019-caef53dcda70',
+  'a0000001-0000-4000-8000-000000000002',
+  '2026-05-20',
+  '2026-05-22',
+  'Permiso de Laura con dos eventos libres de mayo',
+  'https://example.com/ausencias/laura-permiso-mayo.pdf',
+  false
+)
 ON CONFLICT (absence_id) DO UPDATE SET
   employee_id = EXCLUDED.employee_id,
   absence_type_id = EXCLUDED.absence_type_id,

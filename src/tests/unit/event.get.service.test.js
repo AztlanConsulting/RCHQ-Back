@@ -9,6 +9,29 @@ const eventModel = require("../../model/event/get.model");
 const absenceModel = require("../../model/absence/get.model");
 const RESPONSES = require("../../utils/responses");
 
+describe("event.service — getAllEventTypes", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it("retorna eventTypes con eventTypeId en camelCase", async () => {
+        eventModel.getAllEventTypes.mockResolvedValue([
+            {
+                event_type_id: "550e8400-e29b-41d4-a716-446655440000",
+                name: "Festivo",
+            },
+        ]);
+
+        const result = await eventGetService.getAllEventTypes();
+
+        expect(result.code).toBe(RESPONSES.EVENTS.FOUND);
+        expect(result.data.eventTypes).toEqual([
+            {
+                eventTypeId: "550e8400-e29b-41d4-a716-446655440000",
+                name: "Festivo",
+            },
+        ]);
+    });
+});
+
 describe("event.service — getHouseCalendarRecordsInRange", () => {
     beforeEach(() => jest.clearAllMocks());
 

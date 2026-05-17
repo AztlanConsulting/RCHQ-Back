@@ -37,7 +37,12 @@ exports.getAllEventTypes = async () => {
     return {
         code: RESPONSES.EVENTS.FOUND,
         data: {
-            eventTypes: result,
+            eventTypes: result.map((eventType) => ({
+                ...(eventType.event_type_id && {
+                    eventTypeId: eventType.event_type_id,
+                }),
+                name: eventType.name,
+            })),
         },
     };
 };
