@@ -48,7 +48,7 @@ const setupSuccessMocks = () => {
     findById.mockImplementation((employeeId) => {
         if (employeeId === IDS.actor) {
             return Promise.resolve({
-                employee_id: IDS.actor,
+                employeeId: IDS.actor,
                 house_id: "house-1",
                 is_active: true,
             });
@@ -56,7 +56,7 @@ const setupSuccessMocks = () => {
 
         if (employeeId === IDS.target) {
             return Promise.resolve({
-                employee_id: IDS.target,
+                employeeId: IDS.target,
                 house_id: "house-1",
                 is_active: true,
             });
@@ -65,22 +65,22 @@ const setupSuccessMocks = () => {
         return Promise.resolve(null);
     });
     getAbsenceTypeById.mockResolvedValue({
-        absence_type_id: IDS.type,
+        absenceTypeId: IDS.type,
         name: "Médica",
     });
     getActiveVacationsInRange.mockResolvedValue([]);
     getHouseAbsencesInRange.mockResolvedValue([]);
     createAbsence.mockResolvedValue({
         absence_id: "absence-1",
-        absence_type_id: IDS.type,
+        absenceTypeId: IDS.type,
         start: new Date("2026-06-20T00:00:00.000Z"),
         end: new Date("2026-06-21T00:00:00.000Z"),
         description: "Consulta medica programada",
         url: null,
-        is_deleted: false,
+        isDeleted: false,
         absence_type: { name: "Médica" },
         employee: {
-            employee_id: IDS.target,
+            employeeId: IDS.target,
             house_id: "house-1",
             name: "Luis",
             surname: "Martínez",
@@ -218,7 +218,7 @@ describe("absence.create.service — addAbsence", () => {
         findById.mockImplementation((employeeId) => {
             if (employeeId === IDS.actor) {
                 return Promise.resolve({
-                    employee_id: IDS.actor,
+                    employeeId: IDS.actor,
                     house_id: "house-1",
                     is_active: true,
                 });
@@ -240,13 +240,13 @@ describe("absence.create.service — addAbsence", () => {
         findById.mockImplementation((employeeId) => {
             if (employeeId === IDS.actor) {
                 return Promise.resolve({
-                    employee_id: IDS.actor,
+                    employeeId: IDS.actor,
                     house_id: "house-1",
                     is_active: true,
                 });
             }
             return Promise.resolve({
-                employee_id: IDS.target,
+                employeeId: IDS.target,
                 house_id: "house-1",
                 is_active: false,
             });
@@ -356,13 +356,13 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(createAbsence).toHaveBeenCalledWith({
-            employee_id: IDS.target,
-            absence_type_id: IDS.type,
+            employeeId: IDS.target,
+            absenceTypeId: IDS.type,
             start: new Date("2026-06-20T00:00:00.000Z"),
             end: new Date("2026-06-21T00:00:00.000Z"),
             description: "Consulta medica programada",
             url: null,
-            is_deleted: false,
+            isDeleted: false,
         });
         expect(result.code).toBe(RESPONSES.ABSENCE.CREATED);
     });

@@ -549,7 +549,7 @@ describe("POST /absence/:employeeId/add", () => {
         expect(res.body.message).toBe("tipo de ausencia no encontrado");
     });
 
-    it("400 si faltan campos obligatorios", async () => {
+    it("422 si faltan campos obligatorios", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
@@ -557,11 +557,11 @@ describe("POST /absence/:employeeId/add", () => {
                 absenceTypeId: IDS.absenceTypeA,
             });
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Campo obligatorio");
     });
 
-    it("400 si la fecha de fin es mayor a un año", async () => {
+    it("422 si la fecha de fin es mayor a un año", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
@@ -571,11 +571,11 @@ describe("POST /absence/:employeeId/add", () => {
                 }),
             );
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Fecha de fin no puede ser mayor a un año");
     });
 
-    it("400 si la fecha de inicio es menor a un mes", async () => {
+    it("422 si la fecha de inicio es menor a un mes", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
@@ -586,11 +586,11 @@ describe("POST /absence/:employeeId/add", () => {
                 }),
             );
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Fecha de inicio no puede ser menor a un mes");
     });
 
-    it("400 si la fecha de inicio es mayor a la fecha de fin", async () => {
+    it("422 si la fecha de inicio es mayor a la fecha de fin", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
@@ -601,47 +601,47 @@ describe("POST /absence/:employeeId/add", () => {
                 }),
             );
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Fecha de inicio no puede mayor a la de fin");
     });
 
-    it("400 si el formato de fecha no es YYYY-MM-DD", async () => {
+    it("422 si el formato de fecha no es YYYY-MM-DD", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
             .send(validBody({ startDate: "2026/06/20" }));
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Fecha solo puede tener un formato YYYY-MM-DD");
     });
 
-    it("400 si la fecha no tiene 10 caracteres", async () => {
+    it("422 si la fecha no tiene 10 caracteres", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
             .send(validBody({ startDate: "2026-6-20" }));
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("El tamaño de la fecha debe ser de 10 caracteres");
     });
 
-    it("400 si la descripción excede 200 caracteres", async () => {
+    it("422 si la descripción excede 200 caracteres", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
             .send(validBody({ description: "a".repeat(201) }));
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Descripción no puede ser mayor a 200 caracteres");
     });
 
-    it("400 si la descripción contiene emojis", async () => {
+    it("422 si la descripción contiene emojis", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
             .send(validBody({ description: "Reposo medico 😀" }));
 
-        expect(res.statusCode).toBe(400);
+        expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Descripción no permite caracteres especiales");
     });
 

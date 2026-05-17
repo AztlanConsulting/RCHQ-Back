@@ -133,13 +133,13 @@ exports.addAbsence = async ({
 
     try {
         const createdAbsence = await createAbsenceModel({
-            employee_id: absence.targetEmployeeId,
-            absence_type_id: absence.body.absenceTypeId,
+            employeeId: absence.targetEmployeeId,
+            absenceTypeId: absence.body.absenceTypeId,
             start: startDate,
             end: endDate,
             description: absence.body.description,
             url: evidenceUrl,
-            is_deleted: false,
+            isDeleted: false,
         });
 
         return {
