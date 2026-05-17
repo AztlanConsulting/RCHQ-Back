@@ -53,7 +53,7 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
         link: vacation.url || "",
         focus: "vacaciones",
         scope: "house",
-        color: vacation.status == 1 ? "#5673DB" : "#1439BA",
+        color: vacation.status == 1 ? "#1439BA" : "#5673DB",
         lastsAllDay: true,
         usedDays,
     };
