@@ -1,6 +1,7 @@
 const { z } = require("zod");
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const SEARCH_ALLOWED_CHARS_REGEX = /^[\p{L}\p{M}\p{N}\s]*$/u;
 
 function isRealISODate(dateString) {
     if (!ISO_DATE_REGEX.test(dateString)) return false;
@@ -37,60 +38,62 @@ const searchSchema = z
     .string()
     .trim()
     .max(100, "La búsqueda no puede superar 100 caracteres")
+    .regex(
+        SEARCH_ALLOWED_CHARS_REGEX,
+        "La búsqueda solo puede contener letras, números y espacios",
+    )
     .optional();
 
 const reviewedStatusSchema = z
     .enum(["approved", "rejected", "all"])
     .optional();
 
-exports.getPendingVacationRequestsSchema = z
-    .object({
-        params: z.object({}).strict().optional(),
-        query: z
-            .object({
-                ...paginationSchema,
-                search: searchSchema,
-                startDate: optionalDateSchema,
-                endDate: optionalDateSchema,
-            })
-            .strict()
-            .refine(
-                (data) => {
-                    if (!data.startDate || !data.endDate) return true;
-                    return data.startDate <= data.endDate;
-                },
-                {
-                    message: "La fecha de inicio no puede ser posterior a la fecha de fin",
-                    path: ["startDate"],
-                }
-            ),
-        body: z.object({}).strict().optional(),
-    });
+exports.getPendingVacationRequestsSchema = z.object({
+    params: z.object({}).strict().optional(),
+    query: z
+        .object({
+            ...paginationSchema,
+            search: searchSchema,
+            startDate: optionalDateSchema,
+            endDate: optionalDateSchema,
+        })
+        .strict()
+        .refine(
+            (data) => {
+                if (!data.startDate || !data.endDate) return true;
+                return data.startDate <= data.endDate;
+            },
+            {
+                message: "La fecha de inicio no puede ser posterior a la fecha de fin",
+                path: ["startDate"],
+            },
+        ),
+    body: z.object({}).strict().optional(),
+});
 
-exports.getReviewedVacationRequestsSchema = z
-    .object({
-        params: z.object({}).strict().optional(),
-        query: z
-            .object({
-                ...paginationSchema,
-                search: searchSchema,
-                status: reviewedStatusSchema,
-                startDate: optionalDateSchema,
-                endDate: optionalDateSchema,
-            })
-            .strict()
-            .refine(
-                (data) => {
-                    if (!data.startDate || !data.endDate) return true;
-                    return data.startDate <= data.endDate;
-                },
-                {
-                    message: "La fecha de inicio no puede ser posterior a la fecha de fin",
-                    path: ["startDate"],
-                }
-            ),
-        body: z.object({}).strict().optional(),
-    });
+exports.getReviewedVacationRequestsSchema = z.object({
+    params: z.object({}).strict().optional(),
+    query: z
+        .object({
+            ...paginationSchema,
+            search: searchSchema,
+            status: reviewedStatusSchema,
+            startDate: optionalDateSchema,
+            endDate: optionalDateSchema,
+        })
+        .strict()
+        .refine(
+            (data) => {
+                if (!data.startDate || !data.endDate) return true;
+                return data.startDate <= data.endDate;
+            },
+            {
+                message: "La fecha de inicio no puede ser posterior a la fecha de fin",
+                path: ["startDate"],
+            },
+        ),
+    body: z.object({}).strict().optional(),
+});
 
 exports.getVacationRequestsInputSchema = z
     .object({
