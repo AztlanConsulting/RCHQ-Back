@@ -51,7 +51,7 @@ exports.getPendingVacationRequests = async (req, res) => {
         if (result.code === RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,
-                message: "No tienes permisos para consultar solicitudes de vacaciones",
+                message: "No se tienen permisos",
             });
         }
 
@@ -64,7 +64,7 @@ exports.getPendingVacationRequests = async (req, res) => {
         }
 
         if (result.code === RESPONSES.VACATION.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos",
             });
@@ -100,7 +100,7 @@ exports.getReviewedVacationRequests = async (req, res) => {
         if (result.code === RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,
-                message: "No tienes permisos para consultar solicitudes de vacaciones",
+                message: "No se tienen permisos",
             });
         }
 
@@ -113,7 +113,7 @@ exports.getReviewedVacationRequests = async (req, res) => {
         }
 
         if (result.code === RESPONSES.VACATION.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos",
             });
