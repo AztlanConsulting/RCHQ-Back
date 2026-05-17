@@ -440,6 +440,48 @@ VALUES (
   4
 );
 
+INSERT INTO public.vacations_request (
+  vacations_request_id,
+  employee_id,
+  start,
+  "end",
+  status,
+  feedback,
+  created_at,
+  used_days
+)
+VALUES (
+  'c4000000-0000-4000-9000-000000000004',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
+  '2026-05-15',
+  '2026-05-19',
+  1,
+  NULL,
+  NOW(),
+  3
+);
+
+INSERT INTO public.vacations_request (
+  vacations_request_id,
+  employee_id,
+  start,
+  "end",
+  status,
+  feedback,
+  created_at,
+  used_days
+)
+VALUES (
+  'c4000000-0000-4000-1100-000000000004',
+  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
+  '2026-05-26',
+  '2026-05-28',
+  2,
+  NULL,
+  NOW(),
+  3
+);
+
 -- =========================
 -- DOCUMENTOS
 -- =========================
