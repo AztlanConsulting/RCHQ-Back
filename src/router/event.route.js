@@ -15,10 +15,15 @@ const {
     getAllEventTypes,
     getEventsInRange,
     getHouseCalendarRecordsInRange,
+    getEmployeesForSelector,
 } = require("../controller/event/get.controller");
 
-const { createHouseEvent } = require("../controller/event/create.controler");
+const {
+    createHouseEvent,
+    createPersonalEvent,
+} = require("../controller/event/create.controller");
 const { houseEventPolicy } = require("../policies/event.policies");
+const { ROLES } = require("../utils/roles");
 
 router.get(
     "/range/:id/:startDate/:endDate",
@@ -43,7 +48,14 @@ router.get(
     getHouseCalendarRecordsInRange,
 );
 
-router.get("/getAllTypes", apiLimiter, verifyToken, getAllEventTypes);
+router.get(
+    "/getAllTypes",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges("viewEvents"),
+    getAllEventTypes,
+);
 
 router.post(
     "/house/add",
@@ -53,6 +65,24 @@ router.post(
     requirePrivileges("createEvent"),
     authorize(houseEventPolicy, (req) => ({ houseId: req.user.houseId })),
     createHouseEvent,
+);
+
+router.get(
+    "/personal/employees",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges("viewEmployees"),
+    getEmployeesForSelector,
+);
+
+router.post(
+    "/personal/add",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges("createEvent"),
+    createPersonalEvent,
 );
 
 module.exports = router;

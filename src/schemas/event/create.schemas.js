@@ -1,7 +1,8 @@
 const { z } = require("zod");
 
 const TEXT_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-!¿¡?.,:;()]+$/;
-const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
 const DATETIME_WITH_TIMEZONE_REGEX =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -72,7 +73,7 @@ const houseEventCreateSchema = z
     })
     .superRefine((data, ctx) => {
         if (data.allDay) {
-            if (!DATE_ONLY_REGEX.test(data.start)) {
+            if (!DATE_REGEX.test(data.start)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["start"],
@@ -81,7 +82,7 @@ const houseEventCreateSchema = z
                 });
             }
 
-            if (!DATE_ONLY_REGEX.test(data.end)) {
+            if (!DATE_REGEX.test(data.end)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["end"],
@@ -153,3 +154,103 @@ const houseEventCreateSchema = z
     });
 
 exports.houseEventCreateSchema = houseEventCreateSchema;
+
+exports.createPersonalEventSchema = z
+    .object({
+        name: z
+            .string({ required_error: "El nombre es obligatorio." })
+            .trim()
+            .min(1, { message: "El nombre no puede estar vacío." })
+            .max(70, {
+                message: `El nombre no debe exceder 70 caracteres.`,
+            })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            }),
+
+        eventTypeId: z
+            .string({ required_error: "El tipo de evento es obligatorio" })
+            .uuid("El tipo de evento debe ser un UUID válido"),
+
+        date: z
+            .string({ required_error: "La fecha es obligatoria" })
+            .regex(DATE_REGEX, "La fecha debe tener formato YYYY-MM-DD"),
+
+        description: z
+            .string()
+            .trim()
+            .max(250, {
+                message: `La descripción no debe exceder los 250 caracteres.`,
+            })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            })
+            .nullable()
+            .optional(),
+
+        allDay: z.boolean({ required_error: "El campo allDay es obligatorio" }),
+
+        start: z
+            .string()
+            .regex(
+                TIME_REGEX,
+                "La hora de inicio debe tener formato HH:mm o HH:mm:ss",
+            )
+            .optional(),
+
+        end: z
+            .string()
+            .regex(
+                TIME_REGEX,
+                "La hora de fin debe tener formato HH:mm o HH:mm:ss",
+            )
+            .optional(),
+
+        employeeIds: z
+            .array(
+                z.string().uuid("Los IDs de empleados deben ser UUIDs válidos"),
+            )
+            .optional(),
+
+        forceOverlap: z.boolean().optional().default(false),
+    })
+    .superRefine((data, ctx) => {
+        if (data.allDay === true) {
+            return;
+        }
+
+        if (!data.start) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["start"],
+                message:
+                    "La hora de inicio es obligatoria cuando allDay es false",
+            });
+        }
+
+        if (!data.end) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["end"],
+                message: "La hora de fin es obligatoria cuando allDay es false",
+            });
+        }
+
+        if (data.start && data.end && data.end <= data.start) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["end"],
+                message: "La hora de fin debe ser mayor que la hora de inicio",
+            });
+        }
+    });
+
+exports.searchEmployeesSchema = z.object({
+    search: z
+        .string()
+        .trim()
+        .max(100, { message: "La búsqueda no debe exceder 100 caracteres." })
+        .optional(),
+});
