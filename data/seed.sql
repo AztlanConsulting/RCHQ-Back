@@ -83,11 +83,11 @@ SELECT 'a0000002-0000-4000-8000-000000000002', privilege_id
 FROM public.privileges
 ON CONFLICT DO NOTHING;
 
--- Coordinador — gestión completa excepto logs
+-- Coordinador — gestión completa incluyendo logs
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
-WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments')
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_privilege (role_id, privilege_id)
