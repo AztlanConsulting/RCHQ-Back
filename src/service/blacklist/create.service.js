@@ -1,5 +1,5 @@
 const { findEmployeeByCurp } = require("../../model/blacklist/get.model");
-const { transactionalBlacklistInsert } = require("../../model/blacklist/patch.model");
+const { transactionalBlacklistInsert } = require("../../model/blacklist/update.model");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");

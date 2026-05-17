@@ -2,7 +2,7 @@ jest.mock("../../model/blacklist/get.model", () => ({
     findEmployeeByCurp: jest.fn(),
 }));
 
-jest.mock("../../model/blacklist/patch.model", () => ({
+jest.mock("../../model/blacklist/update.model", () => ({
     transactionalBlacklistInsert: jest.fn(),
 }));
 
@@ -11,7 +11,7 @@ jest.mock("../../model/log.model", () => ({
 }));
 
 const { findEmployeeByCurp } = require("../../model/blacklist/get.model");
-const { transactionalBlacklistInsert } = require("../../model/blacklist/patch.model");
+const { transactionalBlacklistInsert } = require("../../model/blacklist/update.model");
 const { createLog } = require("../../model/log.model");
 const { insertIntoBlacklist } = require("../../service/blacklist/create.service");
 const RESPONSES = require("../../utils/responses");
