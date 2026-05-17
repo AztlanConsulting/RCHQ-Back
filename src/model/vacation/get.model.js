@@ -1,6 +1,25 @@
 const prisma = require("../../prisma");
 const { ACTIVE_VACATION_STATUSES } = require("../../utils/vacationStatus");
 
+const employeeBasicSearch = {
+    employee: {
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            curp: true,
+            picture: true,
+            start_date: true,
+            house: {
+                select: {
+                    house_id: true,
+                    name: true,
+                },
+            },
+        },
+    },
+};
+
 exports.getVacationsInRange = async (employeeId, startDate, endDate) => {
     return await prisma.vacations_request.findMany({
         where: {
@@ -68,24 +87,7 @@ exports.getPendingVacationRequestsByHouse = async ({
     const [requests, total] = await Promise.all([
         prisma.vacations_request.findMany({
             where,
-            include: {
-                employee: {
-                    select: {
-                        employee_id: true,
-                        name: true,
-                        surname: true,
-                        curp: true,
-                        picture: true,
-                        start_date: true,
-                        house: {
-                            select: {
-                                house_id: true,
-                                name: true,
-                            },
-                        },
-                    },
-                },
-            },
+            include: employeeBasicSearch,
             orderBy: [
                 { created_at: "desc" },
                 { start: "asc" },
@@ -107,24 +109,7 @@ exports.getReviewedVacationRequestsByHouse = async ({
     const [requests, total] = await Promise.all([
         prisma.vacations_request.findMany({
             where,
-            include: {
-                employee: {
-                    select: {
-                        employee_id: true,
-                        name: true,
-                        surname: true,
-                        curp: true,
-                        picture: true,
-                        start_date: true,
-                        house: {
-                            select: {
-                                house_id: true,
-                                name: true,
-                            },
-                        },
-                    },
-                },
-            },
+            include: employeeBasicSearch,
             orderBy: [
                 { created_at: "desc" },
                 { start: "desc" },
