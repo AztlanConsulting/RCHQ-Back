@@ -3,10 +3,11 @@ const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const { apiLimiter } = require("../utils/rateLimit");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { resolveRequesterHouse } = require("../middleware/resolvers");
 const {
-    resolveRequesterHouse,
-} = require("../middleware/resolvers");
-const { getAbsenceTypes } = require("../controller/absence/get.controller");
+    getAbsenceTypes,
+    getEmployeesAndAbsenceTypes,
+} = require("../controller/absence/get.controller");
 const { updateAbsence } = require("../controller/absence/update.controller");
 const { deleteAbsence } = require("../controller/absence/delete.controller");
 const { absenceUpdateSchema } = require("../schemas/absence/update.schemas");
@@ -22,6 +23,16 @@ const markEvidenceUpload = (req, res, next) => {
 
     next();
 };
+
+router.get(
+    "/add",
+    apiLimiter,
+    verifyToken,
+    resolveRequesterHouse,
+    requireRole("Admin", "Coordinador"),
+    requirePrivileges("addAbsences"),
+    getEmployeesAndAbsenceTypes,
+);
 
 router.get(
     "/types",

@@ -97,23 +97,6 @@ else Privilegios suficientes
     activate router
 end
 
-router -> auth: authorize(absencePolicy, req)
-deactivate router
-
-alt Acceso Negado
-    activate auth
-    auth -> router: res.status(403).json({error: Accesso denegado})
-    deactivate auth
-    activate router
-    router -> front: res.status(403).json({error: Accesso denegado})
-    deactivate router
-else Acceso autorizado
-    activate auth
-    auth -> router: next()
-    deactivate auth
-    activate router
-end
-
 router -> controller: getEmployeesAndAbsenceTypes(req, res)
 deactivate
 

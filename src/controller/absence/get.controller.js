@@ -33,3 +33,16 @@ exports.getAbsenceTypes = async (req, res) => {
         });
     }
 };
+
+exports.getEmployeesAndAbsenceTypes = async (req, res) => {
+    console.log("Prueba getEmployeesAndAbsenceTypes", {
+        employeeId: req.user?.id,
+        houseId: req.resolvedRequester?.houseId,
+    });
+
+    return res.status(200).json({
+        success: true,
+        message:
+            "Endpoint de prueba para recuperar empleados y tipos de ausencia",
+    });
+};
