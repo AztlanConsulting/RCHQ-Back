@@ -21,6 +21,7 @@ const {
 const {
     approveVacationRequest,
     rejectVacationRequest,
+    updateVacationRequestDates,
 } = require("../controller/vacation/update.controller");
 
 const {
@@ -29,6 +30,7 @@ const {
 const {
     approveVacationRequestSchema,
     rejectVacationRequestSchema,
+    updateVacationRequestDatesSchema,
 } = require("../schemas/vacation/update.schemas");
 const {
     getPendingVacationRequestsSchema,
@@ -68,6 +70,16 @@ router.patch(
     requirePrivileges("manageEmployees"),
     validate(rejectVacationRequestSchema, "all"),
     rejectVacationRequest,
+);
+
+router.patch(
+    "/request/:vacationRequestId/dates",
+    apiLimiter,
+    verifyToken,
+    requireRole("Coordinador"),
+    requirePrivileges("manageEmployees"),
+    validate(updateVacationRequestDatesSchema, "all"),
+    updateVacationRequestDates,
 );
 
 router.get(
