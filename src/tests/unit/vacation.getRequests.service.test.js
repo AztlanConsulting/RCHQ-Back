@@ -166,7 +166,7 @@ describe("US80 - getPendingVacationRequests service", () => {
 
         expect(buildVacationListWhere).toHaveBeenCalledWith({
             houseId: "a0000001-0000-4000-8000-000000000001",
-            search: "Ana",
+            search: "",
             startDate: "2026-10-01",
             endDate: "2026-10-31",
             statusFilter: VACATION_STATUS.PENDING,
@@ -178,6 +178,13 @@ describe("US80 - getPendingVacationRequests service", () => {
                 employee: {
                     house_id: "a0000001-0000-4000-8000-000000000001",
                 },
+            },
+            searchFilters: {
+                houseId: "a0000001-0000-4000-8000-000000000001",
+                search: "Ana",
+                startDate: "2026-10-01",
+                endDate: "2026-10-31",
+                statusFilter: VACATION_STATUS.PENDING,
             },
             skip: 0,
             take: 6,
