@@ -2,8 +2,8 @@ const {
     getAllEventTypes,
     getEventsInRange,
     getHouseCalendarRecordsInRange,
+    getPersonalEventService,
 } = require("../../service/event/get.service");
-const getPersonalEventService = require("../../service/event/get.service");
 const RESPONSES = require("../../utils/responses");
 
 exports.getAllEventTypes = async (req, res) => {
@@ -153,10 +153,7 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
 
 exports.getEmployeesForSelector = async (req, res) => {
     try {
-        const result = await getPersonalEventService.getEmployeesForSelector(
-            req.user,
-            req.query,
-        );
+        const result = await getEmployeesForSelector(req.user, req.query);
 
         if (result.code === RESPONSES.EVENTS.VALIDATION_ERROR) {
             return res.status(422).json({
