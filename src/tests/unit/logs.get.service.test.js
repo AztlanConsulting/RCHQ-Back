@@ -1,16 +1,32 @@
 jest.mock("../../model/logs/get.model", () => ({
     getLogsByHousePage: jest.fn(),
+    getLogsByHouse: jest.fn(),
     getAffectedEmployeesByIds: jest.fn(),
 }));
 
 jest.mock("../../utils/logIp", () => ({
     readLogIp: jest.fn((value) => `decoded:${value}`),
 }));
-const { getLogsByHouse } = require("../../service/logs/get.service");
+
+jest.mock("../../model/house/get.model", () => ({
+    getHouseById: jest.fn(),
+}));
+
+jest.mock("../../utils/logsPdf", () => ({
+    buildLogsPdfBuffer: jest.fn(),
+}));
+
+const {
+    getLogsByHouse,
+    getLogsPdfByHouse,
+} = require("../../service/logs/get.service");
 const {
     getLogsByHousePage,
+    getLogsByHouse: getLogsByHouseModel,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
+const { getHouseById } = require("../../model/house/get.model");
+const { buildLogsPdfBuffer } = require("../../utils/logsPdf");
 const { readLogIp } = require("../../utils/logIp");
 const RESPONSES = require("../../utils/responses");
 
@@ -149,6 +165,67 @@ describe("logs.get.service", () => {
             },
         ]);
         expect(readLogIp).toHaveBeenCalledTimes(2);
+    });
+
+    it("genera el reporte pdf con el nombre de la casa", async () => {
+        const moment = new Date("2026-05-01T12:00:00.000Z");
+        const pdfBuffer = Buffer.from("%PDF-test");
+
+        getLogsByHouseModel.mockResolvedValue([
+            {
+                log_id: "log-1",
+                affected: "11111111-1111-4111-8111-111111111111",
+                ip_address: "hashed-ip",
+                moment,
+                action: {
+                    description: "Empleado creado",
+                    important: true,
+                },
+                employee: {
+                    employee_id: "emp-1",
+                    name: "Ana",
+                    surname: "Pérez",
+                    curp: "PEGA900101MDFRNN01",
+                    picture: "ana.jpg",
+                },
+            },
+        ]);
+        getHouseById.mockResolvedValue({
+            houseId: "house-1",
+            name: "Desarrollo",
+        });
+        getAffectedEmployeesByIds.mockResolvedValue([
+            {
+                employee_id: "11111111-1111-4111-8111-111111111111",
+                name: "María",
+                surname: "López",
+            },
+        ]);
+        buildLogsPdfBuffer.mockResolvedValue(pdfBuffer);
+
+        const result = await getLogsPdfByHouse("house-1");
+
+        expect(result.code).toBe(RESPONSES.LOGS.PDF_CREATED);
+        expect(buildLogsPdfBuffer).toHaveBeenCalledWith({
+            houseName: "Desarrollo",
+            logs: [
+                {
+                    logId: "log-1",
+                    responsibleEmployeeId: "emp-1",
+                    responsibleName: "Ana Pérez",
+                    responsibleCurp: "PEGA900101MDFRNN01",
+                    responsiblePicture: "ana.jpg",
+                    affectedName: "María López",
+                    ipAddress: "decoded:hashed-ip",
+                    action: "Empleado creado",
+                    important: true,
+                    moment,
+                },
+            ],
+            generatedAt: expect.any(Date),
+        });
+        expect(result.data.pdfBuffer).toBe(pdfBuffer);
+        expect(result.data.fileName).toBe("reporte-logs-house-1.pdf");
     });
 
 });

@@ -1,4 +1,7 @@
-const { getLogsByHouse } = require("../../service/logs/get.service");
+const {
+    getLogsByHouse,
+    getLogsPdfByHouse,
+} = require("../../service/logs/get.service");
 const RESPONSES = require("../../utils/responses");
 
 exports.getLogsByHouse = async (req, res) => {
@@ -38,6 +41,41 @@ exports.getLogsByHouse = async (req, res) => {
         });
     } catch (error) {
         console.error("getLogsByHouse error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getLogsPdfByHouse = async (req, res) => {
+    try {
+        const houseId = req.resolvedRequester?.houseId || req.user?.houseId;
+        const result = await getLogsPdfByHouse(houseId);
+
+        if (result.code === RESPONSES.LOGS.NOT_PROVIDED) {
+            return res.status(400).json({
+                success: false,
+                message: "No se pudo identificar la casa del coordinador",
+            });
+        }
+
+        if (result.code === RESPONSES.LOGS.PDF_CREATED) {
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader(
+                "Content-Disposition",
+                `attachment; filename="${result.data.fileName}"`,
+            );
+
+            return res.status(200).send(result.data.pdfBuffer);
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al generar el PDF de logs",
+        });
+    } catch (error) {
+        console.error("getLogsPdfByHouse error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

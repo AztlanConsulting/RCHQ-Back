@@ -17,4 +17,14 @@ router.get(
     logsGetController.getLogsByHouse,
 );
 
+router.get(
+    "/house/report/pdf",
+    apiLimiter,
+    verifyToken,
+    resolveRequesterHouse,
+    requireRole("Coordinador"),
+    requirePrivileges("viewLogs"),
+    logsGetController.getLogsPdfByHouse,
+);
+
 module.exports = router;

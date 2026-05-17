@@ -45,6 +45,18 @@ exports.getLogsByHousePage = async (houseId, skip, take) => {
     };
 };
 
+exports.getLogsByHouse = async (houseId) => {
+    return prisma.logs.findMany({
+        where: {
+            employee: {
+                house_id: houseId,
+            },
+        },
+        include: logInclude,
+        orderBy: { moment: "desc" },
+    });
+};
+
 exports.getAffectedEmployeesByIds = async (employeeIds) => {
     if (employeeIds.length === 0) {
         return [];

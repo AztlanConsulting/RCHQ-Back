@@ -416,4 +416,16 @@ describe("GET /logs/house", () => {
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
     });
 
+    it("genera un reporte pdf de los logs de la casa", async () => {
+        const res = await request(app)
+            .get("/logs/house/report/pdf")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.headers["content-type"]).toContain("application/pdf");
+        expect(res.headers["content-disposition"]).toContain(".pdf");
+        expect(Buffer.isBuffer(res.body)).toBe(true);
+        expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
+    });
+
 });
