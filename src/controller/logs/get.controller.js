@@ -1,15 +1,31 @@
 const {
     getLogsByHouse,
     getLogsPdfByHouse,
+    getLogsActions,
 } = require("../../service/logs/get.service");
 const RESPONSES = require("../../utils/responses");
 
 exports.getLogsByHouse = async (req, res) => {
     try {
         const houseId = req.resolvedRequester?.houseId || req.user?.houseId;
-        const { page, limit } = req.query;
+        const {
+            page,
+            limit,
+            actionIds,
+            search,
+            startDate,
+            endDate,
+        } = req.query;
 
-        const result = await getLogsByHouse(houseId, page, limit);
+        const result = await getLogsByHouse(
+            houseId,
+            page,
+            limit,
+            actionIds,
+            search,
+            startDate,
+            endDate,
+        );
 
         if (result.code === RESPONSES.LOGS.NOT_PROVIDED) {
             return res.status(400).json({
@@ -41,6 +57,30 @@ exports.getLogsByHouse = async (req, res) => {
         });
     } catch (error) {
         console.error("getLogsByHouse error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getLogsActions = async (req, res) => {
+    try {
+        const result = await getLogsActions();
+
+        if (result.code === RESPONSES.LOGS.ACTIONS_FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: result.data,
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al obtener acciones",
+        });
+    } catch (error) {
+        console.error("getLogsActions error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

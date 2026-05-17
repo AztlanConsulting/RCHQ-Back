@@ -322,6 +322,27 @@ describe("GET /logs/house", () => {
         expect(res.statusCode).toBe(401);
     });
 
+    it("retorna acciones disponibles para el filtro", async () => {
+        const res = await request(app)
+            .get("/logs/actions")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    actionId: "empl-001",
+                    description: "Empleado creado",
+                }),
+                expect.objectContaining({
+                    actionId: "ausn-001",
+                    description: "Actualización de ausencia exitosa",
+                }),
+            ]),
+        );
+    });
+
     it("retorna 403 si el rol no es coordinador", async () => {
         const res = await request(app)
             .get("/logs/house")
@@ -414,6 +435,34 @@ describe("GET /logs/house", () => {
         expect(res.body.currentPage).toBe(2);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
+    });
+
+    it("filtra por acción y nombre", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&actionIds=empl-001&search=Car")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            action: "Empleado creado",
+            responsibleName: "Carla Coord",
+        });
+    });
+
+    it("filtra por rango de fechas", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&startDate=2026-05-10&endDate=2026-05-10")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            action: "Empleado creado",
+            affectedName: "Luis CasaA",
+        });
     });
 
     it("genera un reporte pdf de los logs de la casa", async () => {

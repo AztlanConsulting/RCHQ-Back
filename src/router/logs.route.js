@@ -8,6 +8,15 @@ const logsGetController = require("../controller/logs/get.controller");
 const router = express.Router();
 
 router.get(
+    "/actions",
+    apiLimiter,
+    verifyToken,
+    requireRole("Coordinador"),
+    requirePrivileges("viewLogs"),
+    logsGetController.getLogsActions,
+);
+
+router.get(
     "/house",
     apiLimiter,
     verifyToken,

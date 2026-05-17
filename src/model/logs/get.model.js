@@ -19,23 +19,19 @@ const logInclude = {
     },
 };
 
-exports.getLogsByHousePage = async (houseId, skip, take) => {
-    const whereClause = {
-        employee: {
-            house_id: houseId,
-        },
-    };
+exports.getLogsByHousePage = async (whereClause, skip, take) => {
+    const logsWhereClause = whereClause || {};
 
     const [logs, totalRecords] = await prisma.$transaction([
         prisma.logs.findMany({
-            where: whereClause,
+            where: logsWhereClause,
             include: logInclude,
             orderBy: { moment: "desc" },
             skip,
             take,
         }),
         prisma.logs.count({
-            where: whereClause,
+            where: logsWhereClause,
         }),
     ]);
 
@@ -45,7 +41,62 @@ exports.getLogsByHousePage = async (houseId, skip, take) => {
     };
 };
 
+exports.getLogsByHouseBaseWhere = (houseId) => ({
+    employee: {
+        house_id: houseId,
+    },
+});
+
+exports.getEmployeeIdsBySearch = async (houseId, search) => {
+    if (!search) {
+        return [];
+    }
+
+    const employees = await prisma.employee.findMany({
+        where: {
+            house_id: houseId,
+            OR: [
+                {
+                    name: {
+                        contains: search,
+                        mode: "insensitive",
+                    },
+                },
+                {
+                    surname: {
+                        contains: search,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        },
+        select: {
+            employee_id: true,
+        },
+    });
+
+    return employees.map((employee) => employee.employee_id);
+};
+
+exports.getLogActions = async () => {
+    return prisma.action.findMany({
+        select: {
+            action_id: true,
+            description: true,
+        },
+        orderBy: {
+            description: "asc",
+        },
+    });
+};
+
 exports.getLogsByHouse = async (houseId) => {
+    const whereClause = {
+        employee: {
+            house_id: houseId,
+        },
+    };
+
     return prisma.logs.findMany({
         where: {
             employee: {

@@ -1,6 +1,13 @@
 jest.mock("../../model/logs/get.model", () => ({
     getLogsByHousePage: jest.fn(),
+    getLogsByHouseBaseWhere: jest.fn((houseId) => ({
+        employee: {
+            house_id: houseId,
+        },
+    })),
     getLogsByHouse: jest.fn(),
+    getEmployeeIdsBySearch: jest.fn(),
+    getLogActions: jest.fn(),
     getAffectedEmployeesByIds: jest.fn(),
 }));
 
@@ -19,9 +26,12 @@ jest.mock("../../utils/logsPdf", () => ({
 const {
     getLogsByHouse,
     getLogsPdfByHouse,
+    getLogsActions,
 } = require("../../service/logs/get.service");
 const {
     getLogsByHousePage,
+    getEmployeeIdsBySearch,
+    getLogActions,
     getLogsByHouse: getLogsByHouseModel,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
@@ -53,6 +63,22 @@ describe("logs.get.service", () => {
 
     it("retorna INVALID_PAGINATION con limit no numérico", async () => {
         const result = await getLogsByHouse("house-1", "1", "abc");
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
+    });
+
+    it("retorna INVALID_PAGINATION con rango de fechas inválido", async () => {
+        const result = await getLogsByHouse(
+            "house-1",
+            "1",
+            "6",
+            "",
+            "",
+            "2026-05-11",
+            "2026-05-10",
+        );
 
         expect(result).toEqual({
             code: RESPONSES.LOGS.INVALID_PAGINATION,
@@ -165,6 +191,105 @@ describe("logs.get.service", () => {
             },
         ]);
         expect(readLogIp).toHaveBeenCalledTimes(2);
+    });
+
+    it("filtra logs por acciones y nombre", async () => {
+        getEmployeeIdsBySearch.mockResolvedValue(["emp-1"]);
+        getLogsByHousePage.mockResolvedValue({
+            logs: [],
+            totalRecords: 0,
+        });
+        getAffectedEmployeesByIds.mockResolvedValue([]);
+
+        await getLogsByHouse("house-1", "1", "6", "empl-001,ausn-001", "Car");
+
+        expect(getEmployeeIdsBySearch).toHaveBeenCalledWith("house-1", "Car");
+        expect(getLogsByHousePage).toHaveBeenCalledWith(
+            {
+                employee: {
+                    house_id: "house-1",
+                },
+                action_id: {
+                    in: ["empl-001", "ausn-001"],
+                },
+                OR: [
+                    {
+                        employee_id: {
+                            in: ["emp-1"],
+                        },
+                    },
+                    {
+                        affected: {
+                            contains: "Car",
+                            mode: "insensitive",
+                        },
+                    },
+                ],
+            },
+            0,
+            6,
+        );
+    });
+
+    it("filtra logs por rango de fechas", async () => {
+        getLogsByHousePage.mockResolvedValue({
+            logs: [],
+            totalRecords: 0,
+        });
+        getAffectedEmployeesByIds.mockResolvedValue([]);
+
+        await getLogsByHouse(
+            "house-1",
+            "1",
+            "6",
+            "",
+            "",
+            "2026-05-09",
+            "2026-05-10",
+        );
+
+        expect(getLogsByHousePage).toHaveBeenCalledWith(
+            {
+                employee: {
+                    house_id: "house-1",
+                },
+                moment: {
+                    gte: new Date("2026-05-09T00:00:00.000Z"),
+                    lte: new Date("2026-05-10T23:59:59.999Z"),
+                },
+            },
+            0,
+            6,
+        );
+    });
+
+    it("retorna acciones de logs para el filtro", async () => {
+        getLogActions.mockResolvedValue([
+            {
+                action_id: "empl-001",
+                description: "Empleado creado",
+            },
+            {
+                action_id: "ausn-001",
+                description: "Actualización de ausencia exitosa",
+            },
+        ]);
+
+        const result = await getLogsActions();
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.ACTIONS_FOUND,
+            data: [
+                {
+                    actionId: "empl-001",
+                    description: "Empleado creado",
+                },
+                {
+                    actionId: "ausn-001",
+                    description: "Actualización de ausencia exitosa",
+                },
+            ],
+        });
     });
 
     it("genera el reporte pdf con el nombre de la casa", async () => {
