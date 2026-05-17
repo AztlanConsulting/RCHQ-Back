@@ -2,7 +2,7 @@ const {
     getAllEventTypes,
     getEventsInRange,
     getHouseCalendarRecordsInRange,
-    getPersonalEventService,
+    getEmployeesForSelector,
 } = require("../../service/event/get.service");
 const RESPONSES = require("../../utils/responses");
 
