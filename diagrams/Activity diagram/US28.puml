@@ -82,7 +82,7 @@ endif
 :Obtener días laborales del empleado;
 if (¿Empleado tiene días laborales registrados?) then (Sí)
 else (No)
-:Mostrar error "Se ocupan tener registrados los días de trabajo";
+:Mostrar error "Se necesitan tener registrados los días de trabajo";
 stop
 endif
 

@@ -70,7 +70,7 @@ exports.approveVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.WITHOUT_DATES) {
             return res.status(406).json({
                 success: false,
-                message: "Se ocupan tener registrados los días de trabajo",
+                message: "Se necesitan tener registrados los días de trabajo",
             });
         }
 
