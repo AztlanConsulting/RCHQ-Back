@@ -231,6 +231,63 @@ describe("logs.get.service", () => {
         );
     });
 
+    it("filtra logs por responsable y afectado de forma separada", async () => {
+        getEmployeeIdsBySearch
+            .mockResolvedValueOnce(["emp-responsible"])
+            .mockResolvedValueOnce(["emp-affected"]);
+        getLogsByHousePage.mockResolvedValue({
+            logs: [],
+            totalRecords: 0,
+        });
+        getAffectedEmployeesByIds.mockResolvedValue([]);
+
+        await getLogsByHouse(
+            "house-1",
+            "1",
+            "6",
+            "",
+            "",
+            "",
+            "",
+            "Carla",
+            "Luis",
+        );
+
+        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(1, "house-1", "Carla");
+        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(2, "house-1", "Luis");
+        expect(getLogsByHousePage).toHaveBeenCalledWith(
+            {
+                employee: {
+                    house_id: "house-1",
+                },
+                AND: [
+                    {
+                        employee_id: {
+                            in: ["emp-responsible"],
+                        },
+                    },
+                    {
+                        OR: [
+                            {
+                                affected: {
+                                    in: ["emp-affected"],
+                                },
+                            },
+                            {
+                                affected: {
+                                    contains: "Luis",
+                                    mode: "insensitive",
+                                },
+                            },
+                        ],
+                    },
+                ],
+            },
+            0,
+            6,
+        );
+    });
+
     it("filtra logs por rango de fechas", async () => {
         getLogsByHousePage.mockResolvedValue({
             logs: [],

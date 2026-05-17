@@ -15,6 +15,8 @@ exports.getLogsByHouse = async (req, res) => {
             search,
             startDate,
             endDate,
+            responsible,
+            affected,
         } = req.query;
 
         const result = await getLogsByHouse(
@@ -25,6 +27,8 @@ exports.getLogsByHouse = async (req, res) => {
             search,
             startDate,
             endDate,
+            responsible,
+            affected,
         );
 
         if (result.code === RESPONSES.LOGS.NOT_PROVIDED) {

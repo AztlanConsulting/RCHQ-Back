@@ -91,11 +91,6 @@ exports.getLogActions = async () => {
 };
 
 exports.getLogsByHouse = async (houseId) => {
-    const whereClause = {
-        employee: {
-            house_id: houseId,
-        },
-    };
 
     return prisma.logs.findMany({
         where: {

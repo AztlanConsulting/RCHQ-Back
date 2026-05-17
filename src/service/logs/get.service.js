@@ -34,8 +34,11 @@ const buildLogsWhereClause = async (
     actionIds,
     startDate,
     endDate,
+    responsible,
+    affected,
 ) => {
     const whereClause = getLogsByHouseBaseWhere(houseId);
+    const andConditions = [];
 
     if (Array.isArray(actionIds) && actionIds.length > 0) {
         whereClause.action_id = {
@@ -58,23 +61,76 @@ const buildLogsWhereClause = async (
     if (search) {
         const matchedEmployeeIds = await getEmployeeIdsBySearch(houseId, search);
 
-        whereClause.OR = [
-            {
-                employee_id: {
-                    in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
+        andConditions.push({
+            OR: [
+                {
+                    employee_id: {
+                        in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
+                    },
                 },
-            },
-            {
-                affected: {
-                    contains: search,
-                    mode: "insensitive",
+                {
+                    affected: {
+                        in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
+                    },
                 },
+                {
+                    affected: {
+                        contains: search,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        });
+    }
+
+    if (responsible) {
+        const matchedResponsibleIds = await getEmployeeIdsBySearch(
+            houseId,
+            responsible,
+        );
+
+        andConditions.push({
+            employee_id: {
+                in: matchedResponsibleIds.length > 0
+                    ? matchedResponsibleIds
+                    : ["00000000-0000-0000-0000-000000000000"],
             },
-        ];
+        });
+    }
+
+    if (affected) {
+        const matchedAffectedIds = await getEmployeeIdsBySearch(
+            houseId,
+            affected,
+        );
+
+        andConditions.push({
+            OR: [
+                {
+                    affected: {
+                        in: matchedAffectedIds.length > 0
+                            ? matchedAffectedIds
+                            : ["00000000-0000-0000-0000-000000000000"],
+                    },
+                },
+                {
+                    affected: {
+                        contains: affected,
+                        mode: "insensitive",
+                    },
+                },
+            ],
+        });
+    }
+
+    if (andConditions.length > 0) {
+        whereClause.AND = andConditions;
     }
 
     return whereClause;
 };
+
+const normalizeSearch = (value) => String(value || "").trim();
 
 const normalizeActionIds = (rawActionIds) => {
     if (!rawActionIds) {
@@ -102,6 +158,8 @@ exports.getLogsByHouse = async (
     rawSearch,
     rawStartDate,
     rawEndDate,
+    rawResponsible,
+    rawAffected,
 ) => {
     if (!houseId) {
         return {
@@ -125,7 +183,9 @@ exports.getLogsByHouse = async (
         limit: parsedLimit,
     } = parsedPagination.data;
     const actionIds = normalizeActionIds(rawActionIds);
-    const search = String(rawSearch || "").trim();
+    const search = normalizeSearch(rawSearch);
+    const responsible = normalizeSearch(rawResponsible);
+    const affected = normalizeSearch(rawAffected);
     const startDate = normalizeDate(rawStartDate);
     const endDate = normalizeDate(rawEndDate);
 
@@ -146,6 +206,8 @@ exports.getLogsByHouse = async (
         actionIds,
         startDate,
         endDate,
+        responsible,
+        affected,
     );
     const { logs, totalRecords } = await getLogsByHousePage(
         whereClause,

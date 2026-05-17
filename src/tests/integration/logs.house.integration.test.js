@@ -465,6 +465,20 @@ describe("GET /logs/house", () => {
         });
     });
 
+    it("filtra por responsable y afectado por separado", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&responsible=Carla&affected=Luis")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "Luis CasaA",
+        });
+    });
+
     it("genera un reporte pdf de los logs de la casa", async () => {
         const res = await request(app)
             .get("/logs/house/report/pdf")
