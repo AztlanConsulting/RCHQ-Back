@@ -294,7 +294,7 @@ exports.updateVacationRequestDates = async (req, res) => {
             });
         }
 
-        if (result.code === RESPONSES.VACATION.APPROVED_OVERLAP) {
+        if (result.code === RESPONSES.VACATION.ALREADY_REQUEST) {
             return res.status(406).json({
                 success: false,
                 message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
@@ -308,7 +308,7 @@ exports.updateVacationRequestDates = async (req, res) => {
             });
         }
 
-        if (result.code === RESPONSES.VACATION.BAD_DATES) {
+        if (result.code === RESPONSES.DATES.BAD_DATES) {
             return res.status(406).json({
                 success: false,
                 message: "No se puede tener una fecha de inicio posterior a la de finalización",

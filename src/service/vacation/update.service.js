@@ -11,7 +11,7 @@ const {
 const {
     approveVacationRequestAtomically,
     rejectVacationRequestAtomically,
-    updateVacationRequestAtomically,
+    updateVacationRequestDatesAtomically,
 } = require("../../model/vacation/update.model");
 const {
     calculateUsedDays,
