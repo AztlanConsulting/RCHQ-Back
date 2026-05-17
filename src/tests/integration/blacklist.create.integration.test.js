@@ -289,12 +289,13 @@ describe("POST /blacklist - integración", () => {
 
         expect(res.statusCode).toBe(403);
 
+        await prisma.employee.delete({ where: { employee_id: TEST_TARGET_ID } });
         await prisma.house.delete({ where: { house_id: otraHouseId } });
     });
 
     it("retorna 404 si el empleado objetivo no existe", async () => {
         const token = generateSessionToken();
-        const curpInexistente = "XXXX999999XXXXXX99";
+        const curpInexistente = "TARG900101HDFXXX99";
 
         const res = await request(app)
             .post(`/blacklist`)

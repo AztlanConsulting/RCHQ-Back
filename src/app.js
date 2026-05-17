@@ -8,6 +8,7 @@ const vacationRouter = require("./router/vacation.route");
 const eventRouter = require("./router/event.route");
 const houseRouter = require("./router/house.route");
 const absenceRouter = require("./router/absence.route");
+const blacklistRouter = require("./router/blacklist.route");
 
 const errorHandler = require("./middleware/ErrorHandler");
 const path = require("path");
@@ -35,6 +36,7 @@ app.use("/vacation", vacationRouter);
 app.use("/event", eventRouter);
 app.use("/house", houseRouter);
 app.use("/absence", absenceRouter);
+app.use("/blacklist", blacklistRouter);
 
 app.use(errorHandler);
 
