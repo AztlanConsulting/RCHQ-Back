@@ -258,6 +258,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
 ('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
+('ausn-003', 'Creación de ausencia exitosa', false),
 ('ausn-001', 'Actualización de ausencia exitosa', false),
 ('ausn-002', 'Eliminación de ausencia exitosa', false),
 ('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),

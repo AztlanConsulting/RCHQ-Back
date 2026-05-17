@@ -1,10 +1,15 @@
 const { addAbsence } = require("../../service/absence/create.service");
 const RESPONSES = require("../../utils/responses");
+const { createLog } = require("../../model/log.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { getClientIp } = require("../../utils/ip");
 
 exports.addAbsence = async (req, res) => {
     try {
+        const actorEmployeeId = req.user?.id;
+
         const result = await addAbsence({
-            actorEmployeeId: req.user?.id,
+            actorEmployeeId,
             targetEmployeeId: req.params.employeeId,
             body: req.body,
             file: req.file,
@@ -62,6 +67,17 @@ exports.addAbsence = async (req, res) => {
         }
 
         if (result.code === RESPONSES.ABSENCE.CREATED) {
+            try {
+                await createLog(
+                    actorEmployeeId,
+                    LOG_ACTIONS.ABSENCE_CREATED,
+                    getClientIp(req),
+                    result.data.absence.employeeId,
+                );
+            } catch (logError) {
+                console.error("Error creando log addAbsence:", logError);
+            }
+
             return res.status(201).json({
                 success: true,
                 message: "Ausencia creada con éxito",
