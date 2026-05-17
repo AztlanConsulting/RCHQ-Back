@@ -152,6 +152,57 @@ Extrae la IP real del cliente desde los headers de la request.
 #### `utils/logs.js`
 Registra acciones de empleados en la base de datos (empleado, acción, IP).
 
+#### Retención de logs
+La limpieza automática de logs se divide en dos archivos:
+
+- `src/utils/logRetention.js` → contiene la lógica de retención.
+- `src/utils/logRetentionJob.js` → programa la ejecución periódica con `node-cron`.
+
+**Regla actual de borrado:**
+- Un log se elimina si su campo `moment` es anterior a la fecha actual menos 5 años.
+- Un log **NO** se elimina si la acción relacionada tiene `important = true`.
+
+En otras palabras:
+- viejo + no importante → se borra
+- viejo + importante → se conserva
+- reciente + no importante → se conserva
+
+**Ejecución programada:**
+- El job corre todos los días a la `1:00 AM`.
+- La expresión cron actual es:
+
+```js
+"0 1 * * *"
+```
+
+**Notas de implementación:**
+- La retención se calcula restando 5 años a la fecha actual.
+- El borrado se hace con Prisma sobre `logs`, filtrando también por la relación `action.important = false`.
+- El job no borra al iniciar el servidor; solo cuando llega la siguiente ejecución programada.
+
+**Prueba manual recomendada:**
+1. Insertar un log con una fecha de hace más de 5 años y una acción no importante.
+2. Ejecutar manualmente `deleteExpiredLogs()` o cambiar temporalmente el cron para probar más rápido.
+3. Verificar en la BD que el log haya sido eliminado.
+
+Ejemplo para ejecutar la limpieza manualmente:
+
+```bash
+node -e "const { deleteExpiredLogs } = require('./src/utils/logRetention'); deleteExpiredLogs().then(console.log).catch(console.error)"
+```
+
+Para pruebas rápidas, se puede cambiar temporalmente la expresión cron a cada 5 segundos:
+
+```js
+"*/5 * * * * *"
+```
+
+Después de probar, debe regresarse a:
+
+```js
+"0 1 * * *"
+```
+
 ---
 
 ## Manejo de fechas en eventos
