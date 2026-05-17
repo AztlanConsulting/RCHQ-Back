@@ -1,6 +1,7 @@
 const {
     approveVacationRequest,
     rejectVacationRequest,
+    updateVacationRequestDates,
 } = require("../../service/vacation/update.service");
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
