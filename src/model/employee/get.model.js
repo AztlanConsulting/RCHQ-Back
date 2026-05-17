@@ -277,7 +277,15 @@ exports.findByIdWithRoleAndHouse = async (employeeId) => {
             employee_id: employeeId,
         },
         include: {
-            role: true,
+            role: {
+                include: {
+                    role_privilege: {
+                        include: {
+                            privilege: true,
+                        },
+                    },
+                },
+            },
             house: true,
         },
     });
