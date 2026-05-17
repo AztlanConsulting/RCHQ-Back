@@ -128,6 +128,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             color: "#EFBF22",
             link: "",
             lastsAllDay: false,
+            employeeId,
         });
     });
 
