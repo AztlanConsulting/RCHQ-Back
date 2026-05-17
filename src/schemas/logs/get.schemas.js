@@ -22,16 +22,3 @@ exports.logsPaginationSchema = z.object({
         message: `limit no debe ser mayor a ${MAX_LIMIT}`,
     }).default(DEFAULT_LIMIT),
 });
-
-exports.logsReportSchema = z.object({
-    month: coercePositiveInteger("month").min(1, {
-        message: "month debe ser mayor o igual a 1",
-    }).max(12, {
-        message: "month no debe ser mayor a 12",
-    }),
-    year: coercePositiveInteger("year").min(2000, {
-        message: "year debe ser mayor o igual a 2000",
-    }).max(2100, {
-        message: "year no debe ser mayor a 2100",
-    }),
-});
