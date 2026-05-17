@@ -1,6 +1,9 @@
 const { getVacationsInRange } = require("../../model/vacation/get.model");
-const { getHouseCalendarAbsenceInRange,getAbsencesInRange } = require("../../model/absence/get.model");
-const { dateRangeSchema } = require("../../schemas/dates.schemas")
+const {
+    getHouseCalendarAbsenceInRange,
+    getAbsencesInRange,
+} = require("../../model/absence/get.model");
+const { dateRangeSchema } = require("../../schemas/dates.schemas");
 const {
     calculateUsedDays,
     combineDateAndTime,
@@ -16,11 +19,13 @@ const {
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
+    getEmployeesByHouse,
 } = require("../../model/event/get.model");
 const {
     mapEmployeeAbsenceCalendarEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
+const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
@@ -112,8 +117,14 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     );
     personalEvents.forEach((event) => {
         events.push({
-            start: combineDateAndTime(event.personal_event.date, event.personal_event.start),
-            end: combineDateAndTime(event.personal_event.date, event.personal_event.end),
+            start: combineDateAndTime(
+                event.personal_event.date,
+                event.personal_event.start,
+            ),
+            end: combineDateAndTime(
+                event.personal_event.date,
+                event.personal_event.end,
+            ),
             date: event.date,
             name: event.personal_event.name,
             type: event.personal_event.event_type.name,
@@ -196,7 +207,11 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     };
 };
 
-exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDate) => {
+exports.getHouseCalendarRecordsInRange = async (
+    houseId,
+    rawStartDate,
+    rawEndDate,
+) => {
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -217,7 +232,11 @@ exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDat
         };
     }
 
-    const absences = await getHouseCalendarAbsenceInRange(houseId, startDate, endDate);
+    const absences = await getHouseCalendarAbsenceInRange(
+        houseId,
+        startDate,
+        endDate,
+    );
 
     if (absences.length <= 0) {
         return {
@@ -229,11 +248,12 @@ exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDat
     }
 
     const supportRangeStart = absences.reduce(
-        (minDate, absence) => absence.start < minDate ? absence.start : minDate,
+        (minDate, absence) =>
+            absence.start < minDate ? absence.start : minDate,
         absences[0].start,
     );
     const supportRangeEnd = absences.reduce(
-        (maxDate, absence) => absence.end > maxDate ? absence.end : maxDate,
+        (maxDate, absence) => (absence.end > maxDate ? absence.end : maxDate),
         absences[0].end,
     );
 
@@ -265,4 +285,25 @@ exports.getHouseCalendarRecordsInRange = async (houseId, rawStartDate, rawEndDat
             events,
         },
     };
+};
+
+exports.getEmployeesForSelector = async (user, query) => {
+    if (!user?.houseId) {
+        return { code: RESPONSES.USER.NOT_ACCESS };
+    }
+
+    const parsed = searchEmployeesSchema.safeParse(query);
+    if (!parsed.success) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+            data: { errors: parsed.error.flatten().fieldErrors },
+        };
+    }
+
+    const employees = await getEmployeesByHouse(
+        user.houseId,
+        parsed.data.search ?? "",
+    );
+
+    return { code: RESPONSES.EVENTS.FOUND, data: { employees } };
 };
