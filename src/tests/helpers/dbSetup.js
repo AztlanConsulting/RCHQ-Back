@@ -137,6 +137,11 @@ const SEED_ACTIONS = [
         important: false,
     },
     {
+        action_id: "ausn-003",
+        description: "Creación de ausencia exitosa",
+        important: false,
+    },
+    {
         action_id: "ausn-001",
         description: "Actualización de ausencia exitosa",
         important: false,
