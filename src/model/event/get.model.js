@@ -1,4 +1,8 @@
 const prisma = require("../../prisma");
+const { Prisma } = require("@prisma/client");
+const { mapPersonalEventOverlap } = require("../../utils/mappers/event.map");
+const personalEventTimeToUtc = (date, time) =>
+    new Date(`${date}T${time}-06:00`);
 
 exports.getAllEventTypes = async () => {
     return await prisma.event_type.findMany({
@@ -61,4 +65,97 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
             event_type: true,
         },
     });
-}
+};
+
+exports.getEmployeesByHouse = (houseId, search) => {
+    if (!search || search.trim() === "") {
+        return prisma.$queryRaw`
+            SELECT
+                e.employee_id AS "employeeId",
+                (e.name || ' ' || e.surname) AS "fullName",
+                e.picture AS "picture"
+            FROM employee e
+            WHERE e.house_id = ${houseId}::uuid
+              AND e.is_active = true
+            ORDER BY e.name ASC, e.surname ASC
+        `;
+    }
+
+    const tokens = search.trim().split(/\s+/).filter(Boolean);
+
+    const conditions = tokens.map(
+        (token) => Prisma.sql`
+        (
+            unaccent(e.name) ILIKE unaccent(${"%" + token + "%"})
+            OR unaccent(e.surname) ILIKE unaccent(${"%" + token + "%"})
+        )
+    `,
+    );
+
+    const whereSearch = Prisma.join(conditions, " AND ");
+
+    return prisma.$queryRaw`
+        SELECT
+            e.employee_id AS "employeeId",
+            (e.name || ' ' || e.surname) AS "fullName",
+            e.picture AS "picture"
+        FROM employee e
+        WHERE e.house_id = ${houseId}::uuid
+          AND e.is_active = true
+          AND ${whereSearch}
+        ORDER BY e.name ASC, e.surname ASC
+    `;
+};
+
+exports.getEmployeesInHouse = (employeeIds, houseId) => {
+    return prisma.employee.findMany({
+        where: {
+            employee_id: { in: employeeIds },
+            house_id: houseId,
+            is_active: true,
+        },
+        select: { employee_id: true },
+    });
+};
+
+exports.findOverlappingEmployees = async ({
+    employeeIds,
+    date,
+    start,
+    end,
+}) => {
+    const overlaps = await prisma.employee_personal_event.findMany({
+        where: {
+            employee_id: { in: employeeIds },
+            personal_event: {
+                date: new Date(date),
+                start: {
+                    lt: personalEventTimeToUtc(date, end),
+                },
+                end: {
+                    gt: personalEventTimeToUtc(date, start),
+                },
+            },
+        },
+        select: {
+            employee_id: true,
+            employee: {
+                select: {
+                    name: true,
+                    surname: true,
+                },
+            },
+            personal_event: {
+                select: {
+                    personal_event_id: true,
+                    name: true,
+                    date: true,
+                    start: true,
+                    end: true,
+                },
+            },
+        },
+    });
+
+    return overlaps.map(mapPersonalEventOverlap);
+};

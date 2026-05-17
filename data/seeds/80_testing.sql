@@ -167,7 +167,7 @@ VALUES
     'a0000001-0000-4000-8000-000000000001',
     'a0000002-0000-4000-8000-000000000003',
     'Empleado',
-    'Desarrollo us80',
+    'Desarrolló us80',
     true,
     'empleado.desarrollo.us80@rchq.test',
     '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -516,7 +516,7 @@ VALUES
     'a0000001-0000-4000-8000-000000000001',
     'a0000002-0000-4000-8000-000000000003',
     'Empleado',
-    'Exito Admin us80',
+    'Éxito Admin us80',
     true,
     'exito.admin.us80@rchq.test',
     '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -580,14 +580,18 @@ ON CONFLICT (workday_id, employee_id) DO UPDATE SET
     start = EXCLUDED.start,
     "end" = EXCLUDED."end";
 
--- Reasignar Caso 13 a empleado limpio
 UPDATE public.vacations_request
-SET employee_id = 'e3400000-0000-4000-8000-000000000013'
+SET
+    employee_id = 'e3400000-0000-4000-8000-000000000013',
+    status = 0,
+    feedback = NULL
 WHERE vacations_request_id = 'c3400000-0000-4000-8000-000000000001';
 
--- Reasignar Caso 14 a empleado limpio
 UPDATE public.vacations_request
-SET employee_id = 'e3400000-0000-4000-8000-000000000014'
+SET
+    employee_id = 'e3400000-0000-4000-8000-000000000014',
+    status = 0,
+    feedback = NULL
 WHERE vacations_request_id = 'c3400000-0000-4000-8000-000000000011';
 
 COMMIT;

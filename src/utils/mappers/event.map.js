@@ -39,3 +39,45 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
         lastsAllDay: true,
     };
 };
+
+exports.mapPersonalEvent = (event, options = {}) => {
+    if (!event) return null;
+
+    return {
+        personalEventId: event.personal_event_id,
+        eventTypeId: event.event_type_id,
+        date: options.date ?? event.date,
+        start: options.start ?? event.start,
+        end: options.end ?? event.end,
+        name: event.name,
+        description: event.description,
+        allDay: event.all_day,
+        employeeIds: options.employeeIds,
+    };
+};
+
+const formatTime = (time) => {
+    if (!time) return null;
+
+    return time.toISOString().slice(11, 19);
+};
+
+exports.mapPersonalEventOverlap = (row) => {
+    if (!row) return null;
+
+    const employeeFullName = [row.employee?.name, row.employee?.surname]
+        .filter(Boolean)
+        .join(" ");
+
+    return {
+        employeeId: row.employee_id,
+        employeeName: employeeFullName,
+        event: {
+            personalEventId: row.personal_event?.personal_event_id,
+            name: row.personal_event?.name,
+            date: row.personal_event?.date,
+            start: formatTime(row.personal_event?.start),
+            end: formatTime(row.personal_event?.end),
+        },
+    };
+};
