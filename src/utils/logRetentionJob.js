@@ -1,16 +1,17 @@
+const cron = require("node-cron");
 const {
     deleteExpiredLogs,
     LOG_RETENTION_YEARS,
 } = require("./logRetention");
 
-const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_CRON_EXPRESSION = "0 1 * * *";
 
 exports.startLogRetentionJob = ({
-    intervalMs = ONE_DAY_IN_MS,
+    cronExpression = DEFAULT_CRON_EXPRESSION,
     retentionYears = LOG_RETENTION_YEARS,
     logger = console,
 } = {}) => {
-    const runCleanup = async () => {
+    return cron.schedule(cronExpression, async () => {
         try {
             const result = await deleteExpiredLogs({ retentionYears });
             logger.info?.(
@@ -19,17 +20,5 @@ exports.startLogRetentionJob = ({
         } catch (error) {
             logger.error?.("[log-retention] cleanup failed", error);
         }
-    };
-
-    void runCleanup();
-
-    const timer = setInterval(() => {
-        void runCleanup();
-    }, intervalMs);
-
-    if (typeof timer.unref === "function") {
-        timer.unref();
-    }
-
-    return timer;
+    });
 };
