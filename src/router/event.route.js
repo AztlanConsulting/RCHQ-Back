@@ -21,7 +21,7 @@ const {
 const {
     createHouseEvent,
     createPersonalEvent,
-} = require("../controller/event/create.controler");
+} = require("../controller/event/create.controller");
 const { houseEventPolicy } = require("../policies/event.policies");
 const { ROLES } = require("../utils/roles");
 
