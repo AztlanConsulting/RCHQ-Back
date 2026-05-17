@@ -103,8 +103,18 @@ const getVacationRequestsByHouseRaw = async ({
         });
 
     const orderSql = reviewed
-        ? Prisma.sql`ORDER BY vr.created_at DESC, vr.start DESC`
-        : Prisma.sql`ORDER BY vr.created_at DESC, vr.start ASC`;
+        ? Prisma.sql`
+        ORDER BY
+            vr.created_at DESC,
+            vr.start DESC,
+            vr.vacations_request_id ASC
+    `
+        : Prisma.sql`
+        ORDER BY
+            vr.created_at DESC,
+            vr.start ASC,
+            vr.vacations_request_id ASC
+    `;
 
     const [rows, countRows] = await Promise.all([
         prisma.$queryRaw`
@@ -163,6 +173,7 @@ exports.getPendingVacationRequestsByHouse = async ({
             orderBy: [
                 { created_at: "desc" },
                 { start: "asc" },
+                { vacations_request_id: "asc" },
             ],
             skip,
             take,
@@ -195,6 +206,7 @@ exports.getReviewedVacationRequestsByHouse = async ({
             orderBy: [
                 { created_at: "desc" },
                 { start: "desc" },
+                { vacations_request_id: "asc" },
             ],
             skip,
             take,
