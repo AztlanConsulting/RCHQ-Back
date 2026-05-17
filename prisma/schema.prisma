@@ -254,8 +254,8 @@ model personal_event {
   personal_event_id       String                    @id(map: "personal_event_pk") @db.Uuid
   event_type_id           String                    @db.Uuid
   date                    DateTime                  @db.Date
-  start                   DateTime                  @db.Timestamp(6)
-  end                     DateTime                  @db.Timestamp(6)
+  start                   DateTime                  @db.Time(6)
+  end                     DateTime                  @db.Time(6)
   name                    String                    @db.VarChar(70)
   description             String?                   @db.VarChar(250)
   all_day                 Boolean
