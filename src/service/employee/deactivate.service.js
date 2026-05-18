@@ -31,6 +31,13 @@ exports.deactivateEmployee = async (req) => {
         return { code: RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED };
     }
 
+    if (employee.isActive && (!reason || reason.trim() === "")) {
+        return {
+            code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+            data: { message: "El campo 'Razón' es obligatorio para dar de baja." },
+        };
+    }
+
     try {
         const curpToBlacklist = addToBlacklist ? employee.curp : null;
         await deactivateEmployee(employeeId, reason, curpToBlacklist, employee.isActive);
