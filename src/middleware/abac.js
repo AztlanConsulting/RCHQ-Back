@@ -117,11 +117,8 @@ exports.canAddToBlacklist = async (req, res, next) => {
             });
         }
 
-        let currentUserCurp = req.user.curp;
-        if (!currentUserCurp) {
-            const currentUser = await findByIdWithRoleAndHouse(req.user.id);
-            if (currentUser) currentUserCurp = currentUser.curp;
-        }
+        const currentUser = await findByIdWithRoleAndHouse(req.user.id);
+        const currentUserCurp = currentUser ? currentUser.curp : null;
 
         if (currentUserCurp && String(currentUserCurp) === String(targetCurp)) {
             return res.status(403).json({
