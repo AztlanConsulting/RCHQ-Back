@@ -86,6 +86,7 @@ router.post(
     requireRole(...allRoles),
     requirePrivileges("createEvent"),
     authorize(personalEventPolicy, (req) => ({
+        houseId: req.user.houseId,
         forceOverlap: req.body?.forceOverlap,
     })),
     createPersonalEvent,
