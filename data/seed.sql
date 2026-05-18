@@ -67,6 +67,7 @@ VALUES
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
 ('00000001-0000-4000-8000-000000000006', 'viewLogs'),
 ('00000001-0000-4000-8000-000000000007', 'viewEvents'),
+('00000001-0000-4000-8000-000000000010', 'addToBlacklist'),
 ('00000001-0000-4000-8000-000000000008', 'createEvent'),
 ('00000001-0000-4000-8000-000000000009', 'editAbsences'),
 ('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
@@ -87,7 +88,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
-WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs')
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs', 'addToBlacklist')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_privilege (role_id, privilege_id)
@@ -269,7 +270,9 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
 ('empl-004', 'Documento de empleado eliminado', false),
-('empl-005', 'Información de empleado actualizada', false)
+('empl-005', 'Información de empleado actualizada', false),
+('vaca-005', 'Modificación de vacaciones exitosa', false),
+('blck-001', 'Empleado agregado a la lista negra', true)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.workday (workday_id, name)
@@ -983,5 +986,731 @@ INSERT INTO PUBLIC.frecuency_of_payment (
   ('f0000003-0000-4000-8000-000000000003', 'mensual')
 ON CONFLICT DO NOTHING;
 
+-- ============================================================
+-- SEED MANUAL US30 — Modificar fechas de vacaciones
+-- Password todos: Andatti67
+-- ============================================================
+
+-- Casa externa para probar out of scope
+INSERT INTO public.house (
+  house_id,
+  name,
+  location,
+  phone_number,
+  description,
+  image
+)
+VALUES (
+  'a3000001-0000-4000-8000-000000000001',
+  'Casa Externa US30',
+  'Querétaro, Qro.',
+  '4423000001',
+  'Casa externa para pruebas US30',
+  'default_house'
+)
+ON CONFLICT (house_id) DO UPDATE SET
+  name = EXCLUDED.name,
+  location = EXCLUDED.location,
+  phone_number = EXCLUDED.phone_number,
+  description = EXCLUDED.description,
+  image = EXCLUDED.image;
+
+-- Acción requerida por logs de US30
+INSERT INTO public.action (action_id, description, important)
+VALUES (
+  'vaca-005',
+  'Modificación de vacaciones exitosa',
+  false
+)
+ON CONFLICT (action_id) DO UPDATE SET
+  description = EXCLUDED.description,
+  important = EXCLUDED.important;
+
+-- Coordinador Desarrollo para US30
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Coordinador',
+  'US30',
+  true,
+  'coordinador.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00001',
+  NULL,
+  '1990-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Empleado válido Desarrollo
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000002',
+  'a0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Empleado',
+  'Valido US30',
+  true,
+  'empleado.valido.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00002',
+  NULL,
+  '1995-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Empleado de otra casa
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000003',
+  'a3000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Empleado',
+  'Otra Casa US30',
+  true,
+  'empleado.otracasa.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00003',
+  NULL,
+  '1995-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Empleado sin días laborales
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000004',
+  'a0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Empleado',
+  'Sin Dias US30',
+  true,
+  'empleado.sindias.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00004',
+  NULL,
+  '1995-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Empleado aislado para casos exitosos US30
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000005',
+  'a0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Empleado',
+  'Exitos US30',
+  true,
+  'empleado.exitos.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00005',
+  NULL,
+  '1995-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Empleado aislado para concurrencia US30
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000006',
+  'a0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Empleado',
+  'Concurrencia US30',
+  true,
+  'empleado.concurrencia.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00006',
+  NULL,
+  '1995-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Empleado Admin aislado para validar que Coordinador no pueda modificar vacaciones de Admin
+INSERT INTO public.employee (
+  employee_id,
+  house_id,
+  role_id,
+  name,
+  surname,
+  is_active,
+  email,
+  password,
+  has_first_login,
+  is_active_two_factor_auth,
+  failed_login_attempts,
+  failed_two_factor_auth_attempts,
+  totp_secret,
+  curp,
+  rfc,
+  birth_date,
+  picture,
+  start_date,
+  nss,
+  bank_account,
+  blocked_until,
+  temp_totp_secret,
+  temp_totp_secret_created_at,
+  type
+)
+VALUES (
+  'e3000001-0000-4000-8000-000000000007',
+  'a0000001-0000-4000-8000-000000000001',
+  (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
+  'Admin',
+  'Aislado US30',
+  true,
+  'admin.empleado.us30@rchq.test',
+  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  false,
+  false,
+  0,
+  0,
+  NULL,
+  'US300101HDF00007',
+  NULL,
+  '1990-01-01',
+  'boop',
+  '2025-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+)
+ON CONFLICT (employee_id) DO UPDATE SET
+  house_id = EXCLUDED.house_id,
+  role_id = EXCLUDED.role_id,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  has_first_login = EXCLUDED.has_first_login,
+  is_active = EXCLUDED.is_active,
+  start_date = EXCLUDED.start_date,
+  type = EXCLUDED.type;
+
+-- Días laborales L-V para empleados US30 que sí deben tener horario
+INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+SELECT
+  wd.workday_id,
+  emp.employee_id,
+  '09:00:00'::time,
+  '18:00:00'::time
+FROM (
+  VALUES
+    ('c0000001-0000-4000-8000-000000000001'::uuid),
+    ('c0000001-0000-4000-8000-000000000002'::uuid),
+    ('c0000001-0000-4000-8000-000000000003'::uuid),
+    ('c0000001-0000-4000-8000-000000000004'::uuid),
+    ('c0000001-0000-4000-8000-000000000005'::uuid)
+) AS wd(workday_id)
+CROSS JOIN (
+  VALUES
+    ('e3000001-0000-4000-8000-000000000001'::uuid),
+    ('e3000001-0000-4000-8000-000000000002'::uuid),
+    ('e3000001-0000-4000-8000-000000000003'::uuid),
+    ('e3000001-0000-4000-8000-000000000005'::uuid),
+    ('e3000001-0000-4000-8000-000000000006'::uuid),
+    ('e3000001-0000-4000-8000-000000000007'::uuid)
+) AS emp(employee_id)
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end";
+
+-- Limpiar datos US30 para que el script manual sea repetible sin tocar datos base de otras US
+DELETE FROM public.logs
+WHERE affected IN (
+  'e3000001-0000-4000-8000-000000000002',
+  'e3000001-0000-4000-8000-000000000003',
+  'e3000001-0000-4000-8000-000000000004',
+  'e3000001-0000-4000-8000-000000000005',
+  'e3000001-0000-4000-8000-000000000006',
+  'e3000001-0000-4000-8000-000000000007'
+)
+OR employee_id = 'e3000001-0000-4000-8000-000000000001';
+
+DELETE FROM public.vacations_request
+WHERE vacations_request_id::text LIKE 'c3000000-0000-4000-8000-%';
+
+-- Solicitudes US30
+INSERT INTO public.vacations_request (
+  vacations_request_id,
+  employee_id,
+  start,
+  "end",
+  status,
+  feedback,
+  created_at,
+  used_days
+)
+VALUES
+-- Caso exitoso: pendiente modificable
+(
+  'c3000000-0000-4000-8000-000000000001',
+  'e3000001-0000-4000-8000-000000000005',
+  '2026-10-06',
+  '2026-10-08',
+  0,
+  NULL,
+  NOW(),
+  3
+),
+-- Caso aprobado modificable
+(
+  'c3000000-0000-4000-8000-000000000002',
+  'e3000001-0000-4000-8000-000000000005',
+  '2026-10-13',
+  '2026-10-14',
+  1,
+  NULL,
+  NOW(),
+  2
+),
+-- Caso rechazado no modificable
+(
+  'c3000000-0000-4000-8000-000000000003',
+  'e3000001-0000-4000-8000-000000000002',
+  '2026-10-20',
+  '2026-10-21',
+  2,
+  'No procede',
+  NOW(),
+  2
+),
+-- Caso otra casa
+(
+  'c3000000-0000-4000-8000-000000000004',
+  'e3000001-0000-4000-8000-000000000003',
+  '2026-10-06',
+  '2026-10-08',
+  0,
+  NULL,
+  NOW(),
+  3
+),
+-- Caso empleado Admin, debe bloquearse para Coordinador
+(
+  'c3000000-0000-4000-8000-000000000005',
+  'e3000001-0000-4000-8000-000000000007',
+  '2026-05-11',
+  '2026-05-12',
+  0,
+  NULL,
+  NOW(),
+  2
+),
+-- Caso empleado sin días laborales
+(
+  'c3000000-0000-4000-8000-000000000006',
+  'e3000001-0000-4000-8000-000000000004',
+  '2026-10-06',
+  '2026-10-08',
+  0,
+  NULL,
+  NOW(),
+  3
+),
+-- Solicitud base aprobada para provocar traslape
+(
+  'c3000000-0000-4000-8000-000000000007',
+  'e3000001-0000-4000-8000-000000000002',
+  '2026-11-03',
+  '2026-11-05',
+  1,
+  NULL,
+  NOW(),
+  3
+),
+-- Solicitud pendiente que se intentará mover encima de la aprobada anterior
+(
+  'c3000000-0000-4000-8000-000000000008',
+  'e3000001-0000-4000-8000-000000000002',
+  '2026-11-10',
+  '2026-11-11',
+  0,
+  NULL,
+  NOW(),
+  2
+),
+-- Solicitud para insuficiencia de días
+(
+  'c3000000-0000-4000-8000-000000000009',
+  'e3000001-0000-4000-8000-000000000002',
+  '2026-12-01',
+  '2026-12-02',
+  0,
+  NULL,
+  NOW(),
+  2
+),
+-- Solicitud activa que consume días para provocar insuficiencia
+(
+  'c3000000-0000-4000-8000-000000000010',
+  'e3000001-0000-4000-8000-000000000002',
+  '2026-12-08',
+  '2026-12-19',
+  1,
+  NULL,
+  NOW(),
+  10
+),
+-- Solicitud para fuera de rango
+(
+  'c3000000-0000-4000-8000-000000000011',
+  'e3000001-0000-4000-8000-000000000002',
+  '2026-09-01',
+  '2026-09-02',
+  0,
+  NULL,
+  NOW(),
+  2
+),
+-- Solicitud para concurrencia
+(
+  'c3000000-0000-4000-8000-000000000096',
+  'e3000001-0000-4000-8000-000000000006',
+  '2026-10-27',
+  '2026-10-28',
+  0,
+  NULL,
+  NOW(),
+  2
+)
+ON CONFLICT (vacations_request_id) DO UPDATE SET
+  employee_id = EXCLUDED.employee_id,
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end",
+  status = EXCLUDED.status,
+  feedback = EXCLUDED.feedback,
+  created_at = EXCLUDED.created_at,
+  used_days = EXCLUDED.used_days;
+-- =========================
+-- EMPLEADO DE PRUEBA BLACKLIST
+-- ID fijo para usar en pruebas: e0000002-0000-4000-8000-000000000002
+-- Coordinador puede agregarlo a la blacklist (misma casa que andre@gmail.com)
+-- =========================
+
+INSERT INTO public.employee (
+    employee_id,
+    house_id,
+    role_id,
+    name,
+    surname,
+    is_active,
+    email,
+    password,
+    has_first_login,
+    is_active_two_factor_auth,
+    failed_login_attempts,
+    failed_two_factor_auth_attempts,
+    totp_secret,
+    curp,
+    rfc,
+    birth_date,
+    picture,
+    start_date,
+    type
+)
+SELECT
+    'e0000002-0000-4000-8000-000000000002',
+    (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+    (SELECT role_id  FROM public.role  WHERE name = 'Mantenimiento' LIMIT 1),
+    'Luis',
+    'Pérez',
+    true,
+    'luis.prueba.blacklist@example.com',
+    '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+    false,
+    false,
+    0,
+    0,
+    NULL,
+    'PELM900101HDFRZS09',
+    NULL,
+    '1990-01-01',
+    NULL,
+    '2025-01-01',
+    'nomina'
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.employee WHERE employee_id = 'e0000002-0000-4000-8000-000000000002'
+);
 
 COMMIT;

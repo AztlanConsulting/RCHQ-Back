@@ -29,8 +29,8 @@ exports.mapHouseEmployeeForAbsence = (employee) => {
 
     return {
         employeeId: employee.employee_id,
-        houseId: employee.house_id,
         name: `${employee.name} ${employee.surname}`.trim(),
+        picture: employee.picture || null,
     };
 };
 

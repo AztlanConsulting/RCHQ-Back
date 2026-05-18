@@ -1,4 +1,4 @@
-const ROLES = {
+const ROLES = Object.freeze({
     COORDINATOR: "Coordinador",
     ADMIN: "Admin",
     MAINTENANCE: "Mantenimiento",
@@ -22,7 +22,7 @@ const ROLES = {
     LAUNDRY_ASSISTANT: "Auxiliar de Lavandería",
     DRIVER: "Chofer",
     COOK: "Cocinera",
-};
+});
 
 const allRoles = Object.values(ROLES);
 

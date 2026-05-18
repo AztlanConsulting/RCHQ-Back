@@ -86,7 +86,7 @@ exports.absenceAddSchema = z
         const minStartDate = new Date(
             Date.UTC(
                 today.getUTCFullYear(),
-                today.getUTCMonth() + 1,
+                today.getUTCMonth() - 1,
                 today.getUTCDate(),
             ),
         );
