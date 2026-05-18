@@ -41,13 +41,18 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
 };
 
 exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
+    const calendarEnd = new Date(vacation.end);
+    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+
     return {
         vacationId: vacation.vacations_request_id,
         employeeId: vacation.employee.employee_id,
         name: `${vacation.employee.name} ${vacation.employee.surname}`.trim(),
         curp: vacation.employee.curp,
         start: vacation.start,
-        end: vacation.end,
+        end: calendarEnd,
+        startDate: vacation.start,
+        endDate: vacation.end,
         status: vacation.status,
         feedback: vacation.feedback,
         link: vacation.url || "",
