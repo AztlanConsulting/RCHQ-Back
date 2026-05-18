@@ -575,19 +575,21 @@ describe("POST /absence/:employeeId/add", () => {
         expect(res.body.message).toBe("Fecha de fin no puede ser mayor a un año");
     });
 
-    it("422 si la fecha de inicio es menor a un mes", async () => {
+    it("422 si la fecha de inicio es menor a un mes antes del dia actual", async () => {
         const res = await request(app)
             .post(`/absence/${IDS.employeeA}/add`)
             .set("Authorization", `Bearer ${sign()}`)
             .send(
                 validBody({
-                    startDate: dateOnly(dateFromTodayUTC({ months: 1, days: -1 })),
-                    endDate: dateOnly(dateFromTodayUTC({ months: 1 })),
+                    startDate: dateOnly(dateFromTodayUTC({ months: - 1, days: - 1 })),
+                    endDate: dateOnly(dateFromTodayUTC({ months: - 1 })),
                 }),
             );
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("Fecha de inicio no puede ser menor a un mes");
+        expect(res.body.message).toBe(
+            "Fecha de inicio no puede ser menor a un mes",
+        );
     });
 
     it("422 si la fecha de inicio es mayor a la fecha de fin", async () => {
