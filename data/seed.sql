@@ -272,6 +272,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-004', 'Documento de empleado eliminado', false),
 ('empl-005', 'Información de empleado actualizada', false),
 ('vaca-005', 'Modificación de vacaciones exitosa', false),
+('vaca-006', 'Eliminación de vacaciones exitosa', false),
 ('blck-001', 'Empleado agregado a la lista negra', true)
 ON CONFLICT DO NOTHING;
 
@@ -978,6 +979,17 @@ INSERT INTO public.action (action_id, description, important)
 VALUES (
   'vaca-005',
   'Modificación de vacaciones exitosa',
+  false
+)
+ON CONFLICT (action_id) DO UPDATE SET
+  description = EXCLUDED.description,
+  important = EXCLUDED.important;
+
+-- Acción requerida por logs de US32
+INSERT INTO public.action (action_id, description, important)
+VALUES (
+  'vaca-006',
+  'Remoción de vacaciones exitosa',
   false
 )
 ON CONFLICT (action_id) DO UPDATE SET
