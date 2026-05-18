@@ -119,7 +119,7 @@ const seed = async () => {
     }
 
     const existingAdminRole = await prisma.role.findUnique({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
     });
     if (existingAdminRole) {
         IDS.adminRole = existingAdminRole.role_id;
@@ -128,7 +128,7 @@ const seed = async () => {
         await prisma.role.create({
             data: {
                 role_id: IDS.adminRole,
-                name: "Admin",
+                name: "Administrador",
             },
         });
     }
@@ -189,7 +189,7 @@ const seed = async () => {
                 house_id: IDS.houseA,
                 role_id: IDS.adminRole,
                 name: "Alicia",
-                surname: "Admin",
+                surname: "Administrador",
                 is_active: true,
                 email: "admin.absence.delete@test.com",
                 password: "hashed",
@@ -532,7 +532,7 @@ describe("DELETE /absence/:absenceId", () => {
                 `Bearer ${sign({
                     id: IDS.adminA,
                     email: "admin.absence.delete@test.com",
-                    role: "Admin",
+                    role: "Administrador",
                     privileges: ["deleteAbsences"],
                 })}`,
             );

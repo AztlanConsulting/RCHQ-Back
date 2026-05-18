@@ -22,6 +22,7 @@ const TEST_TARGET_CURP = "TARG900101HDFXXX02";
 
 let testCoordinadorRoleId;
 let testTargetRoleId;
+let testPrivilegeId;
 
 const seedDependencies = async () => {
     await prisma.house.upsert({
@@ -57,7 +58,7 @@ const seedDependencies = async () => {
     });
     testTargetRoleId = targetRole.role_id;
 
-    await prisma.privileges.upsert({
+    const priv = await prisma.privileges.upsert({
         where: { name: "addToBlacklist" },
         update: {},
         create: {
@@ -65,11 +66,12 @@ const seedDependencies = async () => {
             name: "addToBlacklist",
         },
     });
+    testPrivilegeId = priv.privilege_id;
 
     await prisma.role_privilege.upsert({
-        where: { role_id_privilege_id: { role_id: testCoordinadorRoleId, privilege_id: TEST_PRIVILEGE_ID } },
+        where: { role_id_privilege_id: { role_id: testCoordinadorRoleId, privilege_id: testPrivilegeId } },
         update: {},
-        create: { role_id: testCoordinadorRoleId, privilege_id: TEST_PRIVILEGE_ID },
+        create: { role_id: testCoordinadorRoleId, privilege_id: testPrivilegeId },
     });
 
     for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {

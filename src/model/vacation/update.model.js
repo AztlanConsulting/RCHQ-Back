@@ -4,6 +4,10 @@ const {
     VACATION_STATUS,
     ACTIVE_VACATION_STATUSES,
 } = require("../../utils/vacationStatus");
+const { ROLES } = require("../../utils/roles");
+
+const isAdminRole = (roleName) =>
+    roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
 
 exports.approveVacationRequestAtomically = async ({
     vacationRequestId,
@@ -58,10 +62,8 @@ exports.approveVacationRequestAtomically = async ({
             };
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
-
         if (
-            targetRoleName === "admin" ||
+            isAdminRole(targetEmployee.role?.name) ||
             targetEmployee.house_id !== actorHouseId
         ) {
             return {
@@ -217,10 +219,8 @@ exports.rejectVacationRequestAtomically = async ({
             };
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
-
         if (
-            targetRoleName === "admin" ||
+            isAdminRole(targetEmployee.role?.name) ||
             targetEmployee.house_id !== actorHouseId
         ) {
             return {
@@ -310,10 +310,8 @@ exports.updateVacationRequestDatesAtomically = async ({
             };
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
-
         if (
-            targetRoleName === "admin" ||
+            isAdminRole(targetEmployee.role?.name) ||
             targetEmployee.house_id !== actorHouseId
         ) {
             return {

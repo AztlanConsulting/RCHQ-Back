@@ -64,7 +64,7 @@ activate resolve
     activate router
 end
 
-router -> role: requireRole("Admin", "Coordinador")
+router -> role: requireRole("Administrador", "Coordinador")
 deactivate router
 
 alt Rol invalido
@@ -190,7 +190,7 @@ activate resolve
     activate router
 end
 
-router -> role: requireRole("Admin", "Coordinador")
+router -> role: requireRole("Administrador", "Coordinador")
 deactivate router
 
 alt Rol invalido

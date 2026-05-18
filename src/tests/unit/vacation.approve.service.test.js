@@ -88,7 +88,7 @@ describe("US34 - approveVacationRequest service", () => {
     const adminActor = {
         employee_id: actorAdminId,
         house_id: "house-1",
-        role: { name: "Admin" },
+        role: { name: "Administrador" },
     };
 
     const coordinatorActor = {
@@ -106,7 +106,7 @@ describe("US34 - approveVacationRequest service", () => {
     const targetAdminEmployee = {
         employee_id: targetEmployeeId,
         house_id: "house-1",
-        role: { name: "Admin" },
+        role: { name: "Administrador" },
     };
 
     const targetOtherHouseEmployee = {
@@ -232,7 +232,7 @@ describe("US34 - approveVacationRequest service", () => {
     });
 
     describe("validaciones de input y permisos", () => {
-        test("retorna INSUFFICIENT_PERMISSIONS si el actor es Admin porque US34 solo permite Coordinador", async () => {
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor es Administrador porque US34 solo permite Coordinador", async () => {
             findByIdWithRoleAndHouse.mockReset();
             findByIdWithRoleAndHouse.mockResolvedValueOnce(adminActor);
 

@@ -1,4 +1,12 @@
-const { getHome, findByIdWithRoleAndHouse, findByCurpWithRoleAndHouse } = require("../model/employee/get.model");
+const {
+    getHome,
+    findByIdWithRoleAndHouse,
+    findByCurpWithRoleAndHouse,
+} = require("../model/employee/get.model");
+const { ROLES } = require("../utils/roles");
+
+const isAdminRole = (roleName) =>
+    roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
 
 exports.canAccess = (user, policyFn, resource) => {
     if (!user) return false;
@@ -16,7 +24,11 @@ exports.authorize = (policyFn, getResource) => async (req, res, next) => {
             return next();
         }
 
-        return res.status(403).json({ error: "Acceso denegado" });
+        return res.status(403).json({
+            success: false,
+            message: "Acceso denegado",
+            error: "Acceso denegado",
+        });
     } catch (error) {
         console.error("Error en middleware authorize:", error);
         return res.status(500).json({ message: "Error del servidor" });
@@ -27,7 +39,7 @@ exports.isAllowed = async (req, res, next) => {
     try {
         const targetId = req.params.employeeId || req.params.id || "";
 
-        if (req.user.role == "Admin") return next();
+        if (req.user.role == ROLES.ADMIN) return next();
         if (req.user.id == targetId) return next();
 
         const homeQuery = await getHome(targetId);
@@ -35,7 +47,7 @@ exports.isAllowed = async (req, res, next) => {
             success: false,
             message: "No puede acceder a este recurso"
         });
-        if (req.user.houseId == homeQuery.house_id && req.user.role == "Coordinador") {
+        if (req.user.houseId == homeQuery.house_id && req.user.role == ROLES.COORDINATOR) {
             return next();
         }
 
@@ -65,20 +77,18 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
             });
         }
 
-        if (req.user.role === "Admin") {
+        if (req.user.role === ROLES.ADMIN) {
             return next();
         }
 
-        if (req.user.role !== "Coordinador" && req.user.role !== "Admin") {
+        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",
             });
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
-
-        if (targetRoleName === "admin") {
+        if (isAdminRole(targetEmployee.role?.name)) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",
@@ -110,7 +120,7 @@ exports.canAddToBlacklist = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "CURP no proporcionada" });
         }
 
-        if (req.user.role !== "Coordinador" && req.user.role !== "Admin") {
+        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",

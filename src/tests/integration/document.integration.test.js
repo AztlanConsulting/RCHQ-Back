@@ -38,7 +38,7 @@ const sign = (overrides = {}) =>
         {
             id: IDS.employee,
             houseId: IDS.house,
-            role: "Admin",
+            role: "Administrador",
             tokenType: "SESSION",
             privileges: ["manageDocuments", "viewDocuments"],
             ...overrides,

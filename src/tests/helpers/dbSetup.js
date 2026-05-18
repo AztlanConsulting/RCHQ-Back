@@ -180,7 +180,7 @@ const SEED = {
     },
     role: {
         role_id: IDS.role,
-        name: "Admin",
+        name: "Administrador",
     },
     employee: {
         employee_id: IDS.employee,

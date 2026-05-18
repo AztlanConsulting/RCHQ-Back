@@ -48,7 +48,7 @@ exports.updateAbsence = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (!["Admin", "Coordinador"].includes(actorRoleName)) {
+    if (!["Administrador", "Coordinador"].includes(actorRoleName)) {
         deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.ABSENCE.INSUFFICIENT_PERMISSIONS,

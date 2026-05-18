@@ -99,14 +99,14 @@ const seed = async () => {
     }
 
     const existingAdminRole = await prisma.role.findUnique({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
     });
     if (existingAdminRole) {
         IDS.adminRole = existingAdminRole.role_id;
     } else {
         STATE.createdAdminRole = true;
         await prisma.role.create({
-            data: { role_id: IDS.adminRole, name: "Admin" },
+            data: { role_id: IDS.adminRole, name: "Administrador" },
         });
     }
 
@@ -187,7 +187,7 @@ const seed = async () => {
                 house_id: IDS.houseA,
                 role_id: IDS.adminRole,
                 name: "Ada",
-                surname: "Admin",
+                surname: "Administrador",
                 is_active: true,
                 email: "admin.logs@test.com",
                 password: "hashed",
@@ -399,7 +399,7 @@ describe("GET /logs/house", () => {
     it("retorna 403 si el rol no es coordinador", async () => {
         const res = await request(app)
             .get("/logs/house")
-            .set("Authorization", `Bearer ${sign({ role: "Admin", id: IDS.admin })}`);
+            .set("Authorization", `Bearer ${sign({ role: "Administrador", id: IDS.admin })}`);
 
         expect(res.statusCode).toBe(403);
         expect(res.body.message).toBe("Role not allowed");
@@ -464,7 +464,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado con éxito",
+            action: "Empleado creado",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
@@ -556,7 +556,7 @@ describe("GET /logs/house", () => {
             .get("/logs/house/report/pdf")
             .set("Authorization", `Bearer ${sign()}`);
 
-        expect(res.statusCode).toBe(200);
+        expect(res.statusCode).toBe(201);
         expect(res.headers["content-type"]).toContain("application/pdf");
         expect(res.headers["content-disposition"]).toContain(".pdf");
         expect(Buffer.isBuffer(res.body)).toBe(true);

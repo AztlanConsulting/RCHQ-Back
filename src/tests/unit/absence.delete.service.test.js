@@ -84,7 +84,7 @@ describe("absence.delete.service — deleteAbsence", () => {
         findByIdWithRoleAndHouse.mockResolvedValue({
             employee_id: "actor-1",
             house_id: "house-1",
-            role: { name: "Admin" },
+            role: { name: "Administrador" },
         });
         getAbsenceById.mockResolvedValue({
             absence_id: "absence-1",

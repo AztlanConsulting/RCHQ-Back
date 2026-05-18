@@ -32,7 +32,7 @@ exports.deleteAbsence = async ({ actorEmployeeId, absenceId }) => {
     const actorRoleName = actorEmployee.role?.name;
     const actorHouseId = actorEmployee.house_id;
 
-    if (!["Admin", "Coordinador"].includes(actorRoleName)) {
+    if (!["Administrador", "Coordinador"].includes(actorRoleName)) {
         return {
             code: RESPONSES.ABSENCE.INSUFFICIENT_PERMISSIONS,
         };
