@@ -3,6 +3,14 @@ jest.mock("../../model/logs/get.model", () => ({
     getAffectedEmployeesByIds: jest.fn(),
 }));
 
+jest.mock("../../model/house/get.model", () => ({
+    getHousesByIds: jest.fn(),
+}));
+
+jest.mock("../../model/event/get.model", () => ({
+    getEventsByIds: jest.fn(),
+}));
+
 jest.mock("../../utils/logIp", () => ({
     readLogIp: jest.fn((value) => `decoded:${value}`),
 }));
@@ -11,6 +19,8 @@ const {
     getLogsByHousePage,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
+const { getHousesByIds } = require("../../model/house/get.model");
+const { getEventsByIds } = require("../../model/event/get.model");
 const { readLogIp } = require("../../utils/logIp");
 const RESPONSES = require("../../utils/responses");
 
@@ -50,6 +60,8 @@ describe("logs.get.service", () => {
         });
 
         getAffectedEmployeesByIds.mockResolvedValue([]);
+        getHousesByIds.mockResolvedValue([]);
+        getEventsByIds.mockResolvedValue([]);
 
         const result = await getLogsByHouse("house-1", "1", "6");
 
@@ -63,6 +75,8 @@ describe("logs.get.service", () => {
             },
         });
         expect(getAffectedEmployeesByIds).toHaveBeenCalledWith([]);
+        expect(getHousesByIds).toHaveBeenCalledWith([]);
+        expect(getEventsByIds).toHaveBeenCalledWith([]);
     });
 
     it("retorna logs paginados y mapeados", async () => {
@@ -104,8 +118,42 @@ describe("logs.get.service", () => {
                         picture: null,
                     },
                 },
+                {
+                    log_id: "log-3",
+                    affected: "a0000001-0000-4000-8000-000000000001",
+                    ip_address: "hashed-ip-3",
+                    moment,
+                    action: {
+                        description: "Actualización de ausencia exitosa",
+                        important: false,
+                    },
+                    employee: {
+                        employee_id: "emp-3",
+                        name: "Sofía",
+                        surname: "Neri",
+                        curp: "NESO900101MDFMNS03",
+                        picture: null,
+                    },
+                },
+                {
+                    log_id: "log-4",
+                    affected: "c3000000-0000-4000-8000-000000000003",
+                    ip_address: "hashed-ip-4",
+                    moment,
+                    action: {
+                        description: "Actualización de ausencia exitosa",
+                        important: false,
+                    },
+                    employee: {
+                        employee_id: "emp-4",
+                        name: "Elena",
+                        surname: "Soto",
+                        curp: "SOEL900101MDFMNS04",
+                        picture: null,
+                    },
+                },
             ],
-            totalRecords: 2,
+            totalRecords: 4,
         });
 
         getAffectedEmployeesByIds.mockResolvedValue([
@@ -115,13 +163,25 @@ describe("logs.get.service", () => {
                 surname: "López",
             },
         ]);
+        getHousesByIds.mockResolvedValue([
+            {
+                house_id: "a0000001-0000-4000-8000-000000000001",
+                name: "Desarrollo",
+            },
+        ]);
+        getEventsByIds.mockResolvedValue([
+            {
+                id: "c3000000-0000-4000-8000-000000000003",
+                name: "Visita médica",
+            },
+        ]);
 
         const result = await getLogsByHouse("house-1", "1", "6");
 
         expect(result.code).toBe(RESPONSES.LOGS.FOUND);
         expect(result.data.totalPages).toBe(1);
         expect(result.data.currentPage).toBe(1);
-        expect(result.data.totalRecords).toBe(2);
+        expect(result.data.totalRecords).toBe(4);
         expect(result.data.logs).toEqual([
             {
                 logId: "log-1",
@@ -147,8 +207,32 @@ describe("logs.get.service", () => {
                 important: false,
                 moment,
             },
+            {
+                logId: "log-3",
+                responsibleEmployeeId: "emp-3",
+                responsibleName: "Sofía Neri",
+                responsibleCurp: "NESO900101MDFMNS03",
+                responsiblePicture: null,
+                affectedName: "Desarrollo",
+                ipAddress: "decoded:hashed-ip-3",
+                action: "Actualización de ausencia exitosa",
+                important: false,
+                moment,
+            },
+            {
+                logId: "log-4",
+                responsibleEmployeeId: "emp-4",
+                responsibleName: "Elena Soto",
+                responsibleCurp: "SOEL900101MDFMNS04",
+                responsiblePicture: null,
+                affectedName: "Visita médica",
+                ipAddress: "decoded:hashed-ip-4",
+                action: "Actualización de ausencia exitosa",
+                important: false,
+                moment,
+            },
         ]);
-        expect(readLogIp).toHaveBeenCalledTimes(2);
+        expect(readLogIp).toHaveBeenCalledTimes(4);
     });
 
 });
