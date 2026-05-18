@@ -7,6 +7,7 @@ jest.mock("../../model/absence/get.model");
 
 const eventModel = require("../../model/event/get.model");
 const absenceModel = require("../../model/absence/get.model");
+const vacationModel = require("../../model/vacation/get.model");
 const RESPONSES = require("../../utils/responses");
 
 describe("event.service — getAllEventTypes", () => {
@@ -89,6 +90,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
             },
         ]);
         eventModel.getGlobalEventsInRange.mockResolvedValue([]);
+        vacationModel.getHouseCalendarVacationsInRange.mockResolvedValue([]);
 
         const result = await eventGetService.getHouseCalendarRecordsInRange(
             "employee-1",
