@@ -20,6 +20,7 @@ const {
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
+const ROLES = require("../../utils/roles");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
 const {
     approveVacationRequestInputSchema,
@@ -55,7 +56,7 @@ exports.approveVacationRequest = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== "Coordinador") {
+    if (actorRoleName !== ROLES.COORDINADOR) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -85,9 +86,9 @@ exports.approveVacationRequest = async ({
         };
     }
 
-    const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+    const targetRoleName = targetEmployee.role?.name;
 
-    if (targetRoleName === "admin") {
+    if (targetRoleName === ROLES.ADMIN) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
@@ -211,7 +212,7 @@ exports.rejectVacationRequest = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== "Coordinador") {
+    if (actorRoleName !== ROLES.COORDINADOR) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -241,9 +242,9 @@ exports.rejectVacationRequest = async ({
         };
     }
 
-    const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+    const targetRoleName = targetEmployee.role?.name;
 
-    if (targetRoleName === "admin") {
+    if (targetRoleName === ROLES.ADMIN) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
@@ -318,7 +319,7 @@ exports.updateVacationRequestDates = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== "Coordinador") {
+    if (actorRoleName !== ROLES.COORDINADOR) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -360,9 +361,9 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+    const targetRoleName = targetEmployee.role?.name;
 
-    if (targetRoleName === "admin") {
+    if (targetRoleName === ROLES.ADMIN) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
