@@ -34,6 +34,8 @@ const {
 } = require("../model/employee/deactivate.model");
 
 const { getWorkDays } = require("../controller/employee/get.controller");
+const { ROLES } = require("../utils/roles");
+const PRIVILEGES = require("../utils/privileges");
 
 router.get(
   "/update-form",
@@ -186,8 +188,8 @@ router.patch(
     "/:employeeId/deactivate",
     apiLimiter,
     verifyToken,
-    requireRole("Administrador", "Coordinador"),
-    requirePrivileges("manageEmployees"),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     resolveRequesterHouse,
     validate(deactivateEmployeeParamsSchema, "params"),
     validate(deactivateEmployeeSchema, "body"),
