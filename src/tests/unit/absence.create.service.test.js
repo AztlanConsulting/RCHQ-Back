@@ -182,7 +182,7 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Fecha de inicio no puede ser menor a un mes antes del día actual");
+        expect(result.message).toBe("Fecha de inicio no puede ser menor a un mes");
     });
 
     it.each([
