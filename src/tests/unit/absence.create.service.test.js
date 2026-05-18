@@ -36,6 +36,32 @@ const IDS = {
     type: "6eb8e341-d92e-460c-a6f3-e2a25a1ec8f6",
 };
 
+const dateOnly = (date) => date.toISOString().split("T")[0];
+
+const todayUTC = () => {
+    const today = new Date();
+
+    return new Date(
+        Date.UTC(
+            today.getUTCFullYear(),
+            today.getUTCMonth(),
+            today.getUTCDate(),
+        ),
+    );
+};
+
+const dateFromTodayUTC = ({ years = 0, months = 0, days = 0 }) => {
+    const today = todayUTC();
+
+    return new Date(
+        Date.UTC(
+            today.getUTCFullYear() + years,
+            today.getUTCMonth() + months,
+            today.getUTCDate() + days,
+        ),
+    );
+};
+
 const validBody = (overrides = {}) => ({
     absenceTypeId: IDS.type,
     startDate: "2026-06-20",
@@ -145,15 +171,18 @@ describe("absence.create.service — addAbsence", () => {
         expect(result.message).toBe("Fecha de fin no puede ser mayor a un año");
     });
 
-    it("rechaza fecha de inicio menor a un mes", async () => {
+    it("rechaza fecha de inicio menor a un mes antes del día actual", async () => {
         const result = await addAbsence({
             actorEmployeeId: IDS.actor,
             targetEmployeeId: IDS.target,
-            body: validBody({ startDate: "2026-06-16", endDate: "2026-06-17" }),
+            body: validBody({
+                startDate: dateOnly(dateFromTodayUTC({ months: - 1, days: - 1 })),
+                endDate: dateOnly(dateFromTodayUTC({ months: - 1 })),
+            }),
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Fecha de inicio no puede ser menor a un mes");
+        expect(result.message).toBe("Fecha de inicio no puede ser menor a un mes antes del día actual");
     });
 
     it.each([

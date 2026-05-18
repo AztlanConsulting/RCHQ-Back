@@ -390,7 +390,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
