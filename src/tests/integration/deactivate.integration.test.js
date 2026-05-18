@@ -63,9 +63,33 @@ const seedDependencies = async (hashedPassword) => {
         update: {},
         create: { privilege_id: randomUUID(), name: "addToBlacklist" },
     });
+    
+    const privManage = await prisma.privileges.upsert({
+        where: { name: "manageEmployees" },
+        update: {},
+        create: { privilege_id: randomUUID(), name: "manageEmployees" },
+    });
 
-    await prisma.role_privilege.create({
-        data: { role_id: TEST_ROLE_ADMIN_ID, privilege_id: priv.privilege_id },
+    await prisma.role_privilege.upsert({
+        where: {
+            role_id_privilege_id: {
+                role_id: TEST_ROLE_ADMIN_ID,
+                privilege_id: priv.privilege_id,
+            },
+        },
+        update: {},
+        create: { role_id: TEST_ROLE_ADMIN_ID, privilege_id: priv.privilege_id },
+    });
+
+    await prisma.role_privilege.upsert({
+        where: {
+            role_id_privilege_id: {
+                role_id: TEST_ROLE_ADMIN_ID,
+                privilege_id: privManage.privilege_id,
+            },
+        },
+        update: {},
+        create: { role_id: TEST_ROLE_ADMIN_ID, privilege_id: privManage.privilege_id },
     });
 
     await prisma.employee.create({
