@@ -1,20 +1,7 @@
 const { z } = require("zod");
+const { isRealISODate } = require("../../utils/vacation/isoDate");
 
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SEARCH_ALLOWED_CHARS_REGEX = /^[\p{L}\p{M}\p{N}\s]*$/u;
-
-function isRealISODate(dateString) {
-    if (!ISO_DATE_REGEX.test(dateString)) return false;
-
-    const [year, month, day] = dateString.split("-").map(Number);
-    const parsedDate = new Date(Date.UTC(year, month - 1, day));
-
-    return (
-        parsedDate.getUTCFullYear() === year &&
-        parsedDate.getUTCMonth() === month - 1 &&
-        parsedDate.getUTCDate() === day
-    );
-}
 
 const optionalDateSchema = z
     .string()

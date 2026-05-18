@@ -41,7 +41,7 @@ const RESPONSES = {
             "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
         OUT_OF_RANGE:
             "No se pueden solicitar vacaciones fuera del periodo actual de trabajo",
-        WITHOUT_DATES: "Se ocupan tener registrados los días de trabajo",
+        WITHOUT_DATES: "Se necesitan tener registrados los días de trabajo",
         INSUFFICIENT_DATES:
             "No se tienen suficientes días disponibles para solicitar las vacaciones",
         ALREADY_REQUEST:
@@ -58,6 +58,8 @@ const RESPONSES = {
         APPROVED_OVERLAP: "VACATION_APPROVED_OVERLAP",
         VALIDATION_ERROR: "VACATION_VALIDATION_ERROR",
         REQUESTS_FOUND: "VACATION_REQUESTS_FOUND",
+        UPDATED: "VACATION_UPDATED",
+        REQUEST_NOT_MODIFIABLE: "VACATION_REQUEST_NOT_MODIFIABLE",
     },
     DATES: {
         BAD_DATES:

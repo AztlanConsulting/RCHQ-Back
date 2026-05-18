@@ -400,7 +400,7 @@ describe("Flujo integración /vacation/request", () => {
 
             expect(res.status).toBe(406);
             expect(res.body.message).toBe(
-                "Se ocupan tener registrados los días de trabajo",
+                "Se necesitan tener registrados los días de trabajo",
             );
         });
 

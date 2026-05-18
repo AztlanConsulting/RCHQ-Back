@@ -85,7 +85,7 @@ EmployeeGetModel --> Service : workDays
 
 alt workDays.length == 0
 Service --> Controller : RESPONSES.VACATION.WITHOUT_DATES
-Controller --> Frontend : 406 Not Acceptable\n"Se ocupan tener registrados los días de trabajo"
+Controller --> Frontend : 406 Not Acceptable\n"Se necesitan tener registrados los días de trabajo"
 end
 
 Service -> Service : getRemainingVacations(targetEmployeeId)
