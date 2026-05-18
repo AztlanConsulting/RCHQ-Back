@@ -1,16 +1,15 @@
 const validate = (schema, property = "body") => {
-  
-  return (req, res, next) => {
-    const dataToValidate =
-      property === "all"
-        ? {
-          params: req.params,
-          body: req.body,
-          query: req.query,
-        }
-        : req[property];
+    return (req, res, next) => {
+        const dataToValidate =
+            property === "all"
+                ? {
+                      params: req.params,
+                      body: req.body,
+                      query: req.query,
+                  }
+                : req[property];
 
-    const result = schema.safeParse(dataToValidate);
+        const result = schema.safeParse(dataToValidate);
 
         if (!result.success) {
             return res.status(400).json({
@@ -24,16 +23,16 @@ const validate = (schema, property = "body") => {
             });
         }
 
-    if (property === "all") {
-      req.params = result.data.params ?? req.params;
-      req.body = result.data.body ?? req.body;
-      req.query = result.data.query ?? req.query;
-    } else {
-      req[property] = result.data;
-    }
+        if (property === "all") {
+            req.params = result.data.params ?? req.params;
+            req.body = result.data.body ?? req.body;
+            req.query = result.data.query ?? req.query;
+        } else {
+            req[property] = result.data;
+        }
 
-    next();
-  };
+        next();
+    };
 };
 
 module.exports = validate;

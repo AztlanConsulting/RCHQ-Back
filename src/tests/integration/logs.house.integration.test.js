@@ -399,7 +399,10 @@ describe("GET /logs/house", () => {
     it("retorna 403 si el rol no es coordinador", async () => {
         const res = await request(app)
             .get("/logs/house")
-            .set("Authorization", `Bearer ${sign({ role: "Administrador", id: IDS.admin })}`);
+            .set(
+                "Authorization",
+                `Bearer ${sign({ role: "Administrador", id: IDS.admin })}`,
+            );
 
         expect(res.statusCode).toBe(403);
         expect(res.body.message).toBe("Role not allowed");
@@ -511,7 +514,9 @@ describe("GET /logs/house", () => {
 
     it("filtra por rango de fechas", async () => {
         const res = await request(app)
-            .get("/logs/house?page=1&limit=10&startDate=2026-05-10&endDate=2026-05-10")
+            .get(
+                "/logs/house?page=1&limit=10&startDate=2026-05-10&endDate=2026-05-10",
+            )
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
@@ -539,7 +544,9 @@ describe("GET /logs/house", () => {
 
     it("filtra por nombre completo y CURP", async () => {
         const res = await request(app)
-            .get("/logs/house?page=1&limit=10&responsible=Carla%20Coord&affected=LUCA900101HDFABC01")
+            .get(
+                "/logs/house?page=1&limit=10&responsible=Carla%20Coord&affected=LUCA900101HDFABC01",
+            )
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
@@ -562,5 +569,4 @@ describe("GET /logs/house", () => {
         expect(Buffer.isBuffer(res.body)).toBe(true);
         expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
     });
-
 });

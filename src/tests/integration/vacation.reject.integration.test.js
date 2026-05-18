@@ -103,18 +103,22 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(targetEmployee);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
-        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce({
-            success: true,
-            data: {
-                vacationRequest: {
-                    ...pendingVacationRequest,
-                    status: VACATION_STATUS.REJECTED,
-                    feedback,
+        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce(
+            {
+                success: true,
+                data: {
+                    vacationRequest: {
+                        ...pendingVacationRequest,
+                        status: VACATION_STATUS.REJECTED,
+                        feedback,
+                    },
                 },
             },
-        });
+        );
 
         logModel.createLog.mockResolvedValueOnce(undefined);
     }
@@ -230,7 +234,9 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
     it("regresa 404 si la solicitud no existe", async () => {
         const token = buildToken(coordinatorTokenPayload);
 
-        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(actorCoordinator);
+        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(
+            actorCoordinator,
+        );
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce(null);
 
         const response = await request(app)
@@ -240,13 +246,17 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
 
         expect(response.status).toBe(404);
         expect(response.body.success).toBe(false);
-        expect(response.body.message).toBe("Solicitud de vacaciones no encontrada");
+        expect(response.body.message).toBe(
+            "Solicitud de vacaciones no encontrada",
+        );
     });
 
     it("regresa 406 si la solicitud ya fue aprobada", async () => {
         const token = buildToken(coordinatorTokenPayload);
 
-        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(actorCoordinator);
+        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(
+            actorCoordinator,
+        );
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce({
             ...pendingVacationRequest,
             status: VACATION_STATUS.APPROVED,
@@ -265,7 +275,9 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
     it("regresa 406 si la solicitud ya fue rechazada", async () => {
         const token = buildToken(coordinatorTokenPayload);
 
-        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(actorCoordinator);
+        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(
+            actorCoordinator,
+        );
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce({
             ...pendingVacationRequest,
             status: VACATION_STATUS.REJECTED,
@@ -291,7 +303,9 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
                 house_id: "b0000001-0000-4000-8000-000000000001",
             });
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
         const response = await request(app)
             .patch(`/vacation/request/${vacationRequestId}/reject`)
@@ -318,7 +332,9 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.message).toBe("Solicitud rechazada correctamente");
-        expect(response.body.data.vacationRequest.status).toBe(VACATION_STATUS.REJECTED);
+        expect(response.body.data.vacationRequest.status).toBe(
+            VACATION_STATUS.REJECTED,
+        );
         expect(response.body.data.vacationRequest.feedback).toBeNull();
     });
 
@@ -340,7 +356,9 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.message).toBe("Solicitud rechazada correctamente");
-        expect(response.body.data.vacationRequest.status).toBe(VACATION_STATUS.REJECTED);
+        expect(response.body.data.vacationRequest.status).toBe(
+            VACATION_STATUS.REJECTED,
+        );
         expect(response.body.data.vacationRequest.feedback).toBe(feedback);
     });
 
@@ -351,12 +369,16 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(targetEmployee);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
-        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce({
-            success: false,
-            code: "VACATION_REQUEST_ALREADY_REVIEWED",
-        });
+        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce(
+            {
+                success: false,
+                code: "VACATION_REQUEST_ALREADY_REVIEWED",
+            },
+        );
 
         const response = await request(app)
             .patch(`/vacation/request/${vacationRequestId}/reject`)

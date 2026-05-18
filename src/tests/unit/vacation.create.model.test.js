@@ -59,7 +59,7 @@ describe("vacation.create.model — registerVacation", () => {
             employeeId,
             startDate,
             endDate,
-            usedDays
+            usedDays,
         );
 
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);
@@ -109,7 +109,7 @@ describe("vacation.create.model — registerVacation", () => {
             employeeId,
             startDate,
             endDate,
-            usedDays
+            usedDays,
         );
 
         expect(prisma.$transaction).toHaveBeenCalledTimes(1);

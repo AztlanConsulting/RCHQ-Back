@@ -1,8 +1,5 @@
 const cron = require("node-cron");
-const {
-    deleteExpiredLogs,
-    LOG_RETENTION_YEARS,
-} = require("./logRetention");
+const { deleteExpiredLogs, LOG_RETENTION_YEARS } = require("./logRetention");
 
 const DEFAULT_CRON_EXPRESSION = "0 1 * * *";
 

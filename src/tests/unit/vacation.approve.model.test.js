@@ -65,7 +65,7 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
         });
 
         transaction.vacations_request.findUnique.mockResolvedValue(
-            baseVacationRequest
+            baseVacationRequest,
         );
 
         transaction.employee.findUnique.mockResolvedValue(targetEmployee);
@@ -163,7 +163,9 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
         });
 
         expect(result.success).toBe(true);
-        expect(result.data.vacationRequest.status).toBe(VACATION_STATUS.APPROVED);
+        expect(result.data.vacationRequest.status).toBe(
+            VACATION_STATUS.APPROVED,
+        );
     });
 
     test("retorna REQUEST_NOT_FOUND si la solicitud no existe", async () => {

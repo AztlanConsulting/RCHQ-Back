@@ -1,20 +1,31 @@
 const prisma = require("../../prisma");
-const { VACATION_STATUS, ACTIVE_VACATION_STATUSES } = require("../../utils/vacationStatus");
+const {
+    VACATION_STATUS,
+    ACTIVE_VACATION_STATUSES,
+} = require("../../utils/vacationStatus");
 
 function getUtcNow() {
     const now = new Date();
-    return new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate(),
-        now.getUTCHours(),
-        now.getUTCMinutes(),
-        now.getUTCSeconds(),
-        now.getUTCMilliseconds()
-    ));
+    return new Date(
+        Date.UTC(
+            now.getUTCFullYear(),
+            now.getUTCMonth(),
+            now.getUTCDate(),
+            now.getUTCHours(),
+            now.getUTCMinutes(),
+            now.getUTCSeconds(),
+            now.getUTCMilliseconds(),
+        ),
+    );
 }
 
-exports.requestVacation = async (vacationId, employeeId, startDate, endDate, usedDays) => {
+exports.requestVacation = async (
+    vacationId,
+    employeeId,
+    startDate,
+    endDate,
+    usedDays,
+) => {
     return await prisma.vacations_request.create({
         data: {
             vacations_request_id: vacationId,
@@ -23,12 +34,18 @@ exports.requestVacation = async (vacationId, employeeId, startDate, endDate, use
             end: endDate,
             status: VACATION_STATUS.PENDING,
             used_days: usedDays,
-            created_at: getUtcNow()
-        }
-    })
-}
+            created_at: getUtcNow(),
+        },
+    });
+};
 
-exports.registerVacation = async (vacationId, employeeId, startDate, endDate, usedDays) => {
+exports.registerVacation = async (
+    vacationId,
+    employeeId,
+    startDate,
+    endDate,
+    usedDays,
+) => {
     return await prisma.$transaction(async (tx) => {
         await tx.$queryRaw`
             SELECT employee_id

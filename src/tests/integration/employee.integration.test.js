@@ -36,21 +36,39 @@ describe("Employee Service - createEmployee", () => {
         id: "user-1",
         role: "Administrador",
         houseId: "a0000001-0000-4000-8000-000000000001",
-        privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
+        privileges: [
+            "viewEmployees",
+            "createEmployees",
+            "manageEmployees",
+            "viewDocuments",
+            "manageDocuments",
+        ],
     };
 
     const mockUserCoordinatorSameHouse = {
         id: "user-2",
         role: "Coordinador",
         houseId: "a0000001-0000-4000-8000-000000000001",
-        privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
+        privileges: [
+            "viewEmployees",
+            "createEmployees",
+            "manageEmployees",
+            "viewDocuments",
+            "manageDocuments",
+        ],
     };
 
     const mockUserCoordinatorOtherHouse = {
         id: "user-3",
         role: "Coordinador",
         houseId: "a0000001-0000-4000-8000-000000000002",
-        privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
+        privileges: [
+            "viewEmployees",
+            "createEmployees",
+            "manageEmployees",
+            "viewDocuments",
+            "manageDocuments",
+        ],
     };
 
     const mockUserUnauthorized = {
@@ -94,7 +112,11 @@ describe("Employee Service - createEmployee", () => {
     // =====================================================
 
     it("debería crear empleado como admin", async () => {
-        const result = await createEmployee(baseEmployee, mockUserAdmin, mockReq);
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserAdmin,
+            mockReq,
+        );
 
         expect(result.success).toBe(true);
         expect(result.employeeId).toBeDefined();

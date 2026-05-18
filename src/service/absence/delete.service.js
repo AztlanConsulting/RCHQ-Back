@@ -1,7 +1,9 @@
 const { findByIdWithRoleAndHouse } = require("../../model/employee/get.model");
 const { getAbsenceById } = require("../../model/absence/get.model");
 const { softDeleteAbsenceById } = require("../../model/absence/delete.model");
-const { absenceDeleteInputSchema } = require("../../schemas/absence/delete.schemas");
+const {
+    absenceDeleteInputSchema,
+} = require("../../schemas/absence/delete.schemas");
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
 const RESPONSES = require("../../utils/responses");
 
@@ -48,10 +50,7 @@ exports.deleteAbsence = async ({ actorEmployeeId, absenceId }) => {
 
     const absenceHouseId = currentAbsence.employee.house_id;
 
-    if (
-        actorRoleName === "Coordinador" &&
-        absenceHouseId !== actorHouseId
-    ) {
+    if (actorRoleName === "Coordinador" && absenceHouseId !== actorHouseId) {
         return {
             code: RESPONSES.ABSENCE.OUT_OF_SCOPE,
         };

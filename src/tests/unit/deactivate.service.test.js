@@ -32,7 +32,9 @@ describe("deactivate.service — deactivateEmployee", () => {
 
     describe("Flujo alternativo — auto-baja", () => {
         it("retorna CANNOT_DEACTIVATE_SELF si actorId es igual a employeeId", async () => {
-            const req = buildReq({ user: { id: "uuid-empleado-001", houseId: "uuid-house-001" } });
+            const req = buildReq({
+                user: { id: "uuid-empleado-001", houseId: "uuid-house-001" },
+            });
             const result = await deactivateEmployee(req);
             expect(result.code).toBe(RESPONSES.EMPLOYEE.CANNOT_DEACTIVATE_SELF);
         });
@@ -78,20 +80,32 @@ describe("deactivate.service — deactivateEmployee", () => {
                 ...MOCK_EMPLOYEE,
                 isBlacklisted: true,
             });
-            const result = await deactivateEmployee(buildReq({ body: { reason: "test", addToBlacklist: true } }));
+            const result = await deactivateEmployee(
+                buildReq({ body: { reason: "test", addToBlacklist: true } }),
+            );
             expect(result.code).toBe(RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED);
         });
     });
 
     describe("Flujo exitoso — añadir a lista negra a empleado ya inactivo", () => {
         it("retorna DEACTIVATED y procesa correctamente si isActive es false pero addToBlacklist es true", async () => {
-            deactivateModel.getEmployeeToDeactivate.mockResolvedValue({ ...MOCK_EMPLOYEE, isActive: false });
+            deactivateModel.getEmployeeToDeactivate.mockResolvedValue({
+                ...MOCK_EMPLOYEE,
+                isActive: false,
+            });
             deactivateModel.deactivateEmployee.mockResolvedValue(undefined);
             createLog.mockResolvedValue(undefined);
-            
-            const result = await deactivateEmployee(buildReq({ body: { reason: "test", addToBlacklist: true } }));
+
+            const result = await deactivateEmployee(
+                buildReq({ body: { reason: "test", addToBlacklist: true } }),
+            );
             expect(result.code).toBe(RESPONSES.EMPLOYEE.DEACTIVATED);
-            expect(deactivateModel.deactivateEmployee).toHaveBeenCalledWith("uuid-empleado-001", "test", "RAMC900101HDFRZN01", false);
+            expect(deactivateModel.deactivateEmployee).toHaveBeenCalledWith(
+                "uuid-empleado-001",
+                "test",
+                "RAMC900101HDFRZN01",
+                false,
+            );
         });
     });
 
@@ -111,13 +125,15 @@ describe("deactivate.service — deactivateEmployee", () => {
         });
 
         it("llama a deactivateEmployee del model con el employeeId y razón correctos", async () => {
-            const req = buildReq({ body: { reason: "Renuncia voluntaria", addToBlacklist: true } });
+            const req = buildReq({
+                body: { reason: "Renuncia voluntaria", addToBlacklist: true },
+            });
             await deactivateEmployee(req);
             expect(deactivateModel.deactivateEmployee).toHaveBeenCalledWith(
                 "uuid-empleado-001",
                 "Renuncia voluntaria",
                 "RAMC900101HDFRZN01",
-                true
+                true,
             );
         });
 

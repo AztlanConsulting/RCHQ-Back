@@ -28,7 +28,8 @@ exports.approveVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,
-                message: "No tienes permisos para aprobar solicitudes de vacaciones",
+                message:
+                    "No tienes permisos para aprobar solicitudes de vacaciones",
             });
         }
 
@@ -63,7 +64,8 @@ exports.approveVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.OUT_OF_RANGE) {
             return res.status(406).json({
                 success: false,
-                message: "No se pueden aprobar vacaciones fuera del periodo actual de trabajo",
+                message:
+                    "No se pueden aprobar vacaciones fuera del periodo actual de trabajo",
             });
         }
 
@@ -77,7 +79,8 @@ exports.approveVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.NULL_DATES) {
             return res.status(406).json({
                 success: false,
-                message: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
+                message:
+                    "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
             });
         }
 
@@ -155,7 +158,8 @@ exports.rejectVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,
-                message: "No tienes permisos para rechazar solicitudes de vacaciones",
+                message:
+                    "No tienes permisos para rechazar solicitudes de vacaciones",
             });
         }
 
@@ -276,7 +280,8 @@ exports.updateVacationRequestDates = async (req, res) => {
         if (result.code === RESPONSES.VACATION.OUT_OF_RANGE) {
             return res.status(406).json({
                 success: false,
-                message: "No se pueden modificar vacaciones fuera del periodo actual de trabajo",
+                message:
+                    "No se pueden modificar vacaciones fuera del periodo actual de trabajo",
             });
         }
 
@@ -290,14 +295,16 @@ exports.updateVacationRequestDates = async (req, res) => {
         if (result.code === RESPONSES.VACATION.NULL_DATES) {
             return res.status(406).json({
                 success: false,
-                message: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
+                message:
+                    "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
             });
         }
 
         if (result.code === RESPONSES.VACATION.ALREADY_REQUEST) {
             return res.status(406).json({
                 success: false,
-                message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
+                message:
+                    "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
             });
         }
 
@@ -311,7 +318,8 @@ exports.updateVacationRequestDates = async (req, res) => {
         if (result.code === RESPONSES.DATES.BAD_DATES) {
             return res.status(406).json({
                 success: false,
-                message: "No se puede tener una fecha de inicio posterior a la de finalización",
+                message:
+                    "No se puede tener una fecha de inicio posterior a la de finalización",
             });
         }
 

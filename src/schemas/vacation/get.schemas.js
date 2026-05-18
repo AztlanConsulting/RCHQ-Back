@@ -11,14 +11,8 @@ const optionalDateSchema = z
     .optional();
 
 const paginationSchema = {
-    page: z
-        .string()
-        .regex(/^\d+$/, "La página debe ser numérica")
-        .optional(),
-    limit: z
-        .string()
-        .regex(/^\d+$/, "El límite debe ser numérico")
-        .optional(),
+    page: z.string().regex(/^\d+$/, "La página debe ser numérica").optional(),
+    limit: z.string().regex(/^\d+$/, "El límite debe ser numérico").optional(),
 };
 
 const searchSchema = z
@@ -31,9 +25,7 @@ const searchSchema = z
     )
     .optional();
 
-const reviewedStatusSchema = z
-    .enum(["approved", "rejected", "all"])
-    .optional();
+const reviewedStatusSchema = z.enum(["approved", "rejected", "all"]).optional();
 
 exports.getPendingVacationRequestsSchema = z.object({
     params: z.object({}).strict().optional(),
@@ -51,7 +43,8 @@ exports.getPendingVacationRequestsSchema = z.object({
                 return data.startDate <= data.endDate;
             },
             {
-                message: "La fecha de inicio no puede ser posterior a la fecha de fin",
+                message:
+                    "La fecha de inicio no puede ser posterior a la fecha de fin",
                 path: ["startDate"],
             },
         ),
@@ -75,7 +68,8 @@ exports.getReviewedVacationRequestsSchema = z.object({
                 return data.startDate <= data.endDate;
             },
             {
-                message: "La fecha de inicio no puede ser posterior a la fecha de fin",
+                message:
+                    "La fecha de inicio no puede ser posterior a la fecha de fin",
                 path: ["startDate"],
             },
         ),
@@ -104,7 +98,7 @@ exports.getVacationRequestsInputSchema = z
                     message:
                         "La fecha de inicio no puede ser posterior a la fecha de fin",
                     path: ["startDate"],
-                }
+                },
             ),
     })
     .strict();

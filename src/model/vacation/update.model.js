@@ -140,7 +140,7 @@ exports.approveVacationRequestAtomically = async ({
 
         const activeUsedDays = activeVacationsInCurrentYear.reduce(
             (total, vacation) => total + vacation.used_days,
-            0
+            0,
         );
 
         if (activeUsedDays + usedDays > maxDays) {
@@ -387,7 +387,7 @@ exports.updateVacationRequestDatesAtomically = async ({
 
         const activeUsedDays = activeVacationsInCurrentYear.reduce(
             (total, vacation) => total + vacation.used_days,
-            0
+            0,
         );
 
         if (activeUsedDays + usedDays > maxDays) {

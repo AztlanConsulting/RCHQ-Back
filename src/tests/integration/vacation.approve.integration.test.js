@@ -33,11 +33,9 @@ const WORKDAY_IDS = {
 function getTodayUTC() {
     const now = new Date();
 
-    return new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate()
-    ));
+    return new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 }
 
 function addDays(date, days) {
@@ -66,11 +64,9 @@ function toDbDate(dateString) {
 
 const TODAY_UTC = getTodayUTC();
 
-const EMPLOYEE_START_DATE = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() - 1,
-    TODAY_UTC.getUTCMonth(),
-    1
-));
+const EMPLOYEE_START_DATE = new Date(
+    Date.UTC(TODAY_UTC.getUTCFullYear() - 1, TODAY_UTC.getUTCMonth(), 1),
+);
 
 const BASE_FUTURE_DATE = addDays(TODAY_UTC, 14);
 
@@ -88,11 +84,9 @@ const THIRD_SUCCESS_FRIDAY = addDays(THIRD_SUCCESS_MONDAY, 4);
 const WEEKEND_SATURDAY = nextWeekdayDate(BASE_FUTURE_DATE, 6);
 const WEEKEND_SUNDAY = addDays(WEEKEND_SATURDAY, 1);
 
-const OUTSIDE_WORK_YEAR_START = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() + 2,
-    TODAY_UTC.getUTCMonth(),
-    1
-));
+const OUTSIDE_WORK_YEAR_START = new Date(
+    Date.UTC(TODAY_UTC.getUTCFullYear() + 2, TODAY_UTC.getUTCMonth(), 1),
+);
 
 const OUTSIDE_WORK_YEAR_END = addDays(OUTSIDE_WORK_YEAR_START, 1);
 
@@ -108,7 +102,7 @@ function generateSessionToken(employee) {
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
     );
 }
 
@@ -225,10 +219,13 @@ async function seedBaseData() {
     for (const workday of existingWorkdays) {
         if (workday.name === "Lunes") WORKDAY_IDS.monday = workday.workday_id;
         if (workday.name === "Martes") WORKDAY_IDS.tuesday = workday.workday_id;
-        if (workday.name === "Miércoles") WORKDAY_IDS.wednesday = workday.workday_id;
-        if (workday.name === "Jueves") WORKDAY_IDS.thursday = workday.workday_id;
+        if (workday.name === "Miércoles")
+            WORKDAY_IDS.wednesday = workday.workday_id;
+        if (workday.name === "Jueves")
+            WORKDAY_IDS.thursday = workday.workday_id;
         if (workday.name === "Viernes") WORKDAY_IDS.friday = workday.workday_id;
-        if (workday.name === "Sábado") WORKDAY_IDS.saturday = workday.workday_id;
+        if (workday.name === "Sábado")
+            WORKDAY_IDS.saturday = workday.workday_id;
         if (workday.name === "Domingo") WORKDAY_IDS.sunday = workday.workday_id;
     }
 
@@ -493,7 +490,6 @@ afterAll(async () => {
 });
 
 describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
-
     test("coordinador aprueba solicitud de empleado de su misma casa", async () => {
         const vacation = await createPendingVacation({
             startDate: formatDate(SECOND_SUCCESS_MONDAY),
@@ -678,7 +674,9 @@ describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/request/${pendingVacation.vacations_request_id}/approve`)
+            .patch(
+                `/vacation/request/${pendingVacation.vacations_request_id}/approve`,
+            )
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -713,7 +711,9 @@ describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
         });
 
         const res = await request(app)
-            .patch(`/vacation/request/${pendingVacation.vacations_request_id}/approve`)
+            .patch(
+                `/vacation/request/${pendingVacation.vacations_request_id}/approve`,
+            )
             .set("Authorization", `Bearer ${getCoordinatorToken()}`)
             .send({});
 
@@ -786,11 +786,15 @@ describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
 
         const responses = await Promise.allSettled([
             request(app)
-                .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
+                .patch(
+                    `/vacation/request/${vacation.vacations_request_id}/approve`,
+                )
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
             request(app)
-                .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
+                .patch(
+                    `/vacation/request/${vacation.vacations_request_id}/approve`,
+                )
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
         ]);
@@ -835,11 +839,15 @@ describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
 
         const responses = await Promise.allSettled([
             request(app)
-                .patch(`/vacation/request/${vacationA.vacations_request_id}/approve`)
+                .patch(
+                    `/vacation/request/${vacationA.vacations_request_id}/approve`,
+                )
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
             request(app)
-                .patch(`/vacation/request/${vacationB.vacations_request_id}/approve`)
+                .patch(
+                    `/vacation/request/${vacationB.vacations_request_id}/approve`,
+                )
                 .set("Authorization", `Bearer ${getCoordinatorToken()}`)
                 .send({}),
         ]);

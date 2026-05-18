@@ -288,7 +288,9 @@ describe("Calendar filter option routes", () => {
             expect(res.body.success).toBe(true);
             expect(Array.isArray(res.body.data.employees)).toBe(true);
 
-            const employeeIds = res.body.data.employees.map((employee) => employee.employeeId);
+            const employeeIds = res.body.data.employees.map(
+                (employee) => employee.employeeId,
+            );
 
             expect(employeeIds).toContain(IDS.coordinator);
             expect(employeeIds).toContain(IDS.houseEmployeeA);

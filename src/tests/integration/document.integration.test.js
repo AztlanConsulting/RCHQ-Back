@@ -4,17 +4,17 @@ const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
 const jwt = require("jsonwebtoken");
-const {deleteFileIfExists} = require("../../utils/deleteFile")
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 const fs = require("fs");
 const path = require("path");
 
 const clearUploadsFolder = () => {
-    const uploadsPath = path.resolve(process.cwd(),"uploads/documents");
+    const uploadsPath = path.resolve(process.cwd(), "uploads/documents");
 
-    if(fs.existsSync(uploadsPath)) {
+    if (fs.existsSync(uploadsPath)) {
         const files = fs.readdirSync(uploadsPath);
         for (const file of files) {
-            if(file.toLowerCase().endsWith(".pdf")) {
+            if (file.toLowerCase().endsWith(".pdf")) {
                 fs.unlinkSync(path.join(uploadsPath, file));
             }
         }
@@ -24,11 +24,11 @@ const clearUploadsFolder = () => {
 const prisma = new PrismaClient();
 
 const IDS = {
-    house:    randomUUID(),
-    role:     randomUUID(),
+    house: randomUUID(),
+    role: randomUUID(),
     employee: randomUUID(),
     stranger: randomUUID(),
-    doc:      randomUUID(),
+    doc: randomUUID(),
 };
 
 const PDF = Buffer.from("%PDF-1.4 dummy");
@@ -53,78 +53,103 @@ const seed = async () => {
         where: { house_id: IDS.house },
         update: {},
         create: {
-            house_id:     IDS.house,
-            name:         `DocTest House ${IDS.house}`,
-            location:     "Loc",
+            house_id: IDS.house,
+            name: `DocTest House ${IDS.house}`,
+            location: "Loc",
             phone_number: "4421234567",
-            description:  "test",
-            image:        "img.jpg",
+            description: "test",
+            image: "img.jpg",
         },
     });
 
-    const existingRole = await prisma.role.findFirst({ where: { name: "administrador_doc_test" } });
+    const existingRole = await prisma.role.findFirst({
+        where: { name: "administrador_doc_test" },
+    });
     if (existingRole) {
         IDS.role = existingRole.role_id;
     } else {
-        await prisma.role.create({ data: { role_id: IDS.role, name: "administrador_doc_test" } });
+        await prisma.role.create({
+            data: { role_id: IDS.role, name: "administrador_doc_test" },
+        });
     }
 
     const empBase = {
-        house_id:        IDS.house,
-        role_id:         IDS.role,
-        password:        "hashed",
-        name:            "Test",
-        surname:         "User",
-        start_date:      new Date(),
-        is_active:       true,
+        house_id: IDS.house,
+        role_id: IDS.role,
+        password: "hashed",
+        name: "Test",
+        surname: "User",
+        start_date: new Date(),
+        is_active: true,
         has_first_login: true,
-        type:            "nomina",
+        type: "nomina",
     };
 
     for (const { email, id } of [
-        { email: "docmain@test.com",    id: IDS.employee },
+        { email: "docmain@test.com", id: IDS.employee },
         { email: "docstranger@test.com", id: IDS.stranger },
     ]) {
         const old = await prisma.employee.findFirst({ where: { email } });
         if (old && old.employee_id !== id) {
-            await prisma.logs.deleteMany({ where: { employee_id: old.employee_id } });
-            await prisma.employee_documents.deleteMany({ where: { employee_id: old.employee_id } });
-            await prisma.employee.delete({ where: { employee_id: old.employee_id } });
+            await prisma.logs.deleteMany({
+                where: { employee_id: old.employee_id },
+            });
+            await prisma.employee_documents.deleteMany({
+                where: { employee_id: old.employee_id },
+            });
+            await prisma.employee.delete({
+                where: { employee_id: old.employee_id },
+            });
         }
     }
 
     await prisma.employee.upsert({
-        where:  { employee_id: IDS.employee },
+        where: { employee_id: IDS.employee },
         update: {},
-        create: { employee_id: IDS.employee, email: "docmain@test.com", curp: "DOCM000000000001AB", ...empBase },
+        create: {
+            employee_id: IDS.employee,
+            email: "docmain@test.com",
+            curp: "DOCM000000000001AB",
+            ...empBase,
+        },
     });
 
     await prisma.employee.upsert({
-        where:  { employee_id: IDS.stranger },
+        where: { employee_id: IDS.stranger },
         update: {},
-        create: { employee_id: IDS.stranger, email: "docstranger@test.com", curp: "DOCS000000000002AB", ...empBase },
+        create: {
+            employee_id: IDS.stranger,
+            email: "docstranger@test.com",
+            curp: "DOCS000000000002AB",
+            ...empBase,
+        },
     });
 
     await prisma.documents.upsert({
-        where:  { document_id: IDS.doc },
+        where: { document_id: IDS.doc },
         update: {},
         create: { document_id: IDS.doc, name: `doc_test_${IDS.doc}` },
     });
 };
 
 const clean = async () => {
-
-    const docsToClean = await prisma.employee_documents.findMany({ 
-        where: { employee_id: { in: [IDS.employee, IDS.stranger] } } 
+    const docsToClean = await prisma.employee_documents.findMany({
+        where: { employee_id: { in: [IDS.employee, IDS.stranger] } },
     });
 
     for (const doc of docsToClean) {
         if (doc.url) deleteFileIfExists(doc.url);
     }
 
-    await prisma.employee_documents.deleteMany({ where: { employee_id: { in: [IDS.employee, IDS.stranger] } } });
-    await prisma.logs.deleteMany({ where: { employee_id: { in: [IDS.employee, IDS.stranger] } } });
-    await prisma.employee.deleteMany({ where: { employee_id: { in: [IDS.employee, IDS.stranger] } } });
+    await prisma.employee_documents.deleteMany({
+        where: { employee_id: { in: [IDS.employee, IDS.stranger] } },
+    });
+    await prisma.logs.deleteMany({
+        where: { employee_id: { in: [IDS.employee, IDS.stranger] } },
+    });
+    await prisma.employee.deleteMany({
+        where: { employee_id: { in: [IDS.employee, IDS.stranger] } },
+    });
     await prisma.documents.deleteMany({ where: { document_id: IDS.doc } });
     await prisma.role.deleteMany({ where: { role_id: IDS.role } });
     await prisma.house.deleteMany({ where: { house_id: IDS.house } });
@@ -132,25 +157,27 @@ const clean = async () => {
 
 beforeAll(async () => {
     clearUploadsFolder();
-     await clean(); 
-     await seed(); 
-    });
+    await clean();
+    await seed();
+});
 
-afterAll(async () => { 
+afterAll(async () => {
     clearUploadsFolder();
-    await clean(); 
-    await prisma.$disconnect(); });
+    await clean();
+    await prisma.$disconnect();
+});
 afterEach(async () => {
-
-    const docs = await prisma.employee_documents.findMany({ 
-        where: { employee_id: IDS.employee } 
+    const docs = await prisma.employee_documents.findMany({
+        where: { employee_id: IDS.employee },
     });
-    
+
     for (const doc of docs) {
         if (doc.url) deleteFileIfExists(doc.url);
     }
     clearUploadsFolder();
-    await prisma.employee_documents.deleteMany({ where: { employee_id: IDS.employee } });
+    await prisma.employee_documents.deleteMany({
+        where: { employee_id: IDS.employee },
+    });
 });
 
 // ─── Helper ───────────────────────────────────────────────
@@ -166,7 +193,9 @@ const upload = (employeeId, docId, token) =>
 // ═══════════════════════════════════════════════════════════
 describe("Autenticación y autorización", () => {
     it("401 — sin token", async () => {
-        const res = await request(app).get(`/employee/${IDS.employee}/documents`);
+        const res = await request(app).get(
+            `/employee/${IDS.employee}/documents`,
+        );
         expect(res.statusCode).toBe(401);
     });
 
@@ -211,7 +240,9 @@ describe("Autenticación y autorización", () => {
 // ═══════════════════════════════════════════════════════════
 describe("POST /:id/documents", () => {
     let token;
-    beforeAll(() => { token = sign(); });
+    beforeAll(() => {
+        token = sign();
+    });
 
     it("400 — sin archivo (solo field)", async () => {
         const res = await request(app)
@@ -236,7 +267,9 @@ describe("POST /:id/documents", () => {
         const res = await upload(IDS.employee, IDS.doc, token);
         expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
-        const row = await prisma.employee_documents.findFirst({ where: { employee_id: IDS.employee } });
+        const row = await prisma.employee_documents.findFirst({
+            where: { employee_id: IDS.employee },
+        });
         expect(row).not.toBeNull();
         expect(row.url).toMatch(/uploads\/documents\//);
     });
@@ -268,8 +301,12 @@ describe("POST /:id/documents", () => {
 // ═══════════════════════════════════════════════════════════
 describe("PUT /:id/documents/:field", () => {
     let token;
-    beforeAll(() => { token = sign(); });
-    beforeEach(async () => { await upload(IDS.employee, IDS.doc, token); });
+    beforeAll(() => {
+        token = sign();
+    });
+    beforeEach(async () => {
+        await upload(IDS.employee, IDS.doc, token);
+    });
 
     it("200 — actualiza el documento existente", async () => {
         const res = await request(app)
@@ -304,7 +341,9 @@ describe("PUT /:id/documents/:field", () => {
     });
 
     it("404 — documento no subido previamente", async () => {
-        await prisma.employee_documents.deleteMany({ where: { employee_id: IDS.employee } });
+        await prisma.employee_documents.deleteMany({
+            where: { employee_id: IDS.employee },
+        });
         const res = await request(app)
             .put(`/employee/${IDS.employee}/documents/${IDS.doc}`)
             .set("Authorization", `Bearer ${token}`)
@@ -318,8 +357,12 @@ describe("PUT /:id/documents/:field", () => {
 // ═══════════════════════════════════════════════════════════
 describe("DELETE /:id/documents/:field", () => {
     let token;
-    beforeAll(() => { token = sign(); });
-    beforeEach(async () => { await upload(IDS.employee, IDS.doc, token); });
+    beforeAll(() => {
+        token = sign();
+    });
+    beforeEach(async () => {
+        await upload(IDS.employee, IDS.doc, token);
+    });
 
     it("200 — elimina y desaparece de BD", async () => {
         const res = await request(app)
@@ -327,7 +370,9 @@ describe("DELETE /:id/documents/:field", () => {
             .set("Authorization", `Bearer ${token}`);
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
-        const row = await prisma.employee_documents.findFirst({ where: { employee_id: IDS.employee } });
+        const row = await prisma.employee_documents.findFirst({
+            where: { employee_id: IDS.employee },
+        });
         expect(row).toBeNull();
     });
 
@@ -362,7 +407,9 @@ describe("DELETE /:id/documents/:field", () => {
 // ═══════════════════════════════════════════════════════════
 describe("GET /:id/documents", () => {
     let token;
-    beforeAll(() => { token = sign(); });
+    beforeAll(() => {
+        token = sign();
+    });
 
     it("200 — retorna documentos del empleado", async () => {
         await upload(IDS.employee, IDS.doc, token);

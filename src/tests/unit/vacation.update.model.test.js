@@ -77,7 +77,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         const transaction = buildTransaction();
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -106,7 +106,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -128,7 +128,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -145,7 +145,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -167,7 +167,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -187,7 +187,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -207,7 +207,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -227,7 +227,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -239,7 +239,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         const transaction = buildTransaction();
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically({
@@ -262,7 +262,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -283,7 +283,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         const result = await updateVacationRequestDatesAtomically(params);
@@ -298,7 +298,7 @@ describe("updateVacationRequestDatesAtomically model", () => {
         const transaction = buildTransaction();
 
         prisma.$transaction.mockImplementation(async (callback) =>
-            callback(transaction)
+            callback(transaction),
         );
 
         await updateVacationRequestDatesAtomically(params);

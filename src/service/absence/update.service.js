@@ -3,9 +3,7 @@ const {
     getAbsenceById,
     getAbsenceTypeById,
 } = require("../../model/absence/get.model");
-const {
-    updateAbsenceById,
-} = require("../../model/absence/update.model");
+const { updateAbsenceById } = require("../../model/absence/update.model");
 const {
     absenceUpdateInputSchema,
 } = require("../../schemas/absence/update.schemas");
@@ -14,12 +12,7 @@ const RESPONSES = require("../../utils/responses");
 const { stringToDate } = require("../../utils/dates");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 
-exports.updateAbsence = async ({
-    actorEmployeeId,
-    absenceId,
-    body,
-    file,
-}) => {
+exports.updateAbsence = async ({ actorEmployeeId, absenceId, body, file }) => {
     const validation = absenceUpdateInputSchema.safeParse({
         actorEmployeeId,
         absenceId,
@@ -75,7 +68,9 @@ exports.updateAbsence = async ({
     }
 
     if (validation.data.body.absenceTypeId) {
-        const absenceType = await getAbsenceTypeById(validation.data.body.absenceTypeId);
+        const absenceType = await getAbsenceTypeById(
+            validation.data.body.absenceTypeId,
+        );
 
         if (!absenceType) {
             deleteFileIfExists(file?.path);

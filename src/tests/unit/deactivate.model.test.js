@@ -120,32 +120,53 @@ describe("deactivate.model", () => {
                 prisma.employee.update.mockReturnValue("update_action");
                 prisma.$transaction.mockResolvedValue(undefined);
                 await deactivateEmployee(EMPLOYEE_ID, "Motivo de prueba");
-                
-                expect(prisma.$transaction).toHaveBeenCalledWith(["update_action"]);
-                expect(prisma.employee.update).toHaveBeenCalledWith(expect.objectContaining({
-                    where: { employee_id: EMPLOYEE_ID },
-                }));
+
+                expect(prisma.$transaction).toHaveBeenCalledWith([
+                    "update_action",
+                ]);
+                expect(prisma.employee.update).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        where: { employee_id: EMPLOYEE_ID },
+                    }),
+                );
             });
 
             it("ejecuta blacklist.upsert si curpToBlacklist es provisto", async () => {
                 prisma.employee.update.mockReturnValue("update_action");
                 prisma.blacklist.upsert.mockReturnValue("upsert_action");
                 prisma.$transaction.mockResolvedValue(undefined);
-                
-                await deactivateEmployee(EMPLOYEE_ID, "Motivo", "RAMC900101HDFRZN01", true);
-                
-                expect(prisma.$transaction).toHaveBeenCalledWith(["update_action", "upsert_action"]);
-                expect(prisma.blacklist.upsert).toHaveBeenCalledWith(expect.objectContaining({
-                    where: { curp: "RAMC900101HDFRZN01" }
-                }));
+
+                await deactivateEmployee(
+                    EMPLOYEE_ID,
+                    "Motivo",
+                    "RAMC900101HDFRZN01",
+                    true,
+                );
+
+                expect(prisma.$transaction).toHaveBeenCalledWith([
+                    "update_action",
+                    "upsert_action",
+                ]);
+                expect(prisma.blacklist.upsert).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        where: { curp: "RAMC900101HDFRZN01" },
+                    }),
+                );
             });
 
             it("no añade employee.update si wasActive es false", async () => {
                 prisma.blacklist.upsert.mockReturnValue("upsert_action");
                 prisma.$transaction.mockResolvedValue(undefined);
-                await deactivateEmployee(EMPLOYEE_ID, "Motivo", "RAMC900101HDFRZN01", false);
+                await deactivateEmployee(
+                    EMPLOYEE_ID,
+                    "Motivo",
+                    "RAMC900101HDFRZN01",
+                    false,
+                );
                 expect(prisma.employee.update).not.toHaveBeenCalled();
-                expect(prisma.$transaction).toHaveBeenCalledWith(["upsert_action"]);
+                expect(prisma.$transaction).toHaveBeenCalledWith([
+                    "upsert_action",
+                ]);
             });
 
             it("no retorna valor (void)", async () => {

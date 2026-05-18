@@ -10,8 +10,8 @@ exports.findEmployeeByCurp = async (curp) => {
                 curp: true,
                 is_active: true,
                 blacklist: {
-                    select: { blacklist_id: true }
-                }
+                    select: { blacklist_id: true },
+                },
             },
         });
 

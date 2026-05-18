@@ -6,10 +6,7 @@ const {
     getLogActions,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
-const {
-    getHouseById,
-    getHousesByIds,
-} = require("../../model/house/get.model");
+const { getHouseById, getHousesByIds } = require("../../model/house/get.model");
 const { getEventsByIds } = require("../../model/event/get.model");
 const RESPONSES = require("../../utils/responses");
 const { logsPaginationSchema } = require("../../schemas/logs/get.schemas");
@@ -24,13 +21,10 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const normalizeDate = (value) => String(value || "").trim();
 
-const isValidDate = (value) => (
-    !value
-    || (
-        DATE_PATTERN.test(value)
-        && !Number.isNaN(new Date(`${value}T00:00:00.000Z`).getTime())
-    )
-);
+const isValidDate = (value) =>
+    !value ||
+    (DATE_PATTERN.test(value) &&
+        !Number.isNaN(new Date(`${value}T00:00:00.000Z`).getTime()));
 
 const buildLogsWhereClause = async (
     houseId,
@@ -63,18 +57,27 @@ const buildLogsWhereClause = async (
     }
 
     if (search) {
-        const matchedEmployeeIds = await getEmployeeIdsBySearch(houseId, search);
+        const matchedEmployeeIds = await getEmployeeIdsBySearch(
+            houseId,
+            search,
+        );
 
         andConditions.push({
             OR: [
                 {
                     employee_id: {
-                        in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
+                        in:
+                            matchedEmployeeIds.length > 0
+                                ? matchedEmployeeIds
+                                : ["00000000-0000-0000-0000-000000000000"],
                     },
                 },
                 {
                     affected: {
-                        in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
+                        in:
+                            matchedEmployeeIds.length > 0
+                                ? matchedEmployeeIds
+                                : ["00000000-0000-0000-0000-000000000000"],
                     },
                 },
                 {
@@ -95,9 +98,10 @@ const buildLogsWhereClause = async (
 
         andConditions.push({
             employee_id: {
-                in: matchedResponsibleIds.length > 0
-                    ? matchedResponsibleIds
-                    : ["00000000-0000-0000-0000-000000000000"],
+                in:
+                    matchedResponsibleIds.length > 0
+                        ? matchedResponsibleIds
+                        : ["00000000-0000-0000-0000-000000000000"],
             },
         });
     }
@@ -112,9 +116,10 @@ const buildLogsWhereClause = async (
             OR: [
                 {
                     affected: {
-                        in: matchedAffectedIds.length > 0
-                            ? matchedAffectedIds
-                            : ["00000000-0000-0000-0000-000000000000"],
+                        in:
+                            matchedAffectedIds.length > 0
+                                ? matchedAffectedIds
+                                : ["00000000-0000-0000-0000-000000000000"],
                     },
                 },
                 {
@@ -182,10 +187,7 @@ exports.getLogsByHouse = async (
         };
     }
 
-    const {
-        page: parsedPage,
-        limit: parsedLimit,
-    } = parsedPagination.data;
+    const { page: parsedPage, limit: parsedLimit } = parsedPagination.data;
     const actionIds = normalizeActionIds(rawActionIds);
     const search = normalizeSearch(rawSearch);
     const responsible = normalizeSearch(rawResponsible);
@@ -194,9 +196,9 @@ exports.getLogsByHouse = async (
     const endDate = normalizeDate(rawEndDate);
 
     if (
-        !isValidDate(startDate)
-        || !isValidDate(endDate)
-        || (startDate && endDate && startDate > endDate)
+        !isValidDate(startDate) ||
+        !isValidDate(endDate) ||
+        (startDate && endDate && startDate > endDate)
     ) {
         return {
             code: RESPONSES.LOGS.INVALID_PAGINATION,
@@ -219,11 +221,12 @@ exports.getLogsByHouse = async (
         parsedLimit,
     );
     const affectedIds = extractAffectedIds(logs);
-    const [affectedEmployees, affectedHouses, affectedEvents] = await Promise.all([
-        getAffectedEmployeesByIds(affectedIds),
-        getHousesByIds(affectedIds),
-        getEventsByIds(affectedIds),
-    ]);
+    const [affectedEmployees, affectedHouses, affectedEvents] =
+        await Promise.all([
+            getAffectedEmployeesByIds(affectedIds),
+            getHousesByIds(affectedIds),
+            getEventsByIds(affectedIds),
+        ]);
     const affectedEntityMap = buildAffectedEntityMap(
         affectedEmployees,
         affectedHouses,
@@ -267,11 +270,12 @@ exports.getLogsPdfByHouse = async (houseId) => {
         getHouseById(houseId),
     ]);
     const affectedIds = extractAffectedIds(logs);
-    const [affectedEmployees, affectedHouses, affectedEvents] = await Promise.all([
-        getAffectedEmployeesByIds(affectedIds),
-        getHousesByIds(affectedIds),
-        getEventsByIds(affectedIds),
-    ]);
+    const [affectedEmployees, affectedHouses, affectedEvents] =
+        await Promise.all([
+            getAffectedEmployeesByIds(affectedIds),
+            getHousesByIds(affectedIds),
+            getEventsByIds(affectedIds),
+        ]);
     const affectedEntityMap = buildAffectedEntityMap(
         affectedEmployees,
         affectedHouses,

@@ -85,7 +85,8 @@ const removeLocalAbsenceFiles = async () => {
     });
 
     for (const absence of absences) {
-        if (!absence.url || !absence.url.startsWith("uploads/documents/")) continue;
+        if (!absence.url || !absence.url.startsWith("uploads/documents/"))
+            continue;
         const fullPath = path.resolve(process.cwd(), absence.url);
         if (fs.existsSync(fullPath)) {
             fs.unlinkSync(fullPath);
@@ -319,7 +320,12 @@ const cleanup = async () => {
     await prisma.logs.deleteMany({
         where: {
             employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+                in: [
+                    IDS.coordinatorA,
+                    IDS.adminA,
+                    IDS.employeeA,
+                    IDS.employeeB,
+                ],
             },
         },
     });
@@ -327,7 +333,12 @@ const cleanup = async () => {
     await prisma.employee.deleteMany({
         where: {
             employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+                in: [
+                    IDS.coordinatorA,
+                    IDS.adminA,
+                    IDS.employeeA,
+                    IDS.employeeB,
+                ],
             },
         },
     });
@@ -434,7 +445,9 @@ describe("PUT /absence/:absenceId", () => {
             });
 
         expect(res.statusCode).toBe(406);
-        expect(res.body.message).toBe("La fecha de fin no puede ser menor a la fecha de inicio");
+        expect(res.body.message).toBe(
+            "La fecha de fin no puede ser menor a la fecha de inicio",
+        );
     });
 
     it("400 si el tipo de ausencia no existe", async () => {
@@ -478,19 +491,24 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
         expect(absenceInDb.description).toBe("Descripción editada");
-        expect(absenceInDb.start.toISOString()).toBe("2026-05-06T00:00:00.000Z");
+        expect(absenceInDb.start.toISOString()).toBe(
+            "2026-05-06T00:00:00.000Z",
+        );
         expect(absenceInDb.end.toISOString()).toBe("2026-05-10T00:00:00.000Z");
     });
 
     it("200 y un admin puede editar una ausencia de otra casa", async () => {
         const res = await request(app)
             .put(`/absence/${IDS.absenceB}`)
-            .set("Authorization", `Bearer ${sign({
-                id: IDS.adminA,
-                email: "admin.absence@test.com",
-                role: "Administrador",
-                privileges: ["editAbsences"],
-            })}`)
+            .set(
+                "Authorization",
+                `Bearer ${sign({
+                    id: IDS.adminA,
+                    email: "admin.absence@test.com",
+                    role: "Administrador",
+                    privileges: ["editAbsences"],
+                })}`,
+            )
             .send({
                 description: "Editada por admin",
             });
@@ -504,8 +522,12 @@ describe("PUT /absence/:absenceId", () => {
     });
 
     it("200 y permite actualizar solo la evidencia con multipart", async () => {
-        const oldFileRelativePath = "uploads/documents/absence-old-evidence.pdf";
-        const oldFileAbsolutePath = path.resolve(process.cwd(), oldFileRelativePath);
+        const oldFileRelativePath =
+            "uploads/documents/absence-old-evidence.pdf";
+        const oldFileAbsolutePath = path.resolve(
+            process.cwd(),
+            oldFileRelativePath,
+        );
         fs.writeFileSync(oldFileAbsolutePath, PDF);
 
         await prisma.absence.update({
@@ -520,7 +542,9 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.data.absence.link).toMatch(/^uploads\/documents\/.+\.pdf$/);
+        expect(res.body.data.absence.link).toMatch(
+            /^uploads\/documents\/.+\.pdf$/,
+        );
 
         const absenceInDb = await prisma.absence.findUnique({
             where: { absence_id: IDS.absenceA },
@@ -528,7 +552,9 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
         expect(absenceInDb.url).not.toBe(oldFileRelativePath);
-        expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
+        expect(
+            fs.existsSync(path.resolve(process.cwd(), absenceInDb.url)),
+        ).toBe(true);
         expect(fs.existsSync(oldFileAbsolutePath)).toBe(false);
     });
 
@@ -550,7 +576,9 @@ describe("PUT /absence/:absenceId", () => {
             absenceTypeId: IDS.absenceTypeB,
             description: "Ausencia con evidencia nueva",
         });
-        expect(res.body.data.absence.link).toMatch(/^uploads\/documents\/.+\.pdf$/);
+        expect(res.body.data.absence.link).toMatch(
+            /^uploads\/documents\/.+\.pdf$/,
+        );
 
         const absenceInDb = await prisma.absence.findUnique({
             where: { absence_id: IDS.absenceA },
@@ -558,10 +586,14 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
         expect(absenceInDb.description).toBe("Ausencia con evidencia nueva");
-        expect(absenceInDb.start.toISOString()).toBe("2026-05-07T00:00:00.000Z");
+        expect(absenceInDb.start.toISOString()).toBe(
+            "2026-05-07T00:00:00.000Z",
+        );
         expect(absenceInDb.end.toISOString()).toBe("2026-05-11T00:00:00.000Z");
         expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
-        expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
+        expect(
+            fs.existsSync(path.resolve(process.cwd(), absenceInDb.url)),
+        ).toBe(true);
     });
 
     it("400 si intenta subir un archivo con tipo inválido", async () => {
@@ -571,7 +603,9 @@ describe("PUT /absence/:absenceId", () => {
             .attach("file", TXT, "absence.exe");
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.error).toBe("Solo se permiten archivos PDF, JPEG, JPG y PNG");
+        expect(res.body.error).toBe(
+            "Solo se permiten archivos PDF, JPEG, JPG y PNG",
+        );
 
         const absenceInDb = await prisma.absence.findUnique({
             where: { absence_id: IDS.absenceA },

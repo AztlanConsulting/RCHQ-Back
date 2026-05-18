@@ -10,9 +10,7 @@ const {
 const { getVacationDays } = require("../../utils/vacationDays");
 const RESPONSES = require("../../utils/responses");
 const { parsePagination, buildPagination } = require("../../utils/pagination");
-const {
-    buildVacationListWhere,
-} = require("../../utils/vacationFilters");
+const { buildVacationListWhere } = require("../../utils/vacationFilters");
 const {
     mapReviewedStatus,
     mapVacationRequestForList,
@@ -111,9 +109,7 @@ exports.getVacationYearInfoForApproval = async (employeeId) => {
         (currentMonth === baseMonth && currentDay >= baseDay) ||
         currentMonth > baseMonth;
 
-    const startYear = anniversaryAlreadyPassed
-        ? currentYear
-        : currentYear - 1;
+    const startYear = anniversaryAlreadyPassed ? currentYear : currentYear - 1;
 
     const endYear = startYear + 1;
 
@@ -194,12 +190,12 @@ exports.getPendingVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const searchFilters = search
         ? {
-            houseId: actorEmployee.house_id,
-            statusFilter: VACATION_STATUS.PENDING,
-            search,
-            startDate: query.startDate,
-            endDate: query.endDate,
-        }
+              houseId: actorEmployee.house_id,
+              statusFilter: VACATION_STATUS.PENDING,
+              search,
+              startDate: query.startDate,
+              endDate: query.endDate,
+          }
         : null;
 
     const { requests, total } = await getPendingVacationRequestsByHouse({
@@ -271,8 +267,8 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
     const statusFilter =
         mappedStatus === "all"
             ? {
-                in: [VACATION_STATUS.APPROVED, VACATION_STATUS.REJECTED],
-            }
+                  in: [VACATION_STATUS.APPROVED, VACATION_STATUS.REJECTED],
+              }
             : mappedStatus;
 
     const where = buildVacationListWhere({
@@ -285,12 +281,12 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const searchFilters = search
         ? {
-            houseId: actorEmployee.house_id,
-            statusFilter,
-            search,
-            startDate: query.startDate,
-            endDate: query.endDate,
-        }
+              houseId: actorEmployee.house_id,
+              statusFilter,
+              search,
+              startDate: query.startDate,
+              endDate: query.endDate,
+          }
         : null;
 
     const { requests, total } = await getReviewedVacationRequestsByHouse({

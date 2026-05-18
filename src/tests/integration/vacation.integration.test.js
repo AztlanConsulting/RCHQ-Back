@@ -100,7 +100,7 @@ const seed = async () => {
         create: {
             name: "Lunes",
             workday_id: IDS.workdayLunes,
-        }
+        },
     });
 
     await prisma.workday.upsert({
@@ -109,7 +109,7 @@ const seed = async () => {
         create: {
             name: "Martes",
             workday_id: IDS.workdayMartes,
-        }
+        },
     });
 
     await prisma.workday.upsert({
@@ -118,7 +118,7 @@ const seed = async () => {
         create: {
             name: "Miércoles",
             workday_id: IDS.workdayMiercoles,
-        }
+        },
     });
 
     await prisma.workday.upsert({
@@ -127,7 +127,7 @@ const seed = async () => {
         create: {
             name: "Jueves",
             workday_id: IDS.workdayJueves,
-        }
+        },
     });
 
     await prisma.workday.upsert({
@@ -136,9 +136,9 @@ const seed = async () => {
         create: {
             name: "Viernes",
             workday_id: IDS.workdayViernes,
-        }
+        },
     });
-    
+
     await prisma.house.upsert({
         where: { house_id: IDS.house },
         update: {},
@@ -256,9 +256,9 @@ const clean = async () => {
                     IDS.workdayMiercoles,
                     IDS.workdayJueves,
                     IDS.workdayViernes,
-                ]
-            }
-        }
+                ],
+            },
+        },
     });
     await prisma.employee.deleteMany({
         where: {

@@ -76,7 +76,11 @@ describe("Employee Service - createEmployee", () => {
     });
 
     it("debería crear empleado como admin", async () => {
-        const result = await createEmployee(baseEmployee, mockUserAdmin, mockReq);
+        const result = await createEmployee(
+            baseEmployee,
+            mockUserAdmin,
+            mockReq,
+        );
         expect(result.success).toBe(true);
         expect(result.employeeId).toBeDefined();
         expect(employee.create).toHaveBeenCalled();

@@ -3,10 +3,11 @@ const prisma = require("../../prisma");
 const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñç";
 const SEARCHABLE_REPLACEMENT_CHARS = "aeiouaeiouaeiouaeiounc";
 
-const normalizeSearchTerm = (value) => String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+const normalizeSearchTerm = (value) =>
+    String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
 
 const logInclude = {
     action: {
@@ -124,7 +125,6 @@ exports.getLogActions = async () => {
 };
 
 exports.getLogsByHouse = async (houseId) => {
-
     return prisma.logs.findMany({
         where: {
             employee: {

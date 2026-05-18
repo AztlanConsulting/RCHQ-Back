@@ -1,4 +1,5 @@
-const { getRemainingVacations,
+const {
+    getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
 } = require("../../service/vacation/get.service");
@@ -12,7 +13,8 @@ exports.getRemainingVacations = async (req, res) => {
         if (result.code === RESPONSES.VACATION.WITHOUT_START_DATE) {
             return res.status(500).json({
                 success: false,
-                message: "Error interno del servidor. Por favor intente más tarde.",
+                message:
+                    "Error interno del servidor. Por favor intente más tarde.",
             });
         }
 
@@ -23,7 +25,7 @@ exports.getRemainingVacations = async (req, res) => {
                     remainingVacations: result.data.remainingDays,
                     startDate: result.data.startDate,
                     endDate: result.data.endDate,
-                }
+                },
             });
         }
     } catch {
@@ -32,7 +34,7 @@ exports.getRemainingVacations = async (req, res) => {
             message: "Error interno del servidor. Por favor intente más tarde.",
         });
     }
-}
+};
 
 exports.getPendingVacationRequests = async (req, res) => {
     try {

@@ -226,12 +226,14 @@ async function seedDb({ passwordOverride } = {}) {
     }
 
     await prisma.house.upsert({
-        where:  { house_id: IDS.house },
+        where: { house_id: IDS.house },
         update: { name: SEED.house.name },
         create: SEED.house,
     });
 
-    const existingRole = await prisma.role.findUnique({ where: { name: SEED.role.name } });
+    const existingRole = await prisma.role.findUnique({
+        where: { name: SEED.role.name },
+    });
     if (existingRole) {
         IDS.role = existingRole.role_id;
         SEED.employee.role_id = existingRole.role_id;
@@ -243,9 +245,15 @@ async function seedDb({ passwordOverride } = {}) {
         where: { email: SEED.employee.email },
     });
     if (oldByEmail && oldByEmail.employee_id !== IDS.employee) {
-        await prisma.logs.deleteMany({ where: { employee_id: oldByEmail.employee_id } });
-        await prisma.employee_documents.deleteMany({ where: { employee_id: oldByEmail.employee_id } });
-        await prisma.employee.delete({ where: { employee_id: oldByEmail.employee_id } });
+        await prisma.logs.deleteMany({
+            where: { employee_id: oldByEmail.employee_id },
+        });
+        await prisma.employee_documents.deleteMany({
+            where: { employee_id: oldByEmail.employee_id },
+        });
+        await prisma.employee.delete({
+            where: { employee_id: oldByEmail.employee_id },
+        });
     }
 
     const employeeData = {
@@ -254,38 +262,38 @@ async function seedDb({ passwordOverride } = {}) {
     };
 
     await prisma.employee.upsert({
-        where:  { employee_id: IDS.employee },
+        where: { employee_id: IDS.employee },
         update: { password: employeeData.password, role_id: IDS.role },
         create: employeeData,
     });
 }
 
 async function cleanDb() {
-  await prisma.logs.deleteMany();
-  await prisma.employee_documents.deleteMany();
-  await prisma.documents.deleteMany();
+    await prisma.logs.deleteMany();
+    await prisma.employee_documents.deleteMany();
+    await prisma.documents.deleteMany();
 
-  await prisma.employee_address.deleteMany();
-  await prisma.vacations_request.deleteMany();
+    await prisma.employee_address.deleteMany();
+    await prisma.vacations_request.deleteMany();
 
-  await prisma.employee_fault.deleteMany();
-  await prisma.fault.deleteMany();
+    await prisma.employee_fault.deleteMany();
+    await prisma.fault.deleteMany();
 
-  await prisma.employee_workday.deleteMany();
+    await prisma.employee_workday.deleteMany();
 
-  await prisma.employee_personal_event.deleteMany();
-  await prisma.personal_event.deleteMany();
-  await prisma.house_event.deleteMany();
-  await prisma.global_event.deleteMany();
-  await prisma.event_type.deleteMany();
-  await prisma.absence.deleteMany();
+    await prisma.employee_personal_event.deleteMany();
+    await prisma.personal_event.deleteMany();
+    await prisma.house_event.deleteMany();
+    await prisma.global_event.deleteMany();
+    await prisma.event_type.deleteMany();
+    await prisma.absence.deleteMany();
 
-  await prisma.employee.deleteMany();
+    await prisma.employee.deleteMany();
 
-  await prisma.role.deleteMany({ where: { role_id: IDS.role } });
-  await prisma.role.deleteMany({ where: { name: SEED.role.name } });
-  await prisma.house.deleteMany({ where: { house_id: IDS.house } });
-  await prisma.house.deleteMany({ where: { name: SEED.house.name } });
+    await prisma.role.deleteMany({ where: { role_id: IDS.role } });
+    await prisma.role.deleteMany({ where: { name: SEED.role.name } });
+    await prisma.house.deleteMany({ where: { house_id: IDS.house } });
+    await prisma.house.deleteMany({ where: { name: SEED.house.name } });
 }
 
 async function disconnectDb() {

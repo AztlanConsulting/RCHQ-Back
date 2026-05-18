@@ -34,17 +34,11 @@ const {
     findByIdWithRoleAndHouse,
 } = require("../../model/employee/get.model");
 
-const {
-    getActiveVacationsInRange,
-} = require("../../model/vacation/get.model");
+const { getActiveVacationsInRange } = require("../../model/vacation/get.model");
 
-const {
-    getGlobalEventsInRange,
-} = require("../../model/event/get.model");
+const { getGlobalEventsInRange } = require("../../model/event/get.model");
 
-const {
-    getRemainingVacations,
-} = require("../../service/vacation/get.service");
+const { getRemainingVacations } = require("../../service/vacation/get.service");
 
 const { registerVacation } = require("../../model/vacation/create.model");
 const { createLog } = require("../../model/log.model");
@@ -109,8 +103,7 @@ describe("US28 - registerEmployeeVacation service", () => {
         globalEvents = [],
         vacationResult,
     } = {}) {
-        findByIdWithRoleAndHouse
-            .mockResolvedValueOnce(target);
+        findByIdWithRoleAndHouse.mockResolvedValueOnce(target);
 
         getWorkDays.mockResolvedValue(workDays);
 
@@ -135,7 +128,7 @@ describe("US28 - registerEmployeeVacation service", () => {
                 status: VACATION_STATUS.APPROVED,
                 used_days: 5,
                 created_at: new Date(),
-            }
+            },
         );
 
         createLog.mockResolvedValue({
@@ -146,16 +139,22 @@ describe("US28 - registerEmployeeVacation service", () => {
     async function callRegisterVacation(options = {}) {
         const actorEmployeeId = Object.prototype.hasOwnProperty.call(
             options,
-            "actorEmployeeId"
+            "actorEmployeeId",
         )
             ? options.actorEmployeeId
             : actorAdminId;
 
-        const targetId = Object.prototype.hasOwnProperty.call(options, "targetId")
+        const targetId = Object.prototype.hasOwnProperty.call(
+            options,
+            "targetId",
+        )
             ? options.targetId
             : targetEmployeeId;
 
-        const startDate = Object.prototype.hasOwnProperty.call(options, "startDate")
+        const startDate = Object.prototype.hasOwnProperty.call(
+            options,
+            "startDate",
+        )
             ? options.startDate
             : validStartDate;
 
@@ -195,18 +194,22 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(result.data.vacationRequest).toBeDefined();
 
             expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(1);
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(targetEmployeeId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(
+                targetEmployeeId,
+            );
 
             expect(getWorkDays).toHaveBeenCalledWith(targetEmployeeId);
-            expect(getRemainingVacations).toHaveBeenCalledWith(targetEmployeeId);
+            expect(getRemainingVacations).toHaveBeenCalledWith(
+                targetEmployeeId,
+            );
             expect(getGlobalEventsInRange).toHaveBeenCalledWith(
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidEndDate,
             );
             expect(getActiveVacationsInRange).toHaveBeenCalledWith(
                 targetEmployeeId,
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidEndDate,
             );
 
             expect(randomUUID).toHaveBeenCalledTimes(1);
@@ -215,14 +218,14 @@ describe("US28 - registerEmployeeVacation service", () => {
                 targetEmployeeId,
                 parsedValidStartDate,
                 parsedValidEndDate,
-                5
+                5,
             );
 
             expect(createLog).toHaveBeenCalledWith(
                 actorAdminId,
                 LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,
                 ipAddress,
-                targetEmployeeId
+                targetEmployeeId,
             );
         });
 
@@ -238,7 +241,7 @@ describe("US28 - registerEmployeeVacation service", () => {
                 targetEmployeeId,
                 parsedValidStartDate,
                 parsedValidStartDate,
-                1
+                1,
             );
         });
 
@@ -285,7 +288,9 @@ describe("US28 - registerEmployeeVacation service", () => {
             });
 
             expect(findByIdWithRoleAndHouse).toHaveBeenCalledTimes(1);
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(targetEmployeeId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(
+                targetEmployeeId,
+            );
             expect(registerVacation).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -385,7 +390,7 @@ describe("US28 - registerEmployeeVacation service", () => {
                 targetEmployeeId,
                 parsedTodayDate,
                 parsedTodayDate,
-                1
+                1,
             );
         });
 
@@ -474,7 +479,7 @@ describe("US28 - registerEmployeeVacation service", () => {
                 targetEmployeeId,
                 parsedValidStartDate,
                 parsedValidEndDate,
-                4
+                4,
             );
         });
     });
@@ -538,7 +543,7 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(getActiveVacationsInRange).toHaveBeenCalledWith(
                 targetEmployeeId,
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidEndDate,
             );
 
             expect(randomUUID).toHaveBeenCalledTimes(1);
@@ -548,7 +553,7 @@ describe("US28 - registerEmployeeVacation service", () => {
                 targetEmployeeId,
                 parsedValidStartDate,
                 parsedValidEndDate,
-                5
+                5,
             );
 
             expect(createLog).not.toHaveBeenCalled();
@@ -561,12 +566,12 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(getActiveVacationsInRange).toHaveBeenCalledWith(
                 targetEmployeeId,
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidEndDate,
             );
             expect(getActiveVacationsInRange).not.toHaveBeenCalledWith(
                 actorAdminId,
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidEndDate,
             );
         });
     });
@@ -594,9 +599,13 @@ describe("US28 - registerEmployeeVacation service", () => {
         });
 
         test("no crea log si registerVacation falla", async () => {
-            registerVacation.mockRejectedValueOnce(new Error("DB create failed"));
+            registerVacation.mockRejectedValueOnce(
+                new Error("DB create failed"),
+            );
 
-            await expect(callRegisterVacation()).rejects.toThrow("DB create failed");
+            await expect(callRegisterVacation()).rejects.toThrow(
+                "DB create failed",
+            );
 
             expect(registerVacation).toHaveBeenCalledTimes(1);
             expect(createLog).not.toHaveBeenCalled();
@@ -605,17 +614,21 @@ describe("US28 - registerEmployeeVacation service", () => {
         test("propaga error si createLog falla después de crear vacaciones", async () => {
             createLog.mockRejectedValueOnce(new Error("Audit log failed"));
 
-            await expect(callRegisterVacation()).rejects.toThrow("Audit log failed");
+            await expect(callRegisterVacation()).rejects.toThrow(
+                "Audit log failed",
+            );
 
             expect(registerVacation).toHaveBeenCalledTimes(1);
             expect(createLog).toHaveBeenCalledTimes(1);
         });
 
         test("propaga error si getWorkDays falla", async () => {
-            getWorkDays.mockRejectedValueOnce(new Error("Workdays lookup failed"));
+            getWorkDays.mockRejectedValueOnce(
+                new Error("Workdays lookup failed"),
+            );
 
             await expect(callRegisterVacation()).rejects.toThrow(
-                "Workdays lookup failed"
+                "Workdays lookup failed",
             );
 
             expect(registerVacation).not.toHaveBeenCalled();

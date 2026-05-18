@@ -30,13 +30,9 @@ const {
     getWorkDays,
 } = require("../../model/employee/get.model");
 
-const {
-    getVacationRequestById,
-} = require("../../model/vacation/get.model");
+const { getVacationRequestById } = require("../../model/vacation/get.model");
 
-const {
-    getGlobalEventsInRange,
-} = require("../../model/event/get.model");
+const { getGlobalEventsInRange } = require("../../model/event/get.model");
 
 const {
     updateVacationRequestDatesAtomically,
@@ -158,7 +154,7 @@ describe("updateVacationRequestDates service", () => {
             actorEmployeeId,
             LOG_ACTIONS.VACATION_UPDATED_SUCCESS,
             "127.0.0.1",
-            targetEmployeeId
+            targetEmployeeId,
         );
     });
 

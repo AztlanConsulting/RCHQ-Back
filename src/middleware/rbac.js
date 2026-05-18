@@ -62,20 +62,22 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
 };
 
 const requireRole = (...allowedRoles) => {
-  return (req, res, next) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "User not authenticated" });
-      }
+    return (req, res, next) => {
+        try {
+            if (!req.user) {
+                return res
+                    .status(401)
+                    .json({ message: "User not authenticated" });
+            }
 
-      if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({ message: "Role not allowed" });
-      }
-      next();
-    } catch (error) {
-      next(error);
-    }
-  };
+            if (!allowedRoles.includes(req.user.role)) {
+                return res.status(403).json({ message: "Role not allowed" });
+            }
+            next();
+        } catch (error) {
+            next(error);
+        }
+    };
 };
 
 module.exports = {

@@ -8,7 +8,7 @@ const RESPONSES = require("../../utils/responses");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
-const {deleteFileIfExists} = require("../../utils/deleteFile");
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 
 exports.getAdd = async (req, res) => {
     try {

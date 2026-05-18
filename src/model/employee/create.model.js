@@ -1,5 +1,5 @@
 const prisma = require("../../prisma");
-const {randomUUID} = require("crypto");
+const { randomUUID } = require("crypto");
 
 exports.create = async (employeeData) => {
     const data = {

@@ -24,7 +24,7 @@ function generateSessionToken({
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
     );
 }
 
@@ -194,17 +194,17 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
 
         coordinatorRoleId = await getOrCreateRoleId(
             "Coordinador",
-            coordinatorRoleId
+            coordinatorRoleId,
         );
         adminRoleId = await getOrCreateRoleId("Administrador", adminRoleId);
         maintenanceRoleId = await getOrCreateRoleId(
             "Mantenimiento",
-            maintenanceRoleId
+            maintenanceRoleId,
         );
 
         manageEmployeesPrivilegeId = await getOrCreatePrivilegeId(
             "manageEmployees",
-            manageEmployeesPrivilegeId
+            manageEmployeesPrivilegeId,
         );
 
         await prisma.role_privilege.upsert({
@@ -475,7 +475,9 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
 
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
-        expect(response.body.message).toBe("Vacaciones modificadas correctamente");
+        expect(response.body.message).toBe(
+            "Vacaciones modificadas correctamente",
+        );
 
         const updated = await prisma.vacations_request.findUnique({
             where: {
@@ -550,7 +552,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.status).toBe(406);
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
-            "No se puede tener una fecha de inicio posterior a la de finalización"
+            "No se puede tener una fecha de inicio posterior a la de finalización",
         );
     });
 
@@ -566,7 +568,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.status).toBe(406);
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
-            "No se pueden modificar vacaciones rechazadas"
+            "No se pueden modificar vacaciones rechazadas",
         );
     });
 
@@ -582,7 +584,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.status).toBe(406);
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
-            "Dentro del rango seleccionado no hay ningún día hábil de vacaciones"
+            "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
         );
     });
 
@@ -598,7 +600,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.status).toBe(406);
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
-            "Ya hay una solicitud de vacaciones cubriendo los días solicitados"
+            "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
         );
     });
 
@@ -655,7 +657,9 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
 
     it("404 regresa error si la solicitud no existe", async () => {
         const response = await request(app)
-            .patch("/vacation/request/99999999-9999-4999-8999-999999999999/dates")
+            .patch(
+                "/vacation/request/99999999-9999-4999-8999-999999999999/dates",
+            )
             .set("Authorization", `Bearer ${coordinatorToken}`)
             .send({
                 startDate: "2026-06-22",

@@ -43,23 +43,27 @@ exports.isAllowed = async (req, res, next) => {
         if (req.user.id == targetId) return next();
 
         const homeQuery = await getHome(targetId);
-        if (!homeQuery) return res.status(403).json({
-            success: false,
-            message: "No puede acceder a este recurso"
-        });
-        if (req.user.houseId == homeQuery.house_id && req.user.role == ROLES.COORDINATOR) {
+        if (!homeQuery)
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        if (
+            req.user.houseId == homeQuery.house_id &&
+            req.user.role == ROLES.COORDINATOR
+        ) {
             return next();
         }
 
         return res.status(403).json({
             success: false,
-            message: "No puede acceder a este recurso"
+            message: "No puede acceder a este recurso",
         });
     } catch (error) {
         console.error("Error en middleware isAllowed:", error);
         return res.status(403).json({
             success: false,
-            message: "No puede acceder a este recurso"
+            message: "No puede acceder a este recurso",
         });
     }
 };
@@ -81,7 +85,10 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
             return next();
         }
 
-        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
+        if (
+            req.user.role !== ROLES.COORDINATOR &&
+            req.user.role !== ROLES.ADMIN
+        ) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",
@@ -117,10 +124,15 @@ exports.canAddToBlacklist = async (req, res, next) => {
         const targetCurp = req.body.curp;
 
         if (!targetCurp) {
-            return res.status(400).json({ success: false, message: "CURP no proporcionada" });
+            return res
+                .status(400)
+                .json({ success: false, message: "CURP no proporcionada" });
         }
 
-        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
+        if (
+            req.user.role !== ROLES.COORDINATOR &&
+            req.user.role !== ROLES.ADMIN
+        ) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",
@@ -133,7 +145,8 @@ exports.canAddToBlacklist = async (req, res, next) => {
         if (currentUserCurp && String(currentUserCurp) === String(targetCurp)) {
             return res.status(403).json({
                 success: false,
-                message: "Acción denegada: No puedes agregarte a ti mismo a la lista negra.",
+                message:
+                    "Acción denegada: No puedes agregarte a ti mismo a la lista negra.",
             });
         }
 

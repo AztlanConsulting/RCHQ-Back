@@ -235,27 +235,27 @@ exports.changePasswordFirstLogin = async ({
         };
     }
 
-  const token = await buildSessionToken({
-    ...employee,
-    pwd: hashedPassword,
-    hasFirstLogin: false,
-  });
+    const token = await buildSessionToken({
+        ...employee,
+        pwd: hashedPassword,
+        hasFirstLogin: false,
+    });
 
-  return {
-    status: 200,
-    body: {
-      success: true,
-      message: "Contraseña cambiada exitosamente",
-      nextStep: "LOGIN_COMPLETE",
-      data: {
-        token,
-        user: {
-          employeeId: employee.employeeId,
-          email: employee.email,
-          name: employee.name,
-          role: employee.role,
+    return {
+        status: 200,
+        body: {
+            success: true,
+            message: "Contraseña cambiada exitosamente",
+            nextStep: "LOGIN_COMPLETE",
+            data: {
+                token,
+                user: {
+                    employeeId: employee.employeeId,
+                    email: employee.email,
+                    name: employee.name,
+                    role: employee.role,
+                },
+            },
         },
-      },
-    },
-  };
+    };
 };

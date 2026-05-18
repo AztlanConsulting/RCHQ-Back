@@ -122,7 +122,8 @@ const removeUploadedFilesForEmployees = async (employeeIds) => {
     });
 
     for (const absence of absences) {
-        if (!absence.url || !absence.url.startsWith("uploads/documents/")) continue;
+        if (!absence.url || !absence.url.startsWith("uploads/documents/"))
+            continue;
 
         const fullPath = path.resolve(process.cwd(), absence.url);
         if (fs.existsSync(fullPath)) {
@@ -572,7 +573,9 @@ describe("POST /absence/:employeeId/add", () => {
             );
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("Fecha de fin no puede ser mayor a un año");
+        expect(res.body.message).toBe(
+            "Fecha de fin no puede ser mayor a un año",
+        );
     });
 
     it("422 si la fecha de inicio es menor a un mes antes del dia actual", async () => {
@@ -581,8 +584,10 @@ describe("POST /absence/:employeeId/add", () => {
             .set("Authorization", `Bearer ${sign()}`)
             .send(
                 validBody({
-                    startDate: dateOnly(dateFromTodayUTC({ months: - 1, days: - 1 })),
-                    endDate: dateOnly(dateFromTodayUTC({ months: - 1 })),
+                    startDate: dateOnly(
+                        dateFromTodayUTC({ months: -1, days: -1 }),
+                    ),
+                    endDate: dateOnly(dateFromTodayUTC({ months: -1 })),
                 }),
             );
 
@@ -604,7 +609,9 @@ describe("POST /absence/:employeeId/add", () => {
             );
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("Fecha de inicio no puede mayor a la de fin");
+        expect(res.body.message).toBe(
+            "Fecha de inicio no puede mayor a la de fin",
+        );
     });
 
     it("422 si el formato de fecha no es YYYY-MM-DD", async () => {
@@ -614,7 +621,9 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody({ startDate: "2026/06/20" }));
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("Fecha solo puede tener un formato YYYY-MM-DD");
+        expect(res.body.message).toBe(
+            "Fecha solo puede tener un formato YYYY-MM-DD",
+        );
     });
 
     it("422 si la fecha no tiene 10 caracteres", async () => {
@@ -624,7 +633,9 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody({ startDate: "2026-6-20" }));
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("El tamaño de la fecha debe ser de 10 caracteres");
+        expect(res.body.message).toBe(
+            "El tamaño de la fecha debe ser de 10 caracteres",
+        );
     });
 
     it("422 si la descripción excede 200 caracteres", async () => {
@@ -634,7 +645,9 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody({ description: "a".repeat(201) }));
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("Descripción no puede ser mayor a 200 caracteres");
+        expect(res.body.message).toBe(
+            "Descripción no puede ser mayor a 200 caracteres",
+        );
     });
 
     it("422 si la descripción contiene emojis", async () => {
@@ -644,7 +657,9 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody({ description: "Reposo medico 😀" }));
 
         expect(res.statusCode).toBe(422);
-        expect(res.body.message).toBe("Descripción no permite caracteres especiales");
+        expect(res.body.message).toBe(
+            "Descripción no permite caracteres especiales",
+        );
     });
 
     it("406 si hay empalme con vacaciones", async () => {
@@ -667,7 +682,9 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody());
 
         expect(res.statusCode).toBe(406);
-        expect(res.body.message).toBe("Ya hay una vacación registrada para esa fecha");
+        expect(res.body.message).toBe(
+            "Ya hay una vacación registrada para esa fecha",
+        );
     });
 
     it("404 si el trabajador pertenece a otra casa hogar", async () => {
@@ -716,7 +733,9 @@ describe("POST /absence/:employeeId/add", () => {
             .attach("file", TXT, "malware.exe");
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.error).toBe("Solo se permiten archivos PDF, JPEG, JPG y PNG");
+        expect(res.body.error).toBe(
+            "Solo se permiten archivos PDF, JPEG, JPG y PNG",
+        );
     });
 
     it("400 si la evidencia supera 10mb", async () => {
@@ -730,7 +749,9 @@ describe("POST /absence/:employeeId/add", () => {
             .attach("file", LARGE_PDF, "large.pdf");
 
         expect(res.statusCode).toBe(400);
-        expect(res.body.error).toBe("El archivo excede el tamaño permitido (5MB)");
+        expect(res.body.error).toBe(
+            "El archivo excede el tamaño permitido (5MB)",
+        );
     });
 
     it("403 si el rol no puede agregar ausencias", async () => {
@@ -833,14 +854,18 @@ describe("POST /absence/:employeeId/add", () => {
             .attach("file", PDF, "evidence.pdf");
 
         expect(res.statusCode).toBe(201);
-        expect(res.body.data.absence.link).toMatch(/^uploads\/documents\/.+\.pdf$/);
+        expect(res.body.data.absence.link).toMatch(
+            /^uploads\/documents\/.+\.pdf$/,
+        );
 
         const absenceInDb = await prisma.absence.findUnique({
             where: { absence_id: res.body.data.absence.absenceId },
         });
 
         expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
-        expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
+        expect(
+            fs.existsSync(path.resolve(process.cwd(), absenceInDb.url)),
+        ).toBe(true);
 
         const log = await prisma.logs.findFirst({
             where: {

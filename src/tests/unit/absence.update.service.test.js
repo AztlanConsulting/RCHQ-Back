@@ -21,9 +21,7 @@ const {
     getAbsenceById,
     getAbsenceTypeById,
 } = require("../../model/absence/get.model");
-const {
-    updateAbsenceById,
-} = require("../../model/absence/update.model");
+const { updateAbsenceById } = require("../../model/absence/update.model");
 const RESPONSES = require("../../utils/responses");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 
@@ -54,7 +52,8 @@ describe("absence.update.service — updateAbsence", () => {
             expect.arrayContaining([
                 expect.objectContaining({
                     campo: "body.description",
-                    mensaje: "La descripción solo puede contener letras, números, espacios y signos de interrogación o exclamación",
+                    mensaje:
+                        "La descripción solo puede contener letras, números, espacios y signos de interrogación o exclamación",
                 }),
             ]),
         );
@@ -117,9 +116,13 @@ describe("absence.update.service — updateAbsence", () => {
                 url: "uploads/documents/evidencia-nueva.pdf",
             },
         );
-        expect(deleteFileIfExists).toHaveBeenCalledWith("uploads/documents/evidencia-anterior.pdf");
+        expect(deleteFileIfExists).toHaveBeenCalledWith(
+            "uploads/documents/evidencia-anterior.pdf",
+        );
         expect(result.code).toBe(RESPONSES.ABSENCE.UPDATED);
-        expect(result.data.absence.link).toBe("uploads/documents/evidencia-nueva.pdf");
+        expect(result.data.absence.link).toBe(
+            "uploads/documents/evidencia-nueva.pdf",
+        );
     });
 
     it("retorna NOT_FOUND si la ausencia no existe", async () => {
@@ -309,7 +312,10 @@ describe("absence.update.service — updateAbsence", () => {
         const result = await updateAbsence({
             actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
             absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
-            body: { hasEvidenceFile: true, description: "Texto inválido!!! ¿vale? 😀 #123" },
+            body: {
+                hasEvidenceFile: true,
+                description: "Texto inválido!!! ¿vale? 😀 #123",
+            },
             file: {
                 filename: "evidencia.pdf",
                 path: "uploads/documents/evidencia.pdf",
@@ -317,6 +323,8 @@ describe("absence.update.service — updateAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(deleteFileIfExists).toHaveBeenCalledWith("uploads/documents/evidencia.pdf");
+        expect(deleteFileIfExists).toHaveBeenCalledWith(
+            "uploads/documents/evidencia.pdf",
+        );
     });
 });

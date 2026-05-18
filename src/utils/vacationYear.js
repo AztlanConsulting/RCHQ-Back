@@ -1,10 +1,15 @@
-exports.getCurrentWorkYearRange = (employeeStartDate, referenceDate = new Date()) => {
+exports.getCurrentWorkYearRange = (
+    employeeStartDate,
+    referenceDate = new Date(),
+) => {
     const baseDay = employeeStartDate.getUTCDate();
     const baseMonth = employeeStartDate.getUTCMonth();
 
     const currentYear = referenceDate.getUTCFullYear();
 
-    const anniversaryThisYear = new Date(Date.UTC(currentYear, baseMonth, baseDay));
+    const anniversaryThisYear = new Date(
+        Date.UTC(currentYear, baseMonth, baseDay),
+    );
 
     let workYearStart;
     let workYearEnd;

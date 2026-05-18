@@ -33,7 +33,12 @@ exports.deactivateEmployee = async (req) => {
 
     try {
         const curpToBlacklist = addToBlacklist ? employee.curp : null;
-        await deactivateEmployee(employeeId, reason, curpToBlacklist, employee.isActive);
+        await deactivateEmployee(
+            employeeId,
+            reason,
+            curpToBlacklist,
+            employee.isActive,
+        );
         await createLog(
             actorId,
             LOG_ACTIONS.EMPLOYEE_DEACTIVATED,

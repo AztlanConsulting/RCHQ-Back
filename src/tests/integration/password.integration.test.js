@@ -105,18 +105,18 @@ const createFirstLoginEmployee = async (overrides = {}) => {
 };
 
 const generateSessionToken = () => {
-  return jwt.sign(
-    {
-      id: TEST_EMPLOYEE_ID,
-      email: TEST_EMAIL,
-      name: "Password User",
-      role: "test-role-password-integration",
-      privileges: ["viewEmployees", "changePassword"],
-      tokenType: "SESSION",
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" },
-  );
+    return jwt.sign(
+        {
+            id: TEST_EMPLOYEE_ID,
+            email: TEST_EMAIL,
+            name: "Password User",
+            role: "test-role-password-integration",
+            privileges: ["viewEmployees", "changePassword"],
+            tokenType: "SESSION",
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" },
+    );
 };
 
 const generateFirstLoginToken = () => {

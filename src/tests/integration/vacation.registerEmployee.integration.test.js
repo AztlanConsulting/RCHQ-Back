@@ -36,11 +36,9 @@ const WORKDAY_IDS = {
 function getTodayUTC() {
     const now = new Date();
 
-    return new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate()
-    ));
+    return new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 }
 
 function addDays(date, days) {
@@ -69,11 +67,9 @@ function nextWeekdayDate(fromDate, targetDay) {
 
 const TODAY_UTC = getTodayUTC();
 
-const EMPLOYEE_START_DATE = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() - 1,
-    TODAY_UTC.getUTCMonth(),
-    1
-));
+const EMPLOYEE_START_DATE = new Date(
+    Date.UTC(TODAY_UTC.getUTCFullYear() - 1, TODAY_UTC.getUTCMonth(), 1),
+);
 
 const BASE_FUTURE_DATE = addDays(TODAY_UTC, 14);
 
@@ -91,11 +87,9 @@ const THIRD_SUCCESS_FRIDAY = addDays(THIRD_SUCCESS_MONDAY, 4);
 const WEEKEND_SATURDAY = nextWeekdayDate(BASE_FUTURE_DATE, 6);
 const WEEKEND_SUNDAY = addDays(WEEKEND_SATURDAY, 1);
 
-const OUTSIDE_WORK_YEAR_START = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() + 2,
-    TODAY_UTC.getUTCMonth(),
-    1
-));
+const OUTSIDE_WORK_YEAR_START = new Date(
+    Date.UTC(TODAY_UTC.getUTCFullYear() + 2, TODAY_UTC.getUTCMonth(), 1),
+);
 
 const OUTSIDE_WORK_YEAR_END = addDays(OUTSIDE_WORK_YEAR_START, 1);
 
@@ -111,7 +105,7 @@ function generateSessionToken(employee) {
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
     );
 }
 
@@ -228,10 +222,13 @@ async function seedBaseData() {
     for (const workday of existingWorkdays) {
         if (workday.name === "Lunes") WORKDAY_IDS.monday = workday.workday_id;
         if (workday.name === "Martes") WORKDAY_IDS.tuesday = workday.workday_id;
-        if (workday.name === "Miércoles") WORKDAY_IDS.wednesday = workday.workday_id;
-        if (workday.name === "Jueves") WORKDAY_IDS.thursday = workday.workday_id;
+        if (workday.name === "Miércoles")
+            WORKDAY_IDS.wednesday = workday.workday_id;
+        if (workday.name === "Jueves")
+            WORKDAY_IDS.thursday = workday.workday_id;
         if (workday.name === "Viernes") WORKDAY_IDS.friday = workday.workday_id;
-        if (workday.name === "Sábado") WORKDAY_IDS.saturday = workday.workday_id;
+        if (workday.name === "Sábado")
+            WORKDAY_IDS.saturday = workday.workday_id;
         if (workday.name === "Domingo") WORKDAY_IDS.sunday = workday.workday_id;
     }
 
@@ -985,11 +982,11 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(statuses).toEqual([201, 406]);
 
         const successResponse = fulfilledResponses.find(
-            (response) => response.status === 201
+            (response) => response.status === 201,
         );
 
         const rejectedResponse = fulfilledResponses.find(
-            (response) => response.status === 406
+            (response) => response.status === 406,
         );
 
         expect(successResponse.body).toMatchObject({
@@ -999,7 +996,8 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
 
         expect(rejectedResponse.body).toMatchObject({
             success: false,
-            message: "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
+            message:
+                "Ya hay una solicitud de vacaciones cubriendo los días solicitados",
         });
 
         const activeVacations = await prisma.vacations_request.findMany({
@@ -1027,5 +1025,5 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         });
 
         expect(logs).toHaveLength(1);
-    }); 
+    });
 });

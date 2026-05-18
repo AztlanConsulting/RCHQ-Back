@@ -35,7 +35,9 @@ describe("vacation.service — requestVacation", () => {
             const result =
                 await vacationGetService.getRemainingVacations(EMPLOYEE_ID);
 
-            expect(result.code).toBe(RESPONSES.VACATION.REMAINING_VACATIONS_FOUND);
+            expect(result.code).toBe(
+                RESPONSES.VACATION.REMAINING_VACATIONS_FOUND,
+            );
             expect(result.data.startDate.getTime()).toBe(
                 new Date("2025-06-01").getTime(),
             );

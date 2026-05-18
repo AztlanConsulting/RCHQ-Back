@@ -57,9 +57,6 @@ exports.getHouseEmployeesByEmployeeId = async (employeeId) => {
             picture: true,
             is_active: true,
         },
-        orderBy: [
-            { name: "asc" },
-            { surname: "asc" },
-        ],
+        orderBy: [{ name: "asc" }, { surname: "asc" }],
     });
 };

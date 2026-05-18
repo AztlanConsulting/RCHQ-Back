@@ -81,7 +81,10 @@ const seedDependencies = async () => {
         "Coordinador",
         TEST_ROLE_ID,
     );
-    const adminRoleId = await getOrCreateRoleId("Administrador", TEST_ADMIN_ROLE_ID);
+    const adminRoleId = await getOrCreateRoleId(
+        "Administrador",
+        TEST_ADMIN_ROLE_ID,
+    );
     const employeeRoleId = await getOrCreateRoleId(
         "Mantenimiento",
         TEST_EMPLOYEE_ROLE_ID,

@@ -28,13 +28,9 @@ const {
     getWorkDays,
 } = require("../../model/employee/get.model");
 
-const {
-    getVacationRequestById,
-} = require("../../model/vacation/get.model");
+const { getVacationRequestById } = require("../../model/vacation/get.model");
 
-const {
-    getGlobalEventsInRange,
-} = require("../../model/event/get.model");
+const { getGlobalEventsInRange } = require("../../model/event/get.model");
 
 const {
     approveVacationRequestAtomically,
@@ -156,7 +152,7 @@ describe("US34 - approveVacationRequest service", () => {
                 data: {
                     vacationRequest: approvedVacationRequest,
                 },
-            }
+            },
         );
 
         createLog.mockResolvedValue({
@@ -182,10 +178,16 @@ describe("US34 - approveVacationRequest service", () => {
             const result = await callApprove();
 
             expect(result.code).toBe(RESPONSES.VACATION.APPROVED);
-            expect(result.data.vacationRequest).toEqual(approvedVacationRequest);
+            expect(result.data.vacationRequest).toEqual(
+                approvedVacationRequest,
+            );
 
-            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(actorCoordinatorId);
-            expect(getVacationRequestById).toHaveBeenCalledWith(vacationRequestId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(
+                actorCoordinatorId,
+            );
+            expect(getVacationRequestById).toHaveBeenCalledWith(
+                vacationRequestId,
+            );
             expect(getWorkDays).toHaveBeenCalledWith(targetEmployeeId);
 
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith({
@@ -202,7 +204,7 @@ describe("US34 - approveVacationRequest service", () => {
                 actorCoordinatorId,
                 LOG_ACTIONS.VACATION_APPROVED_SUCCESS,
                 ipAddress,
-                targetEmployeeId
+                targetEmployeeId,
             );
         });
 
@@ -323,8 +325,14 @@ describe("US34 - approveVacationRequest service", () => {
                 code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
             });
 
-            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(1, actorCoordinatorId);
-            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(2, targetEmployeeId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(
+                1,
+                actorCoordinatorId,
+            );
+            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(
+                2,
+                targetEmployeeId,
+            );
             expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -345,8 +353,14 @@ describe("US34 - approveVacationRequest service", () => {
                 code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
             });
 
-            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(1, actorCoordinatorId);
-            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(2, targetEmployeeId);
+            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(
+                1,
+                actorCoordinatorId,
+            );
+            expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(
+                2,
+                targetEmployeeId,
+            );
             expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -410,7 +424,9 @@ describe("US34 - approveVacationRequest service", () => {
                 code: RESPONSES.EMPLOYEE.NOT_FOUND,
             });
 
-            expect(getVacationRequestById).toHaveBeenCalledWith(vacationRequestId);
+            expect(getVacationRequestById).toHaveBeenCalledWith(
+                vacationRequestId,
+            );
             expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -491,7 +507,7 @@ describe("US34 - approveVacationRequest service", () => {
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith(
                 expect.objectContaining({
                     usedDays: 4,
-                })
+                }),
             );
         });
     });

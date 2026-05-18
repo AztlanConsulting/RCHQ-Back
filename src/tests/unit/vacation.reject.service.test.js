@@ -61,8 +61,12 @@ describe("US35 - rejectVacationRequest service", () => {
         });
 
         expect(result.code).toBe(RESPONSES.VACATION.VALIDATION_ERROR);
-        expect(employeeGetModel.findByIdWithRoleAndHouse).not.toHaveBeenCalled();
-        expect(vacationUpdateModel.rejectVacationRequestAtomically).not.toHaveBeenCalled();
+        expect(
+            employeeGetModel.findByIdWithRoleAndHouse,
+        ).not.toHaveBeenCalled();
+        expect(
+            vacationUpdateModel.rejectVacationRequestAtomically,
+        ).not.toHaveBeenCalled();
     });
 
     it("regresa NOT_ACCESS si el actor no existe", async () => {
@@ -75,7 +79,9 @@ describe("US35 - rejectVacationRequest service", () => {
         });
 
         expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
-        expect(employeeGetModel.findByIdWithRoleAndHouse).toHaveBeenCalledWith(actorEmployeeId);
+        expect(employeeGetModel.findByIdWithRoleAndHouse).toHaveBeenCalledWith(
+            actorEmployeeId,
+        );
     });
 
     it("regresa INSUFFICIENT_PERMISSIONS si el actor no es Coordinador", async () => {
@@ -97,7 +103,9 @@ describe("US35 - rejectVacationRequest service", () => {
     });
 
     it("regresa REQUEST_NOT_FOUND si la solicitud no existe", async () => {
-        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(actorCoordinator);
+        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(
+            actorCoordinator,
+        );
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce(null);
 
         const result = await rejectVacationRequest({
@@ -110,7 +118,9 @@ describe("US35 - rejectVacationRequest service", () => {
     });
 
     it("regresa REQUEST_ALREADY_REVIEWED si la solicitud ya fue aprobada", async () => {
-        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(actorCoordinator);
+        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(
+            actorCoordinator,
+        );
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce({
             ...pendingVacationRequest,
             status: VACATION_STATUS.APPROVED,
@@ -126,7 +136,9 @@ describe("US35 - rejectVacationRequest service", () => {
     });
 
     it("regresa REQUEST_ALREADY_REVIEWED si la solicitud ya fue rechazada", async () => {
-        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(actorCoordinator);
+        employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(
+            actorCoordinator,
+        );
         vacationGetModel.getVacationRequestById.mockResolvedValueOnce({
             ...pendingVacationRequest,
             status: VACATION_STATUS.REJECTED,
@@ -146,7 +158,9 @@ describe("US35 - rejectVacationRequest service", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(null);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
         const result = await rejectVacationRequest({
             actorEmployeeId,
@@ -165,7 +179,9 @@ describe("US35 - rejectVacationRequest service", () => {
                 house_id: "b0000001-0000-4000-8000-000000000001",
             });
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
         const result = await rejectVacationRequest({
             actorEmployeeId,
@@ -186,7 +202,9 @@ describe("US35 - rejectVacationRequest service", () => {
                 },
             });
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
         const result = await rejectVacationRequest({
             actorEmployeeId,
@@ -208,14 +226,18 @@ describe("US35 - rejectVacationRequest service", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(targetEmployee);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
-        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce({
-            success: true,
-            data: {
-                vacationRequest: rejectedVacationRequest,
+        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce(
+            {
+                success: true,
+                data: {
+                    vacationRequest: rejectedVacationRequest,
+                },
             },
-        });
+        );
 
         logModel.createLog.mockResolvedValueOnce(undefined);
 
@@ -226,10 +248,14 @@ describe("US35 - rejectVacationRequest service", () => {
         });
 
         expect(result.code).toBe(RESPONSES.VACATION.REJECTED);
-        expect(result.data.vacationRequest.status).toBe(VACATION_STATUS.REJECTED);
+        expect(result.data.vacationRequest.status).toBe(
+            VACATION_STATUS.REJECTED,
+        );
         expect(result.data.vacationRequest.feedback).toBeNull();
 
-        expect(vacationUpdateModel.rejectVacationRequestAtomically).toHaveBeenCalledWith({
+        expect(
+            vacationUpdateModel.rejectVacationRequestAtomically,
+        ).toHaveBeenCalledWith({
             vacationRequestId,
             employeeId: targetEmployeeId,
             actorHouseId: actorCoordinator.house_id,
@@ -257,14 +283,18 @@ describe("US35 - rejectVacationRequest service", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(targetEmployee);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
-        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce({
-            success: true,
-            data: {
-                vacationRequest: rejectedVacationRequest,
+        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce(
+            {
+                success: true,
+                data: {
+                    vacationRequest: rejectedVacationRequest,
+                },
             },
-        });
+        );
 
         logModel.createLog.mockResolvedValueOnce(undefined);
 
@@ -278,7 +308,9 @@ describe("US35 - rejectVacationRequest service", () => {
         expect(result.code).toBe(RESPONSES.VACATION.REJECTED);
         expect(result.data.vacationRequest.feedback).toBe(feedback);
 
-        expect(vacationUpdateModel.rejectVacationRequestAtomically).toHaveBeenCalledWith({
+        expect(
+            vacationUpdateModel.rejectVacationRequestAtomically,
+        ).toHaveBeenCalledWith({
             vacationRequestId,
             employeeId: targetEmployeeId,
             actorHouseId: actorCoordinator.house_id,
@@ -291,18 +323,22 @@ describe("US35 - rejectVacationRequest service", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(targetEmployee);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
-        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce({
-            success: true,
-            data: {
-                vacationRequest: {
-                    ...pendingVacationRequest,
-                    status: VACATION_STATUS.REJECTED,
-                    feedback: null,
+        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce(
+            {
+                success: true,
+                data: {
+                    vacationRequest: {
+                        ...pendingVacationRequest,
+                        status: VACATION_STATUS.REJECTED,
+                        feedback: null,
+                    },
                 },
             },
-        });
+        );
 
         logModel.createLog.mockRejectedValueOnce(new Error("Log failed"));
 
@@ -320,12 +356,16 @@ describe("US35 - rejectVacationRequest service", () => {
             .mockResolvedValueOnce(actorCoordinator)
             .mockResolvedValueOnce(targetEmployee);
 
-        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(pendingVacationRequest);
+        vacationGetModel.getVacationRequestById.mockResolvedValueOnce(
+            pendingVacationRequest,
+        );
 
-        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce({
-            success: false,
-            code: RESPONSES.VACATION.REQUEST_ALREADY_REVIEWED,
-        });
+        vacationUpdateModel.rejectVacationRequestAtomically.mockResolvedValueOnce(
+            {
+                success: false,
+                code: RESPONSES.VACATION.REQUEST_ALREADY_REVIEWED,
+            },
+        );
 
         const result = await rejectVacationRequest({
             actorEmployeeId,

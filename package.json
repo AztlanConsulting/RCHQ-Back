@@ -1,67 +1,67 @@
 {
-  "name": "rchq-back",
-  "version": "1.0.0",
-  "description": "xd",
-  "main": "src/index.js",
-  "scripts": {
-    "encrypt": "node scripts/encrypt-cli.js",
-    "start": "nodemon src/index.js",
-    "start:test": "dotenv -e .env.test -- nodemon src/index.js",
-    "test": "npm run test:unit && npm run test:integration",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:unit": "jest tests/unit",
-    "test:integration": "dotenv -e .env.test -- jest tests/integration --runInBand",
-    "test:db:setup": "dotenv -e .env.test -- npx prisma db pull",
-    "test:db:generate": "dotenv -e .env.test -- npx prisma generate",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint:staged": "lint-staged"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@prisma/client": "^6.19.3",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.4.1",
-    "jsonwebtoken": "^9.0.3",
-    "mailgun.js": "^12.7.1",
-    "multer": "^2.1.1",
-    "node-cron": "^4.2.1",
-    "nodemon": "^3.1.14",
-    "pdfkit": "^0.18.0",
-    "pg": "^8.13.1",
-    "qrcode": "^1.5.4",
-    "speakeasy": "^2.0.0",
-    "uuid": "^14.0.0",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "bcrypt": "^6.0.0",
-    "dotenv": "^17.4.2",
-    "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.4",
-    "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.4.0",
-    "jest": "^30.3.0",
-    "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1",
-    "prisma": "^6.19.3",
-    "supertest": "^7.2.2"
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
-  }
+    "name": "rchq-back",
+    "version": "1.0.0",
+    "description": "xd",
+    "main": "src/index.js",
+    "scripts": {
+        "encrypt": "node scripts/encrypt-cli.js",
+        "start": "nodemon src/index.js",
+        "start:test": "dotenv -e .env.test -- nodemon src/index.js",
+        "test": "npm run test:unit && npm run test:integration",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
+        "test:unit": "jest tests/unit",
+        "test:integration": "dotenv -e .env.test -- jest tests/integration --runInBand",
+        "test:db:setup": "dotenv -e .env.test -- npx prisma db pull",
+        "test:db:generate": "dotenv -e .env.test -- npx prisma generate",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "lint:staged": "lint-staged"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@prisma/client": "^6.19.3",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.6",
+        "express": "^5.2.1",
+        "express-rate-limit": "^8.4.1",
+        "jsonwebtoken": "^9.0.3",
+        "mailgun.js": "^12.7.1",
+        "multer": "^2.1.1",
+        "node-cron": "^4.2.1",
+        "nodemon": "^3.1.14",
+        "pdfkit": "^0.18.0",
+        "pg": "^8.13.1",
+        "qrcode": "^1.5.4",
+        "speakeasy": "^2.0.0",
+        "uuid": "^14.0.0",
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.4",
+        "bcrypt": "^6.0.0",
+        "dotenv": "^17.4.2",
+        "dotenv-cli": "^11.0.0",
+        "eslint": "^9.39.4",
+        "eslint-config-prettier": "^10.1.8",
+        "globals": "^17.4.0",
+        "jest": "^30.3.0",
+        "lint-staged": "^16.4.0",
+        "prettier": "^3.8.1",
+        "prisma": "^6.19.3",
+        "supertest": "^7.2.2"
+    },
+    "lint-staged": {
+        "*.js": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{json,md}": [
+            "prettier --write"
+        ]
+    }
 }

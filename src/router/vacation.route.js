@@ -12,7 +12,8 @@ const {
     canRegisterEmployeeVacation,
 } = require("../middleware/abac");
 
-const { getRemainingVacations,
+const {
+    getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
 } = require("../controller/vacation/get.controller");
@@ -40,7 +41,13 @@ const {
     getReviewedVacationRequestsSchema,
 } = require("../schemas/vacation/get.schemas");
 
-router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
+router.get(
+    "/remaining/:id",
+    apiLimiter,
+    verifyToken,
+    isAllowed,
+    getRemainingVacations,
+);
 
 router.post("/request", apiLimiter, verifyToken, requestVacation);
 
@@ -93,7 +100,7 @@ router.get(
     requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getPendingVacationRequestsSchema, "all"),
-    getPendingVacationRequests
+    getPendingVacationRequests,
 );
 
 router.get(
@@ -103,7 +110,7 @@ router.get(
     requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getReviewedVacationRequestsSchema, "all"),
-    getReviewedVacationRequests
+    getReviewedVacationRequests,
 );
 
 module.exports = router;

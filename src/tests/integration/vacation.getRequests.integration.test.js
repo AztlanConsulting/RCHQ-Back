@@ -74,8 +74,7 @@ describe("US80 - GET /vacation/requests/pending", () => {
     });
 
     test("debe rechazar si no hay token", async () => {
-        const response = await request(app)
-            .get("/vacation/requests/pending");
+        const response = await request(app).get("/vacation/requests/pending");
 
         expect(response.status).toBe(401);
         expect(response.body.success).toBe(false);
@@ -112,7 +111,8 @@ describe("US80 - GET /vacation/requests/pending", () => {
             data: {
                 requests: [
                     {
-                        vacationRequestId: "c8000000-0000-4000-8000-000000000001",
+                        vacationRequestId:
+                            "c8000000-0000-4000-8000-000000000001",
                         status: 0,
                         statusLabel: "Pendiente",
                         usedDays: 3,
@@ -139,7 +139,9 @@ describe("US80 - GET /vacation/requests/pending", () => {
         expect(response.body.success).toBe(true);
         expect(response.body.data).toHaveLength(1);
         expect(response.body.pagination.total).toBe(1);
-        expect(vacationGetService.getPendingVacationRequests).toHaveBeenCalledWith({
+        expect(
+            vacationGetService.getPendingVacationRequests,
+        ).toHaveBeenCalledWith({
             actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
             query: {},
         });
@@ -170,8 +172,7 @@ describe("US80 - GET /vacation/requests/reviewed", () => {
     });
 
     test("debe rechazar si no hay token", async () => {
-        const response = await request(app)
-            .get("/vacation/requests/reviewed");
+        const response = await request(app).get("/vacation/requests/reviewed");
 
         expect(response.status).toBe(401);
         expect(response.body.success).toBe(false);
@@ -191,7 +192,8 @@ describe("US80 - GET /vacation/requests/reviewed", () => {
             data: {
                 requests: [
                     {
-                        vacationRequestId: "c8000000-0000-4000-8000-000000000003",
+                        vacationRequestId:
+                            "c8000000-0000-4000-8000-000000000003",
                         status: 1,
                         statusLabel: "Aprobada",
                         usedDays: 3,
@@ -217,7 +219,9 @@ describe("US80 - GET /vacation/requests/reviewed", () => {
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
         expect(response.body.data).toHaveLength(1);
-        expect(vacationGetService.getReviewedVacationRequests).toHaveBeenCalledWith({
+        expect(
+            vacationGetService.getReviewedVacationRequests,
+        ).toHaveBeenCalledWith({
             actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
             query: {
                 status: "approved",
@@ -236,7 +240,9 @@ describe("US80 - GET /vacation/requests/reviewed", () => {
 
     test("debe validar rango de fechas inválido en revisadas", async () => {
         const response = await request(app)
-            .get("/vacation/requests/reviewed?startDate=2026-12-31&endDate=2026-01-01")
+            .get(
+                "/vacation/requests/reviewed?startDate=2026-12-31&endDate=2026-01-01",
+            )
             .set("Authorization", "Bearer coord-token");
 
         expect(response.status).toBe(400);

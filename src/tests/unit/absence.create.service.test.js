@@ -176,13 +176,15 @@ describe("absence.create.service — addAbsence", () => {
             actorEmployeeId: IDS.actor,
             targetEmployeeId: IDS.target,
             body: validBody({
-                startDate: dateOnly(dateFromTodayUTC({ months: - 1, days: - 1 })),
-                endDate: dateOnly(dateFromTodayUTC({ months: - 1 })),
+                startDate: dateOnly(dateFromTodayUTC({ months: -1, days: -1 })),
+                endDate: dateOnly(dateFromTodayUTC({ months: -1 })),
             }),
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Fecha de inicio no puede ser menor a un mes");
+        expect(result.message).toBe(
+            "Fecha de inicio no puede ser menor a un mes",
+        );
     });
 
     it.each([
@@ -196,7 +198,9 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Fecha de inicio no puede mayor a la de fin");
+        expect(result.message).toBe(
+            "Fecha de inicio no puede mayor a la de fin",
+        );
     });
 
     it("rechaza formato de fecha diferente a YYYY-MM-DD", async () => {
@@ -207,7 +211,9 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Fecha solo puede tener un formato YYYY-MM-DD");
+        expect(result.message).toBe(
+            "Fecha solo puede tener un formato YYYY-MM-DD",
+        );
     });
 
     it("rechaza fecha con tamaño diferente a 10 caracteres", async () => {
@@ -218,7 +224,9 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("El tamaño de la fecha debe ser de 10 caracteres");
+        expect(result.message).toBe(
+            "El tamaño de la fecha debe ser de 10 caracteres",
+        );
     });
 
     it("rechaza descripción mayor a 200 caracteres", async () => {
@@ -229,7 +237,9 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Descripción no puede ser mayor a 200 caracteres");
+        expect(result.message).toBe(
+            "Descripción no puede ser mayor a 200 caracteres",
+        );
     });
 
     it("rechaza descripción con emojis", async () => {
@@ -240,7 +250,9 @@ describe("absence.create.service — addAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
-        expect(result.message).toBe("Descripción no permite caracteres especiales");
+        expect(result.message).toBe(
+            "Descripción no permite caracteres especiales",
+        );
     });
 
     it("retorna usuario no encontrado si el empleado no existe", async () => {

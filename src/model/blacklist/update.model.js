@@ -24,6 +24,6 @@ exports.transactionalBlacklistInsert = async (curp) => {
         };
     } catch (error) {
         console.error("Error en transactionalBlacklistInsert:", error);
-        return null; 
+        return null;
     }
 };

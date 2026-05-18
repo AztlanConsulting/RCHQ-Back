@@ -154,8 +154,8 @@ exports.getWorkDays = async (req, res) => {
         return res.status(200).json({
             success: true,
             data: {
-                workDays
-            }
+                workDays,
+            },
         });
     } catch {
         return res.status(500).json({
@@ -163,14 +163,19 @@ exports.getWorkDays = async (req, res) => {
             message: "Internal Server Error",
         });
     }
-}
+};
 
 exports.getUpdateForm = async (req, res) => {
-  try {
-    const data = await getUpdateFormData(req.user);
-    return res.status(200).json({ success: true, ...data });
-  } catch (err) {
-    console.error("getUpdateForm error:", err);
-    return res.status(500).json({ success: false, message: "Error cargando datos del formulario" });
-  }
+    try {
+        const data = await getUpdateFormData(req.user);
+        return res.status(200).json({ success: true, ...data });
+    } catch (err) {
+        console.error("getUpdateForm error:", err);
+        return res
+            .status(500)
+            .json({
+                success: false,
+                message: "Error cargando datos del formulario",
+            });
+    }
 };

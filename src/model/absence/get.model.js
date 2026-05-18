@@ -44,7 +44,7 @@ exports.getAbsenceById = async (absenceId) => {
                     curp: true,
                 },
             },
-        }
+        },
     });
 };
 
@@ -68,7 +68,11 @@ exports.getAbsencesInRange = async (employeeId, startDate, endDate) => {
     });
 };
 
-exports.getHouseCalendarAbsenceInRange = async (houseId, startDate, endDate) => {
+exports.getHouseCalendarAbsenceInRange = async (
+    houseId,
+    startDate,
+    endDate,
+) => {
     return await prisma.absence.findMany({
         where: {
             start: {

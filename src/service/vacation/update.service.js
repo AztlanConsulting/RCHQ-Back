@@ -2,21 +2,14 @@ const {
     findByIdWithRoleAndHouse,
     getWorkDays,
 } = require("../../model/employee/get.model");
-const {
-    getVacationRequestById,
-} = require("../../model/vacation/get.model");
-const {
-    getGlobalEventsInRange,
-} = require("../../model/event/get.model");
+const { getVacationRequestById } = require("../../model/vacation/get.model");
+const { getGlobalEventsInRange } = require("../../model/event/get.model");
 const {
     approveVacationRequestAtomically,
     rejectVacationRequestAtomically,
     updateVacationRequestDatesAtomically,
 } = require("../../model/vacation/update.model");
-const {
-    calculateUsedDays,
-    stringToDate,
-} = require("../../utils/dates");
+const { calculateUsedDays, stringToDate } = require("../../utils/dates");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
@@ -133,14 +126,14 @@ exports.approveVacationRequest = async ({
 
     const globalEvents = await getGlobalEventsInRange(
         vacationRequest.start,
-        vacationRequest.end
+        vacationRequest.end,
     );
 
     const usedDays = calculateUsedDays(
         workDays,
         vacationRequest.start,
         vacationRequest.end,
-        globalEvents
+        globalEvents,
     );
 
     if (usedDays === 0) {
@@ -170,7 +163,7 @@ exports.approveVacationRequest = async ({
             actorEmployeeId,
             LOG_ACTIONS.VACATION_APPROVED_SUCCESS,
             ipAddress,
-            targetEmployeeId
+            targetEmployeeId,
         );
     } catch (error) {
         console.error("Error creando log de aprobación de vacaciones:", error);
@@ -273,7 +266,7 @@ exports.rejectVacationRequest = async ({
             actorEmployeeId,
             LOG_ACTIONS.VACATION_REJECTED_SUCCESS,
             ipAddress,
-            targetEmployeeId
+            targetEmployeeId,
         );
     } catch (error) {
         console.error("Error creando log de rechazo de vacaciones:", error);
@@ -405,7 +398,7 @@ exports.updateVacationRequestDates = async ({
         workDays,
         startDate,
         endDate,
-        globalEvents
+        globalEvents,
     );
 
     if (usedDays === 0) {
@@ -437,10 +430,13 @@ exports.updateVacationRequestDates = async ({
             actorEmployeeId,
             LOG_ACTIONS.VACATION_UPDATED_SUCCESS,
             ipAddress,
-            targetEmployeeId
+            targetEmployeeId,
         );
     } catch (error) {
-        console.error("Error creando log de modificación de vacaciones:", error);
+        console.error(
+            "Error creando log de modificación de vacaciones:",
+            error,
+        );
     }
 
     return {

@@ -4,7 +4,10 @@ exports.deactivateEmployeePolicy = (user, resource) => {
     // Si el empleado no existe, dejamos pasar para que el controller lance el 404 Not Found
     if (!resource) return true;
 
-    if (resource.addToBlacklist && !user.privileges?.includes("addToBlacklist")) {
+    if (
+        resource.addToBlacklist &&
+        !user.privileges?.includes("addToBlacklist")
+    ) {
         return false;
     }
 

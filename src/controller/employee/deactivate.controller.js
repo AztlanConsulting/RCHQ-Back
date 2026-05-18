@@ -24,13 +24,13 @@ exports.deactivateEmployeeController = async (req, res) => {
         } else if (code === RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED) {
             return res
                 .status(409)
-                .json({ message: "El empleado ya se encuentra en la lista negra" });
-        } else if (code === RESPONSES.EMPLOYEE.DEACTIVATION_FAILED) {
-            return res
-                .status(400)
                 .json({
-                    message: `Hubo un error al dar de baja a "${data.name}".`,
+                    message: "El empleado ya se encuentra en la lista negra",
                 });
+        } else if (code === RESPONSES.EMPLOYEE.DEACTIVATION_FAILED) {
+            return res.status(400).json({
+                message: `Hubo un error al dar de baja a "${data.name}".`,
+            });
         } else {
             return res.status(500).json({ message: "Error inesperado" });
         }

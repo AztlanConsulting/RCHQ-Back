@@ -12,12 +12,7 @@ const {
 
 const router = express.Router();
 
-router.get(
-    "/getHouseName",
-    apiLimiter,
-    verifyToken,
-    getHouseName,
-);
+router.get("/getHouseName", apiLimiter, verifyToken, getHouseName);
 
 router.get(
     "/employees",
@@ -25,7 +20,9 @@ router.get(
     verifyToken,
     resolveRequesterHouse,
     requireRole("Coordinador"),
-    authorize(employeePolicy, (req) => ({ houseId: req.resolvedRequester.houseId })),
+    authorize(employeePolicy, (req) => ({
+        houseId: req.resolvedRequester.houseId,
+    })),
     getHouseEmployees,
 );
 

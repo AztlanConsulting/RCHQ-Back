@@ -4,9 +4,13 @@ const { apiLimiter } = require("../utils/rateLimit");
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { canAddToBlacklist } = require("../middleware/abac");
-const { insertIntoBlacklist } = require("../controller/blacklist/create.controller");
+const {
+    insertIntoBlacklist,
+} = require("../controller/blacklist/create.controller");
 const validate = require("../middleware/validate");
-const { blacklistCreateSchema } = require("../schemas/blacklist/create.schemas");
+const {
+    blacklistCreateSchema,
+} = require("../schemas/blacklist/create.schemas");
 
 router.post(
     "/",
@@ -16,7 +20,7 @@ router.post(
     requirePrivileges("addToBlacklist"),
     validate(blacklistCreateSchema),
     canAddToBlacklist,
-    insertIntoBlacklist
+    insertIntoBlacklist,
 );
 
 module.exports = router;

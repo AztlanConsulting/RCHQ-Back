@@ -71,7 +71,9 @@ describe("US35 - rejectVacationRequestAtomically model", () => {
         });
 
         expect(result.success).toBe(true);
-        expect(result.data.vacationRequest.status).toBe(VACATION_STATUS.REJECTED);
+        expect(result.data.vacationRequest.status).toBe(
+            VACATION_STATUS.REJECTED,
+        );
         expect(result.data.vacationRequest.feedback).toBeNull();
 
         expect(tx.$queryRaw).toHaveBeenCalled();

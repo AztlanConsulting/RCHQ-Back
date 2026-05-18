@@ -103,7 +103,10 @@ const seed = async () => {
     }
 
     await prisma.role.create({
-        data: { role_id: IDS.employeeRole, name: `Empleado-${IDS.employeeRole.slice(0, 8)}` },
+        data: {
+            role_id: IDS.employeeRole,
+            name: `Empleado-${IDS.employeeRole.slice(0, 8)}`,
+        },
     });
 
     const existingRolePrivilege = await prisma.role_privilege.findUnique({
@@ -260,18 +263,17 @@ const seed = async () => {
     });
 
     await prisma.global_event.create({
-    data: {
-        global_event_id: IDS.globalFreeDay,
-        event_type_id: IDS.eventType,
-        start: new Date("2026-05-15T00:00:00.000Z"),
-        end: new Date("2026-05-15T23:59:00.000Z"),
-        name: "Dia libre global",
-        description: "No laborable",
-        is_free_day: true,
-        all_day: true,
-    },
+        data: {
+            global_event_id: IDS.globalFreeDay,
+            event_type_id: IDS.eventType,
+            start: new Date("2026-05-15T00:00:00.000Z"),
+            end: new Date("2026-05-15T23:59:00.000Z"),
+            name: "Dia libre global",
+            description: "No laborable",
+            is_free_day: true,
+            all_day: true,
+        },
     });
-
 
     await prisma.absence.createMany({
         data: [
@@ -358,7 +360,9 @@ const clean = async () => {
             role_id: {
                 in: [
                     IDS.employeeRole,
-                    ...(STATE.createdCoordinatorRole ? [IDS.coordinatorRole] : []),
+                    ...(STATE.createdCoordinatorRole
+                        ? [IDS.coordinatorRole]
+                        : []),
                 ],
             },
         },
@@ -387,7 +391,9 @@ afterAll(async () => {
 
 describe("GET /event/house/range/:startDate/:endDate", () => {
     it("401 sin token", async () => {
-        const res = await request(app).get("/event/house/range/2026-05-01/2026-05-31");
+        const res = await request(app).get(
+            "/event/house/range/2026-05-01/2026-05-31",
+        );
         expect(res.statusCode).toBe(401);
     });
 

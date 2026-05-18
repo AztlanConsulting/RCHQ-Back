@@ -49,7 +49,7 @@ describe("dates.util", () => {
                 WORK_DAYS,
                 START_DATE,
                 END_DATE,
-                [ ...EVENTS, ...EVENTS, ...EVENTS ],
+                [...EVENTS, ...EVENTS, ...EVENTS],
             );
 
             expect(result).toBe(2);

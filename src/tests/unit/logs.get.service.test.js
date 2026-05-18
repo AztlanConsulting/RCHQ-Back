@@ -40,10 +40,7 @@ const {
     getLogsByHouse: getLogsByHouseModel,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
-const {
-    getHouseById,
-    getHousesByIds,
-} = require("../../model/house/get.model");
+const { getHouseById, getHousesByIds } = require("../../model/house/get.model");
 const { getEventsByIds } = require("../../model/event/get.model");
 const { buildLogsPdfBuffer } = require("../../utils/logsPdf");
 const { readLogIp } = require("../../utils/logIp");
@@ -345,8 +342,16 @@ describe("logs.get.service", () => {
             "Luis",
         );
 
-        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(1, "house-1", "Carla");
-        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(2, "house-1", "Luis");
+        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(
+            1,
+            "house-1",
+            "Carla",
+        );
+        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(
+            2,
+            "house-1",
+            "Luis",
+        );
         expect(getLogsByHousePage).toHaveBeenCalledWith(
             {
                 employee: {
@@ -503,5 +508,4 @@ describe("logs.get.service", () => {
         expect(result.data.pdfBuffer).toBe(pdfBuffer);
         expect(result.data.fileName).toBe("reporte-logs-house-1.pdf");
     });
-
 });

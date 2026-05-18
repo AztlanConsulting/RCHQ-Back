@@ -27,7 +27,12 @@ exports.getEmployeeToDeactivate = async (employeeId) => {
     };
 };
 
-exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null, wasActive = true) => {
+exports.deactivateEmployee = async (
+    employeeId,
+    reason,
+    curpToBlacklist = null,
+    wasActive = true,
+) => {
     const actions = [];
 
     if (wasActive) {
@@ -39,7 +44,7 @@ exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null, 
                     end_date: new Date(),
                     deactivation_reason: reason,
                 },
-            })
+            }),
         );
     }
 
@@ -49,7 +54,7 @@ exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null, 
                 where: { curp: curpToBlacklist },
                 update: {},
                 create: { curp: curpToBlacklist },
-            })
+            }),
         );
     }
 

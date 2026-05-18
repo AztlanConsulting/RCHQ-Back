@@ -1,4 +1,6 @@
-const { insertIntoBlacklist } = require("../../service/blacklist/create.service");
+const {
+    insertIntoBlacklist,
+} = require("../../service/blacklist/create.service");
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
 
@@ -34,7 +36,8 @@ exports.insertIntoBlacklist = async (req, res) => {
         if (result.code === RESPONSES.BLACKLIST.ADDED) {
             return res.status(201).json({
                 success: true,
-                message: result.data.warning || "Empleado agregado a la lista negra",
+                message:
+                    result.data.warning || "Empleado agregado a la lista negra",
                 data: result.data.blacklistEntry,
             });
         }
@@ -43,7 +46,6 @@ exports.insertIntoBlacklist = async (req, res) => {
             success: false,
             message: "Error interno del servidor",
         });
-
     } catch (error) {
         console.error("Error en insertIntoBlacklist controller:", error);
         return res.status(500).json({

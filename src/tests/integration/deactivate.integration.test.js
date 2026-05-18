@@ -161,7 +161,17 @@ const cleanDb = async () => {
         where: { employee_id: { in: allEmployeeIds } },
     });
     await prisma.blacklist.deleteMany({
-        where: { curp: { in: [TEST_ACTOR_CURP, TEST_TARGET_CURP, TEST_INACT_CURP, TEST_NEW_INACT_CURP, TEST_NO_PRIV_CURP] } }
+        where: {
+            curp: {
+                in: [
+                    TEST_ACTOR_CURP,
+                    TEST_TARGET_CURP,
+                    TEST_INACT_CURP,
+                    TEST_NEW_INACT_CURP,
+                    TEST_NO_PRIV_CURP,
+                ],
+            },
+        },
     });
     await prisma.employee.deleteMany({
         where: { employee_id: { in: allEmployeeIds } },
@@ -327,7 +337,9 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send({ reason: "Otro fraude", addToBlacklist: true });
             expect(res.status).toBe(409);
-            expect(res.body.message).toBe("El empleado ya se encuentra en la lista negra");
+            expect(res.body.message).toBe(
+                "El empleado ya se encuentra en la lista negra",
+            );
         });
     });
 

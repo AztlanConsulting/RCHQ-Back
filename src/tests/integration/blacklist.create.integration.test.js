@@ -33,7 +33,8 @@ const seedDependencies = async () => {
             name: "Casa Prueba Blacklist IT",
             location: "Test Location",
             phone_number: "4421234567",
-            description: "Casa usada solo para tests de integración de blacklist",
+            description:
+                "Casa usada solo para tests de integración de blacklist",
             image: "test-image.jpg",
         },
     });
@@ -69,9 +70,17 @@ const seedDependencies = async () => {
     testPrivilegeId = priv.privilege_id;
 
     await prisma.role_privilege.upsert({
-        where: { role_id_privilege_id: { role_id: testCoordinadorRoleId, privilege_id: testPrivilegeId } },
+        where: {
+            role_id_privilege_id: {
+                role_id: testCoordinadorRoleId,
+                privilege_id: testPrivilegeId,
+            },
+        },
         update: {},
-        create: { role_id: testCoordinadorRoleId, privilege_id: testPrivilegeId },
+        create: {
+            role_id: testCoordinadorRoleId,
+            privilege_id: testPrivilegeId,
+        },
     });
 
     for (const [key, actionId] of Object.entries(LOG_ACTIONS)) {
@@ -159,7 +168,9 @@ const loginAndGetToken = async () => {
 
 const cleanDb = async () => {
     await prisma.blacklist.deleteMany({ where: { curp: TEST_TARGET_CURP } });
-    await prisma.logs.deleteMany({ where: { employee_id: TEST_COORDINADOR_ID } });
+    await prisma.logs.deleteMany({
+        where: { employee_id: TEST_COORDINADOR_ID },
+    });
     await prisma.employee.deleteMany({
         where: { employee_id: { in: [TEST_COORDINADOR_ID, TEST_TARGET_ID] } },
     });
@@ -178,7 +189,11 @@ beforeEach(async () => {
 afterAll(async () => {
     await cleanDb();
     await prisma.role.deleteMany({
-        where: { role_id: { in: [testCoordinadorRoleId, testTargetRoleId].filter(Boolean) } },
+        where: {
+            role_id: {
+                in: [testCoordinadorRoleId, testTargetRoleId].filter(Boolean),
+            },
+        },
     });
     await prisma.privileges.deleteMany({
         where: { name: "addToBlacklist" },
@@ -296,7 +311,9 @@ describe("POST /blacklist - integración", () => {
 
         expect(res.statusCode).toBe(403);
 
-        await prisma.employee.delete({ where: { employee_id: TEST_TARGET_ID } });
+        await prisma.employee.delete({
+            where: { employee_id: TEST_TARGET_ID },
+        });
         await prisma.house.delete({ where: { house_id: otraHouseId } });
     });
 
@@ -333,7 +350,9 @@ describe("POST /blacklist - integración", () => {
 
         expect(res.statusCode).toBe(409);
         expect(res.body.success).toBe(false);
-        expect(res.body.message).toBe("Este empleado ya se encuentra en la lista negra");
+        expect(res.body.message).toBe(
+            "Este empleado ya se encuentra en la lista negra",
+        );
     });
 
     it("retorna 403 si el coordinador intenta agregarse a sí mismo a la lista negra", async () => {
@@ -344,7 +363,7 @@ describe("POST /blacklist - integración", () => {
             .set("Authorization", `Bearer ${token}`)
             .send({ curp: TEST_COORDINADOR_CURP });
 
-        expect(res.statusCode).toBe(403); 
+        expect(res.statusCode).toBe(403);
         expect(res.body.message).toContain("No puedes agregarte a ti mismo");
     });
 

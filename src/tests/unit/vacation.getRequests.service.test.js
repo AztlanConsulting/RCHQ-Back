@@ -142,7 +142,8 @@ describe("US80 - getPendingVacationRequests service", () => {
         getPendingVacationRequestsByHouse.mockResolvedValue({
             requests: [
                 {
-                    vacations_request_id: "c8000000-0000-4000-8000-000000000001",
+                    vacations_request_id:
+                        "c8000000-0000-4000-8000-000000000001",
                     status: VACATION_STATUS.PENDING,
                 },
             ],
@@ -314,11 +315,13 @@ describe("US80 - getReviewedVacationRequests service", () => {
         getReviewedVacationRequestsByHouse.mockResolvedValue({
             requests: [
                 {
-                    vacations_request_id: "c8000000-0000-4000-8000-000000000003",
+                    vacations_request_id:
+                        "c8000000-0000-4000-8000-000000000003",
                     status: VACATION_STATUS.APPROVED,
                 },
                 {
-                    vacations_request_id: "c8000000-0000-4000-8000-000000000004",
+                    vacations_request_id:
+                        "c8000000-0000-4000-8000-000000000004",
                     status: VACATION_STATUS.REJECTED,
                 },
             ],
@@ -368,7 +371,8 @@ describe("US80 - getReviewedVacationRequests service", () => {
         getReviewedVacationRequestsByHouse.mockResolvedValue({
             requests: [
                 {
-                    vacations_request_id: "c8000000-0000-4000-8000-000000000003",
+                    vacations_request_id:
+                        "c8000000-0000-4000-8000-000000000003",
                     status: VACATION_STATUS.APPROVED,
                 },
             ],
