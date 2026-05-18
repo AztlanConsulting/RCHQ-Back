@@ -464,7 +464,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado con éxito",
+            action: "Empleado creado",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
@@ -556,7 +556,7 @@ describe("GET /logs/house", () => {
             .get("/logs/house/report/pdf")
             .set("Authorization", `Bearer ${sign()}`);
 
-        expect(res.statusCode).toBe(200);
+        expect(res.statusCode).toBe(201);
         expect(res.headers["content-type"]).toContain("application/pdf");
         expect(res.headers["content-disposition"]).toContain(".pdf");
         expect(Buffer.isBuffer(res.body)).toBe(true);
