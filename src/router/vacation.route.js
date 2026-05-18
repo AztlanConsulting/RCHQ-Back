@@ -3,7 +3,7 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const { resolveRequesterHouse } = require("../middleware/resolvers");
-const ROLES = require("../utils/roles");
+const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
@@ -48,7 +48,7 @@ router.post(
     "/employees/:employeeId/register",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.ADMIN, ROLES.COORDINADOR),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(employeeVacationCreateSchema, "all"),
     canRegisterEmployeeVacation,
@@ -59,7 +59,7 @@ router.patch(
     "/request/:vacationRequestId/approve",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.COORDINADOR),
+    requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(approveVacationRequestSchema, "all"),
     approveVacationRequest,
@@ -69,7 +69,7 @@ router.patch(
     "/request/:vacationRequestId/reject",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.COORDINADOR),
+    requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(rejectVacationRequestSchema, "all"),
     rejectVacationRequest,
@@ -80,7 +80,7 @@ router.patch(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole(ROLES.COORDINADOR),
+    requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(updateVacationRequestDatesSchema, "all"),
     updateVacationRequestDates,
@@ -90,7 +90,7 @@ router.get(
     "/requests/pending",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.COORDINADOR),
+    requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getPendingVacationRequestsSchema, "all"),
     getPendingVacationRequests
@@ -100,7 +100,7 @@ router.get(
     "/requests/reviewed",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.COORDINADOR),
+    requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getReviewedVacationRequestsSchema, "all"),
     getReviewedVacationRequests

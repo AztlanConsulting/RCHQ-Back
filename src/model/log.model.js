@@ -1,6 +1,6 @@
 const { randomUUID } = require("crypto");
 const prisma = require("../prisma");
-const { hashIp } = require("../utils/hashIp");
+const { encryptLogIp } = require("../utils/logIp");
 
 exports.createLog = async (
     employeeId,
@@ -16,7 +16,7 @@ exports.createLog = async (
             moment: new Date(),
             action_id: actionId,
             affected,
-            ip_address: hashIp(ipAddress),
+            ip_address: encryptLogIp(ipAddress),
         },
     });
 };

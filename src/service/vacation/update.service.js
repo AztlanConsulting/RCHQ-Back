@@ -20,7 +20,7 @@ const {
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
-const ROLES = require("../../utils/roles");
+const { ROLES } = require("../../utils/roles");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
 const {
     approveVacationRequestInputSchema,
@@ -56,7 +56,7 @@ exports.approveVacationRequest = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== ROLES.COORDINADOR) {
+    if (actorRoleName !== ROLES.COORDINATOR) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -212,7 +212,7 @@ exports.rejectVacationRequest = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== ROLES.COORDINADOR) {
+    if (actorRoleName !== ROLES.COORDINATOR) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
@@ -319,7 +319,7 @@ exports.updateVacationRequestDates = async ({
 
     const actorRoleName = actorEmployee.role?.name;
 
-    if (actorRoleName !== ROLES.COORDINADOR) {
+    if (actorRoleName !== ROLES.COORDINATOR) {
         return {
             code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };

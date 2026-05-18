@@ -277,9 +277,9 @@ CREATE TABLE IF NOT EXISTS public.house_donation (
 CREATE TABLE IF NOT EXISTS public.personal_event (
     personal_event_id uuid NOT NULL,
     event_type_id uuid NOT NULL,
-    date date NOT NULL, 
-    start time NOT NULL,
-    "end" time NOT NULL,
+    date date NOT NULL,
+    start timestamp NOT NULL,
+    "end" timestamp NOT NULL,
     name varchar(70) NOT NULL,
     description varchar(250) NULL,
     all_day boolean NOT NULL,
