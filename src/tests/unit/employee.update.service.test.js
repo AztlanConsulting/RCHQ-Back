@@ -9,6 +9,7 @@ jest.mock("../../model/employee/update.model", () => ({
 
 jest.mock("../../model/employee/get.model", () => ({
   findById:    jest.fn(),
+  getRoleById: jest.fn(),
   getAllRoles:  jest.fn(),
   getAllWorkdays:     jest.fn(),
   getAllHouses:       jest.fn(),
@@ -31,6 +32,7 @@ const {
 } = require("../../model/employee/update.model");
 const { 
   findById, 
+  getRoleById,
   getAllRoles,
   getAllWorkdays,
   getAllHouses,
@@ -66,7 +68,6 @@ const validContactBody = {
 };
 
 const validAdminBody = {
-  houseId: "a0000001-0000-4000-8000-000000000001",
   roleId:  "a0000002-0000-4000-8000-000000000001",
   type:    "Asalariado",
   frequencyOfPaymentId: "f0000001-0000-4000-8000-000000000001",
@@ -81,6 +82,10 @@ const validAdminBody = {
 beforeEach(() => {
   jest.clearAllMocks();
   findById.mockResolvedValue(MOCK_EMPLOYEE);
+  getRoleById.mockResolvedValue({
+    roleId: "a0000002-0000-4000-8000-000000000001",
+    name: "Coordinador",
+  });
   updateBasicInfo.mockResolvedValue();
   updateContactInfo.mockResolvedValue();
   updateAdminInfo.mockResolvedValue();
@@ -496,13 +501,13 @@ describe("updateAdminInfoService", () => {
       expect(upsertWorkdays).toHaveBeenCalled();
     });
 
-    it("retorna UPDATED actualizando solo casa", async () => {
+    it("retorna VALIDATION_ERROR si se intenta actualizar solo casa", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body:        { houseId: "a0000001-0000-4000-8000-000000000002" },
       });
-      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
   });
 
@@ -558,6 +563,22 @@ describe("updateAdminInfoService", () => {
         body:        { roleId: "123" },
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+    });
+
+    it("retorna VALIDATION_ERROR si se intenta cambiar el puesto a Administrador", async () => {
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000002",
+        name: "Administrador",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { roleId: "a0000002-0000-4000-8000-000000000002" },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors?.[0]?.campo).toBe("roleId");
     });
 
     it("retorna VALIDATION_ERROR con salario negativo", async () => {

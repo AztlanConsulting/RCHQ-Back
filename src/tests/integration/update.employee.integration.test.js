@@ -6,17 +6,19 @@ const { buildSessionToken } = require("../../utils/auth/authTokens");
 
 // ─── IDs fijos ────────────────────────────────────────────────────────────────
 
-const HOUSE_ID    = "a0000001-0000-4000-8000-000000000001";
-const OTHER_HOUSE_ID = "b0000001-0000-4000-8000-000000000001";
-const ROLE_ID     = "a0000002-0000-4000-8000-000000000002";
-const ADMIN_ROLE_ID = "a0000002-0000-4000-8000-000000000099";
-const WD_ID       = "d0000001-0000-4000-8000-000000000001";
+const HOUSE_ID    = "f1000001-0000-4000-8000-000000000001";
+const OTHER_HOUSE_ID = "f1000001-0000-4000-8000-000000000002";
+const ROLE_ID     = "f2000001-0000-4000-8000-000000000001";
+const FALLBACK_ADMIN_ROLE_ID = "f2000001-0000-4000-8000-000000000002";
+const WD_ID       = "f3000001-0000-4000-8000-000000000001";
 const EMP_ID      = "eee00001-0000-4000-8000-000000000001";
 const OTHER_EMP   = "eee00002-0000-4000-8000-000000000002";
 const UNKNOWN_ID  = "ffffffff-ffff-4fff-bfff-ffffffffffff";
 const PRIVILEGE_ID = "b0000001-0000-4000-8000-000000000001";
 
 let token;
+let adminRoleId = FALLBACK_ADMIN_ROLE_ID;
+let shouldCleanupAdminRole = false;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -36,19 +38,17 @@ beforeAll(async () => {
   await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
-  await prisma.role_privilege.deleteMany({ where: { role_id: ADMIN_ROLE_ID } });
   await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-  await prisma.role.deleteMany({ where: { role_id: { in: [ROLE_ID, ADMIN_ROLE_ID] } } });
+  await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
   await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
   await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
   await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
-  await prisma.workday.deleteMany({ where: { name: "Lunes" } });
 
   // 2. Preparar dependencias (Catálogos)
   await prisma.workday.upsert({
     where:  { workday_id: WD_ID },
     update: {},
-    create: { workday_id: WD_ID, name: "Lunes" },
+    create: { workday_id: WD_ID, name: "Lunes Update IT" },
   });
 
   await prisma.house.upsert({
@@ -79,15 +79,23 @@ beforeAll(async () => {
 
   await prisma.role.upsert({
       where:  { role_id: ROLE_ID },
-      update: { name: "Coordinador" },
-      create: { role_id: ROLE_ID, name: "Coordinador" },
+      update: { name: "Coordinador Update IT" },
+      create: { role_id: ROLE_ID, name: "Coordinador Update IT" },
   });
 
-  await prisma.role.upsert({
-      where:  { role_id: ADMIN_ROLE_ID },
-      update: { name: "Administrador" },
-      create: { role_id: ADMIN_ROLE_ID, name: "Administrador" },
+  const existingAdminRole = await prisma.role.findFirst({
+    where: { name: "Administrador" },
+    select: { role_id: true },
   });
+
+  if (existingAdminRole) {
+    adminRoleId = existingAdminRole.role_id;
+  } else {
+    shouldCleanupAdminRole = true;
+    await prisma.role.create({
+      data: { role_id: adminRoleId, name: "Administrador" },
+    });
+  }
 
   const priv = await prisma.privileges.upsert({
       where: { name: "manageEmployees" },
@@ -144,9 +152,11 @@ afterAll(async () => {
     await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
-    await prisma.role_privilege.deleteMany({ where: { role_id: ADMIN_ROLE_ID } });
     await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-    await prisma.role.deleteMany({ where: { role_id: { in: [ROLE_ID, ADMIN_ROLE_ID] } } });
+    await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
+    if (shouldCleanupAdminRole) {
+      await prisma.role.deleteMany({ where: { role_id: adminRoleId } });
+    }
     await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
     await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
     await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
@@ -488,7 +498,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ roleId: ADMIN_ROLE_ID });
+      .send({ roleId: adminRoleId });
     expect(res.statusCode).toBe(400);
   });
 
