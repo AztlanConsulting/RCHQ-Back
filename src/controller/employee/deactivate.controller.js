@@ -11,7 +11,7 @@ exports.deactivateEmployeeController = async (req, res) => {
             return res
                 .status(200)
                 .json({ message: `"${data.name}" ha sido dado de baja` });
-        } else if (code === "CANNOT_DEACTIVATE_SELF") {
+        } else if (code === RESPONSES.EMPLOYEE.CANNOT_DEACTIVATE_SELF) {
             return res
                 .status(400)
                 .json({ message: "No puedes darte de baja a ti mismo" });
@@ -21,6 +21,10 @@ exports.deactivateEmployeeController = async (req, res) => {
             return res
                 .status(409)
                 .json({ message: "El empleado ya está dado de baja" });
+        } else if (code === RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED) {
+            return res
+                .status(409)
+                .json({ message: "El empleado ya se encuentra en la lista negra" });
         } else if (code === RESPONSES.EMPLOYEE.DEACTIVATION_FAILED) {
             return res
                 .status(400)

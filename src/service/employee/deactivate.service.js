@@ -14,7 +14,7 @@ exports.deactivateEmployee = async (req) => {
     const ip = getClientIp(req);
 
     if (actorId === employeeId) {
-        return { code: "CANNOT_DEACTIVATE_SELF" };
+        return { code: RESPONSES.EMPLOYEE.CANNOT_DEACTIVATE_SELF };
     }
 
     const employee = await getEmployeeToDeactivate(employeeId);
@@ -23,13 +23,17 @@ exports.deactivateEmployee = async (req) => {
         return { code: RESPONSES.EMPLOYEE.NOT_FOUND };
     }
 
-    if (!employee.isActive) {
+    if (!employee.isActive && !addToBlacklist) {
         return { code: RESPONSES.EMPLOYEE.ALREADY_INACTIVE };
+    }
+
+    if (addToBlacklist && employee.isBlacklisted) {
+        return { code: RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED };
     }
 
     try {
         const curpToBlacklist = addToBlacklist ? employee.curp : null;
-        await deactivateEmployee(employeeId, reason, curpToBlacklist);
+        await deactivateEmployee(employeeId, reason, curpToBlacklist, employee.isActive);
         await createLog(
             actorId,
             LOG_ACTIONS.EMPLOYEE_DEACTIVATED,

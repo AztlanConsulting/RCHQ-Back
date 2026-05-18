@@ -10,6 +10,7 @@ exports.getEmployeeToDeactivate = async (employeeId) => {
             house_id: true,
             curp: true,
             is_active: true,
+            blacklist: true,
         },
     });
 
@@ -22,22 +23,25 @@ exports.getEmployeeToDeactivate = async (employeeId) => {
         houseId: employee.house_id,
         curp: employee.curp,
         isActive: employee.is_active,
+        isBlacklisted: !!employee.blacklist,
     };
 };
 
-exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null) => {
+exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null, wasActive = true) => {
     const actions = [];
 
-    actions.push(
-        prisma.employee.update({
-            where: { employee_id: employeeId },
-            data: {
-                is_active: false,
-                end_date: new Date(),
-                deactivation_reason: reason,
-            },
-        })
-    );
+    if (wasActive) {
+        actions.push(
+            prisma.employee.update({
+                where: { employee_id: employeeId },
+                data: {
+                    is_active: false,
+                    end_date: new Date(),
+                    deactivation_reason: reason,
+                },
+            })
+        );
+    }
 
     if (curpToBlacklist) {
         actions.push(
@@ -49,5 +53,7 @@ exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null) 
         );
     }
 
-    await prisma.$transaction(actions);
+    if (actions.length > 0) {
+        await prisma.$transaction(actions);
+    }
 };
