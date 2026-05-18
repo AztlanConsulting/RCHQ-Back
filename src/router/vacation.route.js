@@ -26,7 +26,9 @@ const {
     rejectVacationRequest,
     updateVacationRequestDates,
 } = require("../controller/vacation/update.controller");
-
+const {
+    deleteVacationRequest,
+} = require("../controller/vacation/delete.controller");
 const {
     employeeVacationCreateSchema,
 } = require("../schemas/vacation/create.schemas");
@@ -35,6 +37,9 @@ const {
     rejectVacationRequestSchema,
     updateVacationRequestDatesSchema,
 } = require("../schemas/vacation/update.schemas");
+const {
+    deleteVacationRequestSchema,
+} = require("../schemas/vacation/delete.schemas");
 const {
     getPendingVacationRequestsSchema,
     getReviewedVacationRequestsSchema,
@@ -84,6 +89,16 @@ router.patch(
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(updateVacationRequestDatesSchema, "all"),
     updateVacationRequestDates,
+);
+
+router.delete(
+    "/request/:vacationRequestId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    validate(deleteVacationRequestSchema, "all"),
+    deleteVacationRequest,
 );
 
 router.get(
