@@ -187,6 +187,7 @@ router.patch(
     apiLimiter,
     verifyToken,
     requireRole("Administrador", "Coordinador"),
+    requirePrivileges("manageEmployees"),
     resolveRequesterHouse,
     validate(deactivateEmployeeParamsSchema, "params"),
     validate(deactivateEmployeeSchema, "body"),
