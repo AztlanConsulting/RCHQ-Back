@@ -14,7 +14,7 @@ exports.getAllEventTypes = async () => {
 };
 
 exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
-    return await prisma.house_event.findMany({
+    const houseEvents = await prisma.house_event.findMany({
         where: {
             house_id: houseId,
             start: {
@@ -28,6 +28,11 @@ exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
             event_type: true,
         },
     });
+
+    return houseEvents.map(({ is_free_day, ...event }) => ({
+        ...event,
+        isFreeDay: is_free_day,
+    }));
 };
 
 exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
@@ -52,7 +57,7 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
 };
 
 exports.getGlobalEventsInRange = async (startDate, endDate) => {
-    return await prisma.global_event.findMany({
+    const globalEvents = await prisma.global_event.findMany({
         where: {
             start: {
                 lte: endDate,
@@ -65,6 +70,11 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
             event_type: true,
         },
     });
+
+    return globalEvents.map(({ is_free_day, ...event }) => ({
+        ...event,
+        isFreeDay: is_free_day,
+    }));
 };
 
 exports.getEventsByIds = async (eventIds) => {

@@ -7,6 +7,7 @@ jest.mock("../../model/absence/get.model");
 
 const eventModel = require("../../model/event/get.model");
 const absenceModel = require("../../model/absence/get.model");
+const vacationModel = require("../../model/vacation/get.model");
 const RESPONSES = require("../../utils/responses");
 
 describe("event.service — getAllEventTypes", () => {
@@ -47,6 +48,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
 
     it("retorna error si la fecha final es menor a la inicial", async () => {
         const result = await eventGetService.getHouseCalendarRecordsInRange(
+            "employee-1",
             "house-1",
             "2026-05-10",
             "2026-05-01",
@@ -84,12 +86,14 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
                 date: new Date("2026-05-15T00:00:00.000Z"),
                 start: new Date("2026-05-15T00:00:00.000Z"),
                 end: new Date("2026-05-15T23:59:00.000Z"),
-                is_free_day: true,
+                isFreeDay: true,
             },
         ]);
         eventModel.getGlobalEventsInRange.mockResolvedValue([]);
+        vacationModel.getHouseCalendarVacationsInRange.mockResolvedValue([]);
 
         const result = await eventGetService.getHouseCalendarRecordsInRange(
+            "employee-1",
             "house-1",
             "2026-05-01",
             "2026-05-31",

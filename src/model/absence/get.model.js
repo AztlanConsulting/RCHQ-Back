@@ -1,3 +1,4 @@
+const { dmmfToRuntimeDataModel } = require("@prisma/client/runtime/library");
 const prisma = require("../../prisma");
 
 exports.getAllAbsenceTypes = async () => {
@@ -60,7 +61,24 @@ exports.getAbsencesInRange = async (employeeId, startDate, endDate) => {
             },
         },
         include: {
-            absence_type: true,
+            absence_type: {
+                select: {
+                    name: true,
+                },
+            },
+            employee: {
+                select: {
+                    employee_id: true,
+                    name: true,
+                    surname: true,
+                    curp: true,
+                    employee_workday: {
+                        include: {
+                            workday: true,
+                        },
+                    },
+                },
+            },
         },
         orderBy: {
             start: "asc",
@@ -68,7 +86,7 @@ exports.getAbsencesInRange = async (employeeId, startDate, endDate) => {
     });
 };
 
-exports.getHouseCalendarAbsenceInRange = async (houseId, startDate, endDate) => {
+exports.getHouseCalendarAbsenceInRange = async (requesterId, houseId, startDate, endDate) => {
     return await prisma.absence.findMany({
         where: {
             start: {
@@ -80,6 +98,11 @@ exports.getHouseCalendarAbsenceInRange = async (houseId, startDate, endDate) => 
             employee: {
                 house_id: houseId,
             },
+            NOT: {
+                employee: {
+                    employee_id: requesterId,
+                }
+            }
         },
         include: {
             absence_type: {

@@ -43,12 +43,12 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const freeDays = [];
     
     events.forEach(event => {
-        if (event.is_free_day !== true) {
+        if (event.isFreeDay !== true) {
             return;
         }
 
         const eventStart = event.start;
-        const eventEnd = event.end;
+        const eventEnd =  event.end;
 
         if (!eventStart || !eventEnd) {
             throw new Error("No se encontraron fechas válidas para el evento");

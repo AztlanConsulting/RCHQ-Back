@@ -38,6 +38,60 @@ exports.getVacationsInRange = async (employeeId, startDate, endDate) => {
                 not: 2,
             },
         },
+        include: {
+            employee: {
+                select: {
+                    employee_id: true,
+                    name: true,
+                    surname: true,
+                    curp: true,
+                    employee_workday: {
+                        include: {
+                            workday: true,
+                        },
+                    },
+                },
+            },
+        }
+    });
+};
+
+exports.getHouseCalendarVacationsInRange = async (requesterId, houseId, startDate, endDate) => {
+    return await prisma.vacations_request.findMany({
+        where: {
+            start: {
+                lte: endDate,
+            },
+            end: {
+                gte: startDate,
+            },
+            status: {
+                not: 2,
+            },
+            employee: {
+                house_id: houseId,
+            },
+            NOT: {
+                employee: {
+                    employee_id: requesterId,
+                }
+            }
+        },
+        include: {
+            employee: {
+                select: {
+                    employee_id: true,
+                    name: true,
+                    surname: true,
+                    curp: true,
+                    employee_workday: {
+                        include: {
+                            workday: true,
+                        },
+                    },
+                },
+            },
+        }
     });
 };
 

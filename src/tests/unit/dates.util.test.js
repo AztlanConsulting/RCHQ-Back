@@ -14,7 +14,7 @@ const EVENTS = [
     {
         start: new Date("2026-05-04T00:00:00Z"),
         end: new Date("2026-05-04T23:59:00Z"),
-        is_free_day: true,
+        isFreeDay: true,
     },
 ];
 

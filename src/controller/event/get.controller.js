@@ -95,6 +95,7 @@ exports.getEventsInRange = async (req, res) => {
 
 exports.getHouseCalendarRecordsInRange = async (req, res) => {
     try {
+        const requesterId = req.user.id;
         const requesterHouseId = req.resolvedRequester?.houseId;
         const startDate = req.params.startDate;
         const endDate = req.params.endDate;
@@ -107,6 +108,7 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
         }
 
         const result = await getHouseCalendarRecordsInRange(
+            requesterId,
             requesterHouseId,
             startDate,
             endDate,

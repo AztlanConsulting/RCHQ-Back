@@ -1,9 +1,12 @@
-const { getVacationsInRange } = require("../../model/vacation/get.model");
+const { 
+    getVacationsInRange, 
+    getHouseCalendarVacationsInRange
+} = require("../../model/vacation/get.model");
 const {
     getHouseCalendarAbsenceInRange,
     getAbsencesInRange,
 } = require("../../model/absence/get.model");
-const { dateRangeSchema } = require("../../schemas/dates.schemas");
+const { dateRangeSchema } = require("../../schemas/dates.schemas")
 const {
     calculateUsedDays,
     combineDateAndTime,
@@ -23,12 +26,14 @@ const {
 } = require("../../model/event/get.model");
 const {
     mapEmployeeAbsenceCalendarEvent,
+    mapHouseVacationCalendarEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
 const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
+const { house } = require("../../prisma");
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -105,7 +110,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 color: "#7FD447",
                 link: "",
                 lastsAllDay: false,
-                is_free_day: event.is_free_day || false,
+                isFreeDay: event.isFreeDay || false,
             });
         });
     }
@@ -135,6 +140,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             color: "#EFBF22",
             link: "",
             lastsAllDay: false,
+            employeeId,
         });
     });
 
@@ -153,47 +159,40 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             color: "#C524FF",
             link: "",
             lastsAllDay: false,
-            is_free_day: event.is_free_day || false,
+            isFreeDay: event.isFreeDay || false,
         });
+    });
+
+    const workDays = await getWorkDays(employeeId);
+    const freeDays = events.filter((event) => {
+        return (
+            (event.scope === "global" || event.scope === "house") &&
+            event.isFreeDay === true &&
+            event.start instanceof Date &&
+            event.end instanceof Date
+        );
     });
 
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
     vacations.forEach((vacation) => {
-        const vacationEnd = new Date(vacation.end);
-        vacationEnd.setUTCDate(vacationEnd.getUTCDate() + 1);
+        const usedDays = calculateUsedDays(
+            workDays,
+            vacation.start,
+            vacation.end,
+            freeDays,
+        );
 
-        events.push({
-            start: vacation.start,
-            end: vacationEnd,
-            name: "Vacaciones",
-            type: "Vacaciones",
-            focus: "vacaciones",
-            scope: "personal",
-            status: vacation.status,
-            color: vacation.status == 0 ? "#86d982" : "#55c94f",
-            link: "",
-            lastsAllDay: true,
-        });
+        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
     });
 
     const absences = await getAbsencesInRange(employeeId, startDate, endDate);
-    const workDays = await getWorkDays(employeeId);
 
     absences.forEach((absence) => {
-        const absenceFreeDays = events.filter((event) => {
-            return (
-                (event.scope === "global" || event.scope === "house") &&
-                event.is_free_day === true &&
-                event.start instanceof Date &&
-                event.end instanceof Date
-            );
-        });
-
         const usedDays = calculateUsedDays(
             workDays,
             absence.start,
             absence.end,
-            absenceFreeDays,
+            freeDays,
         );
 
         events.push(mapEmployeeAbsenceCalendarEvent(absence, usedDays));
@@ -207,11 +206,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     };
 };
 
-exports.getHouseCalendarRecordsInRange = async (
-    houseId,
-    rawStartDate,
-    rawEndDate,
-) => {
+exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDate, rawEndDate) => {
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -232,42 +227,31 @@ exports.getHouseCalendarRecordsInRange = async (
         };
     }
 
-    const absences = await getHouseCalendarAbsenceInRange(
-        houseId,
-        startDate,
-        endDate,
-    );
-
-    if (absences.length <= 0) {
-        return {
-            code: RESPONSES.EVENTS.FOUND,
-            data: {
-                events: [],
-            },
-        };
-    }
-
-    const supportRangeStart = absences.reduce(
-        (minDate, absence) =>
-            absence.start < minDate ? absence.start : minDate,
-        absences[0].start,
-    );
-    const supportRangeEnd = absences.reduce(
-        (maxDate, absence) => (absence.end > maxDate ? absence.end : maxDate),
-        absences[0].end,
-    );
+    const vacations = await getHouseCalendarVacationsInRange(requesterId, houseId, startDate, endDate);
+    const absences = await getHouseCalendarAbsenceInRange(requesterId, houseId, startDate, endDate);
 
     const [houseEvents, globalEvents] = await Promise.all([
-        getHouseEventsInRange(houseId, supportRangeStart, supportRangeEnd),
-        getGlobalEventsInRange(supportRangeStart, supportRangeEnd),
+        getHouseEventsInRange(houseId, startDate, endDate),
+        getGlobalEventsInRange(startDate, endDate),
     ]);
 
     const freeDays = [...houseEvents, ...globalEvents].filter(
-        (event) => event.is_free_day === true,
+        (event) => event.isFreeDay === true,
     );
 
     const events = [];
 
+    vacations.forEach((vacation) => {
+        const usedDays = calculateUsedDays(
+            vacation.employee.employee_workday,
+            vacation.start,
+            vacation.end,
+            freeDays,
+        );
+
+        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
+    });
+    
     absences.forEach((absence) => {
         const usedDays = calculateUsedDays(
             absence.employee.employee_workday,

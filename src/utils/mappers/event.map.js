@@ -21,8 +21,8 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
     return {
         absenceId: absence.absence_id,
         employeeId: absence.employee_id,
-        name: "Ausencia",
-        curp: absence.employee?.curp || "",
+        name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
+        curp: absence.employee.curp,
         start: absence.start,
         end: calendarEnd,
         startDate: absence.start,
@@ -37,6 +37,25 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
         scope: "personal",
         color: "#F97316",
         lastsAllDay: true,
+    };
+};
+
+exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
+    return {
+        vacationId: vacation.vacations_request_id,
+        employeeId: vacation.employee.employee_id,
+        name: `${vacation.employee.name} ${vacation.employee.surname}`.trim(),
+        curp: vacation.employee.curp,
+        start: vacation.start,
+        end: vacation.end,
+        status: vacation.status,
+        feedback: vacation.feedback,
+        link: vacation.url || "",
+        focus: "vacaciones",
+        scope: "house",
+        color: vacation.status == 1 ? "#1439BA" : "#5673DB",
+        lastsAllDay: true,
+        usedDays,
     };
 };
 

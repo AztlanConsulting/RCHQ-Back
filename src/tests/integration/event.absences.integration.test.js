@@ -441,9 +441,9 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
             expect(mainAbsence).toMatchObject({
                 absenceId: IDS.absenceMain,
                 employeeId: IDS.employee,
-                name: "Ausencia",
-                curp: "",
-                subtitle: "",
+                name: "Ana Calendario",
+                curp: "EVAB900101HDF004",
+                subtitle: "EVAB900101HDF004",
                 focus: "ausencias",
                 scope: "personal",
                 type: expect.stringMatching(/^ABS/),
@@ -545,7 +545,7 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
             expect(houseEvent).toMatchObject({
                 name: "Evento ordinario casa",
                 scope: "house",
-                is_free_day: false,
+                isFreeDay: false,
             });
             expect(mainAbsence.usedDays).toBe(2);
         });
