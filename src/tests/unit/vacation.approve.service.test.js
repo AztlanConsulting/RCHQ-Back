@@ -480,7 +480,7 @@ describe("US34 - approveVacationRequest service", () => {
                 {
                     start: makeUTCDate(2026, 6, 24),
                     end: makeUTCDate(2026, 6, 24),
-                    is_free_day: true,
+                    isFreeDay: true,
                 },
             ]);
 

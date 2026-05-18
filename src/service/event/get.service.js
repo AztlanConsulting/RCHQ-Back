@@ -33,6 +33,7 @@ const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
+const { house } = require("../../prisma");
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -109,7 +110,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 color: "#7FD447",
                 link: "",
                 lastsAllDay: false,
-                is_free_day: event.is_free_day || false,
+                isFreeDay: event.isFreeDay || false,
             });
         });
     }
@@ -158,7 +159,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             color: "#C524FF",
             link: "",
             lastsAllDay: false,
-            is_free_day: event.is_free_day || false,
+            isFreeDay: event.isFreeDay || false,
         });
     });
 
@@ -166,7 +167,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const freeDays = events.filter((event) => {
         return (
             (event.scope === "global" || event.scope === "house") &&
-            event.is_free_day === true &&
+            event.isFreeDay === true &&
             event.start instanceof Date &&
             event.end instanceof Date
         );
@@ -235,7 +236,7 @@ exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDa
     ]);
 
     const freeDays = [...houseEvents, ...globalEvents].filter(
-        (event) => event.is_free_day === true,
+        (event) => event.isFreeDay === true,
     );
 
     const events = [];

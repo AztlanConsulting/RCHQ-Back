@@ -82,7 +82,7 @@ const makeGlobalEvent = ({
         end: makeUTCDateTime(date, 18),
         name,
         description: "",
-        is_free_day: isFreeDay,
+        isFreeDay,
         event_type: { name: "Festivo" },
     };
 };
@@ -97,7 +97,7 @@ const makeHouseEvent = ({
         end: makeUTCDateTime(date, 18),
         name,
         description: "",
-        is_free_day: isFreeDay,
+        isFreeDay,
         event_type: { name: "General" },
     };
 };
@@ -274,7 +274,7 @@ describe("event.get.service", () => {
             date: makeUTCDate(2026, 5, 4),
             name: "Global sin bandera",
         });
-        globalWithoutFreeDay.is_free_day = undefined;
+        globalWithoutFreeDay.isFreeDay = undefined;
 
         getGlobalEventsInRange.mockResolvedValue([globalWithoutFreeDay]);
 
@@ -302,10 +302,10 @@ describe("event.get.service", () => {
         );
 
         expect(globalEvent).toMatchObject({
-            is_free_day: false,
+            isFreeDay: false,
         });
         expect(houseEvent).toMatchObject({
-            is_free_day: false,
+            isFreeDay: false,
         });
         expect(getAbsenceEvent(result)).toMatchObject({
             usedDays: 3,

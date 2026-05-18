@@ -254,8 +254,8 @@ model personal_event {
   personal_event_id       String                    @id(map: "personal_event_pk") @db.Uuid
   event_type_id           String                    @db.Uuid
   date                    DateTime                  @db.Date
-  start                   DateTime                  @db.Time(6)
-  end                     DateTime                  @db.Time(6)
+  start                   DateTime                  @db.Timestamp(6)
+  end                     DateTime                  @db.Timestamp(6)
   name                    String                    @db.VarChar(70)
   description             String?                   @db.VarChar(250)
   all_day                 Boolean
@@ -337,7 +337,7 @@ model frecuency_of_payment {
 }
 
 model blacklist {
-  blacklist_id String   @id(map: "blacklist_pk") @default(uuid()) @db.Uuid
+  blacklist_id String   @id(map: "blacklist_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   curp         String   @unique @db.VarChar(18)
   created_at   DateTime @default(now()) @db.Timestamp(6)
   employee     employee @relation(fields: [curp], references: [curp], onUpdate: NoAction, map: "blacklist_employee_fk")

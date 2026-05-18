@@ -50,7 +50,7 @@ const buildValidEventBody = (overrides = {}) => ({
     start: "2026-06-15T09:00:00-06:00",
     end: "2026-06-15T11:00:00-06:00",
     allDay: false,
-    isFreeDay: false,
+    is_free_day: false,
     description: "Reunión semanal del equipo",
     ...overrides,
 });
