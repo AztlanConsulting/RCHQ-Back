@@ -167,6 +167,11 @@ const ACTIONS = [
         description: "Modificación de vacaciones exitosa",
         important: false,
     },
+    {
+        action_id: "vaca-006",
+        description: "Eliminación de vacaciones exitosa",
+        important: false,
+    },
 ];
 
 async function seedActions(db = prisma) {
