@@ -111,7 +111,7 @@ exports.getLogsPdfByHouse = async (req, res) => {
                 `attachment; filename="${result.data.fileName}"`,
             );
 
-            return res.status(200).send(result.data.pdfBuffer);
+            return res.status(201).send(result.data.pdfBuffer);
         }
 
         return res.status(500).json({
