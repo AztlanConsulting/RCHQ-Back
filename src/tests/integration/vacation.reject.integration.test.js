@@ -37,7 +37,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         id: "b8f54b14-701e-4e87-a019-caef53dcda99",
         employeeId: "b8f54b14-701e-4e87-a019-caef53dcda99",
         houseId,
-        role: "Admin",
+        role: "Administrador",
         privileges: ["manageEmployees"],
         tokenType: "SESSION",
     };
@@ -152,7 +152,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         expect(response.body.message).toBe("Role not allowed");
     });
 
-    it("regresa 403 si el usuario es Admin", async () => {
+    it("regresa 403 si el usuario es Administrador", async () => {
         const token = buildToken(adminTokenPayload);
 
         const response = await request(app)

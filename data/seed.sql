@@ -31,7 +31,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role (role_id, name)
 VALUES 
 ('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
-('a0000002-0000-4000-8000-000000000002', 'Admin'),
+('a0000002-0000-4000-8000-000000000002', 'Administrador'),
 ('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
 ('a0000002-0000-4000-8000-000000000004', 'Lavandería'),
 ('a0000002-0000-4000-8000-000000000005', 'Responsable del cuidado de NNA'),
@@ -78,7 +78,7 @@ ON CONFLICT DO NOTHING;
 -- ROLE_PRIVILEGE
 -- =========================
 
--- Admin — todos los privilegios
+-- Administrador — todos los privilegios
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000002', privilege_id
 FROM public.privileges
@@ -159,15 +159,15 @@ INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 JOIN public.privileges p ON p.name = 'createEvent'
-WHERE r.name IN ('Admin', 'Coordinador')
+WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
--- Crear ausencias - Admin y Coordinador
+-- Crear ausencias - Administrador y Coordinador
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 JOIN public.privileges p ON p.name = 'addAbsences'
-WHERE r.name IN ('Admin', 'Coordinador')
+WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -185,7 +185,7 @@ INSERT INTO public.employee (
 VALUES (
   'b8f54b14-701e-4e87-a019-caef53dcda99',
   (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
-  (SELECT role_id  FROM public.role   WHERE name = 'Admin'      LIMIT 1),
+  (SELECT role_id  FROM public.role   WHERE name = 'Administrador'      LIMIT 1),
   'Carlos',
   'Ramírez',
   true,
@@ -577,7 +577,7 @@ INSERT INTO public.employee (
 SELECT
   'e0000001-0000-4000-8000-000000000001',
   'b0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
   'María',
   'González',
   true,
@@ -1374,7 +1374,7 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Empleado Admin aislado para validar que Coordinador no pueda modificar vacaciones de Admin
+-- Empleado Administrador aislado para validar que Coordinador no pueda modificar vacaciones de Administrador
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -1404,8 +1404,8 @@ INSERT INTO public.employee (
 VALUES (
   'e3000001-0000-4000-8000-000000000007',
   'a0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
-  'Admin',
+  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
+  'Administrador',
   'Aislado US30',
   true,
   'admin.empleado.us30@rchq.test',
@@ -1536,7 +1536,7 @@ VALUES
   NOW(),
   3
 ),
--- Caso empleado Admin, debe bloquearse para Coordinador
+-- Caso empleado Administrador, debe bloquearse para Coordinador
 (
   'c3000000-0000-4000-8000-000000000005',
   'e3000001-0000-4000-8000-000000000007',

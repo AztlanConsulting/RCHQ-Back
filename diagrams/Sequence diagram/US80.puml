@@ -54,7 +54,7 @@ Service -> Service : parsePagination(page, limit)
 Service -> Service : buildVacationListWhere({\nhouseId,\nsearch,\nstartDate,\nendDate,\nstatusFilter: PENDING\n})
 
 Service -> VacationGetModel : getPendingVacationRequestsByHouse({\nwhere,\nskip,\ntake\n})
-VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status = PENDING\nAND employee.house_id = houseId\nAND employee.role.name != Admin
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status = PENDING\nAND employee.house_id = houseId\nAND employee.role.name != Administrador
 DB --> VacationGetModel : Solicitudes pendientes + total
 VacationGetModel --> Service : { requests, total }
 
@@ -109,7 +109,7 @@ Service -> Service : mapReviewedStatus(status)
 Service -> Service : buildVacationListWhere({\nhouseId,\nsearch,\nstartDate,\nendDate,\nstatusFilter\n})
 
 Service -> VacationGetModel : getReviewedVacationRequestsByHouse({\nwhere,\nskip,\ntake\n})
-VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status IN (APPROVED, REJECTED)\nAND employee.house_id = houseId\nAND employee.role.name != Admin
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status IN (APPROVED, REJECTED)\nAND employee.house_id = houseId\nAND employee.role.name != Administrador
 DB --> VacationGetModel : Solicitudes revisadas + total
 VacationGetModel --> Service : { requests, total }
 

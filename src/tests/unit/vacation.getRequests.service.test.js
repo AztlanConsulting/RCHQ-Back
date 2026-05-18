@@ -111,7 +111,7 @@ describe("US80 - getPendingVacationRequests service", () => {
             employee_id: "e8000000-0000-4000-8000-000000000001",
             house_id: "a0000001-0000-4000-8000-000000000001",
             role: {
-                name: "Admin",
+                name: "Administrador",
             },
         });
 
@@ -281,7 +281,7 @@ describe("US80 - getReviewedVacationRequests service", () => {
             employee_id: "e8000000-0000-4000-8000-000000000001",
             house_id: "a0000001-0000-4000-8000-000000000001",
             role: {
-                name: "Admin",
+                name: "Administrador",
             },
         });
 

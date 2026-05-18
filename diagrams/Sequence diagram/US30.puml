@@ -123,7 +123,7 @@ VacationUpdateModel -> DB : Validar que existe
 VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
 VacationUpdateModel -> DB : Validar status PENDING o APPROVED
 VacationUpdateModel -> DB : Releer empleado
-VacationUpdateModel -> DB : Validar misma casa y que no sea Admin
+VacationUpdateModel -> DB : Validar misma casa y que no sea Administrador
 VacationUpdateModel -> DB : Buscar traslapes activos excluyendo solicitud actual
 VacationUpdateModel -> DB : Calcular used_days de otras vacaciones activas del año
 VacationUpdateModel -> DB : Validar días disponibles
