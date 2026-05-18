@@ -17,7 +17,7 @@ exports.deactivateEmployee = async (req) => {
         return { code: RESPONSES.EMPLOYEE.CANNOT_DEACTIVATE_SELF };
     }
 
-    const employee = await getEmployeeToDeactivate(employeeId);
+    const employee = req.resolvedEmployee || await getEmployeeToDeactivate(employeeId);
 
     if (!employee) {
         return { code: RESPONSES.EMPLOYEE.NOT_FOUND };
@@ -34,24 +34,19 @@ exports.deactivateEmployee = async (req) => {
     try {
         const curpToBlacklist = addToBlacklist ? employee.curp : null;
         await deactivateEmployee(employeeId, reason, curpToBlacklist, employee.isActive);
-        await createLog(
-            actorId,
-            LOG_ACTIONS.EMPLOYEE_DEACTIVATED,
-            ip,
-            employeeId,
-        );
+        
+        try {
+            await createLog(actorId, LOG_ACTIONS.EMPLOYEE_DEACTIVATED, ip, employeeId);
+        } catch (logError) {
+            console.error("Baja exitosa pero falló el log de auditoría:", logError);
+        }
+
         return {
             code: RESPONSES.EMPLOYEE.DEACTIVATED,
             data: { name: employee.name },
         };
     } catch (error) {
         console.error("Error al desactivar al empleado:", error);
-        await createLog(
-            actorId,
-            LOG_ACTIONS.EMPLOYEE_DEACTIVATION_FAILED,
-            ip,
-            employeeId,
-        );
         return {
             code: RESPONSES.EMPLOYEE.DEACTIVATION_FAILED,
             data: { name: employee.name },
