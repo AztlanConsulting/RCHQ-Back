@@ -212,7 +212,7 @@ describe("vacation.update.model — approveVacationRequestAtomically", () => {
         transaction.employee.findUnique.mockResolvedValueOnce({
             ...targetEmployee,
             role: {
-                name: "Admin",
+                name: "Administrador",
             },
         });
 

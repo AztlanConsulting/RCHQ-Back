@@ -43,7 +43,7 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Admin", "Coordinador"),
+    requireRole("Administrador", "Coordinador"),
     requirePrivileges("viewEvents"),
     authorize(employeePolicy, (req) => ({
         houseId: req.resolvedRequester.houseId,
@@ -64,7 +64,7 @@ router.post(
     "/house/add",
     apiLimiter,
     verifyToken,
-    requireRole("Admin", "Coordinador"),
+    requireRole("Administrador", "Coordinador"),
     requirePrivileges("createEvent"),
     authorize(houseEventPolicy, (req) => ({ houseId: req.user.houseId })),
     createHouseEvent,

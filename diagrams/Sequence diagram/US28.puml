@@ -1,7 +1,7 @@
 @startuml
-title US28 - Admin/Coordinador registra vacaciones de un empleado
+title US28 - Administrador/Coordinador registra vacaciones de un empleado
 
-actor "Admin/Coordinador" as Usuario
+actor "Administrador/Coordinador" as Usuario
 boundary "Frontend" as Frontend
 control "vacation.route.js" as Router
 control "create.controller.js" as Controller
@@ -20,7 +20,7 @@ Frontend -> Router : POST /vacation/employees/:employeeId/register\nAuthorizatio
 
 Router -> Router : apiLimiter
 Router -> Router : verifyToken
-Router -> Router : requireRole("Admin", "Coordinador")
+Router -> Router : requireRole("Administrador", "Coordinador")
 Router -> Controller : registerEmployeeVacation(req, res)
 
 Controller -> Controller : Obtener targetEmployeeId de params
@@ -58,7 +58,7 @@ Service --> Controller : RESPONSES.USER.NOT_ACCESS
 Controller --> Frontend : 401 Unauthorized\n"Usuario no autenticado"
 end
 
-alt Actor no es Admin ni Coordinador
+alt Actor no es Administrador ni Coordinador
 Service --> Controller : RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS
 Controller --> Frontend : 403 Forbidden\n"No tienes permisos para registrar vacaciones de otros empleados"
 end

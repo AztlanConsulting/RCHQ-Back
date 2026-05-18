@@ -20,13 +20,15 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
 const { randomUUID } = require("crypto");
 const RESPONSES = require("../../utils/responses");
+const { ROLES } = require("../../utils/roles");
 
 exports.getById = async (id) => {
     return await findById(id);
 };
 
 exports.getRoles = async () => {
-    return await getAllRoles();
+    const roles = await getAllRoles();
+    return roles.filter((role) => role.name !== ROLES.ADMIN);
 };
 
 exports.createEmployee = async (employee, user, req) => {

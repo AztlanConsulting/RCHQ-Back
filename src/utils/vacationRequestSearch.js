@@ -101,7 +101,7 @@ exports.buildVacationRequestSearchSqlParts = ({
         INNER JOIN public.role r
             ON r.role_id = e.role_id
         WHERE e.house_id = ${houseId}::uuid
-            AND r.name <> 'Admin'
+            AND r.name <> 'Administrador'
             AND ${statusSql}
             ${dateSql}
             ${searchSql}

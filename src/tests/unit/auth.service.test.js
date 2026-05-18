@@ -104,7 +104,7 @@ const mockEmployee = {
     employeeId: "abc-123",
     email: "test@gmail.com",
     name: "Test User",
-    role: "admin",
+    role: "Administrador",
     isActive: true,
     hasFirstLogin: false,
     isActiveTwoFactorAuth: false,

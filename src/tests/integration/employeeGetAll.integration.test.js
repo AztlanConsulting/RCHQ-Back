@@ -23,7 +23,7 @@ const generateToken = (
 ) => {
     const defaultPayload = {
         employeeId: TEST_ADMIN_ID,
-        role: "Admin",
+        role: "Administrador",
         houseId: TEST_HOUSE_ID,
         tokenType: "SESSION",
         privileges: [
@@ -44,14 +44,14 @@ const generateToken = (
 
 const seedDependencies = async () => {
     let role = await prisma.role.findUnique({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
     });
 
     if (!role) {
         role = await prisma.role.create({
             data: {
                 role_id: randomUUID(),
-                name: "Admin",
+                name: "Administrador",
             },
         });
     }

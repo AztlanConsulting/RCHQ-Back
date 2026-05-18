@@ -62,8 +62,8 @@ beforeAll(async () => {
 
   await prisma.role.upsert({
       where:  { role_id: ROLE_ID },
-      update: { name: "Admin" },
-      create: { role_id: ROLE_ID, name: "Admin" },
+      update: { name: "Administrador" },
+      create: { role_id: ROLE_ID, name: "Administrador" },
   });
 
   const priv = await prisma.privileges.upsert({
@@ -106,7 +106,7 @@ beforeAll(async () => {
     employeeId: EMP_ID, 
     id: EMP_ID,
     roleId: ROLE_ID, 
-    role: "Admin",
+    role: "Administrador",
     privileges: ["manageEmployees"],
     houseId: HOUSE_ID, 
     email: "test.update@mail.com", 

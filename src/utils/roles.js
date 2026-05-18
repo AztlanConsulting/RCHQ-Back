@@ -1,6 +1,6 @@
 const ROLES = Object.freeze({
     COORDINATOR: "Coordinador",
-    ADMIN: "Admin",
+    ADMIN: "Administrador",
     MAINTENANCE: "Mantenimiento",
     LAUNDRY: "Lavandería",
     NNA_CARE_RESPONSIBLE: "Responsable del cuidado de NNA",

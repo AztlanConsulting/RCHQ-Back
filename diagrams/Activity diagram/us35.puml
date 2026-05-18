@@ -86,7 +86,7 @@ else (No)
 stop
 endif
 
-if (¿Empleado es Admin?) then (Sí)
+if (¿Empleado es Administrador?) then (Sí)
 :Mostrar error "No puede acceder a este recurso";
 stop
 else (No)

@@ -85,7 +85,7 @@ beforeEach(() => {
   updateContactInfo.mockResolvedValue();
   updateAdminInfo.mockResolvedValue();
   upsertWorkdays.mockResolvedValue();
-  getAllRoles.mockResolvedValue([{ roleId: "r1", name: "Admin" }]);
+  getAllRoles.mockResolvedValue([{ roleId: "r1", name: "Administrador" }]);
   getAllHouses.mockResolvedValue([{ houseId: "h1", name: "Casa Test" }]);
   getAllWorkdays.mockResolvedValue([{ workdayId: "wd1", name: "Lunes" }]);
   getFrecuencyPaymentOptions.mockResolvedValue([{ id: "f1", name: "Quincenal" }]);
@@ -99,7 +99,7 @@ describe("getUpdateFormData", () => {
   it("retorna roles, casas, workdays y houseId del usuario", async () => {
     const result = await getUpdateFormData({ houseId: "h1" });
     expect(result).toEqual({
-      roles:    [{ roleId: "r1", name: "Admin" }],
+      roles:    [{ roleId: "r1", name: "Administrador" }],
       houses:   [{ houseId: "h1", name: "Casa Test" }],
       workdays: [{ workdayId: "wd1", name: "Lunes" }],
       houseId:  "h1",

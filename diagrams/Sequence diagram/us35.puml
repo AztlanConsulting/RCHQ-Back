@@ -84,7 +84,7 @@ VacationUpdateModel -> DB : Releer solicitud
 VacationUpdateModel -> DB : Validar que existe
 VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
 VacationUpdateModel -> DB : Releer empleado
-VacationUpdateModel -> DB : Validar misma casa y que no sea Admin
+VacationUpdateModel -> DB : Validar misma casa y que no sea Administrador
 VacationUpdateModel -> DB : Validar que sigue pendiente
 VacationUpdateModel -> DB : UPDATE status = REJECTED,\nfeedback = feedback/null
 DB --> VacationUpdateModel : Solicitud rechazada

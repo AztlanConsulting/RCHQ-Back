@@ -18,6 +18,7 @@ const {
 const { getHouseById } = require("../../model/house/get.model");
 const { decryptValue } = require("../../utils/password");
 const RESPONSES = require("../../utils/responses");
+const { ROLES } = require("../../utils/roles");
 
 exports.getEmployees = async (
     houseId,
@@ -69,7 +70,8 @@ exports.getById = async (id) => {
 };
 
 exports.getRoles = async () => {
-    return await getAllRoles();
+    const roles = await getAllRoles();
+    return roles.filter((role) => role.name !== ROLES.ADMIN);
 };
 
 exports.getDocumentsByEmployee = async (employeeId) => {

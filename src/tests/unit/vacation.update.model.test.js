@@ -156,12 +156,12 @@ describe("updateVacationRequestDatesAtomically model", () => {
         });
     });
 
-    it("regresa EMPLOYEE_OUT_OF_SCOPE si el empleado es Admin", async () => {
+    it("regresa EMPLOYEE_OUT_OF_SCOPE si el empleado es Administrador", async () => {
         const transaction = buildTransaction({
             foundEmployee: {
                 ...targetEmployee,
                 role: {
-                    name: "Admin",
+                    name: "Administrador",
                 },
             },
         });
