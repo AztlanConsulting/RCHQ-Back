@@ -298,3 +298,15 @@ exports.findByIdWithRoleAndHouse = async (employeeId) => {
         },
     });
 };
+
+exports.findByCurpWithRoleAndHouse = async (curp) => {
+    return await prisma.employee.findUnique({
+        where: {
+            curp: curp,
+        },
+        include: {
+            role: true,
+            house: true,
+        },
+    });
+};
