@@ -67,6 +67,63 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
     });
 };
 
+exports.getEventsByIds = async (eventIds) => {
+    if (eventIds.length === 0) {
+        return [];
+    }
+
+    const [houseEvents, personalEvents, globalEvents] = await Promise.all([
+        prisma.house_event.findMany({
+            where: {
+                house_event_id: {
+                    in: eventIds,
+                },
+            },
+            select: {
+                house_event_id: true,
+                name: true,
+            },
+        }),
+        prisma.personal_event.findMany({
+            where: {
+                personal_event_id: {
+                    in: eventIds,
+                },
+            },
+            select: {
+                personal_event_id: true,
+                name: true,
+            },
+        }),
+        prisma.global_event.findMany({
+            where: {
+                global_event_id: {
+                    in: eventIds,
+                },
+            },
+            select: {
+                global_event_id: true,
+                name: true,
+            },
+        }),
+    ]);
+
+    return [
+        ...houseEvents.map((event) => ({
+            id: event.house_event_id,
+            name: event.name,
+        })),
+        ...personalEvents.map((event) => ({
+            id: event.personal_event_id,
+            name: event.name,
+        })),
+        ...globalEvents.map((event) => ({
+            id: event.global_event_id,
+            name: event.name,
+        })),
+    ];
+};
+
 exports.getEmployeesByHouse = (houseId, search) => {
     if (!search || search.trim() === "") {
         return prisma.$queryRaw`

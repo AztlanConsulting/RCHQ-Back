@@ -105,6 +105,7 @@ const cleanDb = async () => {
 
 // ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
+    await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS unaccent;`);
     await cleanDb();
     await seedDependencies();
 });

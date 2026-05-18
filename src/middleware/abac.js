@@ -1,22 +1,26 @@
-const { getHome, findByIdWithRoleAndHouse } = require("../model/employee/get.model");
+const {
+    getHome,
+    findByIdWithRoleAndHouse,
+    findByCurpWithRoleAndHouse,
+} = require("../model/employee/get.model");
 const { ROLES } = require("../utils/roles");
 
 const isAdminRole = (roleName) =>
     roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
 
-const canAccess = (user, policyFn, resource) => {
+exports.canAccess = (user, policyFn, resource) => {
     if (!user) return false;
     return policyFn(user, resource);
 };
 
-const authorize = (policyFn, getResource) => async (req, res, next) => {
+exports.authorize = (policyFn, getResource) => async (req, res, next) => {
     try {
         const resource =
             typeof getResource === "function"
                 ? await getResource(req)
                 : getResource;
 
-        if (canAccess(req.user, policyFn, resource)) {
+        if (exports.canAccess(req.user, policyFn, resource)) {
             return next();
         }
 
@@ -25,12 +29,13 @@ const authorize = (policyFn, getResource) => async (req, res, next) => {
             message: "Acceso denegado",
             error: "Acceso denegado",
         });
-    } catch {
+    } catch (error) {
+        console.error("Error en middleware authorize:", error);
         return res.status(500).json({ message: "Error del servidor" });
     }
 };
 
-const isAllowed = async (req, res, next) => {
+exports.isAllowed = async (req, res, next) => {
     try {
         const targetId = req.params.employeeId || req.params.id || "";
 
@@ -42,7 +47,7 @@ const isAllowed = async (req, res, next) => {
             success: false,
             message: "No puede acceder a este recurso"
         });
-        if (req.user.houseId == homeQuery.house_id && req.user.role == "Coordinador") {
+        if (req.user.houseId == homeQuery.house_id && req.user.role == ROLES.COORDINATOR) {
             return next();
         }
 
@@ -50,7 +55,8 @@ const isAllowed = async (req, res, next) => {
             success: false,
             message: "No puede acceder a este recurso"
         });
-    } catch {
+    } catch (error) {
+        console.error("Error en middleware isAllowed:", error);
         return res.status(403).json({
             success: false,
             message: "No puede acceder a este recurso"
@@ -58,7 +64,7 @@ const isAllowed = async (req, res, next) => {
     }
 };
 
-const canRegisterEmployeeVacation = async (req, res, next) => {
+exports.canRegisterEmployeeVacation = async (req, res, next) => {
     try {
         const targetEmployeeId = req.params.employeeId;
 
@@ -97,7 +103,8 @@ const canRegisterEmployeeVacation = async (req, res, next) => {
         }
 
         return next();
-    } catch {
+    } catch (error) {
+        console.error("Error en canRegisterEmployeeVacation:", error);
         return res.status(403).json({
             success: false,
             message: "No puede acceder a este recurso",
@@ -105,9 +112,53 @@ const canRegisterEmployeeVacation = async (req, res, next) => {
     }
 };
 
-module.exports = {
-    authorize,
-    canAccess,
-    isAllowed,
-    canRegisterEmployeeVacation,
+exports.canAddToBlacklist = async (req, res, next) => {
+    try {
+        const targetCurp = req.body.curp;
+
+        if (!targetCurp) {
+            return res.status(400).json({ success: false, message: "CURP no proporcionada" });
+        }
+
+        if (req.user.role !== ROLES.COORDINATOR) {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        }
+
+        const currentUser = await findByIdWithRoleAndHouse(req.user.id);
+        const currentUserCurp = currentUser ? currentUser.curp : null;
+
+        if (currentUserCurp && String(currentUserCurp) === String(targetCurp)) {
+            return res.status(403).json({
+                success: false,
+                message: "Acción denegada: No puedes agregarte a ti mismo a la lista negra.",
+            });
+        }
+
+        const targetEmployee = await findByCurpWithRoleAndHouse(targetCurp);
+
+        if (!targetEmployee) {
+            return res.status(404).json({
+                success: false,
+                message: "Empleado no encontrado",
+            });
+        }
+
+        if (req.user.houseId !== targetEmployee.house_id) {
+            return res.status(403).json({
+                success: false,
+                message: "No puede acceder a este recurso",
+            });
+        }
+
+        return next();
+    } catch (error) {
+        console.error("Error en canAddToBlacklist:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error del servidor",
+        });
+    }
 };
