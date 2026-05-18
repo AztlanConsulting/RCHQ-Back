@@ -415,4 +415,5 @@ describe("GET /logs/house", () => {
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
     });
+
 });

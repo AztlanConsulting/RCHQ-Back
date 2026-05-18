@@ -9,6 +9,7 @@ const eventRouter = require("./router/event.route");
 const houseRouter = require("./router/house.route");
 const absenceRouter = require("./router/absence.route");
 const logsRouter = require("./router/logs.route");
+const { startLogRetentionJob } = require("./utils/logRetentionJob");
 
 const errorHandler = require("./middleware/ErrorHandler");
 const path = require("path");
@@ -42,6 +43,7 @@ app.use(errorHandler);
 
 if (require.main === module) {
     app.listen(port, () => {
+        startLogRetentionJob();
         console.log(`Server is running on port ${port}`);
     });
 }

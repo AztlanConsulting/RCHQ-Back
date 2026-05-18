@@ -33,6 +33,7 @@
     "jsonwebtoken": "^9.0.3",
     "mailgun.js": "^12.7.1",
     "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
     "nodemon": "^3.1.14",
     "pg": "^8.13.1",
     "qrcode": "^1.5.4",

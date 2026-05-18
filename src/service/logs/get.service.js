@@ -28,8 +28,10 @@ exports.getLogsByHouse = async (houseId, page, limit) => {
         };
     }
 
-    const { page: parsedPage, limit: parsedLimit } = parsedPagination.data;
-
+    const {
+        page: parsedPage,
+        limit: parsedLimit,
+    } = parsedPagination.data;
     const skip = (parsedPage - 1) * parsedLimit;
     const { logs, totalRecords } = await getLogsByHousePage(
         houseId,

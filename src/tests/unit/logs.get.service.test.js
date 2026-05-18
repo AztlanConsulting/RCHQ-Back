@@ -6,7 +6,6 @@ jest.mock("../../model/logs/get.model", () => ({
 jest.mock("../../utils/logIp", () => ({
     readLogIp: jest.fn((value) => `decoded:${value}`),
 }));
-
 const { getLogsByHouse } = require("../../service/logs/get.service");
 const {
     getLogsByHousePage,
@@ -151,4 +150,5 @@ describe("logs.get.service", () => {
         ]);
         expect(readLogIp).toHaveBeenCalledTimes(2);
     });
+
 });
