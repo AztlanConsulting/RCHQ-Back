@@ -23,6 +23,10 @@ const IDS = {
     employeeB: randomUUID(),
     logA1: randomUUID(),
     logA2: randomUUID(),
+    logA3: randomUUID(),
+    personalEventA: randomUUID(),
+    eventType: randomUUID(),
+    logA4: randomUUID(),
     logB1: randomUUID(),
 };
 
@@ -50,6 +54,16 @@ const sign = (overrides = {}) =>
 
 const seed = async () => {
     await seedActions(prisma);
+
+    await prisma.event_type.createMany({
+        data: [
+            {
+                event_type_id: IDS.eventType,
+                name: `Tipo-${IDS.eventType.slice(0, 8)}`,
+            },
+        ],
+        skipDuplicates: true,
+    });
 
     await prisma.house.createMany({
         data: [
@@ -213,6 +227,19 @@ const seed = async () => {
         ],
     });
 
+    await prisma.personal_event.create({
+        data: {
+            personal_event_id: IDS.personalEventA,
+            event_type_id: IDS.eventType,
+            date: new Date("2026-05-08"),
+            start: new Date("2026-05-08T10:00:00.000Z"),
+            end: new Date("2026-05-08T11:00:00.000Z"),
+            name: "Visita médica",
+            description: "Consulta programada",
+            all_day: false,
+        },
+    });
+
     await prisma.logs.createMany({
         data: [
             {
@@ -232,6 +259,22 @@ const seed = async () => {
                 ip_address: encryptLogIp("10.10.10.11"),
             },
             {
+                log_id: IDS.logA3,
+                employee_id: IDS.coordinator,
+                moment: new Date("2026-05-08T10:00:00.000Z"),
+                action_id: "empl-005",
+                affected: IDS.houseB,
+                ip_address: encryptLogIp("10.10.10.13"),
+            },
+            {
+                log_id: IDS.logA4,
+                employee_id: IDS.coordinator,
+                moment: new Date("2026-05-08T09:00:00.000Z"),
+                action_id: "empl-005",
+                affected: IDS.personalEventA,
+                ip_address: encryptLogIp("10.10.10.14"),
+            },
+            {
                 log_id: IDS.logB1,
                 employee_id: IDS.employeeB,
                 moment: new Date("2026-05-08T08:00:00.000Z"),
@@ -247,8 +290,20 @@ const cleanup = async () => {
     await prisma.logs.deleteMany({
         where: {
             log_id: {
-                in: [IDS.logA1, IDS.logA2, IDS.logB1],
+                in: [IDS.logA1, IDS.logA2, IDS.logA3, IDS.logA4, IDS.logB1],
             },
+        },
+    });
+
+    await prisma.personal_event.deleteMany({
+        where: {
+            personal_event_id: IDS.personalEventA,
+        },
+    });
+
+    await prisma.event_type.deleteMany({
+        where: {
+            event_type_id: IDS.eventType,
         },
     });
 
@@ -381,10 +436,10 @@ describe("GET /logs/house", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.totalRecords).toBe(2);
+        expect(res.body.totalRecords).toBe(4);
         expect(res.body.totalPages).toBe(1);
         expect(res.body.currentPage).toBe(1);
-        expect(res.body.data).toHaveLength(2);
+        expect(res.body.data).toHaveLength(4);
         expect(res.body.data[0]).toMatchObject({
             responsibleName: "Carla Coord",
             responsibleCurp: "COOC900101MDFABC01",
@@ -396,11 +451,16 @@ describe("GET /logs/house", () => {
             affectedName: "Afectación libre",
             ipAddress: "10.10.10.11",
         });
-        expect(typeof res.body.data[1].action).toBe("string");
-        expect(res.body.data[1].action.length).toBeGreaterThan(0);
-        expect(
-            res.body.data.some((log) => log.affectedName === "María CasaB"),
-        ).toBe(false);
+        expect(res.body.data[2]).toMatchObject({
+            affectedName: `Casa B ${IDS.houseB}`,
+            ipAddress: "10.10.10.13",
+        });
+        expect(res.body.data[3]).toMatchObject({
+            affectedName: "Visita médica",
+            ipAddress: "10.10.10.14",
+        });
+        expect(typeof res.body.data[3].action).toBe("string");
+        expect(res.body.data[3].action.length).toBeGreaterThan(0);
     });
 
     it("pagina los resultados", async () => {
@@ -409,8 +469,8 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.totalRecords).toBe(2);
-        expect(res.body.totalPages).toBe(2);
+        expect(res.body.totalRecords).toBe(4);
+        expect(res.body.totalPages).toBe(4);
         expect(res.body.currentPage).toBe(2);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
