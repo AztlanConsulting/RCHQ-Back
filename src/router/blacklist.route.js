@@ -12,7 +12,7 @@ router.post(
     "/",
     apiLimiter,
     verifyToken,
-    requireRole("Admin", "Coordinador"),
+    requireRole("Administrador", "Coordinador"),
     requirePrivileges("addToBlacklist"),
     validate(blacklistCreateSchema),
     canAddToBlacklist,

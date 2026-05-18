@@ -46,9 +46,9 @@ const seedDependencies = async (hashedPassword) => {
     });
 
     const adminRole = await prisma.role.upsert({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
         update: {},
-        create: { role_id: TEST_ROLE_ADMIN_ID, name: "Admin" },
+        create: { role_id: TEST_ROLE_ADMIN_ID, name: "Administrador" },
     });
     TEST_ROLE_ADMIN_ID = adminRole.role_id;
 

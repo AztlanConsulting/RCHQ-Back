@@ -8,7 +8,7 @@ exports.deactivateEmployeePolicy = (user, resource) => {
         return false;
     }
 
-    if (user.role === "Admin") return true;
+    if (user.role === "Administrador") return true;
     if (user.role === "Coordinador") return user.houseId === resource.houseId;
     return false;
 };
