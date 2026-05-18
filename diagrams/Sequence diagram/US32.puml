@@ -1,0 +1,115 @@
+@startuml
+title US32 - Coordinador remueve vacaciones de un empleado
+
+actor "Coordinador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "auth/rbac/validate middleware" as Middleware
+control "update.controller.js" as Controller
+control "update.service.js" as Service
+database "vacation/get.model.js" as VacationGetModel
+database "employee/get.model.js" as EmployeeGetModel
+database "vacation/update.model.js" as VacationUpdateModel
+database "log.model.js" as LogModel
+database "Base de datos" as DB
+
+autonumber
+
+Usuario -> Frontend : Selecciona solicitud pendiente, aprobada o rechazada
+Usuario -> Frontend : Da clic en remover vacaciones
+Frontend -> Usuario : Muestra confirmación
+
+alt Usuario cancela confirmación
+Frontend --> Usuario : No se realiza ningún cambio
+else Usuario confirma eliminación
+Frontend -> Router : DELETE /vacation/request/:vacationRequestId\nAuthorization: Bearer token
+
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(deleteVacationRequestSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : deleteVacationRequest(req, res)
+
+Controller -> Service : deleteVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
+
+Service -> Service : Validar contrato interno con schema de caso de uso
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Datos inválidos
+else Entrada interna válida
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Actor coordinador
+EmployeeGetModel --> Service : Actor
+
+alt Actor no existe
+Service --> Controller : USER_NOT_AUTHENTICATED
+Controller --> Frontend : 401 Usuario no autenticado
+else Actor no es Coordinador
+Service --> Controller : INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Sin permisos
+else Actor válido
+Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
+VacationGetModel -> DB : SELECT vacations_request
+DB --> VacationGetModel : Solicitud
+VacationGetModel --> Service : Solicitud
+
+alt Solicitud no existe
+Service --> Controller : VACATION_REQUEST_NOT_FOUND
+Controller --> Frontend : 404 Solicitud no encontrada
+else Solicitud existe
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Empleado dueño
+EmployeeGetModel --> Service : Empleado
+
+alt Empleado no existe
+Service --> Controller : EMPLOYEE_NOT_FOUND
+Controller --> Frontend : 404 Empleado no encontrado
+else Empleado es Admin
+Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 403 No puede acceder a este recurso
+else Empleado fuera de casa hogar
+Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 403 No puede acceder a este recurso
+else Actor autorizado
+Service -> VacationUpdateModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId\n})
+
+VacationUpdateModel -> DB : BEGIN TRANSACTION
+VacationUpdateModel -> DB : SELECT employee FOR UPDATE
+VacationUpdateModel -> DB : Releer solicitud
+VacationUpdateModel -> DB : Validar que existe
+VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
+VacationUpdateModel -> DB : Releer empleado con rol
+VacationUpdateModel -> DB : Validar misma casa y que no sea Admin
+VacationUpdateModel -> DB : DELETE vacations_request
+DB --> VacationUpdateModel : Solicitud eliminada
+VacationUpdateModel -> DB : COMMIT
+VacationUpdateModel --> Service : Solicitud eliminada
+
+alt Transacción detecta solicitud inexistente o fuera de alcance
+Service --> Controller : NOT_FOUND / OUT_OF_SCOPE
+Controller --> Frontend : 404/403 Error de eliminación
+else Eliminación exitosa
+Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
+LogModel -> DB : INSERT logs
+DB --> LogModel : Log creado
+
+Service --> Controller : VACATION_DELETED
+Controller --> Frontend : 200 Vacaciones removidas correctamente
+Frontend --> Usuario : Mostrar confirmación
+end
+end
+end
+end
+end
+end
+end
+
+@enduml

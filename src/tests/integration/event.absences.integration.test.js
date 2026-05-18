@@ -466,8 +466,15 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
 
         it("calcula cero usedDays cuando la ausencia cae solo en dias no laborales", async () => {
             const res = await request(app)
-                .get(route())
-                .set("Authorization", `Bearer ${sign()}`);
+                .get(route(IDS.employee, "2026-05-02", "2026-05-03"))
+                .set(
+                    "Authorization",
+                    `Bearer ${sign({
+                        id: IDS.employee,
+                        employeeId: IDS.employee,
+                        role: "Mantenimiento",
+                    })}`,
+                );
 
             expect(res.statusCode).toBe(200);
             expect(

@@ -4,7 +4,7 @@ const {
   updateAdminInfo,
   upsertWorkdays,
 } = require("../../model/employee/update.model");
-const { findById } = require("../../model/employee/get.model");
+const { findById, getRoleById } = require("../../model/employee/get.model");
 const { encryptValue } = require("../../utils/password");
 const {
   employeeBasicUpdateSchema,
@@ -73,6 +73,40 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
 
   const employee = await findById(employeeId);
   if (!employee) return { type: RESPONSES.EMPLOYEE.NOT_FOUND };
+
+  if (body.houseId !== undefined) {
+    return {
+      type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+      errors: [{
+        campo: "houseId",
+        mensaje: "La casa del empleado no se puede modificar desde esta sección",
+      }],
+    };
+  }
+
+  if (parsed.data.roleId) {
+    const role = await getRoleById(parsed.data.roleId);
+
+    if (!role) {
+      return {
+        type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+        errors: [{
+          campo: "roleId",
+          mensaje: "El puesto seleccionado no existe",
+        }],
+      };
+    }
+
+    if (role.name === "Administrador") {
+      return {
+        type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+        errors: [{
+          campo: "roleId",
+          mensaje: "No se puede modificar el puesto a Administrador",
+        }],
+      };
+    }
+  }
 
   const { workdays, salary, ...rest } = parsed.data;
 

@@ -99,7 +99,6 @@ const workdayUpdateSchema = z
 
 const employeeAdminUpdateSchema = z
   .object({
-    houseId: z.string().uuid("El houseId debe ser un UUID válido").optional(),
     roleId:  z.string().uuid("El roleId debe ser un UUID válido").optional(),
 
     type: z.enum(["Nomina", "Asalariado", "Honorarios", "Voluntariado"], {
