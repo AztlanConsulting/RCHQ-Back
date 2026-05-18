@@ -5,6 +5,7 @@ const deactivateEmployeeSchema = z.object({
         .string({ required_error: 'El campo "Razón" no debe estar vacío' })
         .min(1, { message: 'El campo "Razón" no debe estar vacío' })
         .max(250, { message: 'El campo "Razón" es de máximo 250 caracteres' }),
+    addToBlacklist: z.boolean().optional(),
 });
 
 const deactivateEmployeeParamsSchema = z.object({

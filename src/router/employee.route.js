@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
-const { resolveEmployeeHouse } = require("../middleware/resolvers");
+const { resolveEmployeeHouse, resolveRequesterHouse } = require("../middleware/resolvers");
 const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
 const { authorize, isAllowed } = require("../middleware/abac");
@@ -199,11 +199,15 @@ router.patch(
     apiLimiter,
     verifyToken,
     requireRole("Admin", "Coordinador"),
+    resolveRequesterHouse,
     validate(deactivateEmployeeParamsSchema, "params"),
     validate(deactivateEmployeeSchema, "body"),
     authorize(
         deactivateEmployeePolicy,
-        async (req) => await getEmployeeToDeactivate(req.params.employeeId),
+        async (req) => {
+            const employee = await getEmployeeToDeactivate(req.params.employeeId);
+            return employee ? { ...employee, addToBlacklist: req.body.addToBlacklist } : null;
+        }
     ),
     deactivateEmployeeController,
 );

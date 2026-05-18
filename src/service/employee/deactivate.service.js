@@ -9,9 +9,13 @@ const { getClientIp } = require("../../utils/ip");
 
 exports.deactivateEmployee = async (req) => {
     const { employeeId } = req.params;
-    const { reason } = req.body;
+    const { reason, addToBlacklist } = req.body;
     const actorId = req.user.id;
     const ip = getClientIp(req);
+
+    if (actorId === employeeId) {
+        return { code: "CANNOT_DEACTIVATE_SELF" };
+    }
 
     const employee = await getEmployeeToDeactivate(employeeId);
 
@@ -24,7 +28,8 @@ exports.deactivateEmployee = async (req) => {
     }
 
     try {
-        await deactivateEmployee(employeeId, reason);
+        const curpToBlacklist = addToBlacklist ? employee.curp : null;
+        await deactivateEmployee(employeeId, reason, curpToBlacklist);
         await createLog(
             actorId,
             LOG_ACTIONS.EMPLOYEE_DEACTIVATED,

@@ -25,13 +25,29 @@ exports.getEmployeeToDeactivate = async (employeeId) => {
     };
 };
 
-exports.deactivateEmployee = async (employeeId, reason) => {
-    await prisma.employee.update({
-        where: { employee_id: employeeId },
-        data: {
-            is_active: false,
-            end_date: new Date(),
-            deactivation_reason: reason,
-        },
-    });
+exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null) => {
+    const actions = [];
+
+    actions.push(
+        prisma.employee.update({
+            where: { employee_id: employeeId },
+            data: {
+                is_active: false,
+                end_date: new Date(),
+                deactivation_reason: reason,
+            },
+        })
+    );
+
+    if (curpToBlacklist) {
+        actions.push(
+            prisma.blacklist.upsert({
+                where: { curp: curpToBlacklist },
+                update: {},
+                create: { curp: curpToBlacklist },
+            })
+        );
+    }
+
+    await prisma.$transaction(actions);
 };

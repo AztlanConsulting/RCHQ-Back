@@ -11,6 +11,10 @@ exports.deactivateEmployeeController = async (req, res) => {
             return res
                 .status(200)
                 .json({ message: `"${data.name}" ha sido dado de baja` });
+        } else if (code === "CANNOT_DEACTIVATE_SELF") {
+            return res
+                .status(400)
+                .json({ message: "No puedes darte de baja a ti mismo" });
         } else if (code === RESPONSES.EMPLOYEE.NOT_FOUND) {
             return res.status(404).json({ message: "Empleado no encontrado" });
         } else if (code === RESPONSES.EMPLOYEE.ALREADY_INACTIVE) {
