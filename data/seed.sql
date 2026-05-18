@@ -272,6 +272,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-004', 'Documento de empleado eliminado', false),
 ('empl-005', 'Información de empleado actualizada', false),
 ('vaca-005', 'Modificación de vacaciones exitosa', false),
+('empl-006', 'Empleado dado de baja', true),
+('empl-008', 'Fallo al dar de baja al empleado', true),
 ('blck-001', 'Empleado agregado a la lista negra', true)
 ON CONFLICT DO NOTHING;
 

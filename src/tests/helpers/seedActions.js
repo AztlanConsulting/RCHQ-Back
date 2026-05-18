@@ -167,6 +167,16 @@ const ACTIONS = [
         description: "Modificación de vacaciones exitosa",
         important: false,
     },
+    {
+        action_id: "empl-006",
+        description: "Empleado dado de baja",
+        important: true,
+    },
+    {
+        action_id: "empl-008",
+        description: "Fallo al dar de baja al empleado",
+        important: true,
+    },
 ];
 
 async function seedActions(db = prisma) {
