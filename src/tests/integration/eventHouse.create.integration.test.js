@@ -888,7 +888,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             expect(res.statusCode).toBe(403);
         });
 
-        it("Admin puede crear eventos en cualquier casa", async () => {
+        it("Administrador puede crear eventos en cualquier casa", async () => {
             const adminToken = generateToken({
                 role: "Administrador",
                 houseId: TEST_OTHER_HOUSE_ID,

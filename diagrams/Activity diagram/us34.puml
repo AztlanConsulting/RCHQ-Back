@@ -17,7 +17,7 @@ else (No)
 stop
 endif
 
-:Validar rol Admin o Coordinador;
+:Validar rol Administrador o Coordinador;
 
 if (¿Rol permitido?) then (Sí)
 else (No)
@@ -71,7 +71,7 @@ else (No)
 stop
 endif
 
-if (¿Actor es Admin?) then (Sí)
+if (¿Actor es Administrador?) then (Sí)
 :Permitir revisión de la solicitud;
 else (No)
 :Validar que el Coordinador pertenezca a la misma casa hogar que el empleado;

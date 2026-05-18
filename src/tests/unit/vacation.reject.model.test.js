@@ -194,7 +194,7 @@ describe("US35 - rejectVacationRequestAtomically model", () => {
         expect(tx.vacations_request.update).not.toHaveBeenCalled();
     });
 
-    it("regresa EMPLOYEE_OUT_OF_SCOPE si el empleado objetivo es Admin", async () => {
+    it("regresa EMPLOYEE_OUT_OF_SCOPE si el empleado objetivo es Administrador", async () => {
         const tx = buildTransaction({
             employee: {
                 ...targetEmployee,

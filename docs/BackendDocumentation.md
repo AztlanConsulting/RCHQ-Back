@@ -97,7 +97,7 @@ Valida el cuerpo de la request contra un schema de Zod. Si la validación falla,
 Intercepta errores no controlados que lleguen como excepciones. Responde con `500` y el mensaje del error. Se registra al final de la cadena de middlewares en `index.js`.
 
 #### RBAC
-Verifica que el usuario tenga un rol específico antes de continuar. Se usa con `requireRole("admin")` directamente en el router.
+Verifica que el usuario tenga un rol específico antes de continuar. Se usa con `requireRole("Administrador")` directamente en el router.
 
 #### ABAC (`middleware/abac.js`)
 Evalúa políticas de autorización personalizadas definidas en `policies/`. Se usa con `authorize(policy)` en el router. Permite control de acceso basado en atributos del usuario y del recurso.

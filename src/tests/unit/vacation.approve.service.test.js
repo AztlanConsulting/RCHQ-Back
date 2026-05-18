@@ -232,7 +232,7 @@ describe("US34 - approveVacationRequest service", () => {
     });
 
     describe("validaciones de input y permisos", () => {
-        test("retorna INSUFFICIENT_PERMISSIONS si el actor es Admin porque US34 solo permite Coordinador", async () => {
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor es Administrador porque US34 solo permite Coordinador", async () => {
             findByIdWithRoleAndHouse.mockReset();
             findByIdWithRoleAndHouse.mockResolvedValueOnce(adminActor);
 

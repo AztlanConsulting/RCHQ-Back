@@ -310,10 +310,8 @@ exports.updateVacationRequestDatesAtomically = async ({
             };
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
-
         if (
-            targetRoleName === "admin" ||
+            isAdminRole(targetEmployee.role?.name) ||
             targetEmployee.house_id !== actorHouseId
         ) {
             return {

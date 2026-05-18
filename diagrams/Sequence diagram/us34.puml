@@ -23,7 +23,7 @@ Frontend -> Router : PATCH /vacation/request/:vacationRequestId/approve\nAuthori
 
 Router -> Middleware : apiLimiter
 Router -> Middleware : verifyToken
-Router -> Middleware : requireRole(Admin, Coordinador)
+Router -> Middleware : requireRole(Administrador, Coordinador)
 Router -> Middleware : requirePrivileges(manageEmployees)
 Router -> Middleware : validate(approveVacationRequestSchema, "all")
 

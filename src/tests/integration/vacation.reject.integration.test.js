@@ -152,7 +152,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         expect(response.body.message).toBe("Role not allowed");
     });
 
-    it("regresa 403 si el usuario es Admin", async () => {
+    it("regresa 403 si el usuario es Administrador", async () => {
         const token = buildToken(adminTokenPayload);
 
         const response = await request(app)
