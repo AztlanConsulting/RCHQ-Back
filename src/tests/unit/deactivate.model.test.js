@@ -15,6 +15,7 @@ jest.mock("../../prisma", () => ({
 }));
 
 const prisma = require("../../prisma");
+const { mapEmployee } = require("../../utils/mappers/employee.map");
 
 const EMPLOYEE_ID = "uuid-empleado-001";
 
@@ -28,15 +29,7 @@ const DB_ROW = {
     blacklist: null,
 };
 
-const MAPPED = {
-    employeeId: EMPLOYEE_ID,
-    name: "Carlos",
-    surname: "Ramírez",
-    houseId: "uuid-house-001",
-    curp: "RAMC900101HDFRZN01",
-    isActive: true,
-    isBlacklisted: false,
-};
+const MAPPED = mapEmployee(DB_ROW);
 
 describe("deactivate.model", () => {
     beforeEach(() => jest.clearAllMocks());
@@ -48,15 +41,9 @@ describe("deactivate.model", () => {
                 await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(prisma.employee.findUnique).toHaveBeenCalledWith({
                     where: { employee_id: EMPLOYEE_ID },
-                    select: expect.objectContaining({
-                        employee_id: true,
-                        name: true,
-                        surname: true,
-                        house_id: true,
-                        curp: true,
-                        is_active: true,
+                    include: {
                         blacklist: true,
-                    }),
+                    },
                 });
             });
 

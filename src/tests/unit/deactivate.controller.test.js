@@ -80,6 +80,20 @@ describe("deactivate.controller — deactivateEmployeeController", () => {
         });
     });
 
+    describe("Flujo alternativo — error de validación (422)", () => {
+        it("responde 422 cuando el service retorna VALIDATION_ERROR", async () => {
+            deactivateService.deactivateEmployee.mockResolvedValue({
+                code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+                data: { message: "El campo 'Razón' es obligatorio para dar de baja." },
+            });
+            await deactivateEmployeeController(req, res);
+            expect(res.status).toHaveBeenCalledWith(422);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "El campo 'Razón' es obligatorio para dar de baja.",
+            });
+        });
+    });
+
     describe("Flujo alternativo — fallo al dar de baja (400)", () => {
         it("responde 400 cuando el service retorna EMPLOYEE_DEACTIVATION_FAILED", async () => {
             deactivateService.deactivateEmployee.mockResolvedValue({

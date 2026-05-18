@@ -5,6 +5,8 @@ const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
 const app = require("../../app");
 const { LOG_ACTIONS } = require("../../utils/logActions");
+const { ROLES } = require("../../utils/roles");
+const PRIVILEGES = require("../../utils/privileges");
 
 const prisma = new PrismaClient();
 
@@ -39,11 +41,11 @@ const seedDependencies = async () => {
     });
 
     const coordRole = await prisma.role.upsert({
-        where: { name: "Coordinador" },
+        where: { name: ROLES.COORDINATOR },
         update: {},
         create: {
             role_id: TEST_COORDINADOR_ROLE_ID,
-            name: "Coordinador",
+            name: ROLES.COORDINATOR,
         },
     });
     testCoordinadorRoleId = coordRole.role_id;
@@ -59,11 +61,11 @@ const seedDependencies = async () => {
     testTargetRoleId = targetRole.role_id;
 
     const priv = await prisma.privileges.upsert({
-        where: { name: "addToBlacklist" },
+        where: { name: PRIVILEGES.ADD_TO_BLACKLIST },
         update: {},
         create: {
             privilege_id: TEST_PRIVILEGE_ID,
-            name: "addToBlacklist",
+            name: PRIVILEGES.ADD_TO_BLACKLIST,
         },
     });
     testPrivilegeId = priv.privilege_id;
@@ -139,9 +141,9 @@ const generateSessionToken = (overrides = {}) => {
             id: TEST_COORDINADOR_ID,
             email: TEST_COORDINADOR_EMAIL,
             name: "Coordinador Prueba",
-            role: "Coordinador",
+            role: ROLES.COORDINATOR,
             houseId: TEST_HOUSE_ID,
-            privileges: ["addToBlacklist"],
+            privileges: [PRIVILEGES.ADD_TO_BLACKLIST],
             tokenType: "SESSION",
             ...overrides,
         },
@@ -181,7 +183,7 @@ afterAll(async () => {
         where: { role_id: { in: [testCoordinadorRoleId, testTargetRoleId].filter(Boolean) } },
     });
     await prisma.privileges.deleteMany({
-        where: { name: "addToBlacklist" },
+        where: { name: PRIVILEGES.ADD_TO_BLACKLIST },
     });
     await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
     await prisma.$disconnect();
@@ -264,7 +266,7 @@ describe("POST /blacklist - integración", () => {
 
     it("retorna 403 si el rol no es Coordinador", async () => {
         await createTargetEmployee();
-        const token = generateSessionToken({ role: "Mantenimiento" });
+        const token = generateSessionToken({ role: ROLES.MAINTENANCE });
 
         const res = await request(app)
             .post(`/blacklist`)

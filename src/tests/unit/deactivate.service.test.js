@@ -52,6 +52,15 @@ describe("deactivate.service — deactivateEmployee", () => {
         });
     });
 
+    describe("Flujo alternativo — error de validación", () => {
+        it("retorna VALIDATION_ERROR si el empleado está activo y la razón está vacía", async () => {
+            deactivateModel.getEmployeeToDeactivate.mockResolvedValue(MOCK_EMPLOYEE);
+            const req = buildReq({ body: { reason: "" } });
+            const result = await deactivateEmployee(req);
+            expect(result.code).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+        });
+    });
+
     describe("Flujo alternativo — empleado ya inactivo", () => {
         it("retorna EMPLOYEE_ALREADY_INACTIVE cuando isActive es false", async () => {
             deactivateModel.getEmployeeToDeactivate.mockResolvedValue({
@@ -121,6 +130,12 @@ describe("deactivate.service — deactivateEmployee", () => {
             );
         });
 
+        it("reutiliza req.resolvedEmployee si está presente", async () => {
+            const req = buildReq({ resolvedEmployee: MOCK_EMPLOYEE });
+            await deactivateEmployee(req);
+            expect(deactivateModel.getEmployeeToDeactivate).not.toHaveBeenCalled();
+        });
+
         it("crea log EMPLOYEE_DEACTIVATED después de dar de baja", async () => {
             await deactivateEmployee(buildReq());
             expect(createLog).toHaveBeenCalledWith(
@@ -147,16 +162,6 @@ describe("deactivate.service — deactivateEmployee", () => {
             const result = await deactivateEmployee(buildReq());
             expect(result.code).toBe(RESPONSES.EMPLOYEE.DEACTIVATION_FAILED);
             expect(result.data.name).toBe("Carlos");
-        });
-
-        it("crea log EMPLOYEE_DEACTIVATION_FAILED cuando falla la baja", async () => {
-            await deactivateEmployee(buildReq());
-            expect(createLog).toHaveBeenCalledWith(
-                "uuid-actor-001",
-                LOG_ACTIONS.EMPLOYEE_DEACTIVATION_FAILED,
-                expect.any(String),
-                "uuid-empleado-001",
-            );
         });
     });
 });

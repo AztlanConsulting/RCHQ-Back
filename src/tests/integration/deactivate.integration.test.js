@@ -7,6 +7,8 @@ const { randomUUID } = require("crypto");
 const app = require("../../app");
 const { PrismaClient } = require("@prisma/client");
 const { seedActions } = require("../helpers/seedActions");
+const { ROLES } = require("../../utils/roles");
+const PRIVILEGES = require("../../utils/privileges");
 
 const prisma = new PrismaClient({
     datasources: { db: { url: process.env.TEST_DATABASE_URL } },
@@ -46,28 +48,28 @@ const seedDependencies = async (hashedPassword) => {
     });
 
     const adminRole = await prisma.role.upsert({
-        where: { name: "Administrador" },
+        where: { name: ROLES.ADMIN },
         update: {},
-        create: { role_id: TEST_ROLE_ADMIN_ID, name: "Administrador" },
+        create: { role_id: TEST_ROLE_ADMIN_ID, name: ROLES.ADMIN },
     });
     TEST_ROLE_ADMIN_ID = adminRole.role_id;
 
     const coordRole = await prisma.role.upsert({
-        where: { name: "Coordinador" },
+        where: { name: ROLES.COORDINATOR },
         update: {},
-        create: { role_id: randomUUID(), name: "Coordinador" },
+        create: { role_id: randomUUID(), name: ROLES.COORDINATOR },
     });
 
     const priv = await prisma.privileges.upsert({
-        where: { name: "addToBlacklist" },
+        where: { name: PRIVILEGES.ADD_TO_BLACKLIST },
         update: {},
-        create: { privilege_id: randomUUID(), name: "addToBlacklist" },
+        create: { privilege_id: randomUUID(), name: PRIVILEGES.ADD_TO_BLACKLIST },
     });
     
     const privManage = await prisma.privileges.upsert({
-        where: { name: "manageEmployees" },
+        where: { name: PRIVILEGES.MANAGE_EMPLOYEES },
         update: {},
-        create: { privilege_id: randomUUID(), name: "manageEmployees" },
+        create: { privilege_id: randomUUID(), name: PRIVILEGES.MANAGE_EMPLOYEES },
     });
 
     await prisma.role_privilege.upsert({
@@ -226,20 +228,20 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
     });
 
     describe("Validación del schema", () => {
-        it("400 — razón vacía", async () => {
+        it("422 — razón vacía", async () => {
             const res = await request(app)
                 .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
                 .set("Authorization", `Bearer ${token}`)
                 .send({ reason: "" });
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(422);
         });
 
-        it("400 — razón ausente", async () => {
+        it("422 — razón ausente", async () => {
             const res = await request(app)
                 .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
                 .set("Authorization", `Bearer ${token}`)
                 .send({});
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(422);
         });
 
         it("400 — razón supera 250 caracteres", async () => {
@@ -247,6 +249,14 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
                 .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
                 .set("Authorization", `Bearer ${token}`)
                 .send({ reason: "a".repeat(251) });
+            expect(res.status).toBe(400);
+        });
+
+        it("400 — razón contiene caracteres no permitidos", async () => {
+            const res = await request(app)
+                .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
+                .set("Authorization", `Bearer ${token}`)
+                .send({ reason: "<script>alert('XSS')</script>" });
             expect(res.status).toBe(400);
         });
     });
