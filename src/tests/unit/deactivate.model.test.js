@@ -8,6 +8,10 @@ jest.mock("../../prisma", () => ({
         findUnique: jest.fn(),
         update: jest.fn(),
     },
+    blacklist: {
+        upsert: jest.fn(),
+    },
+    $transaction: jest.fn(),
 }));
 
 const prisma = require("../../prisma");
@@ -21,6 +25,7 @@ const DB_ROW = {
     house_id: "uuid-house-001",
     curp: "RAMC900101HDFRZN01",
     is_active: true,
+    blacklist: null,
 };
 
 const MAPPED = {
@@ -30,6 +35,7 @@ const MAPPED = {
     houseId: "uuid-house-001",
     curp: "RAMC900101HDFRZN01",
     isActive: true,
+    isBlacklisted: false,
 };
 
 describe("deactivate.model", () => {
@@ -49,6 +55,7 @@ describe("deactivate.model", () => {
                         house_id: true,
                         curp: true,
                         is_active: true,
+                        blacklist: true,
                     }),
                 });
             });
@@ -76,6 +83,15 @@ describe("deactivate.model", () => {
                 const result = await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(result.isActive).toBe(false);
             });
+
+            it("retorna isBlacklisted true si el empleado tiene blacklist", async () => {
+                prisma.employee.findUnique.mockResolvedValue({
+                    ...DB_ROW,
+                    blacklist: { curp: "RAMC900101HDFRZN01" },
+                });
+                const result = await getEmployeeToDeactivate(EMPLOYEE_ID);
+                expect(result.isBlacklisted).toBe(true);
+            });
         });
 
         describe("Flujo — empleado no encontrado", () => {
@@ -100,17 +116,36 @@ describe("deactivate.model", () => {
 
     describe("deactivateEmployee", () => {
         describe("Flujo exitoso", () => {
-            it("llama a prisma.employee.update con is_active false, end_date y la razón", async () => {
-                prisma.employee.update.mockResolvedValue(undefined);
+            it("ejecuta una transacción con prisma.employee.update si wasActive es true", async () => {
+                prisma.employee.update.mockReturnValue("update_action");
+                prisma.$transaction.mockResolvedValue(undefined);
                 await deactivateEmployee(EMPLOYEE_ID, "Motivo de prueba");
-                expect(prisma.employee.update).toHaveBeenCalledWith({
+                
+                expect(prisma.$transaction).toHaveBeenCalledWith(["update_action"]);
+                expect(prisma.employee.update).toHaveBeenCalledWith(expect.objectContaining({
                     where: { employee_id: EMPLOYEE_ID },
-                    data: expect.objectContaining({
-                        is_active: false,
-                        end_date: expect.any(Date),
-                        deactivation_reason: "Motivo de prueba",
-                    }),
-                });
+                }));
+            });
+
+            it("ejecuta blacklist.upsert si curpToBlacklist es provisto", async () => {
+                prisma.employee.update.mockReturnValue("update_action");
+                prisma.blacklist.upsert.mockReturnValue("upsert_action");
+                prisma.$transaction.mockResolvedValue(undefined);
+                
+                await deactivateEmployee(EMPLOYEE_ID, "Motivo", "RAMC900101HDFRZN01", true);
+                
+                expect(prisma.$transaction).toHaveBeenCalledWith(["update_action", "upsert_action"]);
+                expect(prisma.blacklist.upsert).toHaveBeenCalledWith(expect.objectContaining({
+                    where: { curp: "RAMC900101HDFRZN01" }
+                }));
+            });
+
+            it("no añade employee.update si wasActive es false", async () => {
+                prisma.blacklist.upsert.mockReturnValue("upsert_action");
+                prisma.$transaction.mockResolvedValue(undefined);
+                await deactivateEmployee(EMPLOYEE_ID, "Motivo", "RAMC900101HDFRZN01", false);
+                expect(prisma.employee.update).not.toHaveBeenCalled();
+                expect(prisma.$transaction).toHaveBeenCalledWith(["upsert_action"]);
             });
 
             it("no retorna valor (void)", async () => {
@@ -122,7 +157,7 @@ describe("deactivate.model", () => {
 
         describe("Flujo — error de base de datos", () => {
             it("propaga el error cuando prisma lanza una excepción", async () => {
-                prisma.employee.update.mockRejectedValue(
+                prisma.$transaction.mockRejectedValue(
                     new Error("Update failed"),
                 );
                 await expect(deactivateEmployee(EMPLOYEE_ID)).rejects.toThrow(

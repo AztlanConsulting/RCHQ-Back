@@ -94,6 +94,32 @@ describe("deactivate.controller — deactivateEmployeeController", () => {
         });
     });
 
+    describe("Flujo alternativo — auto-baja (400)", () => {
+        it("responde 400 cuando el service retorna CANNOT_DEACTIVATE_SELF", async () => {
+            deactivateService.deactivateEmployee.mockResolvedValue({
+                code: RESPONSES.EMPLOYEE.CANNOT_DEACTIVATE_SELF,
+            });
+            await deactivateEmployeeController(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "No puedes darte de baja a ti mismo",
+            });
+        });
+    });
+
+    describe("Flujo alternativo — ya en lista negra (409)", () => {
+        it("responde 409 cuando el service retorna ALREADY_BLACKLISTED", async () => {
+            deactivateService.deactivateEmployee.mockResolvedValue({
+                code: RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED,
+            });
+            await deactivateEmployeeController(req, res);
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(res.json).toHaveBeenCalledWith({
+                message: "El empleado ya se encuentra en la lista negra",
+            });
+        });
+    });
+
     describe("Flujo alternativo — código de respuesta desconocido (500)", () => {
         it("responde 500 cuando el service retorna un código no mapeado", async () => {
             deactivateService.deactivateEmployee.mockResolvedValue({
