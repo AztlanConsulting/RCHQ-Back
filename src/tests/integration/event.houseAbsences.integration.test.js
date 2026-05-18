@@ -440,7 +440,7 @@ describe("GET /event/house/range/:startDate/:endDate", () => {
     it("403 si un empleado intenta escalar privilegios manipulando role y privileges en el JWT", async () => {
         const token = sign({
             id: IDS.unprivilegedEmployee,
-            role: "Admin",
+            role: "Administrador",
             privileges: ["viewEvents"],
         });
 
@@ -453,7 +453,7 @@ describe("GET /event/house/range/:startDate/:endDate", () => {
 
     it("ignora houseId y role manipulados en el JWT y solo devuelve ausencias de la casa real del solicitante", async () => {
         const token = sign({
-            role: "Admin",
+            role: "Administrador",
             houseId: IDS.houseB,
             privileges: ["viewEvents", "manageEmployees"],
         });

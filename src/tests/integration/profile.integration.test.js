@@ -139,7 +139,7 @@ describe("Flujo integración: Login → GET /user/profile", () => {
                 surname: "Ramírez",
                 email: VALID_EMAIL,
                 houseName: "Casa de Desarrollo",
-                roleName: "Admin",
+                roleName: "Administrador",
             });
         });
 

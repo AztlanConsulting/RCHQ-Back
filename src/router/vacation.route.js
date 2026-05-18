@@ -43,7 +43,7 @@ router.post(
     "/employees/:employeeId/register",
     apiLimiter,
     verifyToken,
-    requireRole("Admin", "Coordinador"),
+    requireRole("Administrador", "Coordinador"),
     requirePrivileges("manageEmployees"),
     validate(employeeVacationCreateSchema, "all"),
     canRegisterEmployeeVacation,

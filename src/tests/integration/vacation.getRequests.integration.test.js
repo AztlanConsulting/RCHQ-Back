@@ -33,7 +33,7 @@ jest.mock("../../../src/middleware/auth", () => {
         if (authHeader === "Bearer admin-token") {
             req.user = {
                 id: "b8f54b14-701e-4e87-a019-caef53dcda99",
-                role: "Admin",
+                role: "Administrador",
                 houseId: "a0000001-0000-4000-8000-000000000001",
                 privileges: ["manageEmployees"],
                 tokenType: "SESSION",

@@ -268,7 +268,7 @@ const ensureCatalog = async () => {
     }
 
     const existingAdminRole = await prisma.role.findUnique({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
     });
     if (existingAdminRole) {
         IDS.adminRole = existingAdminRole.role_id;
@@ -277,7 +277,7 @@ const ensureCatalog = async () => {
         await prisma.role.create({
             data: {
                 role_id: IDS.adminRole,
-                name: "Admin",
+                name: "Administrador",
             },
         });
     }
@@ -369,7 +369,7 @@ const seed = async () => {
                 house_id: IDS.houseA,
                 role_id: IDS.adminRole,
                 name: "Alicia",
-                surname: "Admin",
+                surname: "Administrador",
                 is_active: true,
                 email: "admin.absence.create@test.com",
                 password: "hashed",

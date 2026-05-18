@@ -29,7 +29,7 @@ const generateAdminSessionToken = () =>
       id: IDS.employee,
       email: SEED.employee.email,
       name: "Admin Test",
-      role: "Admin",
+      role: "Administrador",
       privileges: ["viewEmployees", "createEmployees", "manageEmployees"],
       tokenType: "SESSION",
     },

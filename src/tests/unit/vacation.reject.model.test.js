@@ -199,7 +199,7 @@ describe("US35 - rejectVacationRequestAtomically model", () => {
             employee: {
                 ...targetEmployee,
                 role: {
-                    name: "Admin",
+                    name: "Administrador",
                 },
             },
         });

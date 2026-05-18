@@ -31,7 +31,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role (role_id, name)
 VALUES 
 ('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
-('a0000002-0000-4000-8000-000000000002', 'Admin'),
+('a0000002-0000-4000-8000-000000000002', 'Administrador'),
 ('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
 ('a0000002-0000-4000-8000-000000000004', 'Lavandería'),
 ('a0000002-0000-4000-8000-000000000005', 'Responsable del cuidado de NNA'),
@@ -158,7 +158,7 @@ INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 JOIN public.privileges p ON p.name = 'createEvent'
-WHERE r.name IN ('Admin', 'Coordinador')
+WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
 -- Crear ausencias - Admin y Coordinador
@@ -166,7 +166,7 @@ INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 JOIN public.privileges p ON p.name = 'addAbsences'
-WHERE r.name IN ('Admin', 'Coordinador')
+WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -184,7 +184,7 @@ INSERT INTO public.employee (
 VALUES (
   'b8f54b14-701e-4e87-a019-caef53dcda99',
   (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
-  (SELECT role_id  FROM public.role   WHERE name = 'Admin'      LIMIT 1),
+  (SELECT role_id  FROM public.role   WHERE name = 'Administrador'      LIMIT 1),
   'Carlos',
   'Ramírez',
   true,
@@ -573,7 +573,7 @@ INSERT INTO public.employee (
 SELECT
   'e0000001-0000-4000-8000-000000000001',
   'b0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
   'María',
   'González',
   true,

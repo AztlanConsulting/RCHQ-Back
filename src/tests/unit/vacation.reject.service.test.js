@@ -82,7 +82,7 @@ describe("US35 - rejectVacationRequest service", () => {
         employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce({
             ...actorCoordinator,
             role: {
-                name: "Admin",
+                name: "Administrador",
             },
         });
 
@@ -182,7 +182,7 @@ describe("US35 - rejectVacationRequest service", () => {
             .mockResolvedValueOnce({
                 ...targetEmployee,
                 role: {
-                    name: "Admin",
+                    name: "Administrador",
                 },
             });
 

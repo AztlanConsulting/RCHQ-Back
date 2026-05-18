@@ -87,7 +87,7 @@ exports.buildVacationListWhere = ({
             house_id: houseId,
             role: {
                 name: {
-                    not: "Admin",
+                    not: "Administrador",
                 },
             },
             ...(searchFilter.employee || {}),

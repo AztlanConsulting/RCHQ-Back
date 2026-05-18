@@ -153,11 +153,11 @@ const seed = async () => {
     });
 
     const roleAdmin = await prisma.role.upsert({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
         update: {},
         create: {
             role_id: IDS.roleAdmin,
-            name: "Admin",
+            name: "Administrador",
         },
     });
     IDS.roleAdmin = roleAdmin.role_id;
@@ -321,7 +321,7 @@ describe("Flujo integración /vacation/request", () => {
         });
 
         it("Administrador obtiene las vacaciones de un empleado", async () => {
-            const token = sign(IDS.employeeAdmin, "Admin");
+            const token = sign(IDS.employeeAdmin, "Administrador");
             const res = await request(app)
                 .get(`/vacation/remaining/${IDS.employeeCook}`)
                 .set("Authorization", `Bearer ${token}`);

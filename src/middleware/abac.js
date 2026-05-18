@@ -1,4 +1,8 @@
 const { getHome, findByIdWithRoleAndHouse } = require("../model/employee/get.model");
+const { ROLES } = require("../utils/roles");
+
+const isAdminRole = (roleName) =>
+    roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
 
 const canAccess = (user, policyFn, resource) => {
     if (!user) return false;
@@ -16,7 +20,11 @@ const authorize = (policyFn, getResource) => async (req, res, next) => {
             return next();
         }
 
-        return res.status(403).json({ error: "Acceso denegado" });
+        return res.status(403).json({
+            success: false,
+            message: "Acceso denegado",
+            error: "Acceso denegado",
+        });
     } catch {
         return res.status(500).json({ message: "Error del servidor" });
     }
@@ -26,7 +34,7 @@ const isAllowed = async (req, res, next) => {
     try {
         const targetId = req.params.employeeId || req.params.id || "";
 
-        if (req.user.role == "Admin") return next();
+        if (req.user.role == ROLES.ADMIN) return next();
         if (req.user.id == targetId) return next();
 
         const homeQuery = await getHome(targetId);
@@ -63,20 +71,18 @@ const canRegisterEmployeeVacation = async (req, res, next) => {
             });
         }
 
-        if (req.user.role === "Admin") {
+        if (req.user.role === ROLES.ADMIN) {
             return next();
         }
 
-        if (req.user.role !== "Coordinador") {
+        if (req.user.role !== ROLES.COORDINATOR) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",
             });
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
-
-        if (targetRoleName === "admin") {
+        if (isAdminRole(targetEmployee.role?.name)) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",

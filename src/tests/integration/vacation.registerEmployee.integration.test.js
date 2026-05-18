@@ -119,8 +119,8 @@ function getAdminToken() {
     return generateSessionToken({
         employee_id: ADMIN_ID,
         email: "admin.us28@test.com",
-        name: "Admin",
-        roleName: "Admin",
+        name: "Administrador",
+        roleName: "Administrador",
         house_id: HOUSE_A_ID,
         privileges: ["manageEmployees"],
     });
@@ -205,7 +205,7 @@ async function seedBaseData() {
         skipDuplicates: true,
     });
 
-    ADMIN_ROLE_ID = await getOrCreateRoleId("Admin");
+    ADMIN_ROLE_ID = await getOrCreateRoleId("Administrador");
     COORDINATOR_ROLE_ID = await getOrCreateRoleId("Coordinador");
     USER_ROLE_ID = await getOrCreateRoleId("Usuario");
 
@@ -254,7 +254,7 @@ async function seedBaseData() {
                 employee_id: ADMIN_ID,
                 house_id: HOUSE_A_ID,
                 role_id: ADMIN_ROLE_ID,
-                name: "Admin",
+                name: "Administrador",
                 surname: "US28",
                 is_active: true,
                 email: "admin.us28@test.com",

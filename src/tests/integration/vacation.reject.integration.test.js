@@ -37,7 +37,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         id: "b8f54b14-701e-4e87-a019-caef53dcda99",
         employeeId: "b8f54b14-701e-4e87-a019-caef53dcda99",
         houseId,
-        role: "Admin",
+        role: "Administrador",
         privileges: ["manageEmployees"],
         tokenType: "SESSION",
     };
