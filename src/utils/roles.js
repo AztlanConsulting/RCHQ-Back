@@ -1,0 +1,27 @@
+const ROLES = Object.freeze({
+    ADMIN: "Admin",
+    COORDINADOR: "Coordinador",
+    MANTENIMIENTO: "Mantenimiento",
+    LAVANDERIA: "Lavandería",
+    RESPONSABLE_CUIDADO_NNA: "Responsable del cuidado de NNA",
+    PSICOLOGA: "Psicóloga",
+    PSICOLOGO: "Psicólogo",
+    TRABAJADOR_SOCIAL: "Trabajador Social",
+    COORDINADOR_OPERATIVO: "Coordinador Operativo",
+    COORDINADOR_ADMINISTRATIVO: "Coordinador Administrativo",
+    COORDINADOR_PROGRAMA: "Coordinador de Programa",
+    DIRECCION_OPERATIVA: "Dirección Operativa",
+    DIRECCION_ADMINISTRATIVA: "Dirección Administrativa",
+    DIRECCION_PROGRAMA: "Dirección de Programa",
+    PROCURACION_FONDOS: "Procuración de Fondos",
+    ENFERMERA: "Enfermera",
+    TERAPEUTA: "Terapeuta",
+    ASISTENTE_DIRECCION: "Asistente de Dirección",
+    ASISTENTE_FINANZAS: "Asistente de Finanzas",
+    AUXILIAR_LIMPIEZA: "Auxiliar de Limpieza",
+    AUXILIAR_LAVANDERIA: "Auxiliar de Lavandería",
+    CHOFER: "Chofer",
+    COCINERA: "Cocinera",
+});
+
+module.exports = ROLES;
