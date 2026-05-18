@@ -434,8 +434,6 @@ describe("GET /logs/house", () => {
                 })}`,
             );
 
-        console.log(res.body.data);
-
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.totalRecords).toBe(4);
