@@ -152,6 +152,35 @@ Extrae la IP real del cliente desde los headers de la request.
 #### `utils/logs.js`
 Registra acciones de empleados en la base de datos (empleado, acción, IP).
 
+#### Reporte PDF de logs
+El backend permite generar un reporte PDF con los logs de la casa del coordinador.
+
+**Flujo general:**
+- La ruta `GET /logs/house/report/pdf` recibe la petición autenticada.
+- El controller obtiene la `houseId` del usuario autenticado.
+- El service consulta:
+  - los logs de la casa
+  - el nombre de la casa
+  - los empleados afectados necesarios para mapear nombres legibles
+- Después construye el PDF y lo devuelve como archivo descargable.
+
+**Archivos involucrados:**
+- `src/router/logs.route.js` → define la ruta del reporte.
+- `src/controller/logs/get.controller.js` → prepara la respuesta HTTP con `Content-Type: application/pdf`.
+- `src/service/logs/get.service.js` → orquesta la consulta de datos y la generación del PDF.
+- `src/utils/logsPdf.js` → arma el documento PDF.
+
+**Contenido del PDF:**
+- Título del reporte.
+- Nombre de la casa.
+- Fecha de generación.
+- Lista de logs con información legible para el usuario.
+
+**Notas de implementación:**
+- El PDF usa los logs ya mapeados, no los registros crudos de la base de datos.
+- El nombre de la casa se obtiene desde el modelo de `house`.
+- El archivo se devuelve como descarga, no como JSON.
+
 #### Retención de logs
 La limpieza automática de logs se divide en dos archivos:
 
