@@ -8,7 +8,7 @@ start
 :Dar clic en remover vacaciones;
 
 |Sistema|
-:Mostrar confirmación de remoción;
+:Mostrar confirmación de eliminación;
 
 if (¿Usuario confirma?) then (Sí)
 else (No)
@@ -108,14 +108,14 @@ endif
 
 if (¿Solicitud existe?) then (Sí)
 else (No)
-:Cancelar remoción;
+:Cancelar eliminación;
 :Mostrar error "Solicitud de vacaciones no encontrada";
 stop
 endif
 
 if (¿Solicitud pertenece al empleado esperado?) then (Sí)
 else (No)
-:Cancelar remoción;
+:Cancelar eliminación;
 :Mostrar error "No puede acceder a este recurso";
 stop
 endif
@@ -124,14 +124,14 @@ endif
 
 if (¿Empleado existe y sigue dentro de la casa del Coordinador?) then (Sí)
 else (No)
-:Cancelar remoción;
+:Cancelar eliminación;
 :Mostrar error "No puede acceder a este recurso";
 stop
 endif
 
 if (¿Empleado sigue sin ser Admin?) then (Sí)
 else (No)
-:Cancelar remoción;
+:Cancelar eliminación;
 :Mostrar error "No puede acceder a este recurso";
 stop
 endif
@@ -141,11 +141,11 @@ endif
 if (¿Solicitud era pendiente o aprobada?) then (Sí)
 :La solicitud deja de contar para disponibilidad, traslapes y calendario operativo;
 else (No, era rechazada)
-:La remoción no modifica días disponibles porque la solicitud rechazada no consumía días;
+:La eliminación no modifica días disponibles porque la solicitud rechazada no consumía días;
 endif
 
 :Confirmar transacción;
-:Guardar log de remoción;
+:Guardar log de eliminación;
 :Mostrar mensaje "Vacaciones removidas correctamente";
 
 |Usuario|

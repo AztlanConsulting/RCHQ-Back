@@ -146,12 +146,12 @@ async function seedActions() {
     await prisma.action.upsert({
         where: { action_id: "vaca-006" },
         update: {
-            description: "Remoción de vacaciones exitosa",
+            description: "Eliminación de vacaciones exitosa",
             important: false,
         },
         create: {
             action_id: "vaca-006",
-            description: "Remoción de vacaciones exitosa",
+            description: "Eliminación de vacaciones exitosa",
             important: false,
         },
     });

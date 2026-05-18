@@ -21,7 +21,7 @@ Frontend -> Usuario : Muestra confirmación
 
 alt Usuario cancela confirmación
 Frontend --> Usuario : No se realiza ningún cambio
-else Usuario confirma remoción
+else Usuario confirma eliminación
 Frontend -> Router : DELETE /vacation/request/:vacationRequestId\nAuthorization: Bearer token
 
 Router -> Middleware : apiLimiter
@@ -95,8 +95,8 @@ VacationUpdateModel --> Service : Solicitud eliminada
 
 alt Transacción detecta solicitud inexistente o fuera de alcance
 Service --> Controller : NOT_FOUND / OUT_OF_SCOPE
-Controller --> Frontend : 404/403 Error de remoción
-else Remoción exitosa
+Controller --> Frontend : 404/403 Error de eliminación
+else Eliminación exitosa
 Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
 LogModel -> DB : INSERT logs
 DB --> LogModel : Log creado

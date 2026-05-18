@@ -989,7 +989,7 @@ ON CONFLICT (action_id) DO UPDATE SET
 INSERT INTO public.action (action_id, description, important)
 VALUES (
   'vaca-006',
-  'Remoción de vacaciones exitosa',
+  'Eliminación de vacaciones exitosa',
   false
 )
 ON CONFLICT (action_id) DO UPDATE SET

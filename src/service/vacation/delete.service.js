@@ -101,7 +101,7 @@ exports.deleteVacationRequest = async ({
             targetEmployeeId
         );
     } catch (error) {
-        console.error("Error creando log de remoción de vacaciones:", error);
+        console.error("Error creando log de eliminación de vacaciones:", error);
     }
 
     return {
