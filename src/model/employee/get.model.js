@@ -1,5 +1,4 @@
 const prisma = require("../../prisma");
-const { Prisma } = require("@prisma/client");
 const {
     mapEmployee,
     mapEmployeeAddress,
@@ -60,35 +59,44 @@ exports.findDocumentById = async (documentId) => {
 };
 
 exports.getEmployees = async (houseId, active, search, skip, take) => {
-    let searchEmployee = Prisma.empty;
+    const whereClause = {
+        house_id: houseId,
+        is_active: active,
+    };
 
     if (search) {
         const terms = search.trim().split(/\s+/);
-        const termConditions = terms.map(
-            (term) =>
-                Prisma.sql`(unaccent(e.name) ILIKE unaccent(${`%${term}%`}) OR unaccent(e.surname) ILIKE unaccent(${`%${term}%`}))`
-        );
-        searchEmployee = Prisma.sql`AND ${Prisma.join(termConditions, " AND ")}`;
+
+        whereClause.AND = terms.map((term) => ({
+            OR: [
+                { name: { contains: term, mode: "insensitive" } },
+                { surname: { contains: term, mode: "insensitive" } },
+            ],
+        }));
     }
 
-    const [employees, countResult] = await Promise.all([
-        prisma.$queryRaw`
-            SELECT e.employee_id, e.name, e.surname, e.picture, e.is_active, r.name AS role_name
-            FROM employee e
-            JOIN role r ON e.role_id = r.role_id
-            WHERE e.house_id = ${houseId}::uuid
-              AND e.is_active = ${active}
-              ${searchEmployee}
-            ORDER BY e.name ASC
-            LIMIT ${take} OFFSET ${skip}
-        `,
-        prisma.$queryRaw`
-            SELECT COUNT(*) AS total
-            FROM employee e
-            WHERE e.house_id = ${houseId}::uuid
-              AND e.is_active = ${active}
-              ${searchEmployee}
-        `,
+    const [employees, total] = await Promise.all([
+        prisma.employee.findMany({
+            where: whereClause,
+            select: {
+                employee_id: true,
+                name: true,
+                surname: true,
+                picture: true,
+                is_active: true,
+                role: {
+                    select: {
+                        name: true,
+                    },
+                },
+            },
+            orderBy: { name: "asc" },
+            skip,
+            take,
+        }),
+        prisma.employee.count({
+            where: whereClause,
+        }),
     ]);
 
     return {
@@ -98,9 +106,9 @@ exports.getEmployees = async (houseId, active, search, skip, take) => {
             surname: e.surname,
             picture: e.picture,
             isActive: e.is_active,
-            roleName: e.role_name,
+            roleName: e.role.name,
         })),
-        total: Number(countResult[0].total),
+        total,
     };
 };
 

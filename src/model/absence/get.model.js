@@ -129,3 +129,24 @@ exports.getHouseCalendarAbsenceInRange = async (requesterId, houseId, startDate,
         },
     });
 };
+
+exports.getHouseAbsencesInRange = async (houseId, startDate, endDate) => {
+    return await prisma.absence.findMany({
+        where: {
+            is_deleted: false,
+            start: {
+                lte: endDate,
+            },
+            end: {
+                gte: startDate,
+            },
+            employee: {
+                house_id: houseId,
+            },
+        },
+        select: {
+            start: true,
+            end: true,
+        },
+    });
+};

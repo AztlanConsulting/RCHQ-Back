@@ -2,7 +2,10 @@ const {
     getVacationsInRange, 
     getHouseCalendarVacationsInRange
 } = require("../../model/vacation/get.model");
-const { getHouseCalendarAbsenceInRange,getAbsencesInRange } = require("../../model/absence/get.model");
+const {
+    getHouseCalendarAbsenceInRange,
+    getAbsencesInRange,
+} = require("../../model/absence/get.model");
 const { dateRangeSchema } = require("../../schemas/dates.schemas")
 const {
     calculateUsedDays,
@@ -19,12 +22,14 @@ const {
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
+    getEmployeesByHouse,
 } = require("../../model/event/get.model");
 const {
     mapEmployeeAbsenceCalendarEvent,
     mapHouseVacationCalendarEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
+const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
@@ -116,8 +121,14 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     );
     personalEvents.forEach((event) => {
         events.push({
-            start: combineDateAndTime(event.personal_event.date, event.personal_event.start),
-            end: combineDateAndTime(event.personal_event.date, event.personal_event.end),
+            start: combineDateAndTime(
+                event.personal_event.date,
+                event.personal_event.start,
+            ),
+            end: combineDateAndTime(
+                event.personal_event.date,
+                event.personal_event.end,
+            ),
             date: event.date,
             name: event.personal_event.name,
             type: event.personal_event.event_type.name,
@@ -257,4 +268,25 @@ exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDa
             events,
         },
     };
+};
+
+exports.getEmployeesForSelector = async (user, query) => {
+    if (!user?.houseId) {
+        return { code: RESPONSES.USER.NOT_ACCESS };
+    }
+
+    const parsed = searchEmployeesSchema.safeParse(query);
+    if (!parsed.success) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+            data: { errors: parsed.error.flatten().fieldErrors },
+        };
+    }
+
+    const employees = await getEmployeesByHouse(
+        user.houseId,
+        parsed.data.search ?? "",
+    );
+
+    return { code: RESPONSES.EVENTS.FOUND, data: { employees } };
 };
