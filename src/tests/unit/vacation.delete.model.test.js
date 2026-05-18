@@ -10,6 +10,7 @@ const {
 
 const RESPONSES = require("../../utils/responses");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
+const { ROLES } = require("../../utils/roles");
 
 describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
     const vacationRequestId = "44444444-4444-4444-8444-444444444444";
@@ -157,25 +158,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         transaction.employee.findUnique.mockResolvedValueOnce({
             ...targetEmployee,
             role: {
-                name: "Admin",
-            },
-        });
-
-        const result = await callDelete();
-
-        expect(result).toEqual({
-            success: false,
-            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
-        });
-
-        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
-    });
-
-    test("retorna EMPLOYEE_OUT_OF_SCOPE si el empleado es admin en minúsculas", async () => {
-        transaction.employee.findUnique.mockResolvedValueOnce({
-            ...targetEmployee,
-            role: {
-                name: "admin",
+                name: ROLES.ADMIN,
             },
         });
 

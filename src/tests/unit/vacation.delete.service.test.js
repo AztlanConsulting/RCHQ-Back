@@ -35,6 +35,7 @@ const {
 const RESPONSES = require("../../utils/responses");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
+const { ROLES } = require("../../utils/roles");
 
 describe("US32 - deleteVacationRequest service", () => {
     const actorAdminId = "11111111-1111-4111-8111-111111111111";
@@ -59,7 +60,7 @@ describe("US32 - deleteVacationRequest service", () => {
         employee_id: actorCoordinatorId,
         house_id: "house-1",
         role: {
-            name: "Coordinador",
+            name: ROLES.COORDINATOR,
         },
     };
 
@@ -67,7 +68,7 @@ describe("US32 - deleteVacationRequest service", () => {
         employee_id: actorAdminId,
         house_id: "house-1",
         role: {
-            name: "Admin",
+            name: ROLES.ADMIN,
         },
     };
 
@@ -91,7 +92,7 @@ describe("US32 - deleteVacationRequest service", () => {
         employee_id: targetEmployeeId,
         house_id: "house-1",
         role: {
-            name: "Admin",
+            name: ROLES.ADMIN,
         },
     };
 

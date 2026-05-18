@@ -95,7 +95,7 @@ function getAdminToken() {
         employee_id: ADMIN_ID,
         email: "admin.us32@test.com",
         name: "Admin",
-        roleName: "Admin",
+        roleName: "Administrador",
         house_id: HOUSE_A_ID,
         privileges: ["manageEmployees"],
     });
@@ -180,7 +180,7 @@ async function seedBaseData() {
         skipDuplicates: true,
     });
 
-    ADMIN_ROLE_ID = await getOrCreateRoleId("Admin");
+    ADMIN_ROLE_ID = await getOrCreateRoleId("Administrador");
     COORDINATOR_ROLE_ID = await getOrCreateRoleId("Coordinador");
     USER_ROLE_ID = await getOrCreateRoleId("Usuario");
 
