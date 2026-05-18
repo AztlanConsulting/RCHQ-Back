@@ -619,7 +619,7 @@ describe("updateAdminInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("retorna VALIDATION_ERROR con workday con start >= end", async () => {
+    it("permite workday con start mayor a end con la validacion actual", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,

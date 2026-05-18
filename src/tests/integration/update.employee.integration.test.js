@@ -11,6 +11,7 @@ const OTHER_HOUSE_ID = "f1000001-0000-4000-8000-000000000002";
 const ROLE_ID     = "f2000001-0000-4000-8000-000000000001";
 const FALLBACK_ADMIN_ROLE_ID = "f2000001-0000-4000-8000-000000000002";
 const WD_ID       = "f3000001-0000-4000-8000-000000000001";
+const WD_NAME     = "LunIT";
 const EMP_ID      = "eee00001-0000-4000-8000-000000000001";
 const OTHER_EMP   = "eee00002-0000-4000-8000-000000000002";
 const UNKNOWN_ID  = "ffffffff-ffff-4fff-bfff-ffffffffffff";
@@ -48,7 +49,7 @@ beforeAll(async () => {
   await prisma.workday.upsert({
     where:  { workday_id: WD_ID },
     update: {},
-    create: { workday_id: WD_ID, name: "Lunes Update IT" },
+    create: { workday_id: WD_ID, name: WD_NAME },
   });
 
   await prisma.house.upsert({
@@ -502,7 +503,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it("retorna 400 con workday start >= end", async () => {
+  it("permite workday con start mayor a end con la validacion actual", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
