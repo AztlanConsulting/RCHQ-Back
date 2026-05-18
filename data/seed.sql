@@ -67,7 +67,7 @@ VALUES
 ('00000001-0000-4000-8000-000000000005', 'manageDocuments'),
 ('00000001-0000-4000-8000-000000000006', 'viewLogs'),
 ('00000001-0000-4000-8000-000000000007', 'viewEvents'),
-('00000001-0000-4000-8000-000000000010', 'addToBlacklist'),
+('00000001-0000-4000-8000-000000000012', 'addToBlacklist'),
 ('00000001-0000-4000-8000-000000000008', 'createEvent'),
 ('00000001-0000-4000-8000-000000000009', 'editAbsences'),
 ('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
@@ -272,6 +272,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-004', 'Documento de empleado eliminado', false),
 ('empl-005', 'Información de empleado actualizada', false),
 ('vaca-005', 'Modificación de vacaciones exitosa', false),
+('empl-006', 'Empleado dado de baja', true),
+('empl-008', 'Fallo al dar de baja al empleado', true),
 ('vaca-006', 'Eliminación de vacaciones exitosa', false),
 ('blck-001', 'Empleado agregado a la lista negra', true)
 ON CONFLICT DO NOTHING;
