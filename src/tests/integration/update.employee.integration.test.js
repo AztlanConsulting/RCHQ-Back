@@ -7,7 +7,9 @@ const { buildSessionToken } = require("../../utils/auth/authTokens");
 // ─── IDs fijos ────────────────────────────────────────────────────────────────
 
 const HOUSE_ID    = "a0000001-0000-4000-8000-000000000001";
+const OTHER_HOUSE_ID = "b0000001-0000-4000-8000-000000000001";
 const ROLE_ID     = "a0000002-0000-4000-8000-000000000002";
+const ADMIN_ROLE_ID = "a0000002-0000-4000-8000-000000000099";
 const WD_ID       = "d0000001-0000-4000-8000-000000000001";
 const EMP_ID      = "eee00001-0000-4000-8000-000000000001";
 const OTHER_EMP   = "eee00002-0000-4000-8000-000000000002";
@@ -34,9 +36,11 @@ beforeAll(async () => {
   await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
+  await prisma.role_privilege.deleteMany({ where: { role_id: ADMIN_ROLE_ID } });
   await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-  await prisma.role.deleteMany();
+  await prisma.role.deleteMany({ where: { role_id: { in: [ROLE_ID, ADMIN_ROLE_ID] } } });
   await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
+  await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
   await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
   await prisma.workday.deleteMany({ where: { name: "Lunes" } });
 
@@ -60,10 +64,29 @@ beforeAll(async () => {
     },
   });
 
+  await prisma.house.upsert({
+    where:  { house_id: OTHER_HOUSE_ID },
+    update: {},
+    create: {
+        house_id: OTHER_HOUSE_ID,
+        name: "Casa Secundaria",
+        location: "CDMX",
+        phone_number: "5512345678",
+        description: "Casa secundaria para pruebas de integración",
+        image: "test-house-2.jpg",
+    },
+  });
+
   await prisma.role.upsert({
       where:  { role_id: ROLE_ID },
+      update: { name: "Coordinador" },
+      create: { role_id: ROLE_ID, name: "Coordinador" },
+  });
+
+  await prisma.role.upsert({
+      where:  { role_id: ADMIN_ROLE_ID },
       update: { name: "Administrador" },
-      create: { role_id: ROLE_ID, name: "Administrador" },
+      create: { role_id: ADMIN_ROLE_ID, name: "Administrador" },
   });
 
   const priv = await prisma.privileges.upsert({
@@ -106,7 +129,7 @@ beforeAll(async () => {
     employeeId: EMP_ID, 
     id: EMP_ID,
     roleId: ROLE_ID, 
-    role: "Administrador",
+    role: "Coordinador",
     privileges: ["manageEmployees"],
     houseId: HOUSE_ID, 
     email: "test.update@mail.com", 
@@ -121,9 +144,11 @@ afterAll(async () => {
     await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
+    await prisma.role_privilege.deleteMany({ where: { role_id: ADMIN_ROLE_ID } });
     await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-    await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
+    await prisma.role.deleteMany({ where: { role_id: { in: [ROLE_ID, ADMIN_ROLE_ID] } } });
     await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
+    await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
     await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
 
     await prisma.$disconnect();
@@ -451,11 +476,19 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it("retorna 400 con houseId no UUID", async () => {
+  it("retorna 400 si se intenta modificar la casa", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ houseId: "no-uuid" });
+      .send({ houseId: OTHER_HOUSE_ID });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("retorna 400 si se intenta modificar el puesto a Administrador", async () => {
+    const res = await request(app)
+      .put(`/employee/${EMP_ID}/admin-info`)
+      .set(json())
+      .send({ roleId: ADMIN_ROLE_ID });
     expect(res.statusCode).toBe(400);
   });
 

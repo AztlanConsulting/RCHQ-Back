@@ -27,6 +27,22 @@ exports.getAllRoles = async () => {
     }));
 };
 
+exports.getRoleById = async (roleId) => {
+    if (!roleId) return null;
+
+    const role = await prisma.role.findUnique({
+        where: { role_id: roleId },
+        select: { role_id: true, name: true },
+    });
+
+    if (!role) return null;
+
+    return {
+        roleId: role.role_id,
+        name: role.name,
+    };
+};
+
 exports.getDocumentTypes = async () => {
     return await prisma.documents.findMany({
         orderBy: { name: "asc" },
