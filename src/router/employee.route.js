@@ -195,6 +195,7 @@ router.patch(
         deactivateEmployeePolicy,
         async (req) => {
             const employee = await getEmployeeToDeactivate(req.params.employeeId);
+                if (employee) req.resolvedEmployee = employee;
             return employee ? { ...employee, addToBlacklist: req.body.addToBlacklist } : null;
         }
     ),
