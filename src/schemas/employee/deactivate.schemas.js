@@ -2,9 +2,10 @@ const { z } = require("zod");
 
 const deactivateEmployeeSchema = z.object({
     reason: z
-        .string({ required_error: 'El campo "Razón" no debe estar vacío' })
-        .min(1, { message: 'El campo "Razón" no debe estar vacío' })
-        .max(250, { message: 'El campo "Razón" es de máximo 250 caracteres' }),
+        .string()
+        .max(250, { message: 'El campo "Razón" es de máximo 250 caracteres' })
+        .regex(/^[^<>]*$/, { message: 'El campo "Razón" contiene caracteres no permitidos' })
+        .optional(),
     addToBlacklist: z.boolean().optional(),
 });
 
