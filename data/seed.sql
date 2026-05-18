@@ -2005,8 +2005,8 @@ INSERT INTO public.employee (
 VALUES (
   'e3200001-0000-4000-8000-000000000005',
   'a0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Admin' LIMIT 1),
-  'Admin',
+  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
+  'Administrador',
   'Objetivo US32',
   true,
   'admin.objetivo.us32@rchq.test',

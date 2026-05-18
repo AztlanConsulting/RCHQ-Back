@@ -1,5 +1,6 @@
 const prisma = require("../../prisma");
 const RESPONSES = require("../../utils/responses");
+const { ROLES } = require("../../utils/roles");
 
 exports.deleteVacationRequestAtomically = async ({
     vacationRequestId,
@@ -50,10 +51,10 @@ exports.deleteVacationRequestAtomically = async ({
             };
         }
 
-        const targetRoleName = targetEmployee.role?.name?.toLowerCase();
+        const targetRoleName = targetEmployee.role?.name;
 
         if (
-            targetRoleName === "admin" ||
+            targetRoleName === ROLES.ADMIN ||
             targetEmployee.house_id !== actorHouseId
         ) {
             return {
