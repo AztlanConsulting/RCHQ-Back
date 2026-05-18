@@ -1,6 +1,6 @@
 const {
     deactivateEmployee,
-} = require("../../service/employee/deactivate.service.js");
+} = require("../../service/employee/deactivate.service");
 const RESPONSES = require("../../utils/responses");
 
 exports.deactivateEmployeeController = async (req, res) => {
@@ -25,6 +25,10 @@ exports.deactivateEmployeeController = async (req, res) => {
             return res
                 .status(409)
                 .json({ message: "El empleado ya se encuentra en la lista negra" });
+        } else if (code === RESPONSES.EMPLOYEE.VALIDATION_ERROR) {
+            return res
+                .status(422)
+                .json({ message: data?.message || "Campos inválidos" });
         } else if (code === RESPONSES.EMPLOYEE.DEACTIVATION_FAILED) {
             return res
                 .status(400)
