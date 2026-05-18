@@ -8,6 +8,7 @@ const employeeRouter = require("./router/employee.route");
 const vacationRouter = require("./router/vacation.route");
 const eventRouter = require("./router/event.route");
 const houseRouter = require("./router/house.route");
+const blacklistRouter = require("./router/blacklist.route");
 const absenceRouter = require("./router/absence.route");
 const logsRouter = require("./router/logs.route");
 const { startLogRetentionJob } = require("./utils/logRetentionJob");
@@ -37,6 +38,7 @@ app.use("/user", userRouter);
 app.use("/vacation", vacationRouter);
 app.use("/event", eventRouter);
 app.use("/house", houseRouter);
+app.use("/blacklist", blacklistRouter);
 app.use("/absence", absenceRouter);
 app.use("/logs", logsRouter);
 
