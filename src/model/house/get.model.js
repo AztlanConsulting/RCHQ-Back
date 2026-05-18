@@ -8,6 +8,24 @@ exports.getHouseById = async (houseId) => {
     return mapHouse(house);
 };
 
+exports.getHousesByIds = async (houseIds) => {
+    if (houseIds.length === 0) {
+        return [];
+    }
+
+    return prisma.house.findMany({
+        where: {
+            house_id: {
+                in: houseIds,
+            },
+        },
+        select: {
+            house_id: true,
+            name: true,
+        },
+    });
+};
+
 exports.getHouseNameByEmployeeId = async (employeeId) => {
     const row = await prisma.employee.findUnique({
         where: { employee_id: employeeId },
@@ -33,10 +51,10 @@ exports.getHouseEmployeesByEmployeeId = async (employeeId) => {
         },
         select: {
             employee_id: true,
-            house_id: true,
             name: true,
             surname: true,
             curp: true,
+            picture: true,
             is_active: true,
         },
         orderBy: [

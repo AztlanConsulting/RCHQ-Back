@@ -1,6 +1,6 @@
 const { readLogIp } = require("../logIp");
 
-exports.extractAffectedEmployeeIds = (logs) => [
+exports.extractAffectedIds = (logs) => [
     ...new Set(
         logs
             .map((log) => log.affected)
@@ -13,22 +13,35 @@ exports.extractAffectedEmployeeIds = (logs) => [
     ),
 ];
 
-exports.buildAffectedEmployeeMap = (affectedEmployees) =>
-    new Map(
-        affectedEmployees.map((employee) => [
+exports.buildAffectedEntityMap = (
+    affectedEmployees = [],
+    affectedHouses = [],
+    affectedEvents = [],
+) => (
+    new Map([
+        ...affectedEmployees.map((employee) => [
             employee.employee_id,
             `${employee.name} ${employee.surname}`.trim(),
         ]),
-    );
+        ...affectedHouses.map((house) => [
+            house.house_id,
+            house.name,
+        ]),
+        ...affectedEvents.map((event) => [
+            event.id,
+            event.name,
+        ]),
+    ])
+);
 
-exports.mapLog = (log, affectedEmployeeMap) => ({
+exports.mapLog = (log, affectedEntityMap) => ({
     logId: log.log_id,
     responsibleEmployeeId: log.employee.employee_id,
     responsibleName: `${log.employee.name} ${log.employee.surname}`.trim(),
     responsibleCurp: log.employee.curp,
     responsiblePicture: log.employee.picture,
     affectedName: log.affected
-        ? affectedEmployeeMap.get(log.affected) || log.affected
+        ? affectedEntityMap.get(log.affected) || log.affected
         : null,
     ipAddress: readLogIp(log.ip_address),
     action: log.action.description,

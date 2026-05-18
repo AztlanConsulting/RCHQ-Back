@@ -36,6 +36,7 @@ const LOG_ACTIONS = {
     PERSONAL_EVENT_CREATED: "even-002",
     PERSONAL_EVENT_ASSIGNED: "even-003",
     EMPLOYEE_UPDATED: "empl-005",
+    BLACKLIST_ADDED: "blck-001",
 };
 
 module.exports = { LOG_ACTIONS };
