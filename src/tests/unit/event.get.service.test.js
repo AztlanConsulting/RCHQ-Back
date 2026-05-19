@@ -38,6 +38,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
 
     it("retorna error si las fechas vienen en formato inválido", async () => {
         const result = await eventGetService.getHouseCalendarRecordsInRange(
+            "employee-1",
             "house-1",
             "2026/05/01",
             "2026-05-10",
@@ -81,6 +82,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
                 },
             },
         ]);
+
         eventModel.getHouseEventsInRange.mockResolvedValue([
             {
                 date: new Date("2026-05-15T00:00:00.000Z"),
@@ -89,7 +91,9 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
                 isFreeDay: true,
             },
         ]);
+
         eventModel.getGlobalEventsInRange.mockResolvedValue([]);
+        eventModel.getHouseCalendarPersonalEventsInRange.mockResolvedValue([]);
         vacationModel.getHouseCalendarVacationsInRange.mockResolvedValue([]);
 
         const result = await eventGetService.getHouseCalendarRecordsInRange(
@@ -116,6 +120,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
             scope: "house",
             lastsAllDay: true,
         });
+
         expect(result.data.events[0].end.toISOString()).toBe("2026-05-16T00:00:00.000Z");
     });
 });

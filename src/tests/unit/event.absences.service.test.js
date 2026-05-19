@@ -13,6 +13,7 @@ jest.mock("../../model/event/get.model", () => ({
     getHouseEventsInRange: jest.fn(),
     getPersonalEventsInRange: jest.fn(),
     getGlobalEventsInRange: jest.fn(),
+    getHouseCalendarPersonalEventsInRange: jest.fn(),
 }));
 
 jest.mock("../../model/absence/get.model", () => ({
@@ -30,10 +31,10 @@ const {
     getHouseEventsInRange,
     getPersonalEventsInRange,
     getGlobalEventsInRange,
+    getHouseCalendarPersonalEventsInRange,
 } = require("../../model/event/get.model");
 const { getEventsInRange } = require("../../service/event/get.service");
 const RESPONSES = require("../../utils/responses");
-const { employee } = require("../../prisma");
 
 const EMPLOYEE_ID = "employee-id";
 const HOUSE_ID = "house-id";
@@ -68,7 +69,7 @@ const makeAbsence = ({
         url: "https://example.com/absence.pdf",
         is_deleted: false,
         absence_type: { name: "Medica" },
-        employee: { name: "John", surname: "Smith" }
+        employee: { name: "John", surname: "Smith" },
     };
 };
 
@@ -102,6 +103,36 @@ const makeHouseEvent = ({
     };
 };
 
+const makePersonalEvent = ({
+    date = makeUTCDate(2026, 5, 5),
+    start = new Date("2026-05-05T15:00:00.000Z"),
+    end = new Date("2026-05-05T16:00:00.000Z"),
+    name = "Evento personal",
+    description = "",
+    type = "General",
+    employeeId = EMPLOYEE_ID,
+    employeeName = "John",
+    employeeSurname = "Smith",
+} = {}) => {
+    return {
+        date,
+        start,
+        end,
+        name,
+        description,
+        event_type: { name: type },
+        employee_personal_event: [
+            {
+                employee: {
+                    employee_id: employeeId,
+                    name: employeeName,
+                    surname: employeeSurname,
+                },
+            },
+        ],
+    };
+};
+
 const getAbsenceEvent = (result, absenceId = "absence-id") => {
     return result.data.events.find((event) => event.absenceId === absenceId);
 };
@@ -115,6 +146,7 @@ describe("event.get.service", () => {
         getHouseEventsInRange.mockResolvedValue([]);
         getPersonalEventsInRange.mockResolvedValue([]);
         getGlobalEventsInRange.mockResolvedValue([]);
+        getHouseCalendarPersonalEventsInRange.mockResolvedValue([]);
         getVacationsInRange.mockResolvedValue([]);
         getAbsencesInRange.mockResolvedValue([]);
         getWorkDays.mockResolvedValue([
@@ -245,15 +277,7 @@ describe("event.get.service", () => {
         ]);
 
         getPersonalEventsInRange.mockResolvedValue([
-            {
-                personal_event: {
-                    date: makeUTCDate(2026, 5, 5),
-                    start: new Date("2026-05-05T15:00:00.000Z"),
-                    end: new Date("2026-05-05T16:00:00.000Z"),
-                    name: "Evento personal",
-                    event_type: { name: "General" },
-                },
-            },
+            makePersonalEvent(),
         ]);
 
         getAbsencesInRange.mockResolvedValue([makeAbsence()]);
