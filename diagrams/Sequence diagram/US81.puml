@@ -65,7 +65,7 @@ else Campos completos
     deactivate ReactView
     activate routes
 
-    routes -> controller : putUpdate(request, response)
+    routes -> controller : updateHouseEvent(request, response)
     activate controller
 
     controller ->> event.service : validateAvailability(data)
@@ -108,7 +108,7 @@ else Campos completos
             deactivate ReactView
             activate routes
 
-            routes -> controller : putUpdate(request, response)
+            routes -> controller : updateHouseEvent(request, response)
             activate controller
 
             controller ->> event.service : updateHouseEvent(eventId, data)
