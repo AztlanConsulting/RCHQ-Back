@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "vacations_request" ADD COLUMN     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "used_days" INTEGER NOT NULL DEFAULT 0;

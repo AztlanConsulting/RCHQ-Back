@@ -1,0 +1,49 @@
+@startuml
+title US04 front - user cambia contraseña en primer login
+
+actor Usuario
+boundary "LoginPage.jsx" as LoginPage
+control "AuthService.jsx" as AuthService
+boundary "ChangePasswordFirstLogin.jsx" as FirstLoginPage
+boundary "TwoFactorAuth.jsx / Dashboard" as NextView
+
+Usuario -> LoginPage : Ingresa correo y contraseña temporal
+LoginPage -> AuthService : loginService(credentials)
+
+alt Credenciales inválidas
+AuthService --> LoginPage : Error de login
+LoginPage --> Usuario : Mostrar error
+else Credenciales válidas
+alt hasFirstLogin = true
+AuthService --> LoginPage : Respuesta con nextStep=CHANGE_PASSWORD_FIRST_LOGIN\n+ firstLoginToken
+LoginPage -> FirstLoginPage : Redirigir a cambio obligatorio
+
+Usuario -> FirstLoginPage : Ingresa nueva contraseña y confirmación
+FirstLoginPage -> FirstLoginPage : Validar formato y confirmación
+
+alt Datos inválidos
+FirstLoginPage --> Usuario : Mostrar error de validación
+else Datos válidos
+FirstLoginPage -> AuthService : changePasswordFirstLoginService(data, token)
+
+alt Error de contraseña actual/temporal o token
+AuthService --> FirstLoginPage : Error
+FirstLoginPage --> Usuario : Mostrar error
+else Cambio exitoso
+alt Debe pasar a autenticación en dos pasos
+AuthService --> FirstLoginPage : nextStep=SETUP_2FA_OPTIONAL o VERIFY_2FA
+FirstLoginPage -> NextView : Redirigir a flujo autenticación en dos pasos
+else No pasa a autenticación en dos pasos
+AuthService --> FirstLoginPage : Éxito
+FirstLoginPage -> NextView : Redirigir a dashboard
+end
+end
+end
+
+else hasFirstLogin = false
+AuthService --> LoginPage : Flujo normal de login
+LoginPage -> NextView : Ir a autenticación en dos pasos o dashboard
+end
+end
+
+@enduml

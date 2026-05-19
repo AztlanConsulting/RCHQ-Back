@@ -1,0 +1,57 @@
+@startuml HU - Registro de evento de casa
+
+|Coordinador|
+start
+:Interactuar con el calendario;
+
+|Sistema|
+:Renderizar modal de creación;
+
+|Coordinador|
+:Seleccionar opción "Casa";
+repeat
+:Llenar campos obligatorios:
+- Título
+- Tipo de evento
+- Fecha y hora de inicio
+- Fecha y hora de fin;
+
+|Sistema|
+if (¿Activar "Todo el día"?) then (SI)
+    :Eliminar selectores de hora;
+    :Registrar solo fechas;
+else (NO)
+    :Mantener selectores de hora;
+endif
+
+if (¿Ingresar descripción?) then (SI)
+    |Coordinador|
+    :Ingresar descripción del evento;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos?) is (NO)
+:Validar disponibilidad de horario;
+
+if (¿Existe empalme con otro evento?) then (SI)
+    |Coordinador|
+    if (¿Desea agregar el evento de todos modos?) then (SI)
+        |Sistema|
+        :Registrar evento con traslape;
+    else (NO)
+        |Sistema|
+        :Cancelar operación;
+        stop
+    endif
+else (NO)
+    |Sistema|
+    :Registrar evento normalmente;
+endif
+
+|Sistema|
+:Notificar éxito al usuario;
+:Actualizar calendario;
+stop
+
+@enduml

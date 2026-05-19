@@ -1,0 +1,128 @@
+@startuml
+title US80 - Coordinador consulta solicitudes de vacaciones pendientes y revisadas
+
+actor "Coordinador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "auth/rbac/validate middleware" as Middleware
+control "get.controller.js" as Controller
+control "get.service.js" as Service
+database "vacation/get.model.js" as VacationGetModel
+database "employee/get.model.js" as EmployeeGetModel
+database "Base de datos" as DB
+
+autonumber
+
+Usuario -> Frontend : Entra al módulo de solicitudes de vacaciones
+
+alt Consulta solicitudes pendientes
+Frontend -> Router : GET /vacation/requests/pending?page&limit&search&startDate&endDate\nAuthorization: Bearer token
+
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(getPendingVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : getPendingVacationRequests(req, res)
+
+Controller -> Service : getPendingVacationRequests({\nactorEmployeeId,\nquery\n})
+
+Service -> Service : Validar contrato interno\ngetVacationRequestsInputSchema
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Datos inválidos
+else Entrada interna válida
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Empleado autenticado
+EmployeeGetModel --> Service : actorEmployee
+
+alt Actor no existe
+Service --> Controller : USER.NOT_ACCESS
+Controller --> Frontend : 401 Usuario no autenticado
+else Actor existe
+alt Actor no es Coordinador
+Service --> Controller : INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Sin permisos
+else Actor es Coordinador
+Service -> Service : parsePagination(page, limit)
+Service -> Service : buildVacationListWhere({\nhouseId,\nsearch,\nstartDate,\nendDate,\nstatusFilter: PENDING\n})
+
+Service -> VacationGetModel : getPendingVacationRequestsByHouse({\nwhere,\nskip,\ntake\n})
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status = PENDING\nAND employee.house_id = houseId\nAND employee.role.name != Administrador
+DB --> VacationGetModel : Solicitudes pendientes + total
+VacationGetModel --> Service : { requests, total }
+
+Service -> Service : mapVacationRequestForList(request)
+Service -> Service : buildPagination({ page, limit, total })
+
+Service --> Controller : VACATION_REQUESTS_FOUND
+Controller --> Frontend : 200 Solicitudes pendientes + paginación
+Frontend --> Usuario : Mostrar tabla de pendientes
+end
+end
+end
+end
+
+else Consulta solicitudes revisadas
+Frontend -> Router : GET /vacation/requests/reviewed?page&limit&search&status&startDate&endDate\nAuthorization: Bearer token
+
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(getReviewedVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : getReviewedVacationRequests(req, res)
+
+Controller -> Service : getReviewedVacationRequests({\nactorEmployeeId,\nquery\n})
+
+Service -> Service : Validar contrato interno\ngetVacationRequestsInputSchema
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Datos inválidos
+else Entrada interna válida
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Empleado autenticado
+EmployeeGetModel --> Service : actorEmployee
+
+alt Actor no existe
+Service --> Controller : USER.NOT_ACCESS
+Controller --> Frontend : 401 Usuario no autenticado
+else Actor existe
+alt Actor no es Coordinador
+Service --> Controller : INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Sin permisos
+else Actor es Coordinador
+Service -> Service : parsePagination(page, limit)
+Service -> Service : mapReviewedStatus(status)
+Service -> Service : buildVacationListWhere({\nhouseId,\nsearch,\nstartDate,\nendDate,\nstatusFilter\n})
+
+Service -> VacationGetModel : getReviewedVacationRequestsByHouse({\nwhere,\nskip,\ntake\n})
+VacationGetModel -> DB : SELECT vacations_request + employee + house\nWHERE status IN (APPROVED, REJECTED)\nAND employee.house_id = houseId\nAND employee.role.name != Administrador
+DB --> VacationGetModel : Solicitudes revisadas + total
+VacationGetModel --> Service : { requests, total }
+
+Service -> Service : mapVacationRequestForList(request)
+Service -> Service : buildPagination({ page, limit, total })
+
+Service --> Controller : VACATION_REQUESTS_FOUND
+Controller --> Frontend : 200 Solicitudes revisadas + paginación
+Frontend --> Usuario : Mostrar tabla de revisadas
+end
+end
+end
+end
+end
+
+@enduml
