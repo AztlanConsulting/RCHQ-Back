@@ -1,4 +1,4 @@
-const{ convertUTCToMexicanTime } = require("../dates")
+const { convertUTCToMexicanTime } = require("../dates");
 
 exports.mapHouseEvent = (event) => {
     if (!event) return null;
