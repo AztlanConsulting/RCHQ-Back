@@ -1,7 +1,7 @@
 const { updateHouseEvent } = require("../../service/event/update.service");
 const RESPONSES = require("../../utils/responses");
 
-exports.putUpdate = async (req, res) => {
+exports.updateHouseEvent = async (req, res) => {
     try {
         const { eventId } = req.params;
         const {
