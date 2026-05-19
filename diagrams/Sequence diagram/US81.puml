@@ -1,0 +1,203 @@
+@startuml HU81 - Modificar evento de casa
+
+actor Navegador
+boundary "event.house.routes" as routes
+boundary "React (calendarModal.jsx)" as ReactView
+control "event.house.controller" as controller
+control event.service
+entity event.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> ReactView : Seleccionar evento de casa existente
+activate ReactView
+ReactView -> routes : GET /events/house/:eventId
+deactivate ReactView
+activate routes
+
+routes -> controller : getHouseEventById(request, response)
+activate controller
+
+controller ->> event.service : getHouseEventById(eventId)
+activate event.service
+
+event.service ->> event.model : findHouseEventById(eventId)
+activate event.model
+
+event.model ->> PostgreSQL : prisma.house_event.findUnique()
+activate PostgreSQL
+PostgreSQL -->> event.model : eventData
+deactivate PostgreSQL
+
+event.model -->> event.service : eventData
+deactivate event.model
+event.service -->> controller : eventData
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ eventData })
+deactivate controller
+routes -->> ReactView : send({ eventData })
+deactivate routes
+activate ReactView
+
+ReactView -> routes : GET /events/getAllTypes
+deactivate ReactView
+activate routes
+
+routes -> controller : getAllEventTypes(request, response)
+activate controller
+
+controller ->> event.service : getAllEventTypes()
+activate event.service
+
+event.service ->> event.model : getAllEventTypes()
+activate event.model
+
+event.model ->> PostgreSQL : prisma.event_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> event.model : eventTypes[]
+deactivate PostgreSQL
+
+event.model -->> event.service : eventTypes[]
+deactivate event.model
+event.service -->> controller : eventTypes[]
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ eventTypes })
+deactivate controller
+routes -->> ReactView : send({ eventTypes })
+deactivate routes
+activate ReactView
+
+ReactView -> Navegador : Renderizar modal de edición con datos actuales
+deactivate ReactView
+Navegador -> ReactView : Modifica datos obligatorios:\n(name, eventType, start, end)
+activate ReactView
+alt all_day?
+    ReactView -> ReactView : Ocultar selectores de hora
+else No
+    ReactView -> ReactView : Mostrar selectores de hora
+end
+
+alt Modificar datos opcionales
+    Navegador -> ReactView : Ingresa description, is_free_day
+else No
+    ReactView -> ReactView : Mantiene datos opcionales actuales
+end
+
+ReactView -> ReactView : Validar campos obligatorios
+
+alt Campos incompletos
+    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes" (422)
+
+else Campos completos
+    ReactView -> routes : PUT /events/house/:eventId
+    deactivate ReactView
+    activate routes
+
+    routes -> controller : putUpdate(request, response)
+    activate controller
+
+    controller ->> event.service : validateAvailability(data)
+    activate event.service
+
+    event.service ->> event.model : findOverlappingHouseEvents(data)
+    activate event.model
+
+    event.model ->> PostgreSQL : prisma.house_event.findMany(overlap_query)
+    activate PostgreSQL
+    PostgreSQL -->> event.model : collisionList
+    deactivate PostgreSQL
+
+    event.model -->> event.service : collisions[]
+    deactivate event.model
+    event.service -->> controller : collisionFound / clear
+    deactivate event.service
+
+    alt ¿Existe empalme? AND !forceOverlap
+        controller -->> routes : response.status(409).send("Conflicto")
+        deactivate controller
+
+        routes -->> ReactView : send("Conflicto")
+        deactivate routes
+        activate ReactView
+
+        ReactView -> Navegador : Mostrar alerta de empalme
+        deactivate ReactView
+
+        alt No desea traslape
+            Navegador -> ReactView : Selecciona "No"
+            activate ReactView
+            ReactView -> Navegador : Regresa a editar datos
+            deactivate ReactView
+        else Sí desea traslape
+            Navegador -> ReactView : Selecciona "Sí"
+            activate ReactView
+
+            ReactView -> routes : PUT /events/house/:eventId { ..., forceOverlap: true }
+            deactivate ReactView
+            activate routes
+
+            routes -> controller : putUpdate(request, response)
+            activate controller
+
+            controller ->> event.service : updateHouseEvent(eventId, data)
+            activate event.service
+
+            event.service ->> event.model : updateHouseEvent(eventId, data)
+            activate event.model
+
+            event.model ->> PostgreSQL : prisma.house_event.update()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : eventUpdated
+            deactivate PostgreSQL
+
+            event.model -->> event.service : success
+            deactivate event.model
+            event.service -->> controller : success
+            deactivate event.service
+
+            controller -->> routes : response.status(200).send("Modificado")
+            deactivate controller
+
+            routes -->> ReactView : send("Modificado")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Actualizar calendario y cerrar modal
+            deactivate ReactView
+        end
+
+    else No existe empalme OR forceOverlap == true
+        controller ->> event.service : updateHouseEvent(eventId, data)
+        activate controller
+        activate event.service
+
+        event.service ->> event.model : updateHouseEvent(eventId, data)
+        activate event.model
+
+        event.model ->> PostgreSQL : prisma.house_event.update()
+        activate PostgreSQL
+        PostgreSQL -->> event.model : eventUpdated
+        deactivate PostgreSQL
+
+        event.model -->> event.service : success
+        deactivate event.model
+        event.service -->> controller : success
+        deactivate event.service
+
+        controller -->> routes : response.status(200).send("Modificado")
+        deactivate controller
+        activate routes
+
+        routes -->> ReactView : send("Modificado")
+        deactivate routes
+        activate ReactView
+
+        ReactView -> Navegador : Actualizar calendario y cerrar modal
+        deactivate ReactView
+    end
+end
+
+@enduml
