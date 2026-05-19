@@ -22,9 +22,11 @@ const {
     createHouseEvent,
     createPersonalEvent,
 } = require("../controller/event/create.controller");
+const { updateHouseEvent } = require("../controller/event/update.controller");
 const {
     houseEventPolicy,
     personalEventPolicy,
+    updateHouseEventPolicy,
 } = require("../policies/event.policies");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
@@ -69,6 +71,16 @@ router.post(
     requirePrivileges(PRIVILEGES.CREATE_EVENT),
     authorize(houseEventPolicy, (req) => ({ houseId: req.user.houseId })),
     createHouseEvent,
+);
+
+router.put(
+    "/house/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.EDIT_EVENT),
+    authorize(updateHouseEventPolicy, (req) => ({ houseId: req.user.houseId })),
+    updateHouseEvent,
 );
 
 router.get(
