@@ -11,6 +11,7 @@ const {
     calculateUsedDays,
     combineDateAndTime,
     stringToDate,
+    convertUTCToMexicanTime,
 } = require("../../utils/dates");
 const {
     getHome,
@@ -98,8 +99,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         );
         houseEvents.forEach((event) => {
             events.push({
-                start: event.start,
-                end: event.end,
+                start: convertUTCToMexicanTime(event.start),
+                end: convertUTCToMexicanTime(event.end),
                 date: "",
                 name: event.name,
                 type: event.event_type.name,
@@ -147,8 +148,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
     globalEvents.forEach((event) => {
         events.push({
-            start: event.start,
-            end: event.end,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
             date: "",
             name: event.name,
             subtitle: event.subtitle || "",
