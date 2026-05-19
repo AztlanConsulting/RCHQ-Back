@@ -22,9 +22,6 @@ exports.convertUTCToMexicanTime = (timestamp) => {
     return combined;
 }
 
-exports.toUTC = (date) => {
-    return new Date(date.toISOString());
-}
 
 exports.spanishToDay = (day) => {
     switch (day) {
