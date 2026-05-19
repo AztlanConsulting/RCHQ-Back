@@ -1,0 +1,110 @@
+@startuml
+title US14_15_16 - Calendario carga inicial
+
+|Usuario|
+start
+:Abrir la vista Calendario;
+
+|Cliente|
+:Montar calendario jsx y hooks;
+note right: JWT storage aporta empleado y rol sin nueva peticion previa paralelos filtros
+
+|Cliente|
+:Enviar getEventsTypes hacia servidor ruta event-getAllTypes;
+
+|Servidor|
+:Procesar consulta obtener tipos de evento;
+:Responder lista tipos;
+
+|Cliente|
+:Actualizar filtros opciones tipo evento;
+
+|Cliente|
+:Enviar getAbsenceTypes hacia servidor ruta absence-types;
+
+|Servidor|
+:Procesar catalogo ausencias disponible usuario;
+:Responder lista tipos ausencia;
+
+|Cliente|
+:Actualizar filtros tipo ausencia;
+note right: ambas rutas paralelas tras montaje useCalendarFilters efecto mismo ciclo inicial
+
+|Cliente|
+:setOwnCalendar y actualiza viewEmployeeId viewerRole estado;
+
+|Cliente|
+:Enviar getEmployeeHouseName hacia servidor ruta house-getHouseName;
+
+|Servidor|
+:Resolver hogar solicitante autorizado;
+:Responder texto nombre hogar cliente;
+
+|Cliente|
+:Guardar titulo hogar vistas moviles;
+
+|Cliente|
+:Montar FullCalendar primer datesSet intervalo visible;
+
+|Cliente|
+:Enviar getEventsInRange hacia servidor ruta event-range empleado desde hasta;
+
+|Servidor|
+:Sintetizar eventos persona rango modelo calendario mezclas;
+:Responder coleccion registros cliente;
+
+|Cliente|
+:Registrar promesa personal Promise-all primera rama;
+
+|Cliente|
+if (Rol Coordinador o Administrador permite ver eventos hogar) then (si)
+
+|Cliente|
+:Enviar getHouseEventsInRange servidor ruta event-house-range desde hasta;
+
+|Servidor|
+:Sintetizar eventos mismo hogar rango;
+:Responder coleccion segunda rama;
+
+|Cliente|
+:Registrar segunda rama Promise-all;
+
+else (no)
+
+|Cliente|
+:Omitir GET hogar rol sin permiso ver eventos de la misma casa;
+
+endif
+
+|Cliente|
+:Fusionar todas respuestas y guardar combinado en estado calendario;
+
+|Cliente|
+if (viewerRole en estado Coordinador o Administrador) then (si)
+
+|Cliente|
+:Enviar getHouseEmployees servidor ruta house-employees segundo efecto;
+
+|Servidor|
+:Listado empleados mismo hogar con permiso autorizado;
+:Responder ids nombre curp filtros equipo;
+
+|Cliente|
+:Popular multiseccion empleados ausencias vacaciones personal;
+
+else (sin equipo catalogo)
+
+|Cliente|
+:Sin GET usar fallback derivados event cargados servidor;
+
+endif
+
+|Cliente|
+:Mapear y filtrar en cliente coleccion dibujada en FullCalendar sin nuevas llamadas servidor;
+
+|Usuario|
+:Interactua con bloques eventos ausencias vacaciones filtradas;
+
+stop
+
+@enduml
