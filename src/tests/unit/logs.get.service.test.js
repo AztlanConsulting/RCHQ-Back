@@ -24,6 +24,10 @@ jest.mock("../../utils/logIp", () => ({
     readLogIp: jest.fn((value) => `decoded:${value}`),
 }));
 
+jest.mock("../../utils/dates", () => ({
+    convertUTCToMexicanTime: jest.fn((timestamp) => timestamp),
+}));
+
 jest.mock("../../utils/logsPdf", () => ({
     buildLogsPdfBuffer: jest.fn(),
 }));
