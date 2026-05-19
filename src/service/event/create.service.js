@@ -66,11 +66,18 @@ exports.createHouseEvent = async (data, user, req) => {
     let warning = null;
 
     try {
+        const ip = getClientIp(req);
         await createLog(
             user.id,
             LOG_ACTIONS.HOUSE_EVENT_CREATED,
-            getClientIp(req),
+            ip,
             houseEvent.houseEventId,
+        );
+        await createLog(
+            user.id,
+            LOG_ACTIONS.HOUSE_EVENT_ASSIGNED,
+            ip,
+            validData.houseId,
         );
     } catch (error) {
         console.error("Error creando log de evento:", error);
