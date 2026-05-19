@@ -24,7 +24,7 @@ const mockEmployee = {
     houseId: "house-1",
     email: "test@gmail.com",
     name: "Test User",
-    role: "admin",
+    role: "Administrador",
     type: "nomina",
     isActive: true,
     isActive2FA: false,

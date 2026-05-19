@@ -196,7 +196,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             "Coordinador",
             coordinatorRoleId
         );
-        adminRoleId = await getOrCreateRoleId("Admin", adminRoleId);
+        adminRoleId = await getOrCreateRoleId("Administrador", adminRoleId);
         maintenanceRoleId = await getOrCreateRoleId(
             "Mantenimiento",
             maintenanceRoleId
@@ -305,7 +305,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                     employee_id: adminEmployeeId,
                     house_id: houseId,
                     role_id: adminRoleId,
-                    name: "Admin",
+                    name: "Administrador",
                     surname: "Test",
                     is_active: true,
                     email: "admin.us30@test.com",
@@ -615,7 +615,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.body.success).toBe(false);
     });
 
-    it("403 no permite modificar vacaciones de Admin", async () => {
+    it("403 no permite modificar vacaciones de Administrador", async () => {
         const response = await request(app)
             .patch(`/vacation/request/${adminVacationId}/dates`)
             .set("Authorization", `Bearer ${coordinatorToken}`)

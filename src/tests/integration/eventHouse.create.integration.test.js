@@ -81,7 +81,7 @@ const seedDependencies = async () => {
         "Coordinador",
         TEST_ROLE_ID,
     );
-    const adminRoleId = await getOrCreateRoleId("Admin", TEST_ADMIN_ROLE_ID);
+    const adminRoleId = await getOrCreateRoleId("Administrador", TEST_ADMIN_ROLE_ID);
     const employeeRoleId = await getOrCreateRoleId(
         "Mantenimiento",
         TEST_EMPLOYEE_ROLE_ID,
@@ -888,9 +888,9 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             expect(res.statusCode).toBe(403);
         });
 
-        it("Admin puede crear eventos en cualquier casa", async () => {
+        it("Administrador puede crear eventos en cualquier casa", async () => {
             const adminToken = generateToken({
-                role: "Admin",
+                role: "Administrador",
                 houseId: TEST_OTHER_HOUSE_ID,
             });
 

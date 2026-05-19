@@ -34,7 +34,7 @@ describe("Employee Service - createEmployee", () => {
     // Variables globales para las pruebas
     const mockUserAdmin = {
         id: "user-1",
-        role: "Admin",
+        role: "Administrador",
         houseId: "a0000001-0000-4000-8000-000000000001",
         privileges: ["viewEmployees", "createEmployees", "manageEmployees", "viewDocuments", "manageDocuments"],
     };

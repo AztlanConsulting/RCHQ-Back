@@ -516,7 +516,7 @@ VALUES
     'a0000001-0000-4000-8000-000000000001',
     'a0000002-0000-4000-8000-000000000003',
     'Empleado',
-    'Éxito Admin us80',
+    'Éxito Administrador us80',
     true,
     'exito.admin.us80@rchq.test',
     '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',

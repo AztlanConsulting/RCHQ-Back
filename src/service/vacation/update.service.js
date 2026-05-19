@@ -29,6 +29,9 @@ const {
 } = require("../../schemas/vacation/update.schemas");
 const { getVacationYearInfoForApproval } = require("./get.service");
 
+const isAdminRole = (roleName) =>
+    roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
+
 exports.approveVacationRequest = async ({
     actorEmployeeId,
     vacationRequestId,
@@ -86,9 +89,7 @@ exports.approveVacationRequest = async ({
         };
     }
 
-    const targetRoleName = targetEmployee.role?.name;
-
-    if (targetRoleName === ROLES.ADMIN) {
+    if (isAdminRole(targetEmployee.role?.name)) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
@@ -242,9 +243,7 @@ exports.rejectVacationRequest = async ({
         };
     }
 
-    const targetRoleName = targetEmployee.role?.name;
-
-    if (targetRoleName === ROLES.ADMIN) {
+    if (isAdminRole(targetEmployee.role?.name)) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
@@ -361,9 +360,7 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    const targetRoleName = targetEmployee.role?.name;
-
-    if (targetRoleName === ROLES.ADMIN) {
+    if (isAdminRole(targetEmployee.role?.name)) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };

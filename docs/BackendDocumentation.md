@@ -97,7 +97,7 @@ Valida el cuerpo de la request contra un schema de Zod. Si la validación falla,
 Intercepta errores no controlados que lleguen como excepciones. Responde con `500` y el mensaje del error. Se registra al final de la cadena de middlewares en `index.js`.
 
 #### RBAC
-Verifica que el usuario tenga un rol específico antes de continuar. Se usa con `requireRole("admin")` directamente en el router.
+Verifica que el usuario tenga un rol específico antes de continuar. Se usa con `requireRole("Administrador")` directamente en el router.
 
 #### ABAC (`middleware/abac.js`)
 Evalúa políticas de autorización personalizadas definidas en `policies/`. Se usa con `authorize(policy)` en el router. Permite control de acceso basado en atributos del usuario y del recurso.
@@ -151,6 +151,35 @@ Extrae la IP real del cliente desde los headers de la request.
 
 #### `utils/logs.js`
 Registra acciones de empleados en la base de datos (empleado, acción, IP).
+
+#### Reporte PDF de logs
+El backend permite generar un reporte PDF con los logs de la casa del coordinador.
+
+**Flujo general:**
+- La ruta `GET /logs/house/report/pdf` recibe la petición autenticada.
+- El controller obtiene la `houseId` del usuario autenticado.
+- El service consulta:
+  - los logs de la casa
+  - el nombre de la casa
+  - los empleados afectados necesarios para mapear nombres legibles
+- Después construye el PDF y lo devuelve como archivo descargable.
+
+**Archivos involucrados:**
+- `src/router/logs.route.js` → define la ruta del reporte.
+- `src/controller/logs/get.controller.js` → prepara la respuesta HTTP con `Content-Type: application/pdf`.
+- `src/service/logs/get.service.js` → orquesta la consulta de datos y la generación del PDF.
+- `src/utils/logsPdf.js` → arma el documento PDF.
+
+**Contenido del PDF:**
+- Título del reporte.
+- Nombre de la casa.
+- Fecha de generación.
+- Lista de logs con información legible para el usuario.
+
+**Notas de implementación:**
+- El PDF usa los logs ya mapeados, no los registros crudos de la base de datos.
+- El nombre de la casa se obtiene desde el modelo de `house`.
+- El archivo se devuelve como descarga, no como JSON.
 
 #### Retención de logs
 La limpieza automática de logs se divide en dos archivos:

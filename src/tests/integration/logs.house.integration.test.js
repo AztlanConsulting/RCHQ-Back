@@ -99,14 +99,14 @@ const seed = async () => {
     }
 
     const existingAdminRole = await prisma.role.findUnique({
-        where: { name: "Admin" },
+        where: { name: "Administrador" },
     });
     if (existingAdminRole) {
         IDS.adminRole = existingAdminRole.role_id;
     } else {
         STATE.createdAdminRole = true;
         await prisma.role.create({
-            data: { role_id: IDS.adminRole, name: "Admin" },
+            data: { role_id: IDS.adminRole, name: "Administrador" },
         });
     }
 
@@ -187,7 +187,7 @@ const seed = async () => {
                 house_id: IDS.houseA,
                 role_id: IDS.adminRole,
                 name: "Ada",
-                surname: "Admin",
+                surname: "Administrador",
                 is_active: true,
                 email: "admin.logs@test.com",
                 password: "hashed",
@@ -377,10 +377,29 @@ describe("GET /logs/house", () => {
         expect(res.statusCode).toBe(401);
     });
 
+    it("retorna acciones disponibles para el filtro", async () => {
+        const res = await request(app)
+            .get("/logs/actions")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    actionId: "empl-001",
+                }),
+                expect.objectContaining({
+                    actionId: "ausn-001",
+                }),
+            ]),
+        );
+    });
+
     it("retorna 403 si el rol no es coordinador", async () => {
         const res = await request(app)
             .get("/logs/house")
-            .set("Authorization", `Bearer ${sign({ role: "Admin", id: IDS.admin })}`);
+            .set("Authorization", `Bearer ${sign({ role: "Administrador", id: IDS.admin })}`);
 
         expect(res.statusCode).toBe(403);
         expect(res.body.message).toBe("Role not allowed");
@@ -445,7 +464,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado con éxito",
+            action: "Empleado creado",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
@@ -474,6 +493,74 @@ describe("GET /logs/house", () => {
         expect(res.body.currentPage).toBe(2);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
+    });
+
+    it("filtra por acción y nombre", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&actionIds=empl-001&search=Car")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            action: "Empleado creado",
+            responsibleName: "Carla Coord",
+        });
+    });
+
+    it("filtra por rango de fechas", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&startDate=2026-05-10&endDate=2026-05-10")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            action: "Empleado creado",
+            affectedName: "Luis CasaA",
+        });
+    });
+
+    it("filtra por responsable y afectado por separado", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&responsible=Carla&affected=Luis")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "Luis CasaA",
+        });
+    });
+
+    it("filtra por nombre completo y CURP", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&responsible=Carla%20Coord&affected=LUCA900101HDFABC01")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "Luis CasaA",
+        });
+    });
+
+    it("genera un reporte pdf de los logs de la casa", async () => {
+        const res = await request(app)
+            .get("/logs/house/report/pdf")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(201);
+        expect(res.headers["content-type"]).toContain("application/pdf");
+        expect(res.headers["content-disposition"]).toContain(".pdf");
+        expect(Buffer.isBuffer(res.body)).toBe(true);
+        expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
     });
 
 });

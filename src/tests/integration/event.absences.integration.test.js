@@ -51,7 +51,7 @@ const sign = (overrides = {}) => {
             id,
             employeeId: id,
             houseId: IDS.houseA,
-            role: "Admin",
+            role: "Administrador",
             tokenType: "SESSION",
             privileges: ["viewEvents"],
             ...overrides,
@@ -200,7 +200,7 @@ const clean = async () => {
 };
 
 const seed = async () => {
-    const adminRoleId = await getRoleId("Admin");
+    const adminRoleId = await getRoleId("Administrador");
     const coordinatorRoleId = await getRoleId("Coordinador");
     const employeeRoleId = await getRoleId("Mantenimiento");
 
@@ -233,7 +233,7 @@ const seed = async () => {
                 roleId: adminRoleId,
                 email: "event.abs.admin@test.com",
                 curp: "EVAB900101HDF001",
-                name: "Admin",
+                name: "Administrador",
             }),
             employeeData({
                 employeeId: IDS.coordinatorA,
@@ -466,8 +466,15 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
 
         it("calcula cero usedDays cuando la ausencia cae solo en dias no laborales", async () => {
             const res = await request(app)
-                .get(route())
-                .set("Authorization", `Bearer ${sign()}`);
+                .get(route(IDS.employee, "2026-05-02", "2026-05-03"))
+                .set(
+                    "Authorization",
+                    `Bearer ${sign({
+                        id: IDS.employee,
+                        employeeId: IDS.employee,
+                        role: "Mantenimiento",
+                    })}`,
+                );
 
             expect(res.statusCode).toBe(200);
             expect(

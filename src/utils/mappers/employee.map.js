@@ -23,6 +23,7 @@ exports.mapEmployee = (employee) => {
         salary: employee.salary,
         frequencyOfPaymentId:   employee.frequency_of_payment_id,
         frequencyOfPaymentName: employee.frecuency_of_payment?.name ?? null,
+        isBlacklisted: !!employee.blacklist,
     };
 };
 

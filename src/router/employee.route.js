@@ -2,13 +2,10 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
-const { resolveEmployeeHouse } = require("../middleware/resolvers");
+const { resolveEmployeeHouse, resolveRequesterHouse } = require("../middleware/resolvers");
 const { apiLimiter } = require("../utils/rateLimit");
 const upload = require("../middleware/upload");
-const {
-    authorize,
-    isAllowed
-} = require("../middleware/abac");
+const { authorize, isAllowed } = require("../middleware/abac");
 
 const {
     employeePolicy,
@@ -21,14 +18,30 @@ const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
 const employeeUpdateController = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
+const {
+    deactivateEmployeeController,
+} = require("../controller/employee/deactivate.controller");
+const {
+    deactivateEmployeeSchema,
+    deactivateEmployeeParamsSchema,
+} = require("../schemas/employee/deactivate.schemas");
+const {
+    deactivateEmployeePolicy,
+} = require("../policies/deactivateEmployee.policies");
+const validate = require("../middleware/validate");
+const {
+    getEmployeeToDeactivate,
+} = require("../model/employee/deactivate.model");
 
 const { getWorkDays } = require("../controller/employee/get.controller");
+const { ROLES } = require("../utils/roles");
+const PRIVILEGES = require("../utils/privileges");
 
 router.get(
   "/update-form",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageEmployees"),
   employeeGetController.getUpdateForm,
 );
@@ -37,7 +50,7 @@ router.get(
   "/getAll",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("viewEmployees"),
   employeeGetController.getAll,
 );
@@ -46,7 +59,7 @@ router.get(
   "/add",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("createEmployees"),
   authorize(employeePolicy, (req) => ({ houseId: req.query.house_id })),
   employeeGetController.getAdd,
@@ -56,54 +69,49 @@ router.get(
   "/employee-detail/:employeeId",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("viewEmployees"),
   employeeGetController.getEmployeeDetail,
 );
 
-router.get("/getWorkDays/:id",
-  apiLimiter,
-  verifyToken,
-  isAllowed,
-  getWorkDays
-);
+router.get("/getWorkDays/:id", apiLimiter, verifyToken, isAllowed, getWorkDays);
 
 router.post(
-  "/add",
-  apiLimiter,
-  verifyToken,
-  upload.single("picture"),
-  requireRole("Admin", "Coordinador"),
-  requirePrivileges("createEmployees"),
-  authorize(employeePolicy, (req) => ({ houseId: req.body.house_id })),
-  employeeAddController.postAdd,
+    "/add",
+    apiLimiter,
+    verifyToken,
+    upload.single("picture"),
+    requireRole("Administrador", "Coordinador"),
+    requirePrivileges("createEmployees"),
+    authorize(employeePolicy, (req) => ({ houseId: req.body.house_id })),
+    employeeAddController.postAdd,
 );
 
 router.get(
-  "/document-types",
-  apiLimiter,
-  verifyToken,
-  employeeGetController.getDocumentTypes,
+    "/document-types",
+    apiLimiter,
+    verifyToken,
+    employeeGetController.getDocumentTypes,
 );
 
 router.get(
-  "/:id/documents",
-  apiLimiter,
-  verifyToken,
-  requirePrivileges("viewDocuments"),
-  resolveEmployeeHouse,
-  authorize(viewDocuments, (req) => ({
-    employeeId: req.params.id,
-    houseId: req.resolvedEmployee.houseId,
-  })),
-  employeeGetController.getDocumentsByEmployee,
+    "/:id/documents",
+    apiLimiter,
+    verifyToken,
+    requirePrivileges("viewDocuments"),
+    resolveEmployeeHouse,
+    authorize(viewDocuments, (req) => ({
+        employeeId: req.params.id,
+        houseId: req.resolvedEmployee.houseId,
+    })),
+    employeeGetController.getDocumentsByEmployee,
 );
 
 router.post(
   "/:id/documents",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageDocuments"),
   resolveEmployeeHouse,
   authorize(modifyDocuments, (req) => ({ houseId: req.resolvedEmployee.houseId })),
@@ -115,7 +123,7 @@ router.put(
   "/:id/documents/:field",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageDocuments"),
   resolveEmployeeHouse,
   authorize(modifyDocuments, (req) => ({ houseId: req.resolvedEmployee.houseId })),
@@ -127,7 +135,7 @@ router.delete(
   "/:id/documents/:field",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageDocuments"),
   resolveEmployeeHouse,
   authorize(modifyDocuments, (req) => ({ houseId: req.resolvedEmployee.houseId })),
@@ -138,7 +146,7 @@ router.get(
   "/:id",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("viewEmployees"),
   employeeGetController.getById,
 );
@@ -147,7 +155,7 @@ router.put(
   "/:employeeId/basic-info",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageEmployees"),
   resolveEmployeeHouse,
   authorize(modifyEmployee, (req) => ({ houseId: req.resolvedEmployee.houseId })),
@@ -158,7 +166,7 @@ router.put(
   "/:employeeId/contact-info",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageEmployees"),
   resolveEmployeeHouse,
   authorize(modifyEmployee, (req) => ({ houseId: req.resolvedEmployee.houseId })),
@@ -169,11 +177,31 @@ router.put(
   "/:employeeId/admin-info",
   apiLimiter,
   verifyToken,
-  requireRole("Admin", "Coordinador"),
+  requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageEmployees"),
   resolveEmployeeHouse,
   authorize(modifyEmployee, (req) => ({ houseId: req.resolvedEmployee.houseId })),
   employeeUpdateController.updateAdminInfo,
+);
+
+router.patch(
+    "/:employeeId/deactivate",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    resolveRequesterHouse,
+    validate(deactivateEmployeeParamsSchema, "params"),
+    validate(deactivateEmployeeSchema, "body"),
+    authorize(
+        deactivateEmployeePolicy,
+        async (req) => {
+            const employee = await getEmployeeToDeactivate(req.params.employeeId);
+                if (employee) req.resolvedEmployee = employee;
+            return employee ? { ...employee, addToBlacklist: req.body.addToBlacklist } : null;
+        }
+    ),
+    deactivateEmployeeController,
 );
 
 module.exports = router;

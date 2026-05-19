@@ -252,14 +252,14 @@ describe("updateVacationRequestDates service", () => {
         expect(result.code).toBe(RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE);
     });
 
-    it("regresa EMPLOYEE_OUT_OF_SCOPE si intenta modificar a un Admin", async () => {
+    it("regresa EMPLOYEE_OUT_OF_SCOPE si intenta modificar a un Administrador", async () => {
         findByIdWithRoleAndHouse.mockImplementation(async (employeeId) => {
             if (employeeId === actorEmployeeId) return actorEmployee;
             if (employeeId === targetEmployeeId) {
                 return {
                     ...targetEmployee,
                     role: {
-                        name: "Admin",
+                        name: "Administrador",
                     },
                 };
             }

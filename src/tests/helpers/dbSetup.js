@@ -166,6 +166,11 @@ const SEED_ACTIONS = [
         description: "Modificación de vacaciones exitosa",
         important: false,
     },
+    {
+        action_id: "vaca-006",
+        description: "Eliminación de vacaciones exitosa",
+        important: false,
+    },
 ];
 
 // ─── Datos de prueba ─────────────────────────────────────────────────────────
@@ -180,7 +185,7 @@ const SEED = {
     },
     role: {
         role_id: IDS.role,
-        name: "Admin",
+        name: "Administrador",
     },
     employee: {
         employee_id: IDS.employee,
