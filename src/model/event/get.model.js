@@ -84,10 +84,10 @@ exports.getHouseCalendarPersonalEventsInRange = async (
                     employee: {
                         house_id: houseId,
                     },
-                    NOT: {
-                        employee: {
-                            employee_id: requesterId,
-                        },
+                },
+                none: {
+                    employee: {
+                        employee_id: requesterId,
                     },
                 },
             },
