@@ -10,37 +10,6 @@ database PostgreSQL
 
 autonumber
 
-Navegador -> ReactView : Seleccionar evento de casa existente
-activate ReactView
-ReactView -> routes : GET /events/house/:eventId
-deactivate ReactView
-activate routes
-
-routes -> controller : getHouseEventById(request, response)
-activate controller
-
-controller ->> event.service : getHouseEventById(eventId)
-activate event.service
-
-event.service ->> event.model : findHouseEventById(eventId)
-activate event.model
-
-event.model ->> PostgreSQL : prisma.house_event.findUnique()
-activate PostgreSQL
-PostgreSQL -->> event.model : eventData
-deactivate PostgreSQL
-
-event.model -->> event.service : eventData
-deactivate event.model
-event.service -->> controller : eventData
-deactivate event.service
-
-controller -->> routes : response.status(200).send({ eventData })
-deactivate controller
-routes -->> ReactView : send({ eventData })
-deactivate routes
-activate ReactView
-
 ReactView -> routes : GET /events/getAllTypes
 deactivate ReactView
 activate routes
