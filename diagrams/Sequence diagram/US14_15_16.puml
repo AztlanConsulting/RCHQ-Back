@@ -1,0 +1,325 @@
+@startuml US14_15_16_Calendario_Sec
+title US14_15_16 - Calendario carga inicial
+
+actor navegador
+boundary "React (calendario.jsx)" as ReactCal
+
+boundary event.routes
+boundary house.routes
+boundary absence.routes
+
+control event.controller
+control house.controller
+control absence.controller
+
+control event.service
+control house.service
+control absence.service
+
+entity event.model
+entity house.model
+entity employee.model
+entity absence.model
+entity vacation.model
+
+database PostgreSQL
+
+autonumber
+
+== Tipos de evento ==
+navegador -> event.routes : GET /event/getAllTypes
+activate event.routes
+
+event.routes -> event.controller : getAllEventTypes(request, response)
+deactivate event.routes
+activate event.controller
+
+event.controller -> event.service : getAllEventTypes()
+activate event.service
+
+event.service -> event.model : getAllEventTypes()
+activate event.model
+
+event.model -> PostgreSQL : prisma.event_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> event.model : filas tipo evento
+deactivate PostgreSQL
+
+event.model -->> event.service : eventTypes[]
+deactivate event.model
+
+event.service -->> event.controller : { code, data }
+deactivate event.service
+
+event.controller -> ReactCal : response.status(...).json({ eventTypes })
+deactivate event.controller
+activate ReactCal
+
+ReactCal -> navegador : opciones filtro tipo evento
+deactivate ReactCal
+
+== Tipos de ausencia ==
+navegador -> absence.routes : GET /absence/types
+activate navegador
+activate absence.routes
+
+absence.routes -> absence.controller : getAbsenceTypes(request, response)
+deactivate absence.routes
+activate absence.controller
+
+absence.controller -> absence.service : getAbsenceTypes()
+activate absence.service
+
+absence.service -> absence.model : getAllAbsenceTypes()
+activate absence.model
+
+absence.model -> PostgreSQL : prisma.absence_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> absence.model : filas tipo ausencia
+deactivate PostgreSQL
+
+absence.model -->> absence.service : absenceTypes[]
+deactivate absence.model
+
+absence.service -->> absence.controller : { code, data }
+deactivate absence.service
+
+absence.controller -> ReactCal : response.status(...).json({ absenceTypes })
+deactivate absence.controller
+activate ReactCal
+
+ReactCal -> navegador : opciones filtro tipo ausencia
+deactivate ReactCal
+deactivate navegador
+
+== Nombre del hogar ==
+navegador -> house.routes : GET /house/getHouseName
+activate navegador
+activate house.routes
+
+house.routes -> house.controller : getHouseName(request, response)
+deactivate house.routes
+activate house.controller
+
+house.controller -> house.service : getHouseNameForEmployee(employeeId)
+activate house.service
+
+house.service -> house.model : getHouseNameByEmployeeId(employeeId)
+activate house.model
+
+house.model -> PostgreSQL : prisma (empleado y casa relacionada)
+activate PostgreSQL
+PostgreSQL -->> house.model : nombreHogar
+deactivate PostgreSQL
+
+house.model -->> house.service : houseName | null
+deactivate house.model
+
+house.service -->> house.controller : { code, houseName }
+deactivate house.service
+
+house.controller -> ReactCal : response.status(...).json({ houseName })
+deactivate house.controller
+activate ReactCal
+
+ReactCal -> navegador : titulo hogar vistas moviles
+deactivate ReactCal
+deactivate navegador
+
+== Eventos del empleado en rango visible ==
+navegador -> event.routes : GET /event/range/:id/:startDate/:endDate
+activate navegador
+activate event.routes
+
+event.routes -> event.controller : getEventsInRange(request, response)
+deactivate event.routes
+activate event.controller
+
+event.controller -> event.service : getEventsInRange(employeeId, rawStartDate, rawEndDate)
+activate event.service
+
+event.service -> employee.model : findById(employeeId)
+activate employee.model
+employee.model -> PostgreSQL : prisma.employee.findUnique()
+activate PostgreSQL
+PostgreSQL -->> employee.model : empleado
+deactivate PostgreSQL
+employee.model -->> event.service : empleado | null
+deactivate employee.model
+
+event.service -> employee.model : getHome(employeeId)
+activate employee.model
+employee.model -> PostgreSQL : prisma (house_id solicitante)
+activate PostgreSQL
+PostgreSQL -->> employee.model : { house_id }
+deactivate PostgreSQL
+employee.model -->> event.service : houseId opcional
+deactivate employee.model
+
+opt existe house_id
+    event.service -> event.model : getHouseEventsInRange(houseId, startDate, endDate)
+    activate event.model
+    event.model -> PostgreSQL : prisma (eventos hogar en rango)
+    activate PostgreSQL
+    PostgreSQL -->> event.model : houseEvents[]
+    deactivate PostgreSQL
+    event.model -->> event.service : houseEvents[]
+    deactivate event.model
+end
+
+event.service -> event.model : getPersonalEventsInRange(employeeId, startDate, endDate)
+activate event.model
+event.model -> PostgreSQL : prisma (eventos personales)
+activate PostgreSQL
+PostgreSQL -->> event.model : personalEvents[]
+deactivate PostgreSQL
+event.model -->> event.service : personalEvents[]
+deactivate event.model
+
+event.service -> event.model : getGlobalEventsInRange(startDate, endDate)
+activate event.model
+event.model -> PostgreSQL : prisma (eventos globales)
+activate PostgreSQL
+PostgreSQL -->> event.model : globalEvents[]
+deactivate PostgreSQL
+event.model -->> event.service : globalEvents[]
+deactivate event.model
+
+event.service -> employee.model : getWorkDays(employeeId)
+activate employee.model
+employee.model -> PostgreSQL : prisma.employee_workday.findMany()
+activate PostgreSQL
+PostgreSQL -->> employee.model : employee_workday[]
+deactivate PostgreSQL
+employee.model -->> event.service : workDays[]
+deactivate employee.model
+
+event.service -> vacation.model : getVacationsInRange(employeeId, startDate, endDate)
+activate vacation.model
+vacation.model -> PostgreSQL : prisma (vacaciones aprobadas en rango)
+activate PostgreSQL
+PostgreSQL -->> vacation.model : vacations[]
+deactivate PostgreSQL
+vacation.model -->> event.service : vacations[]
+deactivate vacation.model
+
+event.service -> absence.model : getAbsencesInRange(employeeId, startDate, endDate)
+activate absence.model
+absence.model -> PostgreSQL : prisma (ausencias en rango)
+activate PostgreSQL
+PostgreSQL -->> absence.model : absences[]
+deactivate PostgreSQL
+absence.model -->> event.service : absences[]
+deactivate absence.model
+
+event.service -->> event.controller : { code, events }
+deactivate event.service
+
+event.controller -> ReactCal : response.status(...).json({ events })
+deactivate event.controller
+activate ReactCal
+
+ReactCal -> navegador : primera rama eventos combinados
+deactivate ReactCal
+
+opt Coordinador o Administrador (permiso ABAC hogar)
+
+    navegador -> event.routes : GET /event/house/range/:startDate/:endDate
+    activate event.routes
+
+    event.routes -> event.controller : getHouseCalendarRecordsInRange(request, response)
+    deactivate event.routes
+    activate event.controller
+
+    event.controller -> event.service : getHouseCalendarRecordsInRange(requesterId, houseId, rawStartDate, rawEndDate)
+    activate event.service
+
+    event.service -> vacation.model : getHouseCalendarVacationsInRange(requesterId, houseId, startDate, endDate)
+    activate vacation.model
+    vacation.model -> PostgreSQL : prisma (vacaciones hogar calendario)
+    activate PostgreSQL
+    PostgreSQL -->> vacation.model : vacations[]
+    deactivate PostgreSQL
+    vacation.model -->> event.service : vacations[]
+    deactivate vacation.model
+
+    event.service -> absence.model : getHouseCalendarAbsenceInRange(requesterId, houseId, startDate, endDate)
+    activate absence.model
+    absence.model -> PostgreSQL : prisma (ausencias hogar calendario)
+    activate PostgreSQL
+    PostgreSQL -->> absence.model : absences[]
+    deactivate PostgreSQL
+    absence.model -->> event.service : absences[]
+    deactivate absence.model
+
+    par paralelo Promise.all
+        event.service -> event.model : getHouseEventsInRange(houseId, startDate, endDate)
+        activate event.model
+        event.model -> PostgreSQL : prisma (eventos casa)
+        activate PostgreSQL
+        PostgreSQL -->> event.model : houseEvents[]
+        deactivate PostgreSQL
+        event.model -->> event.service : houseEvents[]
+        deactivate event.model
+    also
+        event.service -> event.model : getGlobalEventsInRange(startDate, endDate)
+        activate event.model
+        event.model -> PostgreSQL : prisma (eventos globales)
+        activate PostgreSQL
+        PostgreSQL -->> event.model : globalEvents[]
+        deactivate PostgreSQL
+        event.model -->> event.service : globalEvents[]
+        deactivate event.model
+    end
+
+    event.service -->> event.controller : { code, events }
+    deactivate event.service
+
+    event.controller -> ReactCal : response.status(...).json({ events })
+    deactivate event.controller
+    activate ReactCal
+
+    ReactCal -> navegador : segunda rama eventos hogar y merge estado
+    deactivate ReactCal
+
+end
+
+deactivate navegador
+
+== Empleados del hogar selector ausencias ==
+opt Rol Coordinador (ruta solo Coordinador)
+
+    navegador -> house.routes : GET /house/employees
+    activate navegador
+    activate house.routes
+
+    house.routes -> house.controller : getHouseEmployees(request, response)
+    deactivate house.routes
+    activate house.controller
+
+    house.controller -> house.service : getHouseEmployeesForEmployee(employeeId)
+    activate house.service
+
+    house.service -> house.model : getHouseEmployeesByEmployeeId(employeeId)
+    activate house.model
+    house.model -> PostgreSQL : prisma (compañeros mismo house_id)
+    activate PostgreSQL
+    PostgreSQL -->> house.model : employees[]
+    deactivate PostgreSQL
+    house.model -->> house.service : employees[]
+    deactivate house.model
+
+    house.service -->> house.controller : { code, employees }
+    deactivate house.service
+
+    house.controller -> ReactCal : response.status(...).json({ employees })
+    deactivate house.controller
+    activate ReactCal
+
+    ReactCal -> navegador : multiseleccion equipo o fallback desde eventos cache
+    deactivate ReactCal
+    deactivate navegador
+
+end
+
+@enduml
