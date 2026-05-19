@@ -1,5 +1,12 @@
 const { readLogIp } = require("../logIp");
 
+const CST_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+const toCST = (dt) => {
+    if (!dt) return null;
+    return new Date(dt.getTime() - CST_OFFSET_MS);
+};
+
 exports.extractAffectedIds = (logs) => [
     ...new Set(
         logs
@@ -46,5 +53,5 @@ exports.mapLog = (log, affectedEntityMap) => ({
     ipAddress: readLogIp(log.ip_address),
     action: log.action.description,
     important: log.action.important,
-    moment: log.moment,
+    moment: toCST(log.moment),
 });
