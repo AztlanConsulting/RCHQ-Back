@@ -78,7 +78,8 @@ exports.mapPersonalEvent = (event, options = {}) => {
 const formatTime = (time) => {
     if (!time) return null;
 
-    return time.toISOString().slice(11, 19);
+    const cst = new Date(time.getTime() - 6 * 60 * 60 * 1000);
+    return cst.toISOString().slice(11, 19);
 };
 
 exports.mapPersonalEventOverlap = (row) => {
