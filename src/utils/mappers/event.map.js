@@ -1,3 +1,5 @@
+const { combineDateAndTime } = require("../../utils/dates")
+
 const CST_OFFSET_MS = 6 * 60 * 60 * 1000;
 
 const toCST = (dt) => {
@@ -70,6 +72,36 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
         usedDays,
     };
 };
+
+exports.mapPersonalCalendarEvent = (event) => {
+
+    const peopleData = [];
+    event.employee_personal_event.forEach(employeeEvent => {
+        peopleData.push({
+            name: `${employeeEvent.employee.name} ${employeeEvent.employee.surname}`.trim(),
+            id: employeeEvent.employee.employee_id,
+        });
+    });
+    
+    return {
+        start: combineDateAndTime(
+        event.date,
+        event.start,
+    ),
+    end: combineDateAndTime(
+        event.date,
+        event.end,
+    ),
+    name: event.name,
+    type: event.event_type.name,
+    focus: "eventos",
+    scope: "personal",
+    description: event.description ?? "",
+    color: "#EFBF22",
+    lastsAllDay: false,
+    peopleInsideEvent: peopleData,
+    };
+}
 
 exports.mapPersonalEvent = (event, options = {}) => {
     if (!event) return null;
