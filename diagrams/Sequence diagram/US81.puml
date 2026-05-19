@@ -10,7 +10,7 @@ database PostgreSQL
 
 autonumber
 
-ReactView -> routes : GET /events/getAllTypes
+Navegador -> routes : GET /events/getAllTypes
 deactivate ReactView
 activate routes
 
