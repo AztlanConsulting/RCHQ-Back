@@ -10,18 +10,11 @@ exports.combineDateAndTime = (date, time) => {
     return combined;
 }
 
+const MEXICO_TIME_OFFSET_MS = 6 * 60 * 60 * 1000;
 exports.convertUTCToMexicanTime = (timestamp) => {
-    const day = timestamp.getUTCDate();
-    const month = timestamp.getUTCMonth();
-    const year = timestamp.getUTCFullYear();
-    const hour = timestamp.getUTCHours() - 6;
-    const minute = timestamp.getUTCMinutes();
-
-    const combined = new Date(Date.UTC(year, month, day, hour, minute, 0));
-    
-    return combined;
-}
-
+    if (!timestamp) return null;
+    return new Date(timestamp.getTime() - MEXICO_TIME_OFFSET_MS);
+};
 
 exports.spanishToDay = (day) => {
     switch (day) {
