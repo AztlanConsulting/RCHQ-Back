@@ -266,6 +266,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('even-001', 'Evento de casa creado con éxito', false),
 ('even-002', 'Evento personal creado con éxito', false),
 ('even-003', 'Evento personal asignado a empleado', false),
+('even-004', 'Evento de casa asignado a casa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
