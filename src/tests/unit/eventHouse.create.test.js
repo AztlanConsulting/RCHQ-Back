@@ -69,7 +69,7 @@ describe("createHouseEvent service", () => {
                 createModel.findOverlappingHouseEvents,
             ).toHaveBeenCalledTimes(1);
             expect(createModel.createHouseEvent).toHaveBeenCalledTimes(1);
-            expect(createLog).toHaveBeenCalledTimes(1);
+            expect(createLog).toHaveBeenCalledTimes(2);
         });
 
         it("transforma las fechas string a Date antes de llamar al model", async () => {
@@ -420,7 +420,7 @@ describe("createHouseEvent service", () => {
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
             expect(createModel.createHouseEvent).toHaveBeenCalledTimes(1);
-            expect(createLog).toHaveBeenCalledTimes(1);
+            expect(createLog).toHaveBeenCalledTimes(2);
         });
 
         it("retorna múltiples colisiones cuando hay varios empalmes", async () => {

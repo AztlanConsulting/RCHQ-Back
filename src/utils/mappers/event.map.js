@@ -1,11 +1,4 @@
-const { combineDateAndTime } = require("../../utils/dates")
-
-const CST_OFFSET_MS = 6 * 60 * 60 * 1000;
-
-const toCST = (dt) => {
-    if (!dt) return null;
-    return new Date(dt.getTime() - CST_OFFSET_MS);
-};
+const { convertUTCToMexicanTime, combineDateAndTime } = require("../dates");
 
 exports.mapHouseEvent = (event) => {
     if (!event) return null;
@@ -15,8 +8,8 @@ exports.mapHouseEvent = (event) => {
         houseId: event.house_id,
         eventTypeId: event.event_type_id,
         name: event.name,
-        start: toCST(event.start),
-        end: toCST(event.end),
+        start: convertUTCToMexicanTime(event.start),
+        end: convertUTCToMexicanTime(event.end),
         allDay: event.all_day,
         isFreeDay: event.is_free_day,
         description: event.description,
@@ -121,7 +114,7 @@ exports.mapPersonalEvent = (event, options = {}) => {
 
 const formatTime = (time) => {
     if (!time) return null;
-    return toCST(time).toISOString().slice(11, 19);
+    return convertUTCToMexicanTime(time).toISOString().slice(11, 19);
 };
 
 exports.mapPersonalEventOverlap = (row) => {
