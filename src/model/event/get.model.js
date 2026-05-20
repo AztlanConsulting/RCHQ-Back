@@ -36,20 +36,73 @@ exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
 };
 
 exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
-    return await prisma.employee_personal_event.findMany({
+    return await prisma.personal_event.findMany({
         where: {
-            employee_id: employeeId,
-            personal_event: {
-                date: {
-                    gte: startDate,
-                    lte: endDate,
+            date: {
+                gte: startDate,
+                lte: endDate,
+            },
+            employee_personal_event: {
+                some: {
+                    employee: {
+                        employee_id: employeeId,
+                    },
                 },
             },
         },
         include: {
-            personal_event: {
+            event_type: true,
+            employee_personal_event: {
                 include: {
-                    event_type: true,
+                    employee: {
+                        select: {
+                            employee_id: true,
+                            name: true,
+                            surname: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+};
+
+exports.getHouseCalendarPersonalEventsInRange = async (
+    requesterId,
+    houseId,
+    startDate,
+    endDate,
+) => {
+    return await prisma.personal_event.findMany({
+        where: {
+            date: {
+                gte: startDate,
+                lte: endDate,
+            },
+            employee_personal_event: {
+                some: {
+                    employee: {
+                        house_id: houseId,
+                    },
+                },
+                none: {
+                    employee: {
+                        employee_id: requesterId,
+                    },
+                },
+            },
+        },
+        include: {
+            event_type: true,
+            employee_personal_event: {
+                include: {
+                    employee: {
+                        select: {
+                            employee_id: true,
+                            name: true,
+                            surname: true,
+                        },
+                    },
                 },
             },
         },
@@ -190,6 +243,7 @@ exports.findOverlappingEmployees = async ({
     date,
     start,
     end,
+    endDate = date,
 }) => {
     const overlaps = await prisma.employee_personal_event.findMany({
         where: {
@@ -197,7 +251,7 @@ exports.findOverlappingEmployees = async ({
             personal_event: {
                 date: new Date(date),
                 start: {
-                    lt: personalEventTimeToUtc(date, end),
+                    lt: personalEventTimeToUtc(endDate, end),
                 },
                 end: {
                     gt: personalEventTimeToUtc(date, start),
