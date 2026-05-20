@@ -450,7 +450,7 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
                 description: "Ausencia de viernes a martes",
                 link: "https://example.com/absence-main.pdf",
                 usedDays: 2,
-                lastsAllDay: true,
+                allDay: true,
             });
 
             expect(new Date(mainAbsence.startDate).toISOString()).toContain(

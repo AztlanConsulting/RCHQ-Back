@@ -104,7 +104,7 @@ describe("createPersonalEvent service", () => {
             expect(createCall.employeeIds).toEqual([employeeId]);
         });
 
-        it("acepta evento allDay y normaliza horario a 00:00:00 - 23:59:00", async () => {
+        it("acepta evento allDay y normaliza horario a rango exclusivo 00:00:00 - 00:00:00 del dia siguiente", async () => {
             getPersonalEventModel.getEmployeesInHouse.mockResolvedValue([
                 { employeeId },
             ]);
@@ -114,7 +114,7 @@ describe("createPersonalEvent service", () => {
             createModel.createPersonalEvent.mockResolvedValue({
                 ...mockCreatedEvent,
                 start: "00:00:00",
-                end: "23:59:00",
+                end: "00:00:00",
                 allDay: true,
             });
             createLog.mockResolvedValue();
@@ -135,7 +135,8 @@ describe("createPersonalEvent service", () => {
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
             expect(createCall.start).toBe("00:00:00");
-            expect(createCall.end).toBe("23:59:00");
+            expect(createCall.end).toBe("00:00:00");
+            expect(createCall.endDate).toBe("2026-07-11");
         });
 
         it("normaliza hora HH:mm a HH:mm:ss antes de llamar al model", async () => {

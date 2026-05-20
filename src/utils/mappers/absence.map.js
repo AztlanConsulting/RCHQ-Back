@@ -20,7 +20,7 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
         focus: "ausencias",
         scope: "house",
         color: "#F97316",
-        lastsAllDay: true,
+        allDay: true,
     };
 };
 

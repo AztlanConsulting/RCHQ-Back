@@ -243,6 +243,7 @@ exports.findOverlappingEmployees = async ({
     date,
     start,
     end,
+    endDate = date,
 }) => {
     const overlaps = await prisma.employee_personal_event.findMany({
         where: {
@@ -250,7 +251,7 @@ exports.findOverlappingEmployees = async ({
             personal_event: {
                 date: new Date(date),
                 start: {
-                    lt: personalEventTimeToUtc(date, end),
+                    lt: personalEventTimeToUtc(endDate, end),
                 },
                 end: {
                     gt: personalEventTimeToUtc(date, start),

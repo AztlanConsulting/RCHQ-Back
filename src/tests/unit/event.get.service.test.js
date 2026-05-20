@@ -86,8 +86,8 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
         eventModel.getHouseEventsInRange.mockResolvedValue([
             {
                 date: new Date("2026-05-15T00:00:00.000Z"),
-                start: new Date("2026-05-15T00:00:00.000Z"),
-                end: new Date("2026-05-15T23:59:00.000Z"),
+                start: new Date("2026-05-15T06:00:00.000Z"),
+                end: new Date("2026-05-16T05:59:00.000Z"),
                 isFreeDay: true,
             },
         ]);
@@ -118,9 +118,11 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
             usedDays: 1,
             focus: "ausencias",
             scope: "house",
-            lastsAllDay: true,
+            allDay: true,
         });
 
-        expect(result.data.events[0].end.toISOString()).toBe("2026-05-16T00:00:00.000Z");
+        expect(result.data.events[0].end.toISOString()).toBe(
+            "2026-05-16T00:00:00.000Z",
+        );
     });
 });
