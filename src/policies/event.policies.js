@@ -5,7 +5,6 @@ exports.houseEventPolicy = (user, resource) => {
     if (!user) return false;
     const privileges = user.privileges || [];
     if (!privileges.includes(PRIVILEGES.CREATE_EVENT)) return false;
-    if (user.role === ROLES.ADMIN) return true;
     if (user.role === ROLES.COORDINATOR) {
         if (resource?.houseId && resource.houseId !== user.houseId) {
             return false;
@@ -19,7 +18,6 @@ exports.updateHouseEventPolicy = (user, resource) => {
     if (!user) return false;
     const privileges = user.privileges || [];
     if (!privileges.includes(PRIVILEGES.EDIT_EVENT)) return false;
-    if (user.role === ROLES.ADMIN) return true;
     if (user.role === ROLES.COORDINATOR) {
         if (resource?.houseId && resource.houseId !== user.houseId) {
             return false;
