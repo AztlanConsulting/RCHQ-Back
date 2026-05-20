@@ -1,4 +1,5 @@
 const { updateHouseEvent } = require("../../service/event/update.service");
+const { getClientIp } = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 exports.updateHouseEvent = async (req, res) => {
@@ -28,7 +29,7 @@ exports.updateHouseEvent = async (req, res) => {
                 forceOverlap,
             },
             req.user,
-            req,
+            getClientIp(req),
         );
 
         if (result.code === RESPONSES.EVENTS.VALIDATION_ERROR) {
