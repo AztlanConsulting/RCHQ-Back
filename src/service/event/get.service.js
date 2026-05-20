@@ -1,12 +1,12 @@
-const { 
-    getVacationsInRange, 
-    getHouseCalendarVacationsInRange
+const {
+    getVacationsInRange,
+    getHouseCalendarVacationsInRange,
 } = require("../../model/vacation/get.model");
 const {
     getHouseCalendarAbsenceInRange,
     getAbsencesInRange,
 } = require("../../model/absence/get.model");
-const { dateRangeSchema } = require("../../schemas/dates.schemas")
+const { dateRangeSchema } = require("../../schemas/dates.schemas");
 const {
     calculateUsedDays,
     stringToDate,
@@ -111,7 +111,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 description: event.description,
                 color: "#7FD447",
                 link: "",
-                lastsAllDay: false,
+                allDay: event.all_day || false,
                 isFreeDay: event.isFreeDay || false,
             });
         });
@@ -140,7 +140,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             description: event.description,
             color: "#C524FF",
             link: "",
-            lastsAllDay: false,
+            allDay: event.all_day || false,
             isFreeDay: event.isFreeDay || false,
         });
     });
@@ -188,7 +188,12 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     };
 };
 
-exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDate, rawEndDate) => {
+exports.getHouseCalendarRecordsInRange = async (
+    requesterId,
+    houseId,
+    rawStartDate,
+    rawEndDate,
+) => {
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -209,18 +214,37 @@ exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDa
         };
     }
 
-    const vacations = await getHouseCalendarVacationsInRange(requesterId, houseId, startDate, endDate);
-    const absences = await getHouseCalendarAbsenceInRange(requesterId, houseId, startDate, endDate);
+    const vacations = await getHouseCalendarVacationsInRange(
+        requesterId,
+        houseId,
+        startDate,
+        endDate,
+    );
+    const absences = await getHouseCalendarAbsenceInRange(
+        requesterId,
+        houseId,
+        startDate,
+        endDate,
+    );
 
     const [houseEvents, globalEvents, personalEvents] = await Promise.all([
         getHouseEventsInRange(houseId, startDate, endDate),
         getGlobalEventsInRange(startDate, endDate),
-        getHouseCalendarPersonalEventsInRange(requesterId, houseId, startDate, endDate),
+        getHouseCalendarPersonalEventsInRange(
+            requesterId,
+            houseId,
+            startDate,
+            endDate,
+        ),
     ]);
 
-    const freeDays = [...houseEvents, ...globalEvents].filter(
-        (event) => event.isFreeDay === true,
-    );
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
 
     const events = [];
 
@@ -234,7 +258,7 @@ exports.getHouseCalendarRecordsInRange = async (requesterId, houseId, rawStartDa
 
         events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
     });
-    
+
     absences.forEach((absence) => {
         const usedDays = calculateUsedDays(
             absence.employee.employee_workday,
