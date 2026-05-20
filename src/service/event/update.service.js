@@ -4,14 +4,13 @@ const {
     updateHouseEvent,
 } = require("../../model/event/update.model");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
 const {
     houseEventUpdateSchema,
 } = require("../../schemas/event/update.schemas");
 
-exports.updateHouseEvent = async (eventId, data, user, req) => {
+exports.updateHouseEvent = async (eventId, data, user, clientIp) => {
     const parsed = houseEventUpdateSchema.safeParse(data);
 
     if (!parsed.success) {
@@ -61,8 +60,12 @@ exports.updateHouseEvent = async (eventId, data, user, req) => {
     let warning = null;
 
     try {
-        const ip = getClientIp(req);
-        await createLog(user.id, LOG_ACTIONS.HOUSE_EVENT_UPDATED, ip, eventId);
+        await createLog(
+            user.id,
+            LOG_ACTIONS.HOUSE_EVENT_UPDATED,
+            clientIp,
+            eventId,
+        );
     } catch (error) {
         console.error("Error creando log de actualización de evento:", error);
         warning = "Evento actualizado pero el log falló";
