@@ -27,28 +27,39 @@ alt Confirma eliminación
     controller ->> event.service : deleteHouseEvent(eventId, user)
     activate event.service
 
-    event.service ->> event.model : deleteHouseEvent(eventId)
+    event.service ->> event.model : findHouseEventById(eventId)
     activate event.model
 
-    event.model ->> PostgreSQL : prisma.house_event.delete()
+    event.model ->> PostgreSQL : prisma.house_event.findUnique()
     activate PostgreSQL
-    PostgreSQL -->> event.model : eventDeleted
+    PostgreSQL -->> event.model : eventData
     deactivate PostgreSQL
 
-    event.model -->> event.service : success
+    event.model -->> event.service : eventData
     deactivate event.model
 
-    event.service -->> controller : success
-    deactivate event.service
+    alt Evento no existe
+        event.service -->> controller : error
 
-    controller -->> routes : response.status(200).send("Eliminado")
-    deactivate controller
+        controller -->> routes : response.status(404).send("Evento no encontrado")
 
-    routes -->> ReactView : send("Eliminado")
-    deactivate routes
+        routes -->> ReactView : send("Evento no encontrado")
 
-    ReactView -> Navegador : Notificar éxito
-    ReactView -> Navegador : Actualizar calendario y cerrar modal
+        ReactView -> Navegador : Mostrar error 404
+
+    else Evento existe
+        event.service -->> controller : success
+        deactivate event.service
+
+        controller -->> routes : response.status(200).send("Eliminado")
+        deactivate controller
+
+        routes -->> ReactView : send("Eliminado")
+        deactivate routes
+
+        ReactView -> Navegador : Notificar éxito
+        ReactView -> Navegador : Actualizar calendario y cerrar modal
+    end
 
 else Cancela eliminación
     Navegador -> ReactView : Cancelar
