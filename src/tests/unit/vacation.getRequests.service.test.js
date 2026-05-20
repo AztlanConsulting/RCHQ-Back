@@ -7,6 +7,7 @@ jest.mock("../../../src/model/vacation/get.model", () => ({
     getVacationsInRange: jest.fn(),
     getPendingVacationRequestsByHouse: jest.fn(),
     getReviewedVacationRequestsByHouse: jest.fn(),
+    getEligibleVacationEmployees: jest.fn(),
 }));
 
 jest.mock("../../../src/utils/pagination", () => ({
@@ -30,6 +31,7 @@ const {
 const {
     getPendingVacationRequestsByHouse,
     getReviewedVacationRequestsByHouse,
+    getEligibleVacationEmployees: getEligibleVacationEmployeesModel,
 } = require("../../../src/model/vacation/get.model");
 
 const {
@@ -49,6 +51,7 @@ const {
 const {
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getEligibleVacationEmployees,
 } = require("../../../src/service/vacation/get.service");
 
 const RESPONSES = require("../../../src/utils/responses");
@@ -410,5 +413,171 @@ describe("US80 - getReviewedVacationRequests service", () => {
 
         expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
         expect(getReviewedVacationRequestsByHouse).not.toHaveBeenCalled();
+    });
+});
+
+describe("getEligibleVacationEmployees service", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test("debe regresar NOT_ACCESS si no recibe actorEmployeeId", async () => {
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: undefined,
+        });
+
+        expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
+        expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+        expect(getEligibleVacationEmployeesModel).not.toHaveBeenCalled();
+    });
+
+    test("debe regresar NOT_ACCESS si el actor no existe", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue(null);
+
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+        });
+
+        expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
+        expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(
+            "e8000000-0000-4000-8000-000000000001",
+        );
+        expect(getEligibleVacationEmployeesModel).not.toHaveBeenCalled();
+    });
+
+    test("debe regresar INSUFFICIENT_PERMISSIONS si el actor no es admin ni coordinador", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "e8000000-0000-4000-8000-000000000001",
+            house_id: "a0000001-0000-4000-8000-000000000001",
+            role: {
+                name: "Mantenimiento",
+                role_privilege: [
+                    {
+                        privilege: {
+                            name: "manageEmployees",
+                        },
+                    },
+                ],
+            },
+        });
+
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
+        expect(getEligibleVacationEmployeesModel).not.toHaveBeenCalled();
+    });
+
+    test("debe regresar INSUFFICIENT_PERMISSIONS si el actor no tiene manageEmployees", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "e8000000-0000-4000-8000-000000000001",
+            house_id: "a0000001-0000-4000-8000-000000000001",
+            role: {
+                name: "Coordinador",
+                role_privilege: [],
+            },
+        });
+
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
+        expect(getEligibleVacationEmployeesModel).not.toHaveBeenCalled();
+    });
+
+    test("debe regresar empleados elegibles mapeados para coordinador con permisos", async () => {
+        const actorEmployee = {
+            employee_id: "e8000000-0000-4000-8000-000000000001",
+            house_id: "a0000001-0000-4000-8000-000000000001",
+            role: {
+                name: "Coordinador",
+                role_privilege: [
+                    {
+                        privilege: {
+                            name: "manageEmployees",
+                        },
+                    },
+                ],
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(actorEmployee);
+
+        getEligibleVacationEmployeesModel.mockResolvedValue([
+            {
+                employee_id: "e8000000-0000-4000-8000-000000000002",
+                name: "Empleado",
+                surname: "Valido",
+                curp: "CURP000000000001",
+                is_active: true,
+            },
+        ]);
+
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+        });
+
+        expect(result.code).toBe(RESPONSES.EMPLOYEE.FOUND);
+        expect(getEligibleVacationEmployeesModel).toHaveBeenCalledWith({
+            actorEmployee,
+        });
+
+        expect(result.data.employees).toEqual([
+            {
+                employeeId: "e8000000-0000-4000-8000-000000000002",
+                name: "Empleado Valido",
+                curp: "CURP000000000001",
+                isActive: true,
+            },
+        ]);
+    });
+
+    test("debe regresar empleados elegibles mapeados para administrador con permisos", async () => {
+        const actorEmployee = {
+            employee_id: "e8000000-0000-4000-8000-000000000001",
+            house_id: "a0000001-0000-4000-8000-000000000001",
+            role: {
+                name: "Administrador",
+                role_privilege: [
+                    {
+                        privilege: {
+                            name: "manageEmployees",
+                        },
+                    },
+                ],
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(actorEmployee);
+
+        getEligibleVacationEmployeesModel.mockResolvedValue([
+            {
+                employee_id: "e8000000-0000-4000-8000-000000000003",
+                name: "Coordinador",
+                surname: "Prueba",
+                curp: "CURP000000000002",
+                is_active: true,
+            },
+        ]);
+
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
+        });
+
+        expect(result.code).toBe(RESPONSES.EMPLOYEE.FOUND);
+        expect(getEligibleVacationEmployeesModel).toHaveBeenCalledWith({
+            actorEmployee,
+        });
+
+        expect(result.data.employees).toEqual([
+            {
+                employeeId: "e8000000-0000-4000-8000-000000000003",
+                name: "Coordinador Prueba",
+                curp: "CURP000000000002",
+                isActive: true,
+            },
+        ]);
     });
 });
