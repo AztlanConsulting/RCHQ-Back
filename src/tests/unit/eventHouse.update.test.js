@@ -1,12 +1,10 @@
 const updateService = require("../../service/event/update.service");
 const updateModel = require("../../model/event/update.model");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 jest.mock("../../model/event/update.model");
 jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
 
 describe("updateHouseEvent service", () => {
     const validUser = {
@@ -16,7 +14,7 @@ describe("updateHouseEvent service", () => {
         privileges: ["updateEvent"],
     };
 
-    const validReq = { headers: {}, ip: "127.0.0.1" };
+    const validClientIp = "127.0.0.1";
 
     const validEventId = "44444444-4444-4444-8444-444444444444";
 
@@ -54,7 +52,6 @@ describe("updateHouseEvent service", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        getClientIp.mockReturnValue("127.0.0.1");
     });
 
     // ──────────────────────────────────────────────────────────
@@ -71,7 +68,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -92,7 +89,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
@@ -115,7 +112,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(updateModel.updateHouseEvent.mock.calls[0][0]).toBe(
@@ -144,7 +141,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 allDayData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
@@ -173,7 +170,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 allDayData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
@@ -197,7 +194,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.NOT_FOUND);
@@ -213,7 +210,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(updateModel.findHouseEventById).toHaveBeenCalledWith(
@@ -235,7 +232,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -254,7 +251,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -270,7 +267,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -286,7 +283,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -302,7 +299,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -321,7 +318,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -337,7 +334,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -358,7 +355,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -378,7 +375,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -398,7 +395,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -414,7 +411,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -430,7 +427,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 invalidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -451,7 +448,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 dataWithoutDesc,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -479,7 +476,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -502,7 +499,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 forceData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -525,7 +522,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -541,7 +538,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(
@@ -570,7 +567,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -593,7 +590,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -605,13 +602,12 @@ describe("updateHouseEvent service", () => {
             updateModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
             createLog.mockResolvedValue();
-            getClientIp.mockReturnValue("192.168.1.1");
 
             await updateService.updateHouseEvent(
                 validEventId,
                 baseValidData,
                 validUser,
-                validReq,
+                "192.168.1.1",
             );
 
             expect(createLog).toHaveBeenCalledWith(
@@ -639,7 +635,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 dataWithoutAllDay,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -659,7 +655,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 dataWithoutFree,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
@@ -685,7 +681,7 @@ describe("updateHouseEvent service", () => {
                 validEventId,
                 dataWithoutForce,
                 validUser,
-                validReq,
+                validClientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
