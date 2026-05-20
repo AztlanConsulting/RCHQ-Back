@@ -110,6 +110,7 @@ const makePersonalEvent = ({
     name = "Evento personal",
     description = "",
     type = "General",
+    allDay = false,
     employeeId = EMPLOYEE_ID,
     employeeName = "John",
     employeeSurname = "Smith",
@@ -120,6 +121,7 @@ const makePersonalEvent = ({
         end,
         name,
         description,
+        all_day: allDay,
         event_type: { name: type },
         employee_personal_event: [
             {
@@ -199,7 +201,7 @@ describe("event.get.service", () => {
             usedDays: 2,
             focus: "ausencias",
             scope: "personal",
-            lastsAllDay: true,
+            allDay: true,
         });
         expect(absenceEvent.start).toEqual(makeUTCDate(2026, 5, 1));
         expect(absenceEvent.startDate).toEqual(makeUTCDate(2026, 5, 1));
@@ -276,9 +278,7 @@ describe("event.get.service", () => {
             }),
         ]);
 
-        getPersonalEventsInRange.mockResolvedValue([
-            makePersonalEvent(),
-        ]);
+        getPersonalEventsInRange.mockResolvedValue([makePersonalEvent()]);
 
         getAbsencesInRange.mockResolvedValue([makeAbsence()]);
 
@@ -291,6 +291,34 @@ describe("event.get.service", () => {
         expect(getAbsenceEvent(result)).toMatchObject({
             usedDays: 3,
         });
+    });
+
+    it("mapea evento personal allDay con fin exclusivo al dia siguiente", async () => {
+        getPersonalEventsInRange.mockResolvedValue([
+            makePersonalEvent({
+                date: makeUTCDate(2026, 5, 5),
+                start: new Date("2026-05-05T06:00:00.000Z"),
+                end: new Date("2026-05-06T06:00:00.000Z"),
+                allDay: true,
+            }),
+        ]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        const personalEvent = result.data.events.find(
+            (event) => event.name === "Evento personal",
+        );
+
+        expect(personalEvent).toMatchObject({
+            allDay: true,
+            allDay: true,
+        });
+        expect(personalEvent.start).toEqual(makeUTCDate(2026, 5, 5));
+        expect(personalEvent.end).toEqual(makeUTCDate(2026, 5, 6));
     });
 
     it("normaliza is_free_day undefined o null como false sin descontar dias", async () => {
