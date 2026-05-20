@@ -15,6 +15,7 @@ const {
 const { getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getEligibleVacationEmployees
 } = require("../controller/vacation/get.controller");
 
 const {
@@ -48,6 +49,15 @@ const {
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
 
 router.post("/request", apiLimiter, verifyToken, requestVacation);
+
+router.get(
+    "/employees/eligible",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    getEligibleVacationEmployees,
+);
 
 router.post(
     "/employees/:employeeId/register",
