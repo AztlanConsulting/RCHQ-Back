@@ -1,6 +1,7 @@
 const prisma = require("../../prisma");
 const { Prisma } = require("@prisma/client");
 const { ACTIVE_VACATION_STATUSES } = require("../../utils/vacationStatus");
+const { ROLES } = require("../../utils/roles");
 const {
     buildVacationRequestSearchSqlParts,
 } = require("../../utils/vacationRequestSearch");
@@ -269,4 +270,41 @@ exports.getReviewedVacationRequestsByHouse = async ({
     ]);
 
     return { requests, total };
+};
+
+exports.getEligibleVacationEmployees = async ({ actorEmployee }) => {
+    const isAdmin = actorEmployee.role?.name === ROLES.ADMIN;
+    const isCoordinator = actorEmployee.role?.name === ROLES.COORDINATOR;
+
+    if (!isAdmin && !isCoordinator) {
+        return [];
+    }
+
+    const where = {
+        is_active: true,
+    };
+
+    if (isCoordinator) {
+        where.house_id = actorEmployee.house_id;
+        where.role = {
+            name: {
+                not: ROLES.ADMIN,
+            },
+        };
+    }
+
+    return await prisma.employee.findMany({
+        where,
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            curp: true,
+            is_active: true,
+        },
+        orderBy: [
+            { name: "asc" },
+            { surname: "asc" },
+        ],
+    });
 };
