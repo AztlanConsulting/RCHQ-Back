@@ -67,34 +67,37 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
 };
 
 exports.mapPersonalCalendarEvent = (event) => {
-
     const peopleData = [];
-    event.employee_personal_event.forEach(employeeEvent => {
+    const start = combineDateAndTime(event.date, event.start);
+    const endCalendarDate = event.all_day
+        ? convertUTCToMexicanTime(event.end)
+        : event.date;
+    const end = combineDateAndTime(endCalendarDate, event.end);
+
+    event.employee_personal_event.forEach((employeeEvent) => {
         peopleData.push({
             name: `${employeeEvent.employee.name} ${employeeEvent.employee.surname}`.trim(),
             id: employeeEvent.employee.employee_id,
         });
     });
-    
+
     return {
-        start: combineDateAndTime(
-        event.date,
-        event.start,
-    ),
-    end: combineDateAndTime(
-        event.date,
-        event.end,
-    ),
-    name: event.name,
-    type: event.event_type.name,
-    focus: "eventos",
-    scope: "personal",
-    description: event.description ?? "",
-    color: "#EFBF22",
-    lastsAllDay: false,
-    peopleInsideEvent: peopleData,
+        date: event.date,
+        start,
+        end,
+        startDate: start,
+        endDate: end,
+        name: event.name,
+        type: event.event_type.name,
+        focus: "eventos",
+        scope: "personal",
+        description: event.description ?? "",
+        color: "#EFBF22",
+        allDay: event.all_day || false,
+        lastsAllDay: event.all_day || false,
+        peopleInsideEvent: peopleData,
     };
-}
+};
 
 exports.mapPersonalEvent = (event, options = {}) => {
     if (!event) return null;
