@@ -1,0 +1,230 @@
+@startuml HU81 - Modificar evento personal
+
+actor Navegador
+boundary "event.personal.routes" as routes
+boundary "React (calendarModal.jsx)" as ReactView
+control "event.personal.controller" as controller
+control event.service
+entity event.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> ReactView : Seleccionar evento personal existente
+activate ReactView
+
+ReactView -> routes : GET /events/getAllTypes
+deactivate ReactView
+activate routes
+
+routes -> controller : getAllEventTypes(request, response)
+deactivate routes
+activate controller
+
+controller ->> event.service : getAllEventTypes()
+activate event.service
+event.service ->> event.model : getAllEventTypes()
+activate event.model
+event.model ->> PostgreSQL : prisma.event_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> event.model : eventTypes[]
+deactivate PostgreSQL
+event.model -->> event.service : eventTypes[]
+deactivate event.model
+event.service -->> controller : eventTypes[]
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ eventTypes })
+deactivate controller
+activate routes
+routes -->> ReactView : send({ eventTypes })
+deactivate routes
+activate ReactView
+
+ReactView -> routes : GET /events/personal/employees?search=
+deactivate ReactView
+activate routes
+
+routes -> controller : getEmployeesForEvent(request, response)
+deactivate routes
+activate controller
+
+controller ->> event.service : getEmployeesForEvent(houseId, search)
+activate event.service
+event.service ->> event.model : getEmployeesForEvent(houseId, search)
+activate event.model
+event.model ->> PostgreSQL : SELECT employee_id, name, surname, picture\nFROM employee\nWHERE house_id = houseId\nAND is_active = true
+activate PostgreSQL
+PostgreSQL -->> event.model : employees[]
+deactivate PostgreSQL
+event.model -->> event.service : employees[]
+deactivate event.model
+event.service -->> controller : employees[]
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ employees })
+deactivate controller
+activate routes
+routes -->> ReactView : send({ employees })
+deactivate routes
+activate ReactView
+
+ReactView -> Navegador : Mostrar modal con datos actuales del evento
+
+Navegador -> ReactView : Modificar datos:\n(name, eventType, date, start, end, employee)
+
+alt all_day?
+    ReactView -> ReactView : Ocultar selectores de hora
+else No
+    ReactView -> ReactView : Mostrar selectores de hora
+    Navegador -> ReactView : Modificar start y end
+end
+
+alt Modificar descripción
+    Navegador -> ReactView : Ingresa nueva description
+else No
+    ReactView -> ReactView : Mantener description actual
+end
+
+ReactView -> ReactView : Validar campos obligatorios
+
+alt Campos incompletos
+    ReactView -> Navegador : Mostrar error (422)
+    deactivate ReactView
+
+else Campos completos
+
+    Navegador -> routes : PUT /events/personal/:eventId
+    deactivate ReactView
+    activate routes
+
+    routes -> controller : putUpdatePersonalEvent(request, response)
+    deactivate routes
+    activate controller
+
+    controller ->> event.service : validateAvailability(data)
+    activate event.service
+
+    event.service ->> event.model : findOverlappingPersonalEvents(data, eventId)
+    activate event.model
+
+    event.model ->> PostgreSQL : prisma.employee_personal_event.findMany()\nwhere personal_event_id != eventId
+    activate PostgreSQL
+    PostgreSQL -->> event.model : collisions[]
+    deactivate PostgreSQL
+
+    event.model -->> event.service : collisions[]
+    deactivate event.model
+    event.service -->> controller : collisionFound / clear
+    deactivate event.service
+
+    alt Existe empalme AND !forceOverlap
+
+        alt user.role == "Coordinador"
+
+            controller -->> routes : response.status(409).send("Conflicto")
+            deactivate controller
+            activate routes
+
+            routes -->> ReactView : send("Conflicto")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Mostrar alerta de empalme con opción de continuar
+            deactivate ReactView
+
+            alt No desea continuar
+                Navegador -> ReactView : Selecciona "No"
+                activate ReactView
+                ReactView -> Navegador : Regresar a edición
+                deactivate ReactView
+
+            else Desea continuar
+                Navegador -> ReactView : Selecciona "Sí"
+                activate ReactView
+
+                ReactView -> routes : PUT /events/personal/:eventId { forceOverlap: true }
+                deactivate ReactView
+                activate routes
+
+                routes -> controller : putUpdatePersonalEvent(request, response)
+                deactivate routes
+                activate controller
+            end
+
+        else No es Coordinador
+
+            controller -->> routes : response.status(409).send("Conflicto")
+            deactivate controller
+            activate routes
+
+            routes -->> ReactView : send("Conflicto")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Mostrar alerta "Existe empalme seleccione otro horario"
+            ReactView -> Navegador : Regresar a edición
+            deactivate ReactView
+
+        end
+
+    else No hay empalme OR forceOverlap == true
+
+        alt forceOverlap == true AND user.role != "Coordinador"
+
+            controller -->> routes : response.status(403).send("No tienes permiso para modificar evento")
+            deactivate controller
+            activate routes
+
+            routes -->> ReactView : send("No tienes permiso para modificar evento")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Mostrar error "No tienes permiso para modificar evento"
+            deactivate ReactView
+
+        else forceOverlap permitido o no hay empalme
+
+            controller ->> event.service : updatePersonalEvent(eventId, data)
+            activate event.service
+
+            event.service ->> event.model : updatePersonalEvent(eventId, data)
+            activate event.model
+
+            event.model ->> PostgreSQL : prisma.personal_event.update()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : personalEventUpdated
+            deactivate PostgreSQL
+
+            event.model ->> PostgreSQL : prisma.employee_personal_event.deleteMany()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : oldRelationsDeleted
+            deactivate PostgreSQL
+
+            event.model ->> PostgreSQL : prisma.employee_personal_event.createMany()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : newRelationsCreated
+            deactivate PostgreSQL
+
+            event.model -->> event.service : success
+            deactivate event.model
+
+            event.service -->> controller : success
+            deactivate event.service
+
+            controller -->> routes : response.status(200).send("Actualizado")
+            deactivate controller
+            activate routes
+
+            routes -->> ReactView : send("Actualizado")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Actualizar calendario y cerrar modal
+            deactivate ReactView
+
+        end
+    end
+end
+
+@enduml
