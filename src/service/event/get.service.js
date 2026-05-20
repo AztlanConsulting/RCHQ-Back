@@ -35,7 +35,6 @@ const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
-const { house, employee } = require("../../prisma");
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -100,6 +99,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         );
         houseEvents.forEach((event) => {
             events.push({
+                houseEventId: event.house_event_id,
+                eventTypeId: event.event_type_id,
                 start: convertUTCToMexicanTime(event.start),
                 end: convertUTCToMexicanTime(event.end),
                 date: "",
