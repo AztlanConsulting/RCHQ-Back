@@ -1,11 +1,11 @@
 const {
     getWorkDays,
-    getStartDate,
     findByIdWithRoleAndHouse,
 } = require("../../model/employee/get.model");
 const { 
     calculateUsedDays,
     stringToDate,
+    convertUTCToMexicanTime,
 } = require("../../utils/dates");
 const { 
     getVacationsInRange, 
@@ -14,6 +14,7 @@ const {
 } = require("../../model/vacation/get.model");
 const { 
     getGlobalEventsInRange, 
+    getHouseEventsInRange,
 } = require("../../model/event/get.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { dateRangeSchema } = require("../../schemas/dates.schemas");
@@ -140,6 +141,7 @@ exports.registerEmployeeVacation = async ({
     rawStartDate,
     rawEndDate,
     ipAddress,
+    requesterHouseId,
 }) => {
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
@@ -166,6 +168,10 @@ exports.registerEmployeeVacation = async ({
 
     const startDate = stringToDate(rawStartDate);
     const endDate = stringToDate(rawEndDate);
+    const searchEndDate = new Date(endDate);
+    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+
+    console.log(startDate, endDate);
 
     if (endDate < startDate) {
         return {
@@ -208,11 +214,20 @@ exports.registerEmployeeVacation = async ({
         };
     }
 
-    const globalEvents = await getGlobalEventsInRange(startDate, endDate);
+    const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
+    const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
 
-    const usedDays = calculateUsedDays(workDays, startDate, endDate, globalEvents);
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
 
-    if (usedDays === 0) {
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
+
+    if (usedDays <= 0) {
         return {
             code: RESPONSES.VACATION.NULL_DATES,
         };
