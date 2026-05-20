@@ -7,7 +7,7 @@ const DATETIME_WITH_TIMEZONE_REGEX =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-const dateOnlyToUtcDate = (value) => new Date(`${value}T00:00:00.000Z`);
+const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
 
 const houseEventCreateSchema = z
     .object({
