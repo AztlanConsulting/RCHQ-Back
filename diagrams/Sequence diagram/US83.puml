@@ -1,0 +1,60 @@
+@startuml HU - Coordinador elimina evento de casa
+
+actor Navegador
+boundary "React (calendarModal.jsx)" as ReactView
+boundary "event.house.routes" as routes
+control "event.house.controller" as controller
+control event.service
+entity event.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> ReactView : Seleccionar opción "Eliminar evento"
+activate ReactView
+
+ReactView -> Navegador : Mostrar confirmación de eliminación
+
+alt Confirma eliminación
+    Navegador -> ReactView : Confirmar eliminar
+
+    ReactView -> routes : DELETE /events/house/:eventId
+    activate routes
+
+    routes -> controller : deleteHouseEvent(request, response)
+    activate controller
+
+    controller ->> event.service : deleteHouseEvent(eventId, user)
+    activate event.service
+
+    event.service ->> event.model : deleteHouseEvent(eventId)
+    activate event.model
+
+    event.model ->> PostgreSQL : prisma.house_event.delete()
+    activate PostgreSQL
+    PostgreSQL -->> event.model : eventDeleted
+    deactivate PostgreSQL
+
+    event.model -->> event.service : success
+    deactivate event.model
+
+    event.service -->> controller : success
+    deactivate event.service
+
+    controller -->> routes : response.status(200).send("Eliminado")
+    deactivate controller
+
+    routes -->> ReactView : send("Eliminado")
+    deactivate routes
+
+    ReactView -> Navegador : Notificar éxito
+    ReactView -> Navegador : Actualizar calendario y cerrar modal
+
+else Cancela eliminación
+    Navegador -> ReactView : Cancelar
+    ReactView -> Navegador : Mantener detalle del evento
+end
+
+deactivate ReactView
+
+@enduml
