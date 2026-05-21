@@ -6,7 +6,7 @@ const {
     getVacationsInRange,
     getPendingVacationRequestsByHouse,
     getReviewedVacationRequestsByHouse,
-    getEligibleVacationEmployees,
+    getEligibleVacationEmployees: getEligibleVacationEmployeesModel,
 } = require("../../model/vacation/get.model");
 const { getVacationDays } = require("../../utils/vacationDays");
 const RESPONSES = require("../../utils/responses");
@@ -344,7 +344,14 @@ exports.getEligibleVacationEmployees = async ({ actorEmployeeId }) => {
         };
     }
 
-    const employees = await getEligibleVacationEmployees({ actorEmployee });
+    const employeeWhere = {
+        is_active: true,
+        ...(actorRoleName === ROLES.COORDINATOR
+            ? { house_id: actorEmployee.house_id }
+            : {}),
+    };
+
+    const employees = await getEligibleVacationEmployeesModel(employeeWhere);
 
     return {
         code: RESPONSES.EMPLOYEE.FOUND,
