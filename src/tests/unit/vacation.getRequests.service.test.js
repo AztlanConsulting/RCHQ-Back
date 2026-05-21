@@ -56,6 +56,7 @@ const {
 
 const RESPONSES = require("../../../src/utils/responses");
 const { VACATION_STATUS } = require("../../../src/utils/vacationStatus");
+const { ROLES } = require("../../utils/roles");
 
 describe("US80 - getPendingVacationRequests service", () => {
     beforeEach(() => {
@@ -519,9 +520,14 @@ describe("getEligibleVacationEmployees service", () => {
             actorEmployeeId: "e8000000-0000-4000-8000-000000000001",
         });
 
-        expect(result.code).toBe(RESPONSES.EMPLOYEE.FOUND);
         expect(getEligibleVacationEmployeesModel).toHaveBeenCalledWith({
-            actorEmployee,
+            is_active: true,
+            house_id: actorEmployee.house_id,
+            role: {
+                name: {
+                    not: ROLES.ADMIN,
+                },
+            },
         });
 
         expect(result.data.employees).toEqual([
@@ -568,7 +574,7 @@ describe("getEligibleVacationEmployees service", () => {
 
         expect(result.code).toBe(RESPONSES.EMPLOYEE.FOUND);
         expect(getEligibleVacationEmployeesModel).toHaveBeenCalledWith({
-            actorEmployee,
+            is_active: true,
         });
 
         expect(result.data.employees).toEqual([

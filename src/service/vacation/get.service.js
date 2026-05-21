@@ -347,7 +347,14 @@ exports.getEligibleVacationEmployees = async ({ actorEmployeeId }) => {
     const employeeWhere = {
         is_active: true,
         ...(actorRoleName === ROLES.COORDINATOR
-            ? { house_id: actorEmployee.house_id }
+            ? {
+                house_id: actorEmployee.house_id,
+                role: {
+                    name: {
+                        not: ROLES.ADMIN,
+                    },
+                },
+            }
             : {}),
     };
 
