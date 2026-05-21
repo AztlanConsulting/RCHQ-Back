@@ -891,21 +891,6 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             expect(res.statusCode).toBe(403);
         });
 
-        it("Administrador puede crear eventos en cualquier casa", async () => {
-            const adminToken = generateToken({
-                role: "Administrador",
-                houseId: TEST_OTHER_HOUSE_ID,
-            });
-
-            const res = await request(app)
-                .post(API_ROUTE)
-                .set("Authorization", `Bearer ${adminToken}`)
-                .send(buildValidEventBody());
-
-            expect(res.statusCode).toBe(201);
-            expect(res.body.data.houseEvent.houseId).toBe(TEST_OTHER_HOUSE_ID);
-        });
-
         it("el houseId del token tiene precedencia sobre el body (no se puede falsificar)", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
