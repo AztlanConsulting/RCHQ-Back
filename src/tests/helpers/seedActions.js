@@ -183,6 +183,11 @@ const ACTIONS = [
         important: true,
     },
     {
+        action_id: "even-006",
+        description: "Actualización de evento de casa exitosa",
+        important: false,
+    },
+    {
         action_id: "vaca-005",
         description: "Modificación de vacaciones exitosa",
         important: false,

@@ -1,6 +1,9 @@
 const prisma = require("../../prisma");
 const { Prisma } = require("@prisma/client");
-const { mapPersonalEventOverlap } = require("../../utils/mappers/event.map");
+const {
+    mapHouseEvent,
+    mapPersonalEventOverlap,
+} = require("../../utils/mappers/event.map");
 const personalEventTimeToUtc = (date, time) =>
     new Date(`${date}T${time}-06:00`);
 
@@ -11,6 +14,41 @@ exports.getAllEventTypes = async () => {
             name: true,
         },
     });
+};
+
+exports.findHouseEventById = async (eventId, houseId) => {
+    return await prisma.house_event.findFirst({
+        where: {
+            house_event_id: eventId,
+            house_id: houseId,
+            is_deleted: false,
+        },
+    });
+};
+
+exports.findOverlappingHouseEvents = async ({
+    houseId,
+    start,
+    end,
+    excludeEventId,
+}) => {
+    const houseEvents = await prisma.house_event.findMany({
+        where: {
+            house_id: houseId,
+            house_event_id: { not: excludeEventId },
+            is_deleted: false,
+            start: { lt: end },
+            end: { gt: start },
+        },
+        select: {
+            house_event_id: true,
+            name: true,
+            start: true,
+            end: true,
+        },
+    });
+
+    return houseEvents.map(mapHouseEvent);
 };
 
 exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
