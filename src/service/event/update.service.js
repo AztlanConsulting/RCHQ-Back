@@ -1,8 +1,8 @@
 const {
     findHouseEventById,
     findOverlappingHouseEvents,
-    updateHouseEvent,
-} = require("../../model/event/update.model");
+} = require("../../model/event/get.model");
+const { updateHouseEvent } = require("../../model/event/update.model");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
