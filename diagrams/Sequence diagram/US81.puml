@@ -1,4 +1,4 @@
-@startuml HU77 - Coordinador registra evento de casa
+@startuml HU81 - Modificar evento de casa
 
 actor Navegador
 boundary "event.house.routes" as routes
@@ -11,6 +11,7 @@ database PostgreSQL
 autonumber
 
 Navegador -> routes : GET /events/getAllTypes
+deactivate ReactView
 activate routes
 
 routes -> controller : getAllEventTypes(request, response)
@@ -18,12 +19,15 @@ activate controller
 
 controller ->> event.service : getAllEventTypes()
 activate event.service
+
 event.service ->> event.model : getAllEventTypes()
 activate event.model
+
 event.model ->> PostgreSQL : prisma.event_type.findMany()
 activate PostgreSQL
 PostgreSQL -->> event.model : eventTypes[]
 deactivate PostgreSQL
+
 event.model -->> event.service : eventTypes[]
 deactivate event.model
 event.service -->> controller : eventTypes[]
@@ -31,99 +35,135 @@ deactivate event.service
 
 controller -->> routes : response.status(200).send({ eventTypes })
 deactivate controller
-
-routes -> ReactView : render(Modal con datos)
+routes -->> ReactView : send({ eventTypes })
 deactivate routes
 activate ReactView
 
-Navegador -> ReactView : Seleccionar opción "Casa"
-
-Navegador -> ReactView : Ingresa datos obligatorios:\n(name, start, end)
-
+ReactView -> Navegador : Renderizar modal de edición con datos actuales
+deactivate ReactView
+Navegador -> ReactView : Modifica datos obligatorios:\n(name, eventType, start, end)
+activate ReactView
 alt all_day?
     ReactView -> ReactView : Ocultar selectores de hora
 else No
     ReactView -> ReactView : Mostrar selectores de hora
 end
 
-alt Ingresar datos opcionales
-    Navegador -> ReactView : Ingresa datos opcionales:\n(description, is_free_day)
+alt Modificar datos opcionales
+    Navegador -> ReactView : Ingresa description, is_free_day
 else No
-    ReactView -> ReactView : Continúa sin opcionales
+    ReactView -> ReactView : Mantiene datos opcionales actuales
 end
 
 ReactView -> ReactView : Validar campos obligatorios
 
 alt Campos incompletos
     ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes" (422)
-    deactivate ReactView
+
 else Campos completos
-    Navegador -> routes : POST /events/house/add
+    ReactView -> routes : PUT /events/house/:eventId
+    deactivate ReactView
     activate routes
 
-    routes -> controller : postAdd(request, response)
-    deactivate routes
+    routes -> controller : updateHouseEvent(request, response)
     activate controller
 
     controller ->> event.service : validateAvailability(data)
     activate event.service
 
-    event.service ->> event.model : findOverlappingEvents(data)
+    event.service ->> event.model : findOverlappingHouseEvents(data)
     activate event.model
-    event.model ->> PostgreSQL : prisma.event.findMany(overlap_query)
+
+    event.model ->> PostgreSQL : prisma.house_event.findMany(overlap_query)
     activate PostgreSQL
     PostgreSQL -->> event.model : collisionList
     deactivate PostgreSQL
+
     event.model -->> event.service : collisions[]
     deactivate event.model
-
     event.service -->> controller : collisionFound / clear
     deactivate event.service
 
     alt ¿Existe empalme? AND !forceOverlap
         controller -->> routes : response.status(409).send("Conflicto")
-        activate routes
+        deactivate controller
+
         routes -->> ReactView : send("Conflicto")
         deactivate routes
         activate ReactView
+
         ReactView -> Navegador : Mostrar alerta de empalme
         deactivate ReactView
-        
+
         alt No desea traslape
             Navegador -> ReactView : Selecciona "No"
             activate ReactView
             ReactView -> Navegador : Regresa a editar datos
             deactivate ReactView
-        else Si desea traslape (forceOverlap = true)
-            Navegador -> ReactView : Selecciona "Si"
+        else Sí desea traslape
+            Navegador -> ReactView : Selecciona "Sí"
             activate ReactView
-            ReactView -> routes : POST /events/house/add { ..., forceOverlap: true }
+
+            ReactView -> routes : PUT /events/house/:eventId { ..., forceOverlap: true }
             deactivate ReactView
             activate routes
-            routes -> controller : postAdd(request, response)
+
+            routes -> controller : updateHouseEvent(request, response)
+            activate controller
+
+            controller ->> event.service : updateHouseEvent(eventId, data)
+            activate event.service
+
+            event.service ->> event.model : updateHouseEvent(eventId, data)
+            activate event.model
+
+            event.model ->> PostgreSQL : prisma.house_event.update()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : eventUpdated
+            deactivate PostgreSQL
+
+            event.model -->> event.service : success
+            deactivate event.model
+            event.service -->> controller : success
+            deactivate event.service
+
+            controller -->> routes : response.status(200).send("Modificado")
+            deactivate controller
+
+            routes -->> ReactView : send("Modificado")
             deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Actualizar calendario y cerrar modal
+            deactivate ReactView
         end
-        
+
     else No existe empalme OR forceOverlap == true
-        controller ->> event.service : createEvent(data)
+        controller ->> event.service : updateHouseEvent(eventId, data)
+        activate controller
         activate event.service
-        event.service ->> event.model : create(data)
+
+        event.service ->> event.model : updateHouseEvent(eventId, data)
         activate event.model
-        event.model ->> PostgreSQL : prisma.event.create()
+
+        event.model ->> PostgreSQL : prisma.house_event.update()
         activate PostgreSQL
-        PostgreSQL -->> event.model : eventCreated
+        PostgreSQL -->> event.model : eventUpdated
         deactivate PostgreSQL
+
         event.model -->> event.service : success
         deactivate event.model
         event.service -->> controller : success
         deactivate event.service
 
-        controller -->> routes : response.status(201).send("Creado")
+        controller -->> routes : response.status(200).send("Modificado")
         deactivate controller
         activate routes
-        routes -->> ReactView : send("Creado")
+
+        routes -->> ReactView : send("Modificado")
         deactivate routes
         activate ReactView
+
         ReactView -> Navegador : Actualizar calendario y cerrar modal
         deactivate ReactView
     end
