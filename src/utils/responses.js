@@ -72,6 +72,7 @@ const RESPONSES = {
         NOT_FOUND: "No hubo eventos encontrados",
         FOUND: "EVENTS_FOUND_CORRECTLY",
         CREATED: "EVENT_CREATED",
+        DELETED: "EVENT_DELETED",
         OVERLAP: "EVENT_OVERLAP",
         INVALID_DATES: "EVENT_INVALID_DATES",
         MISSING_FIELDS: "EVENT_MISSING_FIELDS",
