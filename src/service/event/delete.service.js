@@ -1,4 +1,4 @@
-const deleteModel = require("../../model/event/delete.model");
+const { softDeleteHouseEvent } = require("../../model/event/delete.model");
 const { findHouseEventById } = require("../../model/event/get.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
@@ -6,7 +6,7 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
 
-exports.deleteHouseEvent = async (houseEventId, user, req) => {
+exports.deleteHouseEvent = async (houseEventId, user, clientIp) => {
     const event = await findHouseEventById(houseEventId);
 
     if (!event || event.isDeleted) {
@@ -17,14 +17,13 @@ exports.deleteHouseEvent = async (houseEventId, user, req) => {
         return { code: RESPONSES.USER.NOT_ACCESS };
     }
 
-    await deleteModel.softDeleteHouseEvent(houseEventId);
+    await softDeleteHouseEvent(houseEventId);
 
     try {
-        const ip = getClientIp(req);
         await createLog(
             user.id,
             LOG_ACTIONS.HOUSE_EVENT_DELETED,
-            ip,
+            clientIp,
             houseEventId,
         );
     } catch (error) {

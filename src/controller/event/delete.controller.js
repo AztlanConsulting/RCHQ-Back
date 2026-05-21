@@ -1,14 +1,15 @@
-const deleteService = require("../../service/event/delete.service");
+const { deleteHouseEvent } = require("../../service/event/delete.service");
 const RESPONSES = require("../../utils/responses");
+const { getClientIp } = require("../../utils/ip");
 
 exports.deleteHouseEvent = async (req, res) => {
     try {
         const { eventId } = req.params;
 
-        const result = await deleteService.deleteHouseEvent(
+        const result = await deleteHouseEvent(
             eventId,
             req.user,
-            req,
+            getClientIp(req),
         );
 
         if (result.code === RESPONSES.EVENTS.NOT_FOUND) {
