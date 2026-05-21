@@ -11,6 +11,7 @@ jest.mock("../../model/vacation/get.model", () => ({
 
 jest.mock("../../model/event/get.model", () => ({
     getGlobalEventsInRange: jest.fn(),
+    getHouseEventsInRange: jest.fn(),
 }));
 
 jest.mock("../../service/vacation/get.service", () => ({
@@ -40,6 +41,10 @@ const {
 
 const {
     getGlobalEventsInRange,
+} = require("../../model/event/get.model");
+
+const {
+    getHouseEventsInRange,
 } = require("../../model/event/get.model");
 
 const {
@@ -74,6 +79,7 @@ describe("US28 - registerEmployeeVacation service", () => {
     const validEndDate = "2026-06-26";
     const parsedValidStartDate = makeUTCDate(2026, 6, 22);
     const parsedValidEndDate = makeUTCDate(2026, 6, 26);
+    const parsedValidSearchEndDate = makeUTCDate(2026, 6, 27);
 
     const todayDate = "2026-04-30";
     const parsedTodayDate = makeUTCDate(2026, 4, 30);
@@ -124,6 +130,9 @@ describe("US28 - registerEmployeeVacation service", () => {
         });
 
         getGlobalEventsInRange.mockResolvedValue(globalEvents);
+
+        getHouseEventsInRange.mockResolvedValue([]);
+        
         getActiveVacationsInRange.mockResolvedValue(activeVacations);
 
         registerVacation.mockResolvedValue(
@@ -201,7 +210,7 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(getRemainingVacations).toHaveBeenCalledWith(targetEmployeeId);
             expect(getGlobalEventsInRange).toHaveBeenCalledWith(
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidSearchEndDate
             );
             expect(getActiveVacationsInRange).toHaveBeenCalledWith(
                 targetEmployeeId,

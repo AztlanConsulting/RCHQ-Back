@@ -6,11 +6,12 @@ exports.requestVacation = async (req, res) => {
     try {
         const startDate = req.body.startDate;
         const endDate = req.body.endDate;
+        const requesterHouseId = req.resolvedRequester?.houseId;
 
         const clientIp = getClientIp(req);
 
         const employeeId = req.user.id;
-        const result = await requestVacation(employeeId, startDate, endDate, clientIp);
+        const result = await requestVacation(employeeId, startDate, endDate, clientIp, requesterHouseId);
 
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
             return res.status(400).json({

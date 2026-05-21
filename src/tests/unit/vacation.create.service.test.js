@@ -50,6 +50,7 @@ describe("vacation.service — requestVacation", () => {
             employeeModel.getHome.mockResolvedValue("1");
 
             eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
+            eventsModel.getHouseEventsInRange.mockResolvedValue([]);
 
             datesUtils.calculateUsedDays.mockReturnValue(5);
 

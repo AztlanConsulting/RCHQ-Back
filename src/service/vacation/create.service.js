@@ -36,7 +36,7 @@ function getTodayUTC() {
     ));
 }
 
-exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress) => {
+exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress, requesterHouseId) => {
     const validation = dateRangeSchema.safeParse({startDate: rawStartDate, endDate: rawEndDate});
 
     if (!validation.success) {
@@ -45,8 +45,10 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
         };
     }
 
-    let startDate = stringToDate(rawStartDate);
-    let endDate = stringToDate(rawEndDate);
+    const startDate = stringToDate(rawStartDate);
+    const endDate = stringToDate(rawEndDate);
+    const searchEndDate = new Date(endDate);
+    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
 
     if (endDate < startDate) {
         return {
@@ -85,9 +87,18 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
         }
     }
 
-    const globalEvents = await getGlobalEventsInRange(startDate, endDate);
+    const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
+    const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
 
-    const usedDays = calculateUsedDays(workDays, startDate, endDate, globalEvents);
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
 
     if (usedDays == 0) {
         return {
@@ -170,8 +181,6 @@ exports.registerEmployeeVacation = async ({
     const endDate = stringToDate(rawEndDate);
     const searchEndDate = new Date(endDate);
     searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
-
-    console.log(startDate, endDate);
 
     if (endDate < startDate) {
         return {
