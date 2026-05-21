@@ -113,7 +113,7 @@ router.delete(
     verifyToken,
     requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.DELETE_EVENT),
-    authorize(deleteHouseEventPolicy, () => ({})),
+    authorize(deleteHouseEventPolicy, (req) => ({ houseId: req.user.houseId })),
     deleteHouseEvent,
 );
 
