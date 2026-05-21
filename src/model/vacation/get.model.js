@@ -270,3 +270,20 @@ exports.getReviewedVacationRequestsByHouse = async ({
 
     return { requests, total };
 };
+
+exports.getEligibleVacationEmployees = async (where) => {
+    return await prisma.employee.findMany({
+        where,
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            curp: true,
+            is_active: true,
+        },
+        orderBy: [
+            { name: "asc" },
+            { surname: "asc" },
+        ],
+    });
+};
