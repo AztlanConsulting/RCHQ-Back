@@ -1,4 +1,5 @@
 const deleteModel = require("../../model/event/delete.model");
+const { findHouseEventById } = require("../../model/event/get.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { LOG_ACTIONS } = require("../../utils/logActions");
@@ -6,7 +7,7 @@ const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
 
 exports.deleteHouseEvent = async (houseEventId, user, req) => {
-    const event = await deleteModel.findHouseEventById(houseEventId);
+    const event = await findHouseEventById(houseEventId);
 
     if (!event || event.isDeleted) {
         return { code: RESPONSES.EVENTS.NOT_FOUND };
