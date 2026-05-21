@@ -10,6 +10,7 @@ const PRIVILEGES = Object.freeze({
     EDIT_ABSENCES: "editAbsences",
     DELETE_ABSENCES: "deleteAbsences",
     ADD_TO_BLACKLIST: "addToBlacklist",
+    EDIT_EVENT: "editEvent",
 });
 
 module.exports = PRIVILEGES;
