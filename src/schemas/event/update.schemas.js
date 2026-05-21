@@ -8,11 +8,15 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
 
+const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+
 exports.houseEventUpdateSchema = z
     .object({
         eventTypeId: z
             .string({ error: "El eventTypeId es obligatorio." })
-            .uuid({ message: "El identificador del tipo de evento no es válido." }),
+            .uuid({
+                message: "El identificador del tipo de evento no es válido.",
+            }),
 
         name: z
             .string({ error: "El título es obligatorio." })
@@ -146,4 +150,94 @@ exports.houseEventUpdateSchema = z
     .refine((data) => data.start < data.end, {
         message: "La fecha de inicio debe ser anterior a la fecha de fin.",
         path: ["start"],
+    });
+
+exports.updatePersonalEventSchema = z
+    .object({
+        name: z
+            .string({ required_error: "El nombre es obligatorio." })
+            .trim()
+            .min(1, { message: "El nombre no puede estar vacío." })
+            .max(70, { message: "El nombre no debe exceder 70 caracteres." })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            }),
+
+        eventTypeId: z
+            .string({ required_error: "El tipo de evento es obligatorio" })
+            .uuid("El tipo de evento debe ser un UUID válido"),
+
+        date: z
+            .string({ required_error: "La fecha es obligatoria" })
+            .regex(DATE_REGEX, "La fecha debe tener formato YYYY-MM-DD"),
+
+        description: z
+            .string()
+            .trim()
+            .max(250, {
+                message: "La descripción no debe exceder los 250 caracteres.",
+            })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            })
+            .nullable()
+            .optional(),
+
+        allDay: z.boolean({ required_error: "El campo allDay es obligatorio" }),
+
+        start: z
+            .string()
+            .regex(
+                TIME_REGEX,
+                "La hora de inicio debe tener formato HH:mm o HH:mm:ss",
+            )
+            .optional(),
+
+        end: z
+            .string()
+            .regex(
+                TIME_REGEX,
+                "La hora de fin debe tener formato HH:mm o HH:mm:ss",
+            )
+            .optional(),
+
+        employeeIds: z
+            .array(
+                z.string().uuid("Los IDs de empleados deben ser UUIDs válidos"),
+            )
+            .optional(),
+
+        forceOverlap: z.boolean().optional().default(false),
+    })
+    .superRefine((data, ctx) => {
+        if (data.allDay === true) {
+            return;
+        }
+
+        if (!data.start) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["start"],
+                message:
+                    "La hora de inicio es obligatoria cuando allDay es false",
+            });
+        }
+
+        if (!data.end) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["end"],
+                message: "La hora de fin es obligatoria cuando allDay es false",
+            });
+        }
+
+        if (data.start && data.end && data.end <= data.start) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["end"],
+                message: "La hora de fin debe ser mayor que la hora de inicio",
+            });
+        }
     });
