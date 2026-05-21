@@ -12,6 +12,7 @@ exports.mapHouseEvent = (event) => {
         end: convertUTCToMexicanTime(event.end),
         allDay: event.all_day,
         isFreeDay: event.is_free_day,
+        isDeleted: event.is_deleted,
         description: event.description,
     };
 };
@@ -110,6 +111,7 @@ exports.mapPersonalEvent = (event, options = {}) => {
         name: event.name,
         description: event.description,
         allDay: event.all_day,
+        isDeleted: event.is_deleted,
         employeeIds: options.employeeIds,
     };
 };

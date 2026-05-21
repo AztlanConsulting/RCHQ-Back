@@ -16,13 +16,27 @@ exports.getAllEventTypes = async () => {
     });
 };
 
-exports.findHouseEventById = async (eventId, houseId) => {
-    return await prisma.house_event.findFirst({
+exports.findHouseEventById = async (eventId) => {
+    const event = await prisma.house_event.findFirst({
+        where: {
+            house_event_id: eventId,
+            is_deleted: false,
+        },
+    });
+
+    return mapHouseEvent(event);
+};
+
+exports.findHouseEventByIdAndHouseId = async (eventId, houseId) => {
+    const event = await prisma.house_event.findFirst({
         where: {
             house_event_id: eventId,
             house_id: houseId,
+            is_deleted: false,
         },
     });
+
+    return mapHouseEvent(event);
 };
 
 exports.findOverlappingHouseEvents = async ({
@@ -35,6 +49,7 @@ exports.findOverlappingHouseEvents = async ({
         where: {
             house_id: houseId,
             house_event_id: { not: excludeEventId },
+            is_deleted: false,
             start: { lt: end },
             end: { gt: start },
         },
@@ -53,6 +68,7 @@ exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
     const houseEvents = await prisma.house_event.findMany({
         where: {
             house_id: houseId,
+            is_deleted: false,
             start: {
                 lte: endDate,
             },
@@ -65,9 +81,10 @@ exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
         },
     });
 
-    return houseEvents.map(({ is_free_day, ...event }) => ({
+    return houseEvents.map(({ is_free_day, is_deleted, ...event }) => ({
         ...event,
         isFreeDay: is_free_day,
+        isDeleted: is_deleted,
     }));
 };
 
@@ -148,6 +165,7 @@ exports.getHouseCalendarPersonalEventsInRange = async (
 exports.getGlobalEventsInRange = async (startDate, endDate) => {
     const globalEvents = await prisma.global_event.findMany({
         where: {
+            is_deleted: false,
             start: {
                 lte: endDate,
             },
@@ -160,9 +178,10 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
         },
     });
 
-    return globalEvents.map(({ is_free_day, ...event }) => ({
+    return globalEvents.map(({ is_free_day, is_deleted, ...event }) => ({
         ...event,
         isFreeDay: is_free_day,
+        isDeleted: is_deleted,
     }));
 };
 

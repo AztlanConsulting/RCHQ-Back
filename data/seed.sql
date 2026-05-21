@@ -72,7 +72,8 @@ VALUES
 ('00000001-0000-4000-8000-000000000009', 'editAbsences'),
 ('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
 ('00000001-0000-4000-8000-000000000011', 'addAbsences'),
-('00000001-0000-4000-8000-000000000013', 'editEvent')
+('00000001-0000-4000-8000-000000000013', 'deleteEvent'),
+('00000001-0000-4000-8000-000000000014', 'editEvent')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -163,7 +164,15 @@ JOIN public.privileges p ON p.name = 'createEvent'
 WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
--- Editar eventos de casa (solo Admin/Coordinador) y eventos personales (todos los roles)
+-- Eliminar eventos de casa - Administrador y Coordinador
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+JOIN public.privileges p ON p.name = 'deleteEvent'
+WHERE r.name IN ('Administrador', 'Coordinador')
+ON CONFLICT DO NOTHING;
+
+-- Editar eventos de casa - Administrador y Coordinador
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
@@ -284,9 +293,10 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('even-002', 'Evento personal creado con éxito', false),
 ('even-003', 'Evento personal asignado a empleado', false),
 ('even-004', 'Evento de casa asignado a casa', false),
-('even-005', 'Actualización de evento de casa exitosa', false),
-('even-006', 'Actualización de evento personal exitosa', false),
-('even-007', 'Actualización de empleado asignado a evento personal', false),
+('even-007', 'Actualización de evento personal exitosa', false),
+('even-008', 'Actualización de empleado asignado a evento personal', false),
+('even-005', 'Evento de casa eliminado con éxito', true),
+('even-006', 'Actualización de evento de casa exitosa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),

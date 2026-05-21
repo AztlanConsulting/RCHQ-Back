@@ -1,5 +1,5 @@
 const {
-    findHouseEventById,
+    findHouseEventByIdAndHouseId,
     findOverlappingHouseEvents,
     findPersonalEventById,
     getEmployeesInHouse,
@@ -83,7 +83,10 @@ exports.updateHouseEvent = async (eventId, data, user, clientIp) => {
 
     const validData = parsed.data;
 
-    const existingEvent = await findHouseEventById(eventId, user.houseId);
+    const existingEvent = await findHouseEventByIdAndHouseId(
+        eventId,
+        user.houseId,
+    );
 
     if (!existingEvent) {
         return { code: RESPONSES.EVENTS.NOT_FOUND };

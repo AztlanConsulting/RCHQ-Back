@@ -283,6 +283,7 @@ CREATE TABLE IF NOT EXISTS public.personal_event (
     name varchar(70) NOT NULL,
     description varchar(250) NULL,
     all_day boolean NOT NULL,
+    is_deleted boolean NOT NULL DEFAULT false,
     CONSTRAINT personal_event_pk PRIMARY KEY (personal_event_id),
     CONSTRAINT personal_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id)
 );
@@ -297,6 +298,7 @@ CREATE TABLE IF NOT EXISTS public.house_event (
     description varchar(250) NULL,
     all_day boolean NOT NULL,
     is_free_day boolean NOT NULL,
+    is_deleted boolean NOT NULL DEFAULT false,
     CONSTRAINT house_event_pk PRIMARY KEY (house_event_id),
     CONSTRAINT house_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id),
     CONSTRAINT house_event_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id)
@@ -311,6 +313,7 @@ CREATE TABLE IF NOT EXISTS public.global_event (
     description varchar(250) NULL,
     all_day boolean NOT NULL,
     is_free_day boolean NOT NULL,
+    is_deleted boolean NOT NULL DEFAULT false,
     CONSTRAINT global_event_pk PRIMARY KEY (global_event_id),
     CONSTRAINT global_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id)
 );
