@@ -464,7 +464,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
@@ -504,7 +504,7 @@ describe("GET /logs/house", () => {
         expect(res.body.totalRecords).toBe(1);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0]).toMatchObject({
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
             responsibleName: "Carla Coord",
         });
     });
@@ -518,7 +518,7 @@ describe("GET /logs/house", () => {
         expect(res.body.totalRecords).toBe(1);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0]).toMatchObject({
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
             affectedName: "Luis CasaA",
         });
     });

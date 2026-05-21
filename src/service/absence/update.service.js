@@ -94,7 +94,7 @@ exports.updateAbsence = async ({
         }
     }
 
-    const workDays = await getWorkDays(currentAbsence.employee_id);
+    const workDays = await getWorkDays(currentAbsence.employee.employee_id);
     if (workDays.length == 0) {
         return {
             code: RESPONSES.VACATION.WITHOUT_DATES
@@ -129,14 +129,6 @@ exports.updateAbsence = async ({
             end: convertUTCToMexicanTime(event.end),
         }));
 
-    const usedDays = calculateUsedDays(workDays, nextStartDate, nextEndDate, freeDays, true);
-
-    if (usedDays == 0) {
-        return {
-            code: RESPONSES.VACATION.NULL_DATES
-        }
-    }
-
     const updateData = {};
 
     if (validation.data.body.absenceTypeId !== undefined) {
@@ -153,6 +145,14 @@ exports.updateAbsence = async ({
 
     if (validation.data.body.endDate !== undefined) {
         updateData.end = nextEndDate;
+    }
+
+    const usedDays = calculateUsedDays(workDays, nextStartDate, nextEndDate, freeDays, true);
+
+    if (usedDays == 0) {
+        return {
+            code: RESPONSES.ABSENCE.NULL_DATES
+        }
     }
 
     const fileUrl = file ? `uploads/documents/${file.filename}` : undefined;

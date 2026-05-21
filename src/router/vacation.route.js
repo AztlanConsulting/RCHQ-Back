@@ -47,12 +47,13 @@ const {
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
 
-router.post("/request", apiLimiter, verifyToken, requestVacation);
+router.post("/request", apiLimiter, verifyToken, resolveRequesterHouse, requestVacation);
 
 router.post(
     "/employees/:employeeId/register",
     apiLimiter,
     verifyToken,
+    resolveRequesterHouse,
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(employeeVacationCreateSchema, "all"),

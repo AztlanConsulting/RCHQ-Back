@@ -42,6 +42,11 @@ const IDS = {
     absenceTypeB: randomUUID(),
     absenceA: randomUUID(),
     absenceB: randomUUID(),
+    workdayLunes: randomUUID(),
+    workdayMartes: randomUUID(),
+    workdayMiercoles: randomUUID(),
+    workdayJueves: randomUUID(),
+    workdayViernes: randomUUID(),
 };
 
 const STATE = {
@@ -104,6 +109,43 @@ const resetAbsences = async () => {
     await prisma.absence.update({
         where: { absence_id: IDS.absenceB },
         data: ORIGINAL_ABSENCE_B,
+    });
+};
+
+const seedEmployeeWorkdays = async (employeeIds) => {
+    const workdays = [
+        { name: "Lunes", id: IDS.workdayLunes },
+        { name: "Martes", id: IDS.workdayMartes },
+        { name: "Miércoles", id: IDS.workdayMiercoles },
+        { name: "Jueves", id: IDS.workdayJueves },
+        { name: "Viernes", id: IDS.workdayViernes },
+    ];
+
+    const savedWorkdays = [];
+
+    for (const workday of workdays) {
+        const savedWorkday = await prisma.workday.upsert({
+            where: { name: workday.name },
+            update: {},
+            create: {
+                workday_id: workday.id,
+                name: workday.name,
+            },
+        });
+
+        savedWorkdays.push(savedWorkday);
+    }
+
+    await prisma.employee_workday.createMany({
+        data: employeeIds.flatMap((employeeId) =>
+            savedWorkdays.map((workday) => ({
+                employee_id: employeeId,
+                workday_id: workday.workday_id,
+                start: new Date("1970-01-01T09:00:00.000Z"),
+                end: new Date("1970-01-01T18:00:00.000Z"),
+            })),
+        ),
+        skipDuplicates: true,
     });
 };
 
@@ -283,6 +325,8 @@ const seed = async () => {
         ],
     });
 
+    await seedEmployeeWorkdays([IDS.employeeA, IDS.employeeB]);
+
     await prisma.absence.createMany({
         data: [
             {
@@ -317,6 +361,14 @@ const cleanup = async () => {
     });
 
     await prisma.logs.deleteMany({
+        where: {
+            employee_id: {
+                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+            },
+        },
+    });
+
+    await prisma.employee_workday.deleteMany({
         where: {
             employee_id: {
                 in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],

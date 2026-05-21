@@ -36,6 +36,9 @@ const IDS = {
     workdayMiercoles: randomUUID(),
     workdayJueves: randomUUID(),
     workdayViernes: randomUUID(),
+    globalFreeEventType: randomUUID(),
+    houseFreeEventType: randomUUID(),
+    remainingFreeEventType: randomUUID(),
 };
 
 const empAdminBase = {
@@ -91,6 +94,29 @@ const sign = (employeeId, roleName) => {
         process.env.JWT_SECRET,
         { expiresIn: "1h" },
     );
+};
+
+const dateOnly = (date) => date.toISOString().slice(0, 10);
+
+const localDateRangeToUtcEventRange = (startDate, endDate) => {
+    const endDateUtc = new Date(`${endDate}T00:00:00.000Z`);
+    endDateUtc.setUTCDate(endDateUtc.getUTCDate() + 1);
+
+    return {
+        start: new Date(`${startDate}T06:00:00.000Z`),
+        end: new Date(`${dateOnly(endDateUtc)}T05:59:00.000Z`),
+    };
+};
+
+const createEventType = async (eventTypeId, name) => {
+    await prisma.event_type.upsert({
+        where: { name },
+        update: {},
+        create: {
+            event_type_id: eventTypeId,
+            name,
+        },
+    });
 };
 
 const seed = async () => {
@@ -214,6 +240,42 @@ const seed = async () => {
 };
 
 const clean = async () => {
+    await prisma.global_event.deleteMany({
+        where: {
+            event_type_id: {
+                in: [
+                    IDS.globalFreeEventType,
+                    IDS.houseFreeEventType,
+                    IDS.remainingFreeEventType,
+                ],
+            },
+        },
+    });
+
+    await prisma.house_event.deleteMany({
+        where: {
+            event_type_id: {
+                in: [
+                    IDS.globalFreeEventType,
+                    IDS.houseFreeEventType,
+                    IDS.remainingFreeEventType,
+                ],
+            },
+        },
+    });
+
+    await prisma.event_type.deleteMany({
+        where: {
+            event_type_id: {
+                in: [
+                    IDS.globalFreeEventType,
+                    IDS.houseFreeEventType,
+                    IDS.remainingFreeEventType,
+                ],
+            },
+        },
+    });
+
     await prisma.logs.deleteMany({
         where: {
             employee_id: {
@@ -602,6 +664,101 @@ describe("Flujo integración /vacation/request", () => {
             );
         });
 
+        it("Manda error si no hay días hábiles debido a días feriados causados por eventos globales", async () => {
+            const token = sign(IDS.employeeCook, "Cocinero");
+            const startDate = "2026-09-14";
+            const endDate = "2026-09-18";
+            const eventRange = localDateRangeToUtcEventRange(startDate, endDate);
+
+            await createEventType(
+                IDS.globalFreeEventType,
+                `Vac glob ${IDS.globalFreeEventType.slice(0, 8)}`,
+            );
+
+            await prisma.global_event.create({
+                data: {
+                    global_event_id: randomUUID(),
+                    event_type_id: IDS.globalFreeEventType,
+                    start: eventRange.start,
+                    end: eventRange.end,
+                    name: "Vacación global libre",
+                    description: "Evento global que regala todo el rango",
+                    all_day: true,
+                    is_free_day: true,
+                },
+            });
+
+            const res = await request(app)
+                .post("/vacation/request")
+                .set("Authorization", `Bearer ${token}`)
+                .send({
+                    startDate,
+                    endDate,
+                });
+
+            const vacationInDb = await prisma.vacations_request.findFirst({
+                where: {
+                    employee_id: IDS.employeeCook,
+                    start: new Date(`${startDate}T00:00:00.000Z`),
+                    end: new Date(`${endDate}T00:00:00.000Z`),
+                },
+            });
+
+            expect(res.status).toBe(406);
+            expect(res.body.message).toBe(
+                "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
+            );
+            expect(vacationInDb).toBeNull();
+        });
+
+        it("Manda error si no hay días hábiles debido a días feriados causados por eventos de casa", async () => {
+            const token = sign(IDS.employeeCook, "Cocinero");
+            const startDate = "2026-09-21";
+            const endDate = "2026-09-25";
+            const eventRange = localDateRangeToUtcEventRange(startDate, endDate);
+
+            await createEventType(
+                IDS.houseFreeEventType,
+                `Vac casa ${IDS.houseFreeEventType.slice(0, 8)}`,
+            );
+
+            await prisma.house_event.create({
+                data: {
+                    house_event_id: randomUUID(),
+                    house_id: IDS.house,
+                    event_type_id: IDS.houseFreeEventType,
+                    start: eventRange.start,
+                    end: eventRange.end,
+                    name: "Vacación casa libre",
+                    description: "Evento de casa que regala todo el rango",
+                    all_day: true,
+                    is_free_day: true,
+                },
+            });
+
+            const res = await request(app)
+                .post("/vacation/request")
+                .set("Authorization", `Bearer ${token}`)
+                .send({
+                    startDate,
+                    endDate,
+                });
+
+            const vacationInDb = await prisma.vacations_request.findFirst({
+                where: {
+                    employee_id: IDS.employeeCook,
+                    start: new Date(`${startDate}T00:00:00.000Z`),
+                    end: new Date(`${endDate}T00:00:00.000Z`),
+                },
+            });
+
+            expect(res.status).toBe(406);
+            expect(res.body.message).toBe(
+                "Dentro del rango seleccionado no hay ningún día hábil de vacaciones",
+            );
+            expect(vacationInDb).toBeNull();
+        });
+
         it("Error al pedir más días de los que se tienen disponibles", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
@@ -648,14 +805,12 @@ describe("Flujo integración /vacation/request", () => {
             const startDate = "2026-11-09";
             const endDate = "2026-11-25";
 
-            const eventTypeId = randomUUID();
+            const eventTypeId = IDS.remainingFreeEventType;
 
-            await prisma.event_type.create({
-                data: {
-                    name: "Día de prueba en vacaciones",
-                    event_type_id: eventTypeId,
-                },
-            });
+            await createEventType(
+                eventTypeId,
+                `Vac rem ${eventTypeId.slice(0, 8)}`,
+            );
 
             await prisma.global_event.create({
                 data: {

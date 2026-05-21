@@ -20,6 +20,8 @@ exports.updateAbsence = async (req, res) => {
             file,
         });
 
+        console.log(result.code);
+
         if (result.code === RESPONSES.USER.NOT_ACCESS) {
             return res.status(401).json({
                 success: false,

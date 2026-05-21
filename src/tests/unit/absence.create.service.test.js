@@ -1,5 +1,6 @@
 jest.mock("../../model/employee/get.model", () => ({
     findById: jest.fn(),
+    getWorkDays: jest.fn(),
 }));
 
 jest.mock("../../model/absence/get.model", () => ({
@@ -15,18 +16,27 @@ jest.mock("../../model/absence/create.model", () => ({
     createAbsence: jest.fn(),
 }));
 
+jest.mock("../../model/event/get.model", () => ({
+    getGlobalEventsInRange: jest.fn(),
+    getHouseEventsInRange: jest.fn(),
+}));
+
 jest.mock("../../utils/deleteFile", () => ({
     deleteFileIfExists: jest.fn(),
 }));
 
 const { addAbsence } = require("../../service/absence/create.service");
-const { findById } = require("../../model/employee/get.model");
+const { findById, getWorkDays } = require("../../model/employee/get.model");
 const {
     getAbsenceTypeById,
     getHouseAbsencesInRange,
 } = require("../../model/absence/get.model");
 const { getActiveVacationsInRange } = require("../../model/vacation/get.model");
 const { createAbsence } = require("../../model/absence/create.model");
+const {
+    getGlobalEventsInRange,
+    getHouseEventsInRange,
+} = require("../../model/event/get.model");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 const RESPONSES = require("../../utils/responses");
 
@@ -64,11 +74,19 @@ const dateFromTodayUTC = ({ years = 0, months = 0, days = 0 }) => {
 
 const validBody = (overrides = {}) => ({
     absenceTypeId: IDS.type,
-    startDate: "2026-06-20",
-    endDate: "2026-06-21",
+    startDate: "2026-06-22",
+    endDate: "2026-06-23",
     description: "Consulta medica programada",
     ...overrides,
 });
+
+const mondayToFridayWorkDays = [
+    { workday: { name: "Lunes" } },
+    { workday: { name: "Martes" } },
+    { workday: { name: "Miércoles" } },
+    { workday: { name: "Jueves" } },
+    { workday: { name: "Viernes" } },
+];
 
 const setupSuccessMocks = () => {
     findById.mockImplementation((employeeId) => {
@@ -94,13 +112,16 @@ const setupSuccessMocks = () => {
         absenceTypeId: IDS.type,
         name: "Médica",
     });
+    getWorkDays.mockResolvedValue(mondayToFridayWorkDays);
+    getGlobalEventsInRange.mockResolvedValue([]);
+    getHouseEventsInRange.mockResolvedValue([]);
     getActiveVacationsInRange.mockResolvedValue([]);
     getHouseAbsencesInRange.mockResolvedValue([]);
     createAbsence.mockResolvedValue({
         absence_id: "absence-1",
         absenceTypeId: IDS.type,
-        start: new Date("2026-06-20T00:00:00.000Z"),
-        end: new Date("2026-06-21T00:00:00.000Z"),
+        start: new Date("2026-06-22T00:00:00.000Z"),
+        end: new Date("2026-06-23T00:00:00.000Z"),
         description: "Consulta medica programada",
         url: null,
         isDeleted: false,
@@ -306,8 +327,8 @@ describe("absence.create.service — addAbsence", () => {
         getActiveVacationsInRange.mockResolvedValue([
             {
                 vacations_request_id: "vacation-1",
-                start: new Date("2026-06-20T00:00:00.000Z"),
-                end: new Date("2026-06-21T00:00:00.000Z"),
+                start: new Date("2026-06-22T00:00:00.000Z"),
+                end: new Date("2026-06-23T00:00:00.000Z"),
             },
         ]);
 
@@ -323,8 +344,8 @@ describe("absence.create.service — addAbsence", () => {
     it("rechaza si ya hay 10 ausencias registradas en una fecha del rango", async () => {
         getHouseAbsencesInRange.mockResolvedValue(
             Array.from({ length: 10 }, () => ({
-                start: new Date("2026-06-20T00:00:00.000Z"),
-                end: new Date("2026-06-20T00:00:00.000Z"),
+                start: new Date("2026-06-22T00:00:00.000Z"),
+                end: new Date("2026-06-22T00:00:00.000Z"),
             })),
         );
 
@@ -387,13 +408,70 @@ describe("absence.create.service — addAbsence", () => {
         expect(createAbsence).toHaveBeenCalledWith({
             employeeId: IDS.target,
             absenceTypeId: IDS.type,
-            start: new Date("2026-06-20T00:00:00.000Z"),
-            end: new Date("2026-06-21T00:00:00.000Z"),
+            start: new Date("2026-06-22T00:00:00.000Z"),
+            end: new Date("2026-06-23T00:00:00.000Z"),
             description: "Consulta medica programada",
             url: null,
             isDeleted: false,
         });
         expect(result.code).toBe(RESPONSES.ABSENCE.CREATED);
+    });
+
+    it("manda error si dentro del rango solicitado hay únicamente días donde el empleado no trabaja", async () => {
+        const result = await addAbsence({
+            actorEmployeeId: IDS.actor,
+            targetEmployeeId: IDS.target,
+            body: validBody({
+                startDate: "2026-06-20",
+                endDate: "2026-06-21",
+            }),
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.NULL_DATES);
+        expect(createAbsence).not.toHaveBeenCalled();
+    });
+
+    it("permite registrar si queda al menos un día usado después de un día feriado", async () => {
+        getGlobalEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-22T06:00:00.000Z"),
+                end: new Date("2026-06-23T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+
+        const result = await addAbsence({
+            actorEmployeeId: IDS.actor,
+            targetEmployeeId: IDS.target,
+            body: validBody(),
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.CREATED);
+        expect(createAbsence).toHaveBeenCalledWith(
+            expect.objectContaining({
+                start: new Date("2026-06-22T00:00:00.000Z"),
+                end: new Date("2026-06-23T00:00:00.000Z"),
+            }),
+        );
+    });
+
+    it("manda error si no hay días hábiles debido a días feriados causados por eventos gloables", async () => {
+        getGlobalEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-22T06:00:00.000Z"),
+                end: new Date("2026-06-24T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+
+        const result = await addAbsence({
+            actorEmployeeId: IDS.actor,
+            targetEmployeeId: IDS.target,
+            body: validBody(),
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.NULL_DATES);
+        expect(createAbsence).not.toHaveBeenCalled();
     });
 
     it("registra ausencia con evidencia", async () => {

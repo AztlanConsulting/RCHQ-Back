@@ -132,18 +132,10 @@ exports.addAbsence = async ({
             end: convertUTCToMexicanTime(event.end),
         }));
 
-    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
-
-    if (usedDays == 0) {
-        return {
-            code: RESPONSES.VACATION.NULL_DATES
-        }
-    }
-
     const overlappingVacations = await getActiveVacationsInRange(
         absence.targetEmployeeId,
         startDate,
-        endDate,
+        searchEndDate,
     );
 
     if (overlappingVacations.length > 0) {
@@ -156,7 +148,7 @@ exports.addAbsence = async ({
     const registeredAbsences = await getHouseAbsencesInRange(
         targetEmployee.house_id,
         startDate,
-        endDate,
+        searchEndDate,
     );
 
     if (hasAbsenceLimitReached(registeredAbsences, startDate, endDate)) {
@@ -164,6 +156,14 @@ exports.addAbsence = async ({
         return {
             code: RESPONSES.ABSENCE.LIMIT_REACHED,
         };
+    }
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
+
+    if (usedDays == 0) {
+        return {
+            code: RESPONSES.ABSENCE.NULL_DATES
+        }
     }
 
     const evidenceUrl = file ? `uploads/documents/${file.filename}` : null;
