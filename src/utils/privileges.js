@@ -7,6 +7,7 @@ const PRIVILEGES = Object.freeze({
     VIEW_LOGS: "viewLogs",
     VIEW_EVENTS: "viewEvents",
     CREATE_EVENT: "createEvent",
+    DELETE_EVENT: "deleteEvent",
     EDIT_ABSENCES: "editAbsences",
     DELETE_ABSENCES: "deleteAbsences",
     ADD_TO_BLACKLIST: "addToBlacklist",
