@@ -17,7 +17,12 @@ exports.deleteHouseEvent = async (houseEventId, user, clientIp) => {
         return { code: RESPONSES.USER.NOT_ACCESS };
     }
 
-    await softDeleteHouseEvent(houseEventId);
+    try {
+        await softDeleteHouseEvent(houseEventId);
+    } catch (error) {
+        console.error("Error eliminando evento de casa:", error);
+        throw error;
+    }
 
     try {
         await createLog(
