@@ -163,13 +163,21 @@ JOIN public.privileges p ON p.name = 'createEvent'
 WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
 
--- Editar eventos de casa - Administrador y Coordinador
+-- Editar eventos de casa (solo Admin/Coordinador) y eventos personales (todos los roles)
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
-JOIN public.privileges p ON p.name = 'editEvent'
-WHERE r.name IN ('Administrador', 'Coordinador')
-ON CONFLICT DO NOTHING;
+CROSS JOIN public.privileges p
+WHERE p.name = 'editEvent'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
+-- Crear eventos personales - todos los roles
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'createEvent'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Crear ausencias - Administrador y Coordinador
 INSERT INTO public.role_privilege (role_id, privilege_id)
@@ -277,6 +285,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('even-003', 'Evento personal asignado a empleado', false),
 ('even-004', 'Evento de casa asignado a casa', false),
 ('even-005', 'Actualización de evento de casa exitosa', false),
+('even-006', 'Actualización de evento personal exitosa', false),
+('even-007', 'Actualización de empleado asignado a evento personal', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
