@@ -11,6 +11,7 @@ exports.findOverlappingHouseEvents = async ({ houseId, start, end }) => {
     const houseEvents = await prisma.house_event.findMany({
         where: {
             house_id: houseId,
+            is_deleted: false,
             start: { lt: end },
             end: { gt: start },
         },

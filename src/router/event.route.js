@@ -23,10 +23,12 @@ const {
     createPersonalEvent,
 } = require("../controller/event/create.controller");
 const { updateHouseEvent } = require("../controller/event/update.controller");
+const { deleteHouseEvent } = require("../controller/event/delete.controller");
 const {
     houseEventPolicy,
     personalEventPolicy,
     updateHouseEventPolicy,
+    deleteHouseEventPolicy,
 } = require("../policies/event.policies");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
@@ -103,6 +105,16 @@ router.post(
         forceOverlap: req.body?.forceOverlap,
     })),
     createPersonalEvent,
+);
+
+router.delete(
+    "/house/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.DELETE_EVENT),
+    authorize(deleteHouseEventPolicy, (req) => ({ houseId: req.user.houseId })),
+    deleteHouseEvent,
 );
 
 module.exports = router;
