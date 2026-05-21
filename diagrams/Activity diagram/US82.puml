@@ -1,0 +1,71 @@
+@startuml HU82 - Modificar evento personal
+
+|Empleado / Coordinador|
+start
+:Interactuar con el calendario;
+
+|Sistema|
+:Mostrar eventos personales en el calendario;
+
+|Empleado / Coordinador|
+:Seleccionar evento personal existente;
+
+|Sistema|
+:Renderizar modal de detalle del evento;
+
+|Empleado / Coordinador|
+:Seleccionar opción "Editar";
+
+|Sistema|
+:Mostrar formulario de modificación con datos actuales;
+
+repeat
+|Empleado / Coordinador|
+:Modificar campos permitidos:
+- Título
+- Tipo de evento
+- Fecha
+- Hora de inicio
+- Hora de fin
+- Empleados asignados;
+
+|Sistema|
+if (¿Activar "Todo el día"?) then (SI)
+    :Eliminar selectores de hora;
+    :Registrar solo fecha;
+else (NO)
+    :Mantener selectores de hora;
+endif
+
+|Empleado / Coordinador|
+if (¿Modificar descripción?) then (SI)
+    :Editar descripción del evento;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos?) is (NO)
+
+:Validar disponibilidad de horario;
+
+if (¿Existe empalme con otro evento?) then (SI)
+    |Empleado / Coordinador|
+    if (¿Desea guardar los cambios de todos modos?) then (SI)
+        |Sistema|
+        :Modificar evento con traslape;
+    else (NO)
+        |Sistema|
+        :Cancelar modificación;
+        stop
+    endif
+else (NO)
+    |Sistema|
+    :Modificar evento normalmente;
+endif
+
+|Sistema|
+:Notificar éxito al usuario;
+:Actualizar calendario;
+stop
+
+@enduml
