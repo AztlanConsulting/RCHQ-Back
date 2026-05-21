@@ -163,6 +163,26 @@ const ACTIONS = [
         important: false,
     },
     {
+        action_id: "even-002",
+        description: "Evento personal creado con éxito",
+        important: false,
+    },
+    {
+        action_id: "even-003",
+        description: "Evento personal asignado a empleado",
+        important: false,
+    },
+    {
+        action_id: "even-004",
+        description: "Evento de casa asignado a casa",
+        important: false,
+    },
+    {
+        action_id: "even-005",
+        description: "Evento de casa eliminado con éxito",
+        important: true,
+    },
+    {
         action_id: "vaca-005",
         description: "Modificación de vacaciones exitosa",
         important: false,
