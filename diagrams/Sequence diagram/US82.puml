@@ -98,7 +98,7 @@ else Campos completos
     deactivate ReactView
     activate routes
 
-    routes -> controller : putUpdatePersonalEvent(request, response)
+    routes -> controller : updatePersonalEvent(request, response)
     deactivate routes
     activate controller
 
@@ -147,7 +147,7 @@ else Campos completos
                 deactivate ReactView
                 activate routes
 
-                routes -> controller : putUpdatePersonalEvent(request, response)
+                routes -> controller : updatePersonalEvent(request, response)
                 deactivate routes
                 activate controller
             end
@@ -155,7 +155,6 @@ else Campos completos
         else No es Coordinador
 
             controller -->> routes : response.status(409).send("Conflicto")
-            deactivate controller
             activate routes
 
             routes -->> ReactView : send("Conflicto")
@@ -165,7 +164,6 @@ else Campos completos
             ReactView -> Navegador : Mostrar alerta "Existe empalme seleccione otro horario"
             ReactView -> Navegador : Regresar a edición
             deactivate ReactView
-
         end
 
     else No hay empalme OR forceOverlap == true
@@ -173,7 +171,6 @@ else Campos completos
         alt forceOverlap == true AND user.role != "Coordinador"
 
             controller -->> routes : response.status(403).send("No tienes permiso para modificar evento")
-            deactivate controller
             activate routes
 
             routes -->> ReactView : send("No tienes permiso para modificar evento")
