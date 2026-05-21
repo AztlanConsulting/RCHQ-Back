@@ -54,6 +54,7 @@ router.get(
     "/employees/eligible",
     apiLimiter,
     verifyToken,
+    resolveRequesterHouse,
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     getEligibleVacationEmployees,
