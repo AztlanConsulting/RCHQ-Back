@@ -19,8 +19,8 @@ const TEST_EVENT_TYPE_ID = randomUUID();
 const TEST_OTHER_EVENT_TYPE_ID = randomUUID();
 const TEST_PRIVILEGE_EDIT_ID = randomUUID();
 const TEST_PERSONAL_EVENT_ID = randomUUID();
-const TEST_UPDATE_ACTION_ID = "even-006";
-const TEST_EMPLOYEE_UPDATE_ACTION_ID = "even-007";
+const TEST_UPDATE_ACTION_ID = "even-007";
+const TEST_EMPLOYEE_UPDATE_ACTION_ID = "even-008";
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_BASE = "/event/personal";

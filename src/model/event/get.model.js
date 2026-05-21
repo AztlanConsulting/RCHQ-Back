@@ -297,6 +297,7 @@ exports.findPersonalEventById = async (eventId, houseId) => {
     return prisma.personal_event.findFirst({
         where: {
             personal_event_id: eventId,
+            is_deleted: false,
             employee_personal_event: {
                 some: {
                     employee: { house_id: houseId },
@@ -326,6 +327,7 @@ exports.findOverlappingEmployees = async ({
                 ? { personal_event_id: { not: excludeEventId } }
                 : {}),
             personal_event: {
+                is_deleted: false,
                 date: new Date(date),
                 start: {
                     lt: personalEventTimeToUtc(endDate, end),
