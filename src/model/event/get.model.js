@@ -274,16 +274,38 @@ exports.getEmployeesInHouse = (employeeIds, houseId) => {
     });
 };
 
+exports.findPersonalEventById = async (eventId, houseId) => {
+    return prisma.personal_event.findFirst({
+        where: {
+            personal_event_id: eventId,
+            employee_personal_event: {
+                some: {
+                    employee: { house_id: houseId },
+                },
+            },
+        },
+        include: {
+            employee_personal_event: {
+                select: { employee_id: true },
+            },
+        },
+    });
+};
+
 exports.findOverlappingEmployees = async ({
     employeeIds,
     date,
     start,
     end,
     endDate = date,
+    excludeEventId = null,
 }) => {
     const overlaps = await prisma.employee_personal_event.findMany({
         where: {
             employee_id: { in: employeeIds },
+            ...(excludeEventId
+                ? { personal_event_id: { not: excludeEventId } }
+                : {}),
             personal_event: {
                 date: new Date(date),
                 start: {
