@@ -61,7 +61,9 @@ describe("updateHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento con hora", () => {
         it("actualiza el evento, retorna UPDATED y registra el log", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
             createLog.mockResolvedValue();
@@ -76,14 +78,20 @@ describe("updateHouseEvent service", () => {
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
             expect(result.data.houseEvent).toEqual(mockUpdatedEvent);
             expect(result.data.warning).toBeNull();
-            expect(getModel.findHouseEventById).toHaveBeenCalledTimes(1);
-            expect(getModel.findOverlappingHouseEvents).toHaveBeenCalledTimes(1);
+            expect(getModel.findHouseEventByIdAndHouseId).toHaveBeenCalledTimes(
+                1,
+            );
+            expect(getModel.findOverlappingHouseEvents).toHaveBeenCalledTimes(
+                1,
+            );
             expect(updateModel.updateHouseEvent).toHaveBeenCalledTimes(1);
             expect(createLog).toHaveBeenCalledTimes(1);
         });
 
         it("transforma las fechas string a Date antes de llamar al model", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -106,7 +114,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("pasa el eventId correcto al model de actualización", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -128,7 +138,9 @@ describe("updateHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento allDay", () => {
         it("suma un día al end para un evento allDay de un solo día", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -157,7 +169,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("suma un día al end para un evento allDay de varios días", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -190,7 +204,7 @@ describe("updateHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Evento no encontrado", () => {
         it("retorna NOT_FOUND si el evento no existe", async () => {
-            getModel.findHouseEventById.mockResolvedValue(null);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
@@ -206,7 +220,7 @@ describe("updateHouseEvent service", () => {
         });
 
         it("busca el evento con el houseId del usuario", async () => {
-            getModel.findHouseEventById.mockResolvedValue(null);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
 
             await updateService.updateHouseEvent(
                 validEventId,
@@ -215,7 +229,7 @@ describe("updateHouseEvent service", () => {
                 validClientIp,
             );
 
-            expect(getModel.findHouseEventById).toHaveBeenCalledWith(
+            expect(getModel.findHouseEventByIdAndHouseId).toHaveBeenCalledWith(
                 validEventId,
                 validUser.houseId,
             );
@@ -241,7 +255,9 @@ describe("updateHouseEvent service", () => {
             expect(
                 result.data.errors.some((e) => e.field === "eventTypeId"),
             ).toBe(true);
-            expect(getModel.findHouseEventById).not.toHaveBeenCalled();
+            expect(
+                getModel.findHouseEventByIdAndHouseId,
+            ).not.toHaveBeenCalled();
             expect(updateModel.updateHouseEvent).not.toHaveBeenCalled();
         });
 
@@ -257,9 +273,9 @@ describe("updateHouseEvent service", () => {
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
-            expect(
-                result.data.errors.some((e) => e.field === "name"),
-            ).toBe(true);
+            expect(result.data.errors.some((e) => e.field === "name")).toBe(
+                true,
+            );
         });
 
         it("retorna VALIDATION_ERROR si el name está vacío", async () => {
@@ -439,7 +455,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("acepta description nulo u omitido", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -469,7 +487,9 @@ describe("updateHouseEvent service", () => {
         };
 
         it("retorna OVERLAP cuando hay empalme y forceOverlap es false", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
             ]);
@@ -488,7 +508,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("actualiza el evento cuando hay empalme pero forceOverlap es true", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
             ]);
@@ -514,7 +536,9 @@ describe("updateHouseEvent service", () => {
                 ...mockCollision,
                 houseEventId: "66666666-6666-4666-8666-666666666666",
             };
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
                 secondCollision,
@@ -532,7 +556,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("pasa excludeEventId al buscar empalmes para excluir el evento actual", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -543,9 +569,7 @@ describe("updateHouseEvent service", () => {
                 validClientIp,
             );
 
-            expect(
-                getModel.findOverlappingHouseEvents,
-            ).toHaveBeenCalledWith(
+            expect(getModel.findOverlappingHouseEvents).toHaveBeenCalledWith(
                 expect.objectContaining({ excludeEventId: validEventId }),
             );
         });
@@ -556,7 +580,9 @@ describe("updateHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna UPDATED con warning si el log falla", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
             createLog.mockRejectedValue(new Error("Log DB error"));
@@ -583,7 +609,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("retorna warning null si el log se crea correctamente", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
             createLog.mockResolvedValue();
@@ -600,7 +628,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("pasa los datos correctos a createLog", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
             createLog.mockResolvedValue();
@@ -626,7 +656,9 @@ describe("updateHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Defaults del schema", () => {
         it("aplica allDay=false por defecto si no se envía", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -646,7 +678,9 @@ describe("updateHouseEvent service", () => {
         });
 
         it("aplica isFreeDay=false por defecto si no se envía", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             updateModel.updateHouseEvent.mockResolvedValue(mockUpdatedEvent);
 
@@ -671,7 +705,9 @@ describe("updateHouseEvent service", () => {
                 start: new Date(),
                 end: new Date(),
             };
-            getModel.findHouseEventById.mockResolvedValue(mockExistingEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
+                mockExistingEvent,
+            );
             getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
             ]);
