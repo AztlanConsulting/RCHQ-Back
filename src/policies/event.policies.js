@@ -15,6 +15,19 @@ exports.houseEventPolicy = (user, resource) => {
     return false;
 };
 
+exports.deleteHouseEventPolicy = (user, resource) => {
+    if (!user) return false;
+    const privileges = user.privileges || [];
+    if (!privileges.includes(PRIVILEGES.DELETE_EVENT)) return false;
+    if (user.role === ROLES.COORDINATOR) {
+        if (resource?.houseId && resource.houseId !== user.houseId) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+};
+
 exports.personalEventPolicy = (user, resource) => {
     if (!user) return false;
     const privileges = user.privileges || [];
