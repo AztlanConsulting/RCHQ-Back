@@ -95,6 +95,10 @@ exports.updateHouseEvent = async (eventId, user, payload, clientIp) => {
 };
 
 exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
+    if (user.role !== ROLES.COORDINATOR) {
+        return { code: RESPONSES.USER.NOT_ACCESS };
+    }
+
     const parsed = updatePersonalEventSchema.safeParse(payload);
 
     if (!parsed.success) {
@@ -129,15 +133,6 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
     const existingEvent = await findPersonalEventById(eventId, user.houseId);
     if (!existingEvent) {
         return { code: RESPONSES.EVENTS.NOT_FOUND };
-    }
-
-    if (user.role !== ROLES.COORDINATOR) {
-        const isAssigned = existingEvent.employee_personal_event.some(
-            (ep) => ep.employee_id === user.id,
-        );
-        if (!isAssigned) {
-            return { code: RESPONSES.USER.NOT_ACCESS };
-        }
     }
 
     const foundEmployees = await getEmployeesInHouse(employeeIds, user.houseId);
