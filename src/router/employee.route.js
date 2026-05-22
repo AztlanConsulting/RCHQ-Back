@@ -156,6 +156,7 @@ router.put(
   "/:employeeId/basic-info",
   apiLimiter,
   verifyToken,
+  upload.single("picture"),
   requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageEmployees"),
   resolveEmployeeHouse,

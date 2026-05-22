@@ -165,6 +165,23 @@ describe("updateBasicInfoService", () => {
         expect.objectContaining({ curp: "PEPJ800101HDFRRN09" }),
       );
     });
+
+    it("permite actualizar solo la foto de perfil", async () => {
+      await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId: EMPLOYEE_ID,
+        body: {},
+        file: {
+          filename: "avatar.jpg",
+          path: "uploads/avatar.jpg",
+        },
+      });
+
+      expect(updateBasicInfo).toHaveBeenCalledWith(
+        EMPLOYEE_ID,
+        expect.objectContaining({ picture: "uploads/avatar.jpg" }),
+      );
+    });
   });
 
   describe("BAD_REQUEST", () => {
