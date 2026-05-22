@@ -66,8 +66,8 @@ const getOverlapError = (user, overlappedEmployees, forceOverlap) => {
     return null;
 };
 
-exports.updateHouseEvent = async (eventId, data, user, clientIp) => {
-    const parsed = houseEventUpdateSchema.safeParse(data);
+exports.updateHouseEvent = async (eventId, user, payload, clientIp) => {
+    const parsed = houseEventUpdateSchema.safeParse(payload);
 
     if (!parsed.success) {
         return {
