@@ -71,6 +71,7 @@ router.get(
   verifyToken,
   requireRole("Administrador", "Coordinador"),
   requirePrivileges("viewEmployees"),
+  authorize(employeePolicy, (req) => ({ houseId: req.query.house_id })),
   employeeGetController.getEmployeeDetail,
 );
 
@@ -155,6 +156,7 @@ router.put(
   "/:employeeId/basic-info",
   apiLimiter,
   verifyToken,
+  upload.single("picture"),
   requireRole("Administrador", "Coordinador"),
   requirePrivileges("manageEmployees"),
   resolveEmployeeHouse,

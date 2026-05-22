@@ -13,12 +13,14 @@ exports.updateBasicInfo = async (req, res) => {
   const { employeeId } = req.params;
   const requesterId = req.user.id;
   const body = req.body;
+  const file = req.file;
 
   try {
     const result = await updateBasicInfoService({
       requesterId,
       employeeId,
-      body
+      body,
+      file,
     });
 
     if (result.type === RESPONSES.EMPLOYEE.BAD_REQUEST)
