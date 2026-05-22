@@ -24,7 +24,7 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
     };
 };
 
-exports.mapHouseEmployeeForAbsence = (employee) => {
+exports.mapEligibleEmployeeForAbsence = (employee) => {
     if (!employee) return undefined;
 
     return {

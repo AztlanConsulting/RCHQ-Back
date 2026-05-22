@@ -1,12 +1,16 @@
 const { getAllAbsenceTypes } = require("../../model/absence/get.model");
 const {
-    getHouseEmployeesByEmployeeId,
-} = require("../../model/house/get.model");
+    findByIdWithRoleAndHouse,
+} = require("../../model/employee/get.model");
+const {
+    getEligibleVacationEmployees,
+} = require("../../model/vacation/get.model");
 const {
     mapAbsenceType,
-    mapHouseEmployeeForAbsence,
+    mapEligibleEmployeeForAbsence,
 } = require("../../utils/mappers/absence.map");
 const RESPONSES = require("../../utils/responses");
+const { ROLES } = require("../../utils/roles");
 
 exports.getAbsenceTypes = async () => {
     const absenceTypes = await getAllAbsenceTypes();
@@ -35,13 +39,30 @@ exports.getEmployeesAndAbsenceTypes = async (employeeId) => {
         };
     }
 
-    const employees = await getHouseEmployeesByEmployeeId(employeeId);
+    const actorEmployee = await findByIdWithRoleAndHouse(employeeId);
 
-    if (employees === null) {
+    if (!actorEmployee) {
         return {
             code: RESPONSES.EMPLOYEE.NOT_FOUND,
         };
     }
+
+    const actorRoleName = actorEmployee.role?.name;
+    const employeeWhere = {
+        is_active: true,
+        ...(actorRoleName === ROLES.COORDINATOR
+            ? {
+                house_id: actorEmployee.house_id,
+                role: {
+                    name: {
+                        not: ROLES.ADMIN,
+                    },
+                },
+            }
+            : {}),
+    };
+
+    const employees = await getEligibleVacationEmployees(employeeWhere);
 
     if (employees.length === 0) {
         return {
@@ -60,7 +81,7 @@ exports.getEmployeesAndAbsenceTypes = async (employeeId) => {
     return {
         code: RESPONSES.ABSENCE.ADD_FORM_FOUND,
         data: {
-            employees: employees.map(mapHouseEmployeeForAbsence),
+            employees: employees.map(mapEligibleEmployeeForAbsence),
             absenceTypes: absenceTypes.map(mapAbsenceType),
         },
     };
