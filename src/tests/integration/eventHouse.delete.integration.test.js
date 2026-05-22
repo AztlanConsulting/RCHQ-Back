@@ -442,7 +442,7 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
     //  3. LÓGICA DE NEGOCIO
     // ──────────────────────────────────────────────────────
     describe("3. Lógica de negocio", () => {
-        it("retorna 403 si el coordinador intenta eliminar un evento de otra casa", async () => {
+        it("retorna 404 si el coordinador intenta eliminar un evento de otra casa", async () => {
             const token = generateToken();
             const eventOtherHouse = await createTestEvent({
                 house_id: TEST_OTHER_HOUSE_ID,
@@ -452,7 +452,7 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
                 .delete(`${BASE_ROUTE}/${eventOtherHouse.house_event_id}`)
                 .set("Authorization", `Bearer ${token}`);
 
-            expect(res.statusCode).toBe(403);
+            expect(res.statusCode).toBe(404);
         });
 
         it("el evento de la otra casa no se modifica tras el intento fallido", async () => {
@@ -599,7 +599,7 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
             expect(res.statusCode).toBe(403);
         });
 
-        it("un token con houseId distinto no puede eliminar el evento", async () => {
+        it("un token con houseId distinto recibe 404 y no puede eliminar el evento", async () => {
             const token = generateToken({ houseId: TEST_OTHER_HOUSE_ID });
             const event = await createTestEvent();
 
@@ -607,7 +607,7 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
                 .delete(`${BASE_ROUTE}/${event.house_event_id}`)
                 .set("Authorization", `Bearer ${token}`);
 
-            expect(res.statusCode).toBe(403);
+            expect(res.statusCode).toBe(404);
             const inDb = await prisma.house_event.findUnique({
                 where: { house_event_id: event.house_event_id },
             });
