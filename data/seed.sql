@@ -117,17 +117,12 @@ FROM public.privileges p
 WHERE p.name = 'deleteAbsences'
 ON CONFLICT DO NOTHING;
 
--- Roles que solo ven documentos
+-- Todos los roles pueden consultar documentos; ABAC limita el alcance
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
-WHERE r.name IN (
-  'Psicóloga', 'Psicólogo', 'Trabajador Social', 'Enfermera',
-  'Terapeuta', 'Responsable del cuidado de NNA',
-  'Asistente de Dirección', 'Asistente de Finanzas'
-)
-AND p.name = 'viewDocuments'
+WHERE p.name = 'viewDocuments'
 ON CONFLICT DO NOTHING;
 
 -- Todos los roles pueden ver eventos
