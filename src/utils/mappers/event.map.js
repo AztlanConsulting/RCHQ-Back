@@ -83,6 +83,7 @@ exports.mapPersonalCalendarEvent = (event) => {
     });
 
     return {
+        eventId: event.personal_event_id,
         date: event.date,
         start,
         end,
