@@ -71,6 +71,7 @@ router.get(
   verifyToken,
   requireRole("Administrador", "Coordinador"),
   requirePrivileges("viewEmployees"),
+  authorize(employeePolicy, (req) => ({ houseId: req.query.house_id })),
   employeeGetController.getEmployeeDetail,
 );
 
