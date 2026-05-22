@@ -17,6 +17,10 @@ jest.mock("../../model/event/get.model", () => ({
     getHouseEventsInRange: jest.fn(),
 }));
 
+jest.mock("../../model/vacation/get.model", () => ({
+    getActiveVacationsInRange: jest.fn(),
+}));
+
 jest.mock("../../utils/deleteFile", () => ({
     deleteFileIfExists: jest.fn(),
 }));
@@ -37,6 +41,9 @@ const {
     getGlobalEventsInRange,
     getHouseEventsInRange,
 } = require("../../model/event/get.model");
+const {
+    getActiveVacationsInRange,
+} = require("../../model/vacation/get.model");
 const RESPONSES = require("../../utils/responses");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 
@@ -54,6 +61,7 @@ describe("absence.update.service — updateAbsence", () => {
         getWorkDays.mockResolvedValue(mondayToFridayWorkDays);
         getGlobalEventsInRange.mockResolvedValue([]);
         getHouseEventsInRange.mockResolvedValue([]);
+        getActiveVacationsInRange.mockResolvedValue([]);
     });
 
     it("retorna validation error si el payload está vacío", async () => {
@@ -241,6 +249,51 @@ describe("absence.update.service — updateAbsence", () => {
         });
 
         expect(result.code).toBe(RESPONSES.DATES.BAD_DATES);
+    });
+
+    it("retorna ALREADY_REQUEST si al modificar se traslapa con vacaciones activas", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "actor-1",
+            house_id: "house-1",
+            role: { name: "Coordinador" },
+        });
+        getAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            absence_type_id: "type-1",
+            start: new Date("2026-05-10T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            description: "Vieja",
+            url: null,
+            is_deleted: false,
+            absence_type: { name: "Médica" },
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+                name: "Luis",
+                surname: "Martínez",
+                curp: "MALR900205HDFRRS09",
+            },
+        });
+        getActiveVacationsInRange.mockResolvedValue([
+            {
+                vacations_request_id: "vac-1",
+                start: new Date("2026-05-11T00:00:00.000Z"),
+                end: new Date("2026-05-11T00:00:00.000Z"),
+            },
+        ]);
+
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            requesterHouseId: "house-1",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                startDate: "2026-05-11",
+                endDate: "2026-05-13",
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.ALREADY_REQUEST);
+        expect(updateAbsenceById).not.toHaveBeenCalled();
     });
 
     it("actualiza la ausencia y la regresa mapeada", async () => {
