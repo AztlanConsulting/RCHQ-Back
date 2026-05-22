@@ -34,6 +34,13 @@ exports.updateAbsence = async (req, res) => {
             });
         }
 
+        if (result.code === RESPONSES.ABSENCE.WITHOUT_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "Se necesitan tener registrados los días de trabajo",
+            });
+        }
+
         if (result.code === RESPONSES.ABSENCE.INSUFFICIENT_PERMISSIONS) {
             return res.status(403).json({
                 success: false,

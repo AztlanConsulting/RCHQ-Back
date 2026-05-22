@@ -32,6 +32,13 @@ exports.addAbsence = async (req, res) => {
             });
         }
 
+        if (result.code === RESPONSES.ABSENCE.WITHOUT_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "Se necesitan tener registrados los días de trabajo",
+            });
+        }
+
         if (result.code === RESPONSES.USER.NOT_ACCESS) {
             return res.status(401).json({
                 success: false,

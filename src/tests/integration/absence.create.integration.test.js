@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../../prisma");
 const app = require("../../app");
+const RESPONSES = require("../../utils/responses");
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/documents");
 const PDF = Buffer.from("%PDF-1.4 absence create evidence");
@@ -25,6 +26,7 @@ const IDS = {
     adminA: randomUUID(),
     employeeA: randomUUID(),
     inactiveEmployeeA: randomUUID(),
+    noWorkdaysEmployeeA: randomUUID(),
     employeeB: randomUUID(),
     roleDifferentEmployee: randomUUID(),
     absenceTypeA: randomUUID(),
@@ -52,6 +54,7 @@ const TEST_EMAILS = [
     "admin.absence.create@test.com",
     "empleado.a.absence.create@test.com",
     "inactive.a.absence.create@test.com",
+    "no.workdays.absence.create@test.com",
     "empleado.b.absence.create@test.com",
     "role.different.absence.create@test.com",
 ];
@@ -232,6 +235,7 @@ const cleanupCreatedAbsencesAndLogs = async () => {
         IDS.adminA,
         IDS.employeeA,
         IDS.inactiveEmployeeA,
+        IDS.noWorkdaysEmployeeA,
         IDS.employeeB,
         IDS.roleDifferentEmployee,
     ];
@@ -556,6 +560,20 @@ const seed = async () => {
                 type: "nomina",
             },
             {
+                employee_id: IDS.noWorkdaysEmployeeA,
+                house_id: IDS.houseA,
+                role_id: IDS.employeeRole,
+                name: "Nora",
+                surname: "SinDias",
+                is_active: true,
+                email: "no.workdays.absence.create@test.com",
+                password: "hashed",
+                has_first_login: false,
+                curp: "NOAC900101MDFABC01",
+                start_date: new Date("2024-01-01T00:00:00.000Z"),
+                type: "nomina",
+            },
+            {
                 employee_id: IDS.employeeB,
                 house_id: IDS.houseB,
                 role_id: IDS.employeeRole,
@@ -704,6 +722,20 @@ describe("POST /absence/:employeeId/add", () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.body.message).toBe("tipo de ausencia no encontrado");
+    });
+
+    it("406 si el empleado no tiene días de trabajo registrados", async () => {
+        const res = await request(app)
+            .post(`/absence/${IDS.noWorkdaysEmployeeA}/add`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .send(validBody());
+
+        expect(RESPONSES.ABSENCE.WITHOUT_DATES).toBe("ABSENCE_WITHOUT_DATES");
+        expect(res.statusCode).toBe(406);
+        expect(res.body).toMatchObject({
+            success: false,
+            message: "Se necesitan tener registrados los días de trabajo",
+        });
     });
 
     it("422 si faltan campos obligatorios", async () => {
