@@ -183,5 +183,11 @@ exports.getUpdateFormData = async (user) => {
         getAllWorkdays(),
         getFrecuencyPaymentOptions(),
     ]);
-    return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
+    return {
+        roles: roles.filter((role) => role.name !== ROLES.ADMIN),
+        houses,
+        workdays,
+        frecuencyOptions,
+        houseId: user.houseId,
+    };
 };

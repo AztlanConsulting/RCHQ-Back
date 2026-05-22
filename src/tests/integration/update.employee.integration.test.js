@@ -182,6 +182,7 @@ describe("GET /employee/update-form", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.roles)).toBe(true);
+    expect(res.body.roles.some((role) => role.name === "Administrador")).toBe(false);
     expect(Array.isArray(res.body.houses)).toBe(true);
     expect(Array.isArray(res.body.workdays)).toBe(true);
   });
