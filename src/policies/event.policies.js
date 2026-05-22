@@ -65,3 +65,13 @@ exports.updatePersonalEventPolicy = (user, resource) => {
     if (user.role === ROLES.COORDINATOR) return true;
     return Boolean(user.id);
 };
+
+exports.deletePersonalEventPolicy = (user, resource) => {
+    if (!user) return false;
+    const privileges = user.privileges || [];
+    if (!privileges.includes(PRIVILEGES.DELETE_EVENT)) return false;
+    if (!user.houseId) return false;
+    if (resource?.houseId && resource.houseId !== user.houseId) return false;
+    if (user.role === ROLES.COORDINATOR) return true;
+    return Boolean(user.id);
+};
