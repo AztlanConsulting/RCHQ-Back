@@ -7,31 +7,9 @@ const RESPONSES = require("../../utils/responses");
 
 exports.createHouseEvent = async (req, res) => {
     try {
-        const { houseId } = req.user;
-        const {
-            eventTypeId,
-            name,
-            start,
-            end,
-            allDay,
-            isFreeDay,
-            description,
-            forceOverlap,
-        } = req.body;
-
         const result = await createHouseEvent(
-            {
-                houseId,
-                eventTypeId,
-                name,
-                start,
-                end,
-                allDay,
-                isFreeDay,
-                description,
-                forceOverlap,
-            },
             req.user,
+            req.body,
             getClientIp(req),
         );
 
