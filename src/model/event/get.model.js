@@ -91,6 +91,7 @@ exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
 exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
     return await prisma.personal_event.findMany({
         where: {
+            is_deleted: false,
             date: {
                 gte: startDate,
                 lte: endDate,
@@ -128,6 +129,7 @@ exports.getHouseCalendarPersonalEventsInRange = async (
 ) => {
     return await prisma.personal_event.findMany({
         where: {
+            is_deleted: false,
             date: {
                 gte: startDate,
                 lte: endDate,

@@ -6,3 +6,10 @@ exports.softDeleteHouseEvent = async (houseEventId) => {
         data: { is_deleted: true },
     });
 };
+
+exports.softDeletePersonalEvent = async (personalEventId) => {
+    return await prisma.personal_event.update({
+        where: { personal_event_id: personalEventId },
+        data: { is_deleted: true },
+    });
+};

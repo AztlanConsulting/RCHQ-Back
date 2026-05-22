@@ -26,13 +26,17 @@ const {
     updateHouseEvent,
     updatePersonalEvent,
 } = require("../controller/event/update.controller");
-const { deleteHouseEvent } = require("../controller/event/delete.controller");
+const {
+    deleteHouseEvent,
+    deletePersonalEvent,
+} = require("../controller/event/delete.controller");
 const {
     houseEventPolicy,
     personalEventPolicy,
     updateHouseEventPolicy,
     updatePersonalEventPolicy,
     deleteHouseEventPolicy,
+    deletePersonalEventPolicy,
 } = require("../policies/event.policies");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
@@ -132,6 +136,16 @@ router.delete(
     requirePrivileges(PRIVILEGES.DELETE_EVENT),
     authorize(deleteHouseEventPolicy, (req) => ({ houseId: req.user.houseId })),
     deleteHouseEvent,
+);
+
+router.delete(
+    "/personal/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.DELETE_EVENT),
+    authorize(deletePersonalEventPolicy, (req) => ({ houseId: req.user.houseId })),
+    deletePersonalEvent,
 );
 
 module.exports = router;
