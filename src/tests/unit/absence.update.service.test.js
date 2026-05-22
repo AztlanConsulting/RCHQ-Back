@@ -1,5 +1,6 @@
 jest.mock("../../model/employee/get.model", () => ({
     findByIdWithRoleAndHouse: jest.fn(),
+    getWorkDays: jest.fn(),
 }));
 
 jest.mock("../../model/absence/get.model", () => ({
@@ -11,12 +12,24 @@ jest.mock("../../model/absence/update.model", () => ({
     updateAbsenceById: jest.fn(),
 }));
 
+jest.mock("../../model/event/get.model", () => ({
+    getGlobalEventsInRange: jest.fn(),
+    getHouseEventsInRange: jest.fn(),
+}));
+
+jest.mock("../../model/vacation/get.model", () => ({
+    getActiveVacationsInRange: jest.fn(),
+}));
+
 jest.mock("../../utils/deleteFile", () => ({
     deleteFileIfExists: jest.fn(),
 }));
 
 const { updateAbsence } = require("../../service/absence/update.service");
-const { findByIdWithRoleAndHouse } = require("../../model/employee/get.model");
+const {
+    findByIdWithRoleAndHouse,
+    getWorkDays,
+} = require("../../model/employee/get.model");
 const {
     getAbsenceById,
     getAbsenceTypeById,
@@ -24,12 +37,31 @@ const {
 const {
     updateAbsenceById,
 } = require("../../model/absence/update.model");
+const {
+    getGlobalEventsInRange,
+    getHouseEventsInRange,
+} = require("../../model/event/get.model");
+const {
+    getActiveVacationsInRange,
+} = require("../../model/vacation/get.model");
 const RESPONSES = require("../../utils/responses");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
+
+const mondayToFridayWorkDays = [
+    { workday: { name: "Lunes" } },
+    { workday: { name: "Martes" } },
+    { workday: { name: "Miércoles" } },
+    { workday: { name: "Jueves" } },
+    { workday: { name: "Viernes" } },
+];
 
 describe("absence.update.service — updateAbsence", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        getWorkDays.mockResolvedValue(mondayToFridayWorkDays);
+        getGlobalEventsInRange.mockResolvedValue([]);
+        getHouseEventsInRange.mockResolvedValue([]);
+        getActiveVacationsInRange.mockResolvedValue([]);
     });
 
     it("retorna validation error si el payload está vacío", async () => {
@@ -219,6 +251,51 @@ describe("absence.update.service — updateAbsence", () => {
         expect(result.code).toBe(RESPONSES.DATES.BAD_DATES);
     });
 
+    it("retorna ALREADY_REQUEST si al modificar se traslapa con vacaciones activas", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "actor-1",
+            house_id: "house-1",
+            role: { name: "Coordinador" },
+        });
+        getAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            absence_type_id: "type-1",
+            start: new Date("2026-05-10T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            description: "Vieja",
+            url: null,
+            is_deleted: false,
+            absence_type: { name: "Médica" },
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+                name: "Luis",
+                surname: "Martínez",
+                curp: "MALR900205HDFRRS09",
+            },
+        });
+        getActiveVacationsInRange.mockResolvedValue([
+            {
+                vacations_request_id: "vac-1",
+                start: new Date("2026-05-11T00:00:00.000Z"),
+                end: new Date("2026-05-11T00:00:00.000Z"),
+            },
+        ]);
+
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            requesterHouseId: "house-1",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                startDate: "2026-05-11",
+                endDate: "2026-05-13",
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.ALREADY_REQUEST);
+        expect(updateAbsenceById).not.toHaveBeenCalled();
+    });
+
     it("actualiza la ausencia y la regresa mapeada", async () => {
         findByIdWithRoleAndHouse.mockResolvedValue({
             employee_id: "actor-1",
@@ -303,6 +380,142 @@ describe("absence.update.service — updateAbsence", () => {
                 },
             },
         });
+    });
+
+    it("manda error si dentro de la solicitud no hay días hábiles", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "actor-1",
+            house_id: "house-1",
+            role: { name: "Coordinador" },
+        });
+        getAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            employee_id: "employee-1",
+            start: new Date("2026-05-11T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+            },
+        });
+
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                startDate: "2026-06-20",
+                endDate: "2026-06-21",
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.NULL_DATES);
+        expect(updateAbsenceById).not.toHaveBeenCalled();
+    });
+
+    it("modifica si queda al menos un día usado después de un evento libre", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "actor-1",
+            house_id: "house-1",
+            role: { name: "Coordinador" },
+        });
+        getAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            employee_id: "employee-1",
+            absence_type_id: "type-1",
+            start: new Date("2026-05-11T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            description: "Vieja",
+            url: "",
+            is_deleted: false,
+            absence_type: { name: "Médica" },
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+                name: "Luis",
+                surname: "Martínez",
+                curp: "MALR900205HDFRRS09",
+            },
+        });
+        getHouseEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-22T06:00:00.000Z"),
+                end: new Date("2026-06-23T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+        updateAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            absence_type_id: "type-1",
+            start: new Date("2026-06-22T00:00:00.000Z"),
+            end: new Date("2026-06-23T00:00:00.000Z"),
+            description: "Vieja",
+            url: "",
+            is_deleted: false,
+            absence_type: { name: "Médica" },
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+                name: "Luis",
+                surname: "Martínez",
+                curp: "MALR900205HDFRRS09",
+            },
+        });
+
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            requesterHouseId: "house-1",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                startDate: "2026-06-22",
+                endDate: "2026-06-23",
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.UPDATED);
+        expect(updateAbsenceById).toHaveBeenCalledWith(
+            "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            {
+                start: new Date("2026-06-22T00:00:00.000Z"),
+                end: new Date("2026-06-23T00:00:00.000Z"),
+            },
+        );
+    });
+
+    it("manda error si dentro de los días solicitados no hay ningún día hábil", async () => {
+        findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "actor-1",
+            house_id: "house-1",
+            role: { name: "Coordinador" },
+        });
+        getAbsenceById.mockResolvedValue({
+            absence_id: "absence-1",
+            employee_id: "employee-1",
+            start: new Date("2026-05-11T00:00:00.000Z"),
+            end: new Date("2026-05-12T00:00:00.000Z"),
+            employee: {
+                employee_id: "employee-1",
+                house_id: "house-1",
+            },
+        });
+        getGlobalEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-22T06:00:00.000Z"),
+                end: new Date("2026-06-24T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                startDate: "2026-06-22",
+                endDate: "2026-06-23",
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.NULL_DATES);
+        expect(updateAbsenceById).not.toHaveBeenCalled();
     });
 
     it("limpia el archivo nuevo si falla la validación con multipart", async () => {

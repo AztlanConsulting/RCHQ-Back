@@ -1,5 +1,3 @@
-// src/tests/unit/vacation.registerEmployee.service.test.js
-
 jest.mock("../../model/employee/get.model", () => ({
     getWorkDays: jest.fn(),
     findByIdWithRoleAndHouse: jest.fn(),
@@ -11,6 +9,7 @@ jest.mock("../../model/vacation/get.model", () => ({
 
 jest.mock("../../model/event/get.model", () => ({
     getGlobalEventsInRange: jest.fn(),
+    getHouseEventsInRange: jest.fn(),
 }));
 
 jest.mock("../../service/vacation/get.service", () => ({
@@ -40,6 +39,10 @@ const {
 
 const {
     getGlobalEventsInRange,
+} = require("../../model/event/get.model");
+
+const {
+    getHouseEventsInRange,
 } = require("../../model/event/get.model");
 
 const {
@@ -74,6 +77,7 @@ describe("US28 - registerEmployeeVacation service", () => {
     const validEndDate = "2026-06-26";
     const parsedValidStartDate = makeUTCDate(2026, 6, 22);
     const parsedValidEndDate = makeUTCDate(2026, 6, 26);
+    const parsedValidSearchEndDate = makeUTCDate(2026, 6, 27);
 
     const todayDate = "2026-04-30";
     const parsedTodayDate = makeUTCDate(2026, 4, 30);
@@ -107,6 +111,7 @@ describe("US28 - registerEmployeeVacation service", () => {
         remainingDays = 14,
         activeVacations = [],
         globalEvents = [],
+        houseEvents = [],
         vacationResult,
     } = {}) {
         findByIdWithRoleAndHouse
@@ -124,6 +129,9 @@ describe("US28 - registerEmployeeVacation service", () => {
         });
 
         getGlobalEventsInRange.mockResolvedValue(globalEvents);
+
+        getHouseEventsInRange.mockResolvedValue(houseEvents);
+        
         getActiveVacationsInRange.mockResolvedValue(activeVacations);
 
         registerVacation.mockResolvedValue(
@@ -169,6 +177,7 @@ describe("US28 - registerEmployeeVacation service", () => {
             rawStartDate: startDate,
             rawEndDate: endDate,
             ipAddress,
+            requesterHouseId: options.requesterHouseId,
         });
     }
 
@@ -201,7 +210,12 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(getRemainingVacations).toHaveBeenCalledWith(targetEmployeeId);
             expect(getGlobalEventsInRange).toHaveBeenCalledWith(
                 parsedValidStartDate,
-                parsedValidEndDate
+                parsedValidSearchEndDate
+            );
+            expect(getHouseEventsInRange).toHaveBeenCalledWith(
+                undefined,
+                parsedValidStartDate,
+                parsedValidSearchEndDate
             );
             expect(getActiveVacationsInRange).toHaveBeenCalledWith(
                 targetEmployeeId,
@@ -256,6 +270,25 @@ describe("US28 - registerEmployeeVacation service", () => {
 
             expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
             expect(registerVacation).toHaveBeenCalledTimes(1);
+        });
+
+        test("no registra como usados los días que el empleado no trabaja", async () => {
+            getWorkDays.mockResolvedValueOnce([
+                { workday: { name: "Lunes" } },
+                { workday: { name: "Miércoles" } },
+                { workday: { name: "Viernes" } },
+            ]);
+
+            const result = await callRegisterVacation();
+
+            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
+            expect(registerVacation).toHaveBeenCalledWith(
+                vacationId,
+                targetEmployeeId,
+                parsedValidStartDate,
+                parsedValidEndDate,
+                3
+            );
         });
     });
 
@@ -460,8 +493,8 @@ describe("US28 - registerEmployeeVacation service", () => {
         test("descuenta eventos globales como días no usados", async () => {
             getGlobalEventsInRange.mockResolvedValueOnce([
                 {
-                    start: makeUTCDate(2026, 6, 24),
-                    end: makeUTCDate(2026, 6, 24),
+                    start: new Date("2026-06-24T06:00:00.000Z"),
+                    end: new Date("2026-06-25T05:59:00.000Z"),
                     isFreeDay: true,
                 },
             ]);
@@ -469,6 +502,34 @@ describe("US28 - registerEmployeeVacation service", () => {
             const result = await callRegisterVacation();
 
             expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
+            expect(registerVacation).toHaveBeenCalledWith(
+                vacationId,
+                targetEmployeeId,
+                parsedValidStartDate,
+                parsedValidEndDate,
+                4
+            );
+        });
+
+        test("no cuenta los días feriados de los eventos de casa como usados", async () => {
+            getHouseEventsInRange.mockResolvedValueOnce([
+                {
+                    start: new Date("2026-06-25T06:00:00.000Z"),
+                    end: new Date("2026-06-26T05:59:00.000Z"),
+                    isFreeDay: true,
+                },
+            ]);
+
+            const result = await callRegisterVacation({
+                requesterHouseId: "house-1",
+            });
+
+            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
+            expect(getHouseEventsInRange).toHaveBeenCalledWith(
+                "house-1",
+                parsedValidStartDate,
+                parsedValidSearchEndDate
+            );
             expect(registerVacation).toHaveBeenCalledWith(
                 vacationId,
                 targetEmployeeId,

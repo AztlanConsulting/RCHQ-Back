@@ -270,6 +270,8 @@ async function cleanDb() {
   await prisma.employee_documents.deleteMany();
   await prisma.documents.deleteMany();
 
+  await prisma.blacklist.deleteMany();
+
   await prisma.employee_address.deleteMany();
   await prisma.vacations_request.deleteMany();
 

@@ -182,6 +182,7 @@ describe("GET /employee/update-form", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.roles)).toBe(true);
+    expect(res.body.roles.some((role) => role.name === "Administrador")).toBe(false);
     expect(Array.isArray(res.body.houses)).toBe(true);
     expect(Array.isArray(res.body.workdays)).toBe(true);
   });
@@ -307,6 +308,19 @@ describe("PUT /employee/:employeeId/basic-info", () => {
       .set(json())
       .send({ name: "Ángel", surname: "Muñoz" });
     expect(res.statusCode).toBe(200);
+  });
+
+  it("retorna 200 y actualiza solo la foto de perfil", async () => {
+    const res = await request(app)
+      .put(`/employee/${EMP_ID}/basic-info`)
+      .set(authHeader())
+      .attach("picture", Buffer.from("fake-image-content"), "avatar.jpg");
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const updated = await prisma.employee.findUnique({ where: { employee_id: EMP_ID } });
+    expect(updated.picture).toMatch(/^uploads\/.+\.jpg$/);
   });
 });
 

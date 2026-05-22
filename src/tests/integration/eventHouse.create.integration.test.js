@@ -81,7 +81,10 @@ const seedDependencies = async () => {
         "Coordinador",
         TEST_ROLE_ID,
     );
-    const adminRoleId = await getOrCreateRoleId("Administrador", TEST_ADMIN_ROLE_ID);
+    const adminRoleId = await getOrCreateRoleId(
+        "Administrador",
+        TEST_ADMIN_ROLE_ID,
+    );
     const employeeRoleId = await getOrCreateRoleId(
         "Mantenimiento",
         TEST_EMPLOYEE_ROLE_ID,
@@ -395,8 +398,8 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                     house_event_id: res.body.data.houseEvent.houseEventId,
                 },
             });
-            expect(inDb.start.toISOString()).toBe("2026-06-15T00:00:00.000Z");
-            expect(inDb.end.toISOString()).toBe("2026-06-16T00:00:00.000Z");
+            expect(inDb.start.toISOString()).toBe("2026-06-15T06:00:00.000Z");
+            expect(inDb.end.toISOString()).toBe("2026-06-16T06:00:00.000Z");
         });
 
         it("crea un evento allDay de varios días", async () => {
@@ -419,8 +422,8 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                     house_event_id: res.body.data.houseEvent.houseEventId,
                 },
             });
-            expect(inDb.start.toISOString()).toBe("2026-06-15T00:00:00.000Z");
-            expect(inDb.end.toISOString()).toBe("2026-06-18T00:00:00.000Z");
+            expect(inDb.start.toISOString()).toBe("2026-06-15T06:00:00.000Z");
+            expect(inDb.end.toISOString()).toBe("2026-06-18T06:00:00.000Z");
         });
 
         it("crea un evento sin description (campo opcional)", async () => {
@@ -886,21 +889,6 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 .send(buildValidEventBody());
 
             expect(res.statusCode).toBe(403);
-        });
-
-        it("Administrador puede crear eventos en cualquier casa", async () => {
-            const adminToken = generateToken({
-                role: "Administrador",
-                houseId: TEST_OTHER_HOUSE_ID,
-            });
-
-            const res = await request(app)
-                .post(API_ROUTE)
-                .set("Authorization", `Bearer ${adminToken}`)
-                .send(buildValidEventBody());
-
-            expect(res.statusCode).toBe(201);
-            expect(res.body.data.houseEvent.houseId).toBe(TEST_OTHER_HOUSE_ID);
         });
 
         it("el houseId del token tiene precedencia sobre el body (no se puede falsificar)", async () => {

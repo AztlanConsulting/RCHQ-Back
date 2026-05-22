@@ -1,4 +1,4 @@
-const { findByIdWithRoleAndHouse } = require("../../model/employee/get.model");
+const { findByIdWithRoleAndHouse, getWorkDays } = require("../../model/employee/get.model");
 const {
     getAbsenceById,
     getAbsenceTypeById,
@@ -9,13 +9,20 @@ const {
 const {
     absenceUpdateInputSchema,
 } = require("../../schemas/absence/update.schemas");
+const { 
+    calculateUsedDays,
+    stringToDate,
+} = require("../../utils/dates");
+const {
+    getAbsenceCalculationContext,
+} = require("../../utils/absenceUsedDays");
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
 const RESPONSES = require("../../utils/responses");
-const { stringToDate } = require("../../utils/dates");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 
 exports.updateAbsence = async ({
     actorEmployeeId,
+    requesterHouseId,
     absenceId,
     body,
     file,
@@ -85,6 +92,14 @@ exports.updateAbsence = async ({
         }
     }
 
+    const workDays = await getWorkDays(currentAbsence.employee.employee_id);
+    if (workDays.length == 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.ABSENCE.WITHOUT_DATES
+        }
+    }
+
     const nextStartDate = validation.data.body.startDate
         ? stringToDate(validation.data.body.startDate)
         : currentAbsence.start;
@@ -96,6 +111,23 @@ exports.updateAbsence = async ({
         deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.DATES.BAD_DATES,
+        };
+    }
+
+    const {
+        freeDays,
+        overlappingVacations,
+    } = await getAbsenceCalculationContext({
+        employeeId: currentAbsence.employee.employee_id,
+        houseId: requesterHouseId,
+        startDate: nextStartDate,
+        endDate: nextEndDate,
+    });
+
+    if (overlappingVacations.length > 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.VACATION.ALREADY_REQUEST,
         };
     }
 
@@ -115,6 +147,15 @@ exports.updateAbsence = async ({
 
     if (validation.data.body.endDate !== undefined) {
         updateData.end = nextEndDate;
+    }
+
+    const usedDays = calculateUsedDays(workDays, nextStartDate, nextEndDate, freeDays, true);
+
+    if (usedDays == 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.ABSENCE.NULL_DATES
+        }
     }
 
     const fileUrl = file ? `uploads/documents/${file.filename}` : undefined;

@@ -1,4 +1,5 @@
 const { readLogIp } = require("../logIp");
+const { convertUTCToMexicanTime } = require("../dates");
 
 exports.extractAffectedIds = (logs) => [
     ...new Set(
@@ -17,22 +18,15 @@ exports.buildAffectedEntityMap = (
     affectedEmployees = [],
     affectedHouses = [],
     affectedEvents = [],
-) => (
+) =>
     new Map([
         ...affectedEmployees.map((employee) => [
             employee.employee_id,
             `${employee.name} ${employee.surname}`.trim(),
         ]),
-        ...affectedHouses.map((house) => [
-            house.house_id,
-            house.name,
-        ]),
-        ...affectedEvents.map((event) => [
-            event.id,
-            event.name,
-        ]),
-    ])
-);
+        ...affectedHouses.map((house) => [house.house_id, house.name]),
+        ...affectedEvents.map((event) => [event.id, event.name]),
+    ]);
 
 exports.mapLog = (log, affectedEntityMap) => ({
     logId: log.log_id,
@@ -46,5 +40,5 @@ exports.mapLog = (log, affectedEntityMap) => ({
     ipAddress: readLogIp(log.ip_address),
     action: log.action.description,
     important: log.action.important,
-    moment: log.moment,
+    moment: convertUTCToMexicanTime(log.moment),
 });

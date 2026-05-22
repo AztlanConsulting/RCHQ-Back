@@ -23,8 +23,20 @@ const {
     createPersonalEvent,
 } = require("../controller/event/create.controller");
 const {
+    updateHouseEvent,
+    updatePersonalEvent,
+} = require("../controller/event/update.controller");
+const {
+    deleteHouseEvent,
+    deletePersonalEvent,
+} = require("../controller/event/delete.controller");
+const {
     houseEventPolicy,
     personalEventPolicy,
+    updateHouseEventPolicy,
+    updatePersonalEventPolicy,
+    deleteHouseEventPolicy,
+    deletePersonalEventPolicy,
 } = require("../policies/event.policies");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
@@ -71,6 +83,16 @@ router.post(
     createHouseEvent,
 );
 
+router.put(
+    "/house/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.EDIT_EVENT),
+    authorize(updateHouseEventPolicy, (req) => ({ houseId: req.user.houseId })),
+    updateHouseEvent,
+);
+
 router.get(
     "/personal/employees",
     apiLimiter,
@@ -91,6 +113,41 @@ router.post(
         forceOverlap: req.body?.forceOverlap,
     })),
     createPersonalEvent,
+);
+
+router.put(
+    "/personal/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.EDIT_EVENT),
+    authorize(updatePersonalEventPolicy, (req) => ({
+        houseId: req.user.houseId,
+        forceOverlap: req.body?.forceOverlap,
+    })),
+    updatePersonalEvent,
+);
+
+router.delete(
+    "/house/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.DELETE_EVENT),
+    authorize(deleteHouseEventPolicy, (req) => ({ houseId: req.user.houseId })),
+    deleteHouseEvent,
+);
+
+router.delete(
+    "/personal/:eventId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.DELETE_EVENT),
+    authorize(deletePersonalEventPolicy, (req) => ({
+        houseId: req.user.houseId,
+    })),
+    deletePersonalEvent,
 );
 
 module.exports = router;

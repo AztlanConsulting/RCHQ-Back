@@ -1,9 +1,4 @@
-const CST_OFFSET_MS = 6 * 60 * 60 * 1000;
-
-const toCST = (dt) => {
-    if (!dt) return null;
-    return new Date(dt.getTime() - CST_OFFSET_MS);
-};
+const { convertUTCToMexicanTime, combineDateAndTime } = require("../dates");
 
 exports.mapHouseEvent = (event) => {
     if (!event) return null;
@@ -13,10 +8,11 @@ exports.mapHouseEvent = (event) => {
         houseId: event.house_id,
         eventTypeId: event.event_type_id,
         name: event.name,
-        start: toCST(event.start),
-        end: toCST(event.end),
+        start: convertUTCToMexicanTime(event.start),
+        end: convertUTCToMexicanTime(event.end),
         allDay: event.all_day,
         isFreeDay: event.is_free_day,
+        isDeleted: event.is_deleted,
         description: event.description,
     };
 };
@@ -43,26 +39,64 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
         focus: "ausencias",
         scope: "personal",
         color: "#F97316",
-        lastsAllDay: true,
+        allDay: true,
     };
 };
 
 exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
+    const calendarEnd = new Date(vacation.end);
+    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+
     return {
         vacationId: vacation.vacations_request_id,
         employeeId: vacation.employee.employee_id,
         name: `${vacation.employee.name} ${vacation.employee.surname}`.trim(),
         curp: vacation.employee.curp,
         start: vacation.start,
-        end: vacation.end,
+        end: calendarEnd,
+        startDate: vacation.start,
+        endDate: vacation.end,
         status: vacation.status,
         feedback: vacation.feedback,
         link: vacation.url || "",
         focus: "vacaciones",
         scope: "house",
         color: vacation.status == 1 ? "#1439BA" : "#5673DB",
-        lastsAllDay: true,
+        allDay: true,
         usedDays,
+    };
+};
+
+exports.mapPersonalCalendarEvent = (event) => {
+    const peopleData = [];
+    const start = combineDateAndTime(event.date, event.start);
+    const endCalendarDate = event.all_day
+        ? convertUTCToMexicanTime(event.end)
+        : event.date;
+    const end = combineDateAndTime(endCalendarDate, event.end);
+
+    event.employee_personal_event.forEach((employeeEvent) => {
+        peopleData.push({
+            name: `${employeeEvent.employee.name} ${employeeEvent.employee.surname}`.trim(),
+            id: employeeEvent.employee.employee_id,
+        });
+    });
+
+    return {
+        eventId: event.personal_event_id,
+        date: event.date,
+        start,
+        end,
+        startDate: start,
+        endDate: end,
+        name: event.name,
+        type: event.event_type.name,
+        focus: "eventos",
+        scope: "personal",
+        description: event.description ?? "",
+        color: "#EFBF22",
+        allDay: event.all_day || false,
+        peopleInsideEvent: peopleData,
     };
 };
 
@@ -78,13 +112,14 @@ exports.mapPersonalEvent = (event, options = {}) => {
         name: event.name,
         description: event.description,
         allDay: event.all_day,
+        isDeleted: event.is_deleted,
         employeeIds: options.employeeIds,
     };
 };
 
 const formatTime = (time) => {
     if (!time) return null;
-    return toCST(time).toISOString().slice(11, 19);
+    return convertUTCToMexicanTime(time).toISOString().slice(11, 19);
 };
 
 exports.mapPersonalEventOverlap = (row) => {

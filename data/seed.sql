@@ -71,7 +71,9 @@ VALUES
 ('00000001-0000-4000-8000-000000000008', 'createEvent'),
 ('00000001-0000-4000-8000-000000000009', 'editAbsences'),
 ('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
-('00000001-0000-4000-8000-000000000011', 'addAbsences')
+('00000001-0000-4000-8000-000000000011', 'addAbsences'),
+('00000001-0000-4000-8000-000000000013', 'deleteEvent'),
+('00000001-0000-4000-8000-000000000014', 'editEvent')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -115,17 +117,12 @@ FROM public.privileges p
 WHERE p.name = 'deleteAbsences'
 ON CONFLICT DO NOTHING;
 
--- Roles que solo ven documentos
+-- Todos los roles pueden consultar documentos; ABAC limita el alcance
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
-WHERE r.name IN (
-  'Psicóloga', 'Psicólogo', 'Trabajador Social', 'Enfermera',
-  'Terapeuta', 'Responsable del cuidado de NNA',
-  'Asistente de Dirección', 'Asistente de Finanzas'
-)
-AND p.name = 'viewDocuments'
+WHERE p.name = 'viewDocuments'
 ON CONFLICT DO NOTHING;
 
 -- Todos los roles pueden ver eventos
@@ -154,13 +151,37 @@ WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Direcció
 AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
 ON CONFLICT DO NOTHING;
 
--- Crear eventos - Casa, Global,
+-- Crear eventos - Casa, Global
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 JOIN public.privileges p ON p.name = 'createEvent'
 WHERE r.name IN ('Administrador', 'Coordinador')
 ON CONFLICT DO NOTHING;
+
+-- Eliminar eventos de casa - Administrador y Coordinador
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+JOIN public.privileges p ON p.name = 'deleteEvent'
+WHERE r.name IN ('Administrador', 'Coordinador')
+ON CONFLICT DO NOTHING;
+
+-- Editar eventos de casa - Administrador y Coordinador
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'editEvent'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
+-- Crear eventos personales - todos los roles
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'createEvent'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Crear ausencias - Administrador y Coordinador
 INSERT INTO public.role_privilege (role_id, privilege_id)
@@ -266,6 +287,11 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('even-001', 'Evento de casa creado con éxito', false),
 ('even-002', 'Evento personal creado con éxito', false),
 ('even-003', 'Evento personal asignado a empleado', false),
+('even-004', 'Evento de casa asignado a casa', false),
+('even-007', 'Actualización de evento personal exitosa', false),
+('even-008', 'Actualización de empleado asignado a evento personal', false),
+('even-005', 'Evento de casa eliminado con éxito', true),
+('even-006', 'Actualización de evento de casa exitosa', false),
 ('empl-001', 'Empleado creado con éxito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
@@ -638,7 +664,7 @@ SELECT
   NULL,
   '2025-01-20',
   NULL,
-  '+52 55 5555 1002',
+  '55 5555 1002',
   NULL,
   NULL
 WHERE NOT EXISTS (
@@ -690,7 +716,7 @@ SELECT
   NULL,
   '2025-02-03',
   NULL,
-  '+52 55 5555 1003',
+  '55 5555 1003',
   NULL,
   NULL,
   'nomina'
@@ -704,7 +730,7 @@ SET
     (SELECT house_id FROM public.house WHERE house_id = 'a0000001-0000-4000-8000-000000000001'),
     house_id
   ),
-  phone_number = COALESCE(phone_number, '+52 442 479 2232')
+  phone_number = COALESCE(phone_number, '442 479 2232')
 WHERE email = 'andre@gmail.com';
 
 INSERT INTO public.employee_address (

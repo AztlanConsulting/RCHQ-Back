@@ -4,10 +4,26 @@ const CURP_REGEX         = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
 const RFC_REGEX          = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
 const ONLY_NUMBERS_REGEX = /^\d+$/;
 const NAMES_REGEX        = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+const EMAIL_SAFE_REGEX   = /^[A-Za-z0-9._@-]+$/;
 const DATE_REGEX         = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX         = /^\d{2}:\d{2}$/;
 
 const emptyToNull = (val) => (val === "" ? null : val);
+
+const CONTRACT_TYPE_BY_NORMALIZED = {
+  nomina: "Nomina",
+  asalariado: "Asalariado",
+  honorarios: "Honorarios",
+  voluntariado: "Voluntariado",
+};
+
+const normalizeEmployeeContractType = (val) => {
+  if (val === null || val === undefined) return val;
+  const s = String(val).trim();
+  if (s === "") return val;
+  const key = s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  return CONTRACT_TYPE_BY_NORMALIZED[key] ?? s;
+};
 
 const employeeBasicUpdateSchema = z
   .object({
@@ -68,18 +84,35 @@ const employeeContactUpdateSchema = z
   .object({
     email: z.string().trim().toLowerCase().email("Formato de correo inválido")
       .max(60, "El correo es demasiado largo")
+      .regex(EMAIL_SAFE_REGEX, "El correo contiene caracteres no permitidos")
       .optional(),
 
-    phoneNumber: z.string().trim().max(10).transform(emptyToNull).nullable()
-  .refine((val) => val === null || val.length === 10, { 
-    message: "El número de teléfono debe tener exactamente 10 dígitos" 
-  })
-  .optional(),
+    phoneNumber: z.string().trim().max(10, "El número de teléfono no puede exceder 10 dígitos").transform(emptyToNull).nullable()
+      .refine((val) => val === null || val.length === 10, {
+        message: "El número de teléfono debe tener exactamente 10 dígitos"
+      })
+      .optional(),
 
-    street:     z.string().trim().max(200).transform(emptyToNull).nullable().optional(),
-    municipio:  z.string().trim().max(120).transform(emptyToNull).nullable().optional(),
-    city:       z.string().trim().max(100).transform(emptyToNull).nullable().optional(),
-    postalCode: z.string().trim().max(10).transform(emptyToNull).nullable().optional(),
+    street: z.string().trim()
+      .max(50, "La calle y número no pueden exceder 50 caracteres")
+      .transform(emptyToNull)
+      .nullable()
+      .optional(),
+    municipio: z.string().trim()
+      .max(50, "El municipio no puede exceder 50 caracteres")
+      .transform(emptyToNull)
+      .nullable()
+      .optional(),
+    city: z.string().trim()
+      .max(50, "La ciudad no puede exceder 50 caracteres")
+      .transform(emptyToNull)
+      .nullable()
+      .optional(),
+    postalCode: z.string().trim()
+      .max(5, "El código postal no puede exceder 5 dígitos")
+      .transform(emptyToNull)
+      .nullable()
+      .optional(),
   })
   .strict()
   .refine(
@@ -99,12 +132,18 @@ const workdayUpdateSchema = z
 
 const employeeAdminUpdateSchema = z
   .object({
+    houseId: z.string().uuid("El houseId debe ser un UUID válido").optional(),
     roleId:  z.string().uuid("El roleId debe ser un UUID válido").optional(),
 
-    type: z.enum(["Nomina", "Asalariado", "Honorarios", "Voluntariado"], {
-      errorMap: () => ({ message: "Tipo de contrato inválido" }),
-    }).nullable().optional(),
-
+    type: z.preprocess(
+      (val) =>
+        val === null || val === undefined || val === ""
+          ? val
+          : normalizeEmployeeContractType(val),
+      z.enum(["Nomina", "Asalariado", "Honorarios", "Voluntariado"], {
+        errorMap: () => ({ message: "Tipo de contrato inválido" }),
+      }).nullable().optional()
+    ),
     frequencyOfPaymentId: z.string().uuid().nullable().optional(),
 
     salary: z.number()

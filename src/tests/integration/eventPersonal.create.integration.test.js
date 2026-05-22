@@ -415,7 +415,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             expect(junctionRow).not.toBeNull();
         });
 
-        it("evento allDay normaliza horario a 00:00:00 y 23:59:00 en BD", async () => {
+        it("evento allDay normaliza horario a rango exclusivo 00:00:00 y 00:00:00 del dia siguiente en BD", async () => {
             const token = generateToken();
             const body = buildValidEventBody({
                 allDay: true,
@@ -440,7 +440,8 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             const startUtc = inDb.start.toISOString().slice(11, 19);
             const endUtc = inDb.end.toISOString().slice(11, 19);
             expect(startUtc).toBe("06:00:00");
-            expect(endUtc).toBe("05:59:00");
+            expect(endUtc).toBe("06:00:00");
+            expect(inDb.end.toISOString().slice(0, 10)).toBe("2026-07-16");
         });
 
         it("crea evento con hora específica y persiste en BD", async () => {

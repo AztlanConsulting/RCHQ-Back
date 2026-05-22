@@ -1,15 +1,20 @@
-const { findById } = require("../../model/employee/get.model");
+const { findById, getWorkDays } = require("../../model/employee/get.model");
 const {
     getAbsenceTypeById,
     getHouseAbsencesInRange,
 } = require("../../model/absence/get.model");
-const { getActiveVacationsInRange } = require("../../model/vacation/get.model");
 const {
     createAbsence: createAbsenceModel,
 } = require("../../model/absence/create.model");
+const { 
+    calculateUsedDays,
+    stringToDate,
+} = require("../../utils/dates");
+const {
+    getAbsenceCalculationContext,
+} = require("../../utils/absenceUsedDays");
 const { absenceAddSchema } = require("../../schemas/absence/absenceAddSchema");
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
-const { stringToDate } = require("../../utils/dates");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 const RESPONSES = require("../../utils/responses");
 
@@ -47,6 +52,7 @@ const hasAbsenceLimitReached = (absences, startDate, endDate) => {
 
 exports.addAbsence = async ({
     actorEmployeeId,
+    requesterHouseId,
     targetEmployeeId,
     body,
     file,
@@ -100,14 +106,26 @@ exports.addAbsence = async ({
         };
     }
 
+    const workDays = await getWorkDays(absence.targetEmployeeId);
+    if (workDays.length == 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.ABSENCE.WITHOUT_DATES
+        }
+    }
+
     const startDate = stringToDate(absence.body.startDate);
     const endDate = stringToDate(absence.body.endDate);
-
-    const overlappingVacations = await getActiveVacationsInRange(
-        absence.targetEmployeeId,
+    const {
+        searchEndDate,
+        freeDays,
+        overlappingVacations,
+    } = await getAbsenceCalculationContext({
+        employeeId: absence.targetEmployeeId,
+        houseId: requesterHouseId,
         startDate,
         endDate,
-    );
+    });
 
     if (overlappingVacations.length > 0) {
         deleteFileIfExists(file?.path);
@@ -119,7 +137,7 @@ exports.addAbsence = async ({
     const registeredAbsences = await getHouseAbsencesInRange(
         targetEmployee.house_id,
         startDate,
-        endDate,
+        searchEndDate,
     );
 
     if (hasAbsenceLimitReached(registeredAbsences, startDate, endDate)) {
@@ -127,6 +145,15 @@ exports.addAbsence = async ({
         return {
             code: RESPONSES.ABSENCE.LIMIT_REACHED,
         };
+    }
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
+
+    if (usedDays == 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.ABSENCE.NULL_DATES
+        }
     }
 
     const evidenceUrl = file ? `uploads/documents/${file.filename}` : null;

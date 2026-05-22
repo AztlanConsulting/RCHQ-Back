@@ -1,6 +1,7 @@
 const { getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getEligibleVacationEmployees,
 } = require("../../service/vacation/get.service");
 const RESPONSES = require("../../utils/responses");
 
@@ -125,6 +126,48 @@ exports.getReviewedVacationRequests = async (req, res) => {
         });
     } catch (error) {
         console.error("getReviewedVacationRequests error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getEligibleVacationEmployees = async (req, res) => {
+    try {
+        const result = await getEligibleVacationEmployees({
+            actorEmployeeId: req.user?.id,
+        });
+
+        if (result.code === RESPONSES.USER.NOT_ACCESS) {
+            return res.status(401).json({
+                success: false,
+                message: "Usuario no autenticado",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS) {
+            return res.status(403).json({
+                success: false,
+                message: "No se tienen permisos",
+            });
+        }
+
+        if (result.code === RESPONSES.EMPLOYEE.FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    employees: result.data.employees,
+                },
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    } catch (error) {
+        console.error("getEligibleVacationEmployees error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

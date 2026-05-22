@@ -7,12 +7,14 @@ const { getClientIp } = require("../../utils/ip");
 exports.updateAbsence = async (req, res) => {
     try {
         const actorEmployeeId = req.user?.id;
+        const requesterHouseId = req.resolvedRequester?.houseId;
         const { absenceId } = req.params;
         const body = req.body;
         const file = req.file;
 
         const result = await updateAbsence({
             actorEmployeeId,
+            requesterHouseId,
             absenceId,
             body,
             file,
@@ -22,6 +24,20 @@ exports.updateAbsence = async (req, res) => {
             return res.status(401).json({
                 success: false,
                 message: "Usuario no autenticado",
+            });
+        }
+
+        if (result.code == RESPONSES.ABSENCE.NULL_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "Dentro del rango seleccionado no hay ningún día hábil para asignar la ausencia"
+            });
+        }
+
+        if (result.code === RESPONSES.ABSENCE.WITHOUT_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "Se necesitan tener registrados los días de trabajo",
             });
         }
 
@@ -58,6 +74,13 @@ exports.updateAbsence = async (req, res) => {
                 success: false,
                 message:
                     "La fecha de fin no puede ser menor a la fecha de inicio",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.ALREADY_REQUEST) {
+            return res.status(406).json({
+                success: false,
+                message: "Ya hay una vacación registrada para esa fecha",
             });
         }
 

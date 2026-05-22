@@ -9,6 +9,7 @@ jest.mock("../../model/vacation/get.model", () => ({
 
 jest.mock("../../model/event/get.model", () => ({
     getGlobalEventsInRange: jest.fn(),
+    getHouseEventsInRange: jest.fn(),
 }));
 
 jest.mock("../../model/vacation/update.model", () => ({
@@ -36,6 +37,7 @@ const {
 
 const {
     getGlobalEventsInRange,
+    getHouseEventsInRange,
 } = require("../../model/event/get.model");
 
 const {
@@ -116,6 +118,7 @@ describe("updateVacationRequestDates service", () => {
         ]);
 
         getGlobalEventsInRange.mockResolvedValue([]);
+        getHouseEventsInRange.mockResolvedValue([]);
 
         updateVacationRequestDatesAtomically.mockResolvedValue({
             success: true,
@@ -160,6 +163,115 @@ describe("updateVacationRequestDates service", () => {
             "127.0.0.1",
             targetEmployeeId
         );
+    });
+
+    it("no cuenta los días si el empleado no trabaja en ellos", async () => {
+        getWorkDays.mockResolvedValueOnce([
+            { workday: { name: "Lunes" } },
+            { workday: { name: "Miércoles" } },
+            { workday: { name: "Viernes" } },
+        ]);
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-15",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
+        expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
+            expect.objectContaining({
+                startDate: new Date("2026-06-15T00:00:00.000Z"),
+                endDate: new Date("2026-06-19T00:00:00.000Z"),
+                usedDays: 3,
+            }),
+        );
+    });
+
+    it("no cuenta los días feriados en los eventos globales", async () => {
+        getGlobalEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-17T06:00:00.000Z"),
+                end: new Date("2026-06-18T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
+        expect(getGlobalEventsInRange).toHaveBeenCalledWith(
+            new Date("2026-06-16T00:00:00.000Z"),
+            new Date("2026-06-20T00:00:00.000Z"),
+        );
+        expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
+            expect.objectContaining({
+                usedDays: 3,
+            }),
+        );
+    });
+
+    it("no cuenta los días feriados en los eventos de casa", async () => {
+        getHouseEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-18T06:00:00.000Z"),
+                end: new Date("2026-06-19T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
+        expect(getHouseEventsInRange).toHaveBeenCalledWith(
+            houseId,
+            new Date("2026-06-16T00:00:00.000Z"),
+            new Date("2026-06-20T00:00:00.000Z"),
+        );
+        expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
+            expect.objectContaining({
+                usedDays: 3,
+            }),
+        );
+    });
+
+    it("regresa error en caso de que ninguno de los días sea hábil", async () => {
+        getGlobalEventsInRange.mockResolvedValueOnce([
+            {
+                start: new Date("2026-06-16T06:00:00.000Z"),
+                end: new Date("2026-06-20T05:59:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.NULL_DATES);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
     });
 
     it("regresa error de validación si los datos son inválidos", async () => {

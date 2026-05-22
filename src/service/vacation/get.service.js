@@ -6,6 +6,7 @@ const {
     getVacationsInRange,
     getPendingVacationRequestsByHouse,
     getReviewedVacationRequestsByHouse,
+    getEligibleVacationEmployees,
 } = require("../../model/vacation/get.model");
 const { getVacationDays } = require("../../utils/vacationDays");
 const RESPONSES = require("../../utils/responses");
@@ -18,6 +19,8 @@ const {
     mapVacationRequestForList,
 } = require("../../utils/mappers/vacation.map");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
+const { ROLES } = require("../../utils/roles");
+const PRIVILEGES = require("../../utils/privileges");
 const {
     getVacationRequestsInputSchema,
 } = require("../../schemas/vacation/get.schemas");
@@ -305,6 +308,68 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
         data: {
             requests: requests.map(mapVacationRequestForList),
             pagination: buildPagination({ page, limit, total }),
+        },
+    };
+};
+
+exports.getEligibleVacationEmployees = async ({ actorEmployeeId }) => {
+    if (!actorEmployeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorEmployee = await findByIdWithRoleAndHouse(actorEmployeeId);
+
+    if (!actorEmployee) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const actorRoleName = actorEmployee.role?.name;
+
+    if (
+        actorRoleName !== ROLES.ADMIN &&
+        actorRoleName !== ROLES.COORDINATOR
+    ) {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    if (!hasCurrentPrivilege(actorEmployee, PRIVILEGES.MANAGE_EMPLOYEES)) {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    const employeeWhere = {
+        is_active: true,
+        ...(actorRoleName === ROLES.COORDINATOR
+            ? {
+                house_id: actorEmployee.house_id,
+                role: {
+                    name: {
+                        not: ROLES.ADMIN,
+                    },
+                },
+            }
+            : {}),
+    };
+
+    const employees = await getEligibleVacationEmployees(employeeWhere);
+
+    return {
+        code: RESPONSES.EMPLOYEE.FOUND,
+        data: {
+            employees: employees.map((employee) => ({
+                employeeId: employee.employee_id,
+                name: `${employee.name} ${employee.surname}`.trim(),
+                curp: employee.curp,
+                picture: employee.picture || null,
+                isActive: employee.is_active,
+            })),
         },
     };
 };
