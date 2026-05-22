@@ -1,4 +1,8 @@
-const createService = require("../../service/event/create.service");
+const {
+    createHouseEvent,
+    createPersonalEvent,
+} = require("../../service/event/create.service");
+const { getClientIp } = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 exports.createHouseEvent = async (req, res) => {
@@ -15,7 +19,7 @@ exports.createHouseEvent = async (req, res) => {
             forceOverlap,
         } = req.body;
 
-        const result = await createService.createHouseEvent(
+        const result = await createHouseEvent(
             {
                 houseId,
                 eventTypeId,
@@ -28,7 +32,7 @@ exports.createHouseEvent = async (req, res) => {
                 forceOverlap,
             },
             req.user,
-            req,
+            getClientIp(req),
         );
 
         if (result.code == RESPONSES.EVENTS.VALIDATION_ERROR) {
@@ -77,10 +81,10 @@ exports.createHouseEvent = async (req, res) => {
 
 exports.createPersonalEvent = async (req, res) => {
     try {
-        const result = await createService.createPersonalEvent(
+        const result = await createPersonalEvent(
             req.user,
             req.body,
-            req,
+            getClientIp(req),
         );
 
         if (result.code === RESPONSES.EVENTS.VALIDATION_ERROR) {
