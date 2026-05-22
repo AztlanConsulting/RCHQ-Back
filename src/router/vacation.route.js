@@ -76,6 +76,7 @@ router.patch(
     "/request/:vacationRequestId/approve",
     apiLimiter,
     verifyToken,
+    resolveRequesterHouse,
     requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(approveVacationRequestSchema, "all"),

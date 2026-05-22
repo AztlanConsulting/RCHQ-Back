@@ -111,8 +111,9 @@ exports.addAbsence = async ({
 
     const workDays = await getWorkDays(absence.targetEmployeeId);
     if (workDays.length == 0) {
+        deleteFileIfExists(file?.path);
         return {
-            code: RESPONSES.VACATION.WITHOUT_DATES
+            code: RESPONSES.ABSENCE.WITHOUT_DATES
         }
     }
 
@@ -161,6 +162,7 @@ exports.addAbsence = async ({
     const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
 
     if (usedDays == 0) {
+        deleteFileIfExists(file?.path);
         return {
             code: RESPONSES.ABSENCE.NULL_DATES
         }

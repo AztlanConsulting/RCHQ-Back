@@ -98,6 +98,13 @@ const sign = (employeeId, roleName) => {
 
 const dateOnly = (date) => date.toISOString().slice(0, 10);
 
+const addDays = (date, days) => {
+    const nextDate = new Date(date);
+    nextDate.setUTCDate(nextDate.getUTCDate() + days);
+
+    return nextDate;
+};
+
 const localDateRangeToUtcEventRange = (startDate, endDate) => {
     const endDateUtc = new Date(`${endDate}T00:00:00.000Z`);
     endDateUtc.setUTCDate(endDateUtc.getUTCDate() + 1);
@@ -449,8 +456,8 @@ describe("Flujo integración /vacation/request", () => {
         it("Manda error por falta de días de trabajo", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate()}`;
-            const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate()}`;
+            const startDate = dateOnly(START_DATE);
+            const endDate = dateOnly(END_DATE);
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -469,8 +476,8 @@ describe("Flujo integración /vacation/request", () => {
         it("Envío correcto", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate()}`;
-            const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate()}`;
+            const startDate = dateOnly(START_DATE);
+            const endDate = dateOnly(END_DATE);
 
             const workDays = [
                 "Lunes",
@@ -530,8 +537,8 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones dentro de unas ya existentes", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() + 1}`;
-            const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate() - 1}`;
+            const startDate = dateOnly(addDays(START_DATE, 1));
+            const endDate = dateOnly(addDays(END_DATE, -1));
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -550,8 +557,8 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones con otras vacaciones dentro del rango", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() - 1}`;
-            const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate() + 1}`;
+            const startDate = dateOnly(addDays(START_DATE, -1));
+            const endDate = dateOnly(addDays(END_DATE, 1));
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -570,7 +577,7 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones para el mismo día", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${TODAY.getUTCFullYear()}-${TODAY.getUTCMonth() + 1}-${TODAY.getUTCDate()}`;
+            const startDate = dateOnly(TODAY);
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -589,7 +596,7 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones en el pasado", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${TODAY.getUTCFullYear()}-${TODAY.getUTCMonth() + 1}-${TODAY.getUTCDate() - 5}`;
+            const startDate = dateOnly(addDays(TODAY, -5));
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -608,8 +615,16 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones fuera del periodo actual", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${START_DATE.getUTCFullYear() + 1}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() - 1}`;
-            const endDate = `${END_DATE.getUTCFullYear() + 1}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate() + 1}`;
+            const startDate = dateOnly(new Date(Date.UTC(
+                START_DATE.getUTCFullYear() + 1,
+                START_DATE.getUTCMonth(),
+                START_DATE.getUTCDate() - 1,
+            )));
+            const endDate = dateOnly(new Date(Date.UTC(
+                END_DATE.getUTCFullYear() + 1,
+                END_DATE.getUTCMonth(),
+                END_DATE.getUTCDate() + 1,
+            )));
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -628,8 +643,8 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al tener la fecha de inicio posterior a la de final", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const endDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate()}`;
-            const startDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 1}-${END_DATE.getUTCDate()}`;
+            const endDate = dateOnly(START_DATE);
+            const startDate = dateOnly(END_DATE);
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -682,7 +697,7 @@ describe("Flujo integración /vacation/request", () => {
                     start: eventRange.start,
                     end: eventRange.end,
                     name: "Vacación global libre",
-                    description: "Evento global que regala todo el rango",
+                    description: "Días inhábiles como eventos globales",
                     all_day: true,
                     is_free_day: true,
                 },
@@ -730,7 +745,7 @@ describe("Flujo integración /vacation/request", () => {
                     start: eventRange.start,
                     end: eventRange.end,
                     name: "Vacación casa libre",
-                    description: "Evento de casa que regala todo el rango",
+                    description: "Días inhábiles como evento de casa",
                     all_day: true,
                     is_free_day: true,
                 },
@@ -762,8 +777,12 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir más días de los que se tienen disponibles", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = `${START_DATE.getUTCFullYear()}-${START_DATE.getUTCMonth() + 1}-${START_DATE.getUTCDate() + 8}`;
-            const endDate = `${END_DATE.getUTCFullYear()}-${END_DATE.getUTCMonth() + 3}-${END_DATE.getUTCDate()}`;
+            const startDate = dateOnly(addDays(START_DATE, 8));
+            const endDate = dateOnly(new Date(Date.UTC(
+                END_DATE.getUTCFullYear(),
+                END_DATE.getUTCMonth() + 2,
+                END_DATE.getUTCDate(),
+            )));
 
             const res = await request(app)
                 .post("/vacation/request")

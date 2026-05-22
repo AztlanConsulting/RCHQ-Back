@@ -9,11 +9,13 @@ const { getClientIp } = require("../../utils/ip");
 exports.approveVacationRequest = async (req, res) => {
     try {
         const actorEmployeeId = req.user.id;
+        const requesterHouseId = req.resolvedRequester?.houseId;
         const { vacationRequestId } = req.params;
         const ipAddress = getClientIp(req);
 
         const result = await approveVacationRequest({
             actorEmployeeId,
+            requesterHouseId,
             vacationRequestId,
             ipAddress,
         });

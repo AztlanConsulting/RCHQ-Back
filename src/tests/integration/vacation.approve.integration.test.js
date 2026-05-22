@@ -3,6 +3,10 @@ const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
+const {
+    calculateUsedDays,
+    convertUTCToMexicanTime,
+} = require("../../utils/dates");
 
 const prisma = new PrismaClient();
 
@@ -12,6 +16,10 @@ const HOUSE_B_ID = randomUUID();
 let ADMIN_ROLE_ID;
 let COORDINATOR_ROLE_ID;
 let USER_ROLE_ID;
+let MANAGE_EMPLOYEES_PRIVILEGE_ID;
+let CREATED_MANAGE_EMPLOYEES_PRIVILEGE = false;
+let CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE = false;
+let CREATED_COORDINATOR_MANAGE_EMPLOYEES_PRIVILEGE = false;
 
 const ADMIN_ID = randomUUID();
 const COORDINATOR_ID = randomUUID();
@@ -19,6 +27,7 @@ const USER_ID = randomUUID();
 const TARGET_EMPLOYEE_ID = randomUUID();
 const OTHER_HOUSE_EMPLOYEE_ID = randomUUID();
 const NO_WORKDAYS_EMPLOYEE_ID = randomUUID();
+const HOUSE_FREE_EVENT_TYPE_ID = randomUUID();
 
 const WORKDAY_IDS = {
     monday: randomUUID(),
@@ -62,6 +71,51 @@ function formatDate(date) {
 
 function toDbDate(dateString) {
     return new Date(`${dateString}T00:00:00.000Z`);
+}
+
+function localDateRangeToUtcEventRange(startDate, endDate = startDate) {
+    const endDateUtc = toDbDate(endDate);
+    endDateUtc.setUTCDate(endDateUtc.getUTCDate() + 1);
+
+    return {
+        start: new Date(`${startDate}T06:00:00.000Z`),
+        end: new Date(`${formatDate(endDateUtc)}T05:59:00.000Z`),
+    };
+}
+
+function getExpectedUsedDays({ startDate, endDate, freeEvents = [] }) {
+    const workDays = [
+        { workday: { name: "Lunes" } },
+        { workday: { name: "Martes" } },
+        { workday: { name: "Miércoles" } },
+        { workday: { name: "Jueves" } },
+        { workday: { name: "Viernes" } },
+    ];
+
+    const freeDays = freeEvents.map((event) => ({
+        ...event,
+        start: convertUTCToMexicanTime(event.start),
+        end: convertUTCToMexicanTime(event.end),
+    }));
+
+    return calculateUsedDays(
+        workDays,
+        toDbDate(startDate),
+        toDbDate(endDate),
+        freeDays,
+        true,
+    );
+}
+
+async function createEventType(eventTypeId, name) {
+    await prisma.event_type.upsert({
+        where: { name },
+        update: {},
+        create: {
+            event_type_id: eventTypeId,
+            name,
+        },
+    });
 }
 
 const TODAY_UTC = getTodayUTC();
@@ -112,17 +166,6 @@ function generateSessionToken(employee) {
     );
 }
 
-function getAdminToken() {
-    return generateSessionToken({
-        employee_id: ADMIN_ID,
-        email: "admin.us34@test.com",
-        name: "Administrador",
-        roleName: "Administrador",
-        house_id: HOUSE_A_ID,
-        privileges: ["manageEmployees"],
-    });
-}
-
 function getCoordinatorToken() {
     return generateSessionToken({
         employee_id: COORDINATOR_ID,
@@ -162,6 +205,66 @@ async function getOrCreateRoleId(name) {
     });
 
     return createdRole.role_id;
+}
+
+async function seedManageEmployeesPrivilege() {
+    const existingPrivilege = await prisma.privileges.findUnique({
+        where: { name: "manageEmployees" },
+    });
+
+    if (existingPrivilege) {
+        MANAGE_EMPLOYEES_PRIVILEGE_ID = existingPrivilege.privilege_id;
+    } else {
+        MANAGE_EMPLOYEES_PRIVILEGE_ID = randomUUID();
+        CREATED_MANAGE_EMPLOYEES_PRIVILEGE = true;
+
+        await prisma.privileges.create({
+            data: {
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+                name: "manageEmployees",
+            },
+        });
+    }
+
+    const adminPrivilege = await prisma.role_privilege.findUnique({
+        where: {
+            role_id_privilege_id: {
+                role_id: ADMIN_ROLE_ID,
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+            },
+        },
+    });
+
+    if (!adminPrivilege) {
+        CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE = true;
+
+        await prisma.role_privilege.create({
+            data: {
+                role_id: ADMIN_ROLE_ID,
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+            },
+        });
+    }
+
+    const coordinatorPrivilege = await prisma.role_privilege.findUnique({
+        where: {
+            role_id_privilege_id: {
+                role_id: COORDINATOR_ROLE_ID,
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+            },
+        },
+    });
+
+    if (!coordinatorPrivilege) {
+        CREATED_COORDINATOR_MANAGE_EMPLOYEES_PRIVILEGE = true;
+
+        await prisma.role_privilege.create({
+            data: {
+                role_id: COORDINATOR_ROLE_ID,
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+            },
+        });
+    }
 }
 
 async function seedActions() {
@@ -205,6 +308,7 @@ async function seedBaseData() {
     ADMIN_ROLE_ID = await getOrCreateRoleId("Administrador");
     COORDINATOR_ROLE_ID = await getOrCreateRoleId("Coordinador");
     USER_ROLE_ID = await getOrCreateRoleId("Usuario");
+    await seedManageEmployeesPrivilege();
 
     const existingWorkdays = await prisma.workday.findMany({
         where: {
@@ -438,6 +542,18 @@ async function cleanVacationAndLogsOnly() {
             },
         },
     });
+
+    await prisma.house_event.deleteMany({
+        where: {
+            event_type_id: HOUSE_FREE_EVENT_TYPE_ID,
+        },
+    });
+
+    await prisma.event_type.deleteMany({
+        where: {
+            event_type_id: HOUSE_FREE_EVENT_TYPE_ID,
+        },
+    });
 }
 
 async function cleanTestData() {
@@ -489,6 +605,31 @@ afterEach(async () => {
 
 afterAll(async () => {
     await cleanTestData();
+
+    if (CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE) {
+        await prisma.role_privilege.deleteMany({
+            where: {
+                role_id: ADMIN_ROLE_ID,
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+            },
+        });
+    }
+
+    if (CREATED_COORDINATOR_MANAGE_EMPLOYEES_PRIVILEGE) {
+        await prisma.role_privilege.deleteMany({
+            where: {
+                role_id: COORDINATOR_ROLE_ID,
+                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
+            },
+        });
+    }
+
+    if (CREATED_MANAGE_EMPLOYEES_PRIVILEGE) {
+        await prisma.privileges.deleteMany({
+            where: { privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID },
+        });
+    }
+
     await prisma.$disconnect();
 });
 
@@ -514,6 +655,65 @@ describe("US34 - PATCH /vacation/request/:vacationRequestId/approve", () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
         expect(updatedVacation.status).toBe(1);
+    });
+
+    test("coordinador aprueba y no toma en cuenta días feriados por eventos de casa", async () => {
+        const startDate = formatDate(THIRD_SUCCESS_MONDAY);
+        const endDate = formatDate(THIRD_SUCCESS_FRIDAY);
+        const freeEventRange = localDateRangeToUtcEventRange(
+            formatDate(addDays(THIRD_SUCCESS_MONDAY, 2)),
+        );
+
+        await createEventType(
+            HOUSE_FREE_EVENT_TYPE_ID,
+            `Aprob casa ${HOUSE_FREE_EVENT_TYPE_ID.slice(0, 8)}`,
+        );
+
+        await prisma.house_event.create({
+            data: {
+                house_event_id: randomUUID(),
+                house_id: HOUSE_A_ID,
+                event_type_id: HOUSE_FREE_EVENT_TYPE_ID,
+                start: freeEventRange.start,
+                end: freeEventRange.end,
+                name: "Aprobación casa libre",
+                description: "Evento de casa libre para aprobación",
+                all_day: true,
+                is_free_day: true,
+            },
+        });
+
+        const vacation = await createPendingVacation({
+            startDate,
+            endDate,
+        });
+
+        const res = await request(app)
+            .patch(`/vacation/request/${vacation.vacations_request_id}/approve`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const updatedVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(updatedVacation.status).toBe(1);
+        expect(updatedVacation.used_days).toBe(
+            getExpectedUsedDays({
+                startDate,
+                endDate,
+                freeEvents: [
+                    {
+                        ...freeEventRange,
+                        isFreeDay: true,
+                    },
+                ],
+            }),
+        );
     });
 
     test("coordinador no aprueba solicitud de empleado de otra casa", async () => {

@@ -99,16 +99,13 @@ const nextWeekdayDate = (fromDate, targetDay) => {
     return date;
 };
 
-const validStartDate = (days = 5) =>
-    dateOnly(dateFromTodayUTC({ months: 1, days }));
-const validEndDate = (days = 6) =>
-    dateOnly(dateFromTodayUTC({ months: 1, days }));
+const BASE_VALID_MONDAY = nextWeekdayDate(
+    dateFromTodayUTC({ months: 1, days: 14 }),
+    1,
+);
 
 const futureWorkWeekRange = (weeks = 0) => {
-    const monday = nextWeekdayDate(
-        dateFromTodayUTC({ months: 1, days: 14 + weeks * 7 }),
-        1,
-    );
+    const monday = addDays(BASE_VALID_MONDAY, weeks * 7);
     const friday = addDays(monday, 4);
 
     return {
@@ -116,6 +113,9 @@ const futureWorkWeekRange = (weeks = 0) => {
         endDate: dateOnly(friday),
     };
 };
+
+const validStartDate = (weeks = 0) => futureWorkWeekRange(weeks).startDate;
+const validEndDate = (weeks = 0) => futureWorkWeekRange(weeks).endDate;
 
 const sign = (overrides = {}) =>
     jwt.sign(
