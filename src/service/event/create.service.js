@@ -1,4 +1,7 @@
-const createModel = require("../../model/event/create.model");
+const {
+    createHouseEvent,
+    createPersonalEvent,
+} = require("../../model/event/create.model");
 const { randomUUID } = require("crypto");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
@@ -8,7 +11,11 @@ const {
     houseEventCreateSchema,
     createPersonalEventSchema,
 } = require("../../schemas/event/create.schemas");
-const getPersonalEventModel = require("../../model/event/get.model");
+const {
+    findOverlappingHouseEvents,
+    findOverlappingEmployees,
+    getEmployeesInHouse,
+} = require("../../model/event/get.model");
 const { ROLES } = require("../../utils/roles");
 
 const ALL_DAY_START = "00:00:00";
@@ -21,7 +28,7 @@ const addOneDay = (date) => {
 };
 
 const validateAvailability = async (data) => {
-    return await createModel.findOverlappingHouseEvents({
+    return await findOverlappingHouseEvents({
         houseId: data.houseId,
         start: data.start,
         end: data.end,
@@ -58,7 +65,7 @@ exports.createHouseEvent = async (data, user, req) => {
         };
     }
 
-    const houseEvent = await createModel.createHouseEvent({
+    const houseEvent = await createHouseEvent({
         houseId: validData.houseId,
         eventTypeId: validData.eventTypeId,
         name: validData.name,
@@ -180,7 +187,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
 
     const { employeeIds } = employeeIdsResult;
 
-    const foundEmployees = await getPersonalEventModel.getEmployeesInHouse(
+    const foundEmployees = await getEmployeesInHouse(
         employeeIds,
         user.houseId,
     );
@@ -194,7 +201,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
     const endDate = allDay === true ? addOneDay(date) : date;
 
     const overlappedEmployees =
-        await getPersonalEventModel.findOverlappingEmployees({
+        await findOverlappingEmployees({
             employeeIds,
             date,
             start,
@@ -213,7 +220,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
 
     const personalEventId = randomUUID();
 
-    const personalEvent = await createModel.createPersonalEvent({
+    const personalEvent = await createPersonalEvent({
         personalEventId,
         eventTypeId,
         date,
