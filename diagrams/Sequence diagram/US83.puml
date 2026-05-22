@@ -27,7 +27,7 @@ alt Confirma eliminación
     controller ->> event.service : deleteHouseEvent(eventId, user)
     activate event.service
 
-    event.service ->> event.model : findHouseEventById(eventId)
+    event.service ->> event.model : findHouseEventByIdAndHouseId(eventId, houseId)
     activate event.model
 
     event.model ->> PostgreSQL : prisma.house_event.findUnique()
