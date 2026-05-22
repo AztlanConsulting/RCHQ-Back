@@ -1,0 +1,59 @@
+@startuml HU - Modificar evento de casa
+
+|Coordinador|
+start
+:Interactuar con el calendario;
+
+|Sistema|
+:Renderizar modal de detalle del evento;
+
+|Coordinador|
+:Seleccionar evento de casa;
+:Seleccionar opción "Editar";
+
+repeat
+:Modificar campos obligatorios:
+- Título
+- Tipo de evento
+- Fecha y hora de inicio
+- Fecha y hora de fin;
+
+|Sistema|
+if (¿Activar "Todo el día"?) then (SI)
+    :Eliminar selectores de hora;
+    :Registrar solo fechas;
+else (NO)
+    :Mantener selectores de hora;
+endif
+
+if (¿Modificar descripción?) then (SI)
+    |Coordinador|
+    :Editar descripción del evento;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos?) is (NO)
+:Validar disponibilidad de horario;
+
+if (¿Existe empalme con otro evento?) then (SI)
+    |Coordinador|
+    if (¿Desea guardar los cambios de todos modos?) then (SI)
+        |Sistema|
+        :Modificar evento con traslape;
+    else (NO)
+        |Sistema|
+        :Cancelar modificación;
+        stop
+    endif
+else (NO)
+    |Sistema|
+    :Modificar evento normalmente;
+endif
+
+|Sistema|
+:Notificar éxito al usuario;
+:Actualizar calendario;
+stop
+
+@enduml

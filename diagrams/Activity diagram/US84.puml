@@ -1,0 +1,37 @@
+@startuml HU - Eliminar evento de personal
+
+|Coordinador|
+start
+:Interactuar con el calendario;
+:Seleccionar evento personal existente;
+
+|Sistema|
+:Mostrar detalle del evento;
+
+|Coordinador|
+:Seleccionar opción "Eliminar";
+
+|Sistema|
+:Mostrar confirmación de eliminación;
+
+|Coordinador|
+if (¿Confirma eliminar el evento?) then (SI)
+    |Sistema|
+    :Validar permisos del usuario;
+    
+    if (¿Tiene permisos para eliminar?) then (SI)
+        :Eliminar evento de personal;
+        :Notificar éxito al usuario;
+        :Actualizar calendario;
+    else (NO)
+        :Notificar error de permisos;
+    endif
+
+else (NO)
+    |Sistema|
+    :Cancelar operación;
+endif
+
+stop
+
+@enduml

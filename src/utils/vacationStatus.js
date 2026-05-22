@@ -4,6 +4,12 @@ const VACATION_STATUS = {
     REJECTED: 2,
 };
 
+const VACATION_VALUE_STATUS = [
+    "pending",
+    "approved",
+    "rejected",
+];
+
 const ACTIVE_VACATION_STATUSES = [
     VACATION_STATUS.PENDING,
     VACATION_STATUS.APPROVED,
@@ -11,5 +17,6 @@ const ACTIVE_VACATION_STATUSES = [
 
 module.exports = {
     VACATION_STATUS,
+    VACATION_VALUE_STATUS,
     ACTIVE_VACATION_STATUSES,
 };

@@ -6,11 +6,12 @@ exports.requestVacation = async (req, res) => {
     try {
         const startDate = req.body.startDate;
         const endDate = req.body.endDate;
+        const requesterHouseId = req.resolvedRequester?.houseId;
 
         const clientIp = getClientIp(req);
 
         const employeeId = req.user.id;
-        const result = await requestVacation(employeeId, startDate, endDate, clientIp);
+        const result = await requestVacation(employeeId, startDate, endDate, clientIp, requesterHouseId);
 
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
             return res.status(400).json({
@@ -80,7 +81,8 @@ exports.requestVacation = async (req, res) => {
             message: "Error interno del servidor. Por favor intente más tarde.",
         });
 
-    } catch {
+    } catch(error) {
+        console.error(error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
@@ -93,6 +95,7 @@ exports.registerEmployeeVacation = async (req, res) => {
         const targetEmployeeId = req.params.employeeId;
         const actorEmployeeId = req.user.id;
         const { startDate, endDate } = req.body;
+        const requesterHouseId = req.resolvedRequester?.houseId;
         const ipAddress = getClientIp(req);
 
         const result = await registerEmployeeVacation({
@@ -101,6 +104,7 @@ exports.registerEmployeeVacation = async (req, res) => {
             rawStartDate: startDate,
             rawEndDate: endDate,
             ipAddress,
+            requesterHouseId,
         });
 
         if (result.code === RESPONSES.DATES.WRONG_FORMAT) {

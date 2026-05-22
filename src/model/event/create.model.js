@@ -11,6 +11,7 @@ exports.findOverlappingHouseEvents = async ({ houseId, start, end }) => {
     const houseEvents = await prisma.house_event.findMany({
         where: {
             house_id: houseId,
+            is_deleted: false,
             start: { lt: end },
             end: { gt: start },
         },
@@ -51,7 +52,10 @@ exports.createPersonalEvent = async (data) => {
                 event_type_id: data.eventTypeId,
                 date: new Date(data.date),
                 start: personalEventTimeToUtc(data.date, data.start),
-                end: personalEventTimeToUtc(data.date, data.end),
+                end: personalEventTimeToUtc(
+                    data.endDate ?? data.date,
+                    data.end,
+                ),
                 name: data.name,
                 description: data.description ?? null,
                 all_day: data.allDay,

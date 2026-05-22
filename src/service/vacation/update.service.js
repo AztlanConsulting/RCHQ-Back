@@ -7,6 +7,7 @@ const {
 } = require("../../model/vacation/get.model");
 const {
     getGlobalEventsInRange,
+    getHouseEventsInRange,
 } = require("../../model/event/get.model");
 const {
     approveVacationRequestAtomically,
@@ -16,6 +17,7 @@ const {
 const {
     calculateUsedDays,
     stringToDate,
+    convertUTCToMexicanTime,
 } = require("../../utils/dates");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
@@ -34,6 +36,7 @@ const isAdminRole = (roleName) =>
 
 exports.approveVacationRequest = async ({
     actorEmployeeId,
+    requesterHouseId,
     vacationRequestId,
     ipAddress,
 }) => {
@@ -131,17 +134,23 @@ exports.approveVacationRequest = async ({
         };
     }
 
-    const globalEvents = await getGlobalEventsInRange(
-        vacationRequest.start,
-        vacationRequest.end
-    );
+    const startDate = vacationRequest.start;
+    const endDate = vacationRequest.end;
+    const searchEndDate = new Date(endDate);
+    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
 
-    const usedDays = calculateUsedDays(
-        workDays,
-        vacationRequest.start,
-        vacationRequest.end,
-        globalEvents
-    );
+    const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
+    const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
+
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
 
     if (usedDays === 0) {
         return {
@@ -293,6 +302,7 @@ exports.updateVacationRequestDates = async ({
     rawStartDate,
     rawEndDate,
     ipAddress,
+    requesterHouseId,
 }) => {
     const validation = updateVacationRequestDatesInputSchema.safeParse({
         actorEmployeeId,
@@ -326,6 +336,8 @@ exports.updateVacationRequestDates = async ({
 
     const startDate = stringToDate(validation.data.rawStartDate);
     const endDate = stringToDate(validation.data.rawEndDate);
+    const searchEndDate = new Date(endDate);
+    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
 
     if (endDate < startDate) {
         return {
@@ -399,14 +411,18 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    const globalEvents = await getGlobalEventsInRange(startDate, endDate);
+    const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
+    const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
 
-    const usedDays = calculateUsedDays(
-        workDays,
-        startDate,
-        endDate,
-        globalEvents
-    );
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
 
     if (usedDays === 0) {
         return {

@@ -1,49 +1,53 @@
+const MEXICO_TIME_OFFSET_MS = 6 * 60 * 60 * 1000;
+exports.convertUTCToMexicanTime = (timestamp) => {
+    if (!timestamp) return null;
+    return new Date(timestamp.getTime() - MEXICO_TIME_OFFSET_MS);
+};
+
 exports.combineDateAndTime = (date, time) => {
+    const mexicanTime = this.convertUTCToMexicanTime(time);
+
     const day = date.getUTCDate();
     const month = date.getUTCMonth();
     const year = date.getUTCFullYear();
-    const hour = time.getUTCHours();
-    const minute = time.getUTCMinutes();
+    const hour = mexicanTime.getUTCHours();
+    const minute = mexicanTime.getUTCMinutes();
 
     const combined = new Date(Date.UTC(year, month, day, hour, minute, 0));
-    
-    return combined;
-}
 
-exports.toUTC = (date) => {
-    return new Date(date.toISOString());
-}
+    return combined;
+};
 
 exports.spanishToDay = (day) => {
     switch (day) {
         case "Domingo":
             return 0;
         case "Lunes":
-            return 1
+            return 1;
         case "Martes":
-            return 2
+            return 2;
         case "Miércoles":
-            return 3
+            return 3;
         case "Jueves":
-            return 4
+            return 4;
         case "Viernes":
-            return 5
+            return 5;
         case "Sábado":
-            return 6
+            return 6;
     }
-    return -1
-}
+    return -1;
+};
 
 exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const days = [];
-    workDays.forEach(workDay => {
-        days.push(this.spanishToDay(workDay.workday.name))
+    workDays.forEach((workDay) => {
+        days.push(this.spanishToDay(workDay.workday.name));
     });
 
     const freeDays = [];
-    
+
     events.forEach(event => {
-        if (event.is_free_day !== true) {
+        if (!event.isFreeDay) {
             return;
         }
 
@@ -51,19 +55,23 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
         const eventEnd = event.end;
 
         if (!eventStart || !eventEnd) {
-            throw new Error("No se encontraron fechas válidas para el evento");
+            return;
         }
 
-        let currentEventDay = new Date(Date.UTC(
-            eventStart.getUTCFullYear(),
-            eventStart.getUTCMonth(),
-            eventStart.getUTCDate()
-        ));
-        const lastEventDay = new Date(Date.UTC(
-            eventEnd.getUTCFullYear(),
-            eventEnd.getUTCMonth(),
-            eventEnd.getUTCDate()
-        ));
+        let currentEventDay = new Date(
+            Date.UTC(
+                eventStart.getUTCFullYear(),
+                eventStart.getUTCMonth(),
+                eventStart.getUTCDate(),
+            ),
+        );
+        const lastEventDay = new Date(
+            Date.UTC(
+                eventEnd.getUTCFullYear(),
+                eventEnd.getUTCMonth(),
+                eventEnd.getUTCDate(),
+            ),
+        );
 
         while (currentEventDay <= lastEventDay) {
             const eventDate = currentEventDay.toISOString().split("T")[0];
@@ -75,7 +83,7 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
                 days.includes(eventDay) &&
                 !freeDays.includes(eventDate)
             ) {
-                freeDays.push(eventDate)
+                freeDays.push(eventDate);
             }
 
             currentEventDay.setUTCDate(currentEventDay.getUTCDate() + 1);
@@ -93,7 +101,7 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     }
 
     return usedDays - freeDays.length;
-}
+};
 
 exports.stringToDate = (rawDate) => {
     const dateElements = rawDate.split("-");
@@ -101,11 +109,11 @@ exports.stringToDate = (rawDate) => {
     const year = Number(dateElements[0]);
     const month = Number(dateElements[1]);
     const day = Number(dateElements[2]);
-    
+
     const parsedDate = new Date(Date.UTC(year, month - 1, day));
 
     return parsedDate;
-}
+};
 
 exports.isValidDate = (rawDate) => {
     const dateElements = rawDate.split("-");

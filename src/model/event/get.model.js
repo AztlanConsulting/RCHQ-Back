@@ -1,6 +1,9 @@
 const prisma = require("../../prisma");
 const { Prisma } = require("@prisma/client");
-const { mapPersonalEventOverlap } = require("../../utils/mappers/event.map");
+const {
+    mapHouseEvent,
+    mapPersonalEventOverlap,
+} = require("../../utils/mappers/event.map");
 const personalEventTimeToUtc = (date, time) =>
     new Date(`${date}T${time}-06:00`);
 
@@ -13,10 +16,59 @@ exports.getAllEventTypes = async () => {
     });
 };
 
-exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
-    return await prisma.house_event.findMany({
+exports.findHouseEventById = async (eventId) => {
+    const event = await prisma.house_event.findFirst({
+        where: {
+            house_event_id: eventId,
+            is_deleted: false,
+        },
+    });
+
+    return mapHouseEvent(event);
+};
+
+exports.findHouseEventByIdAndHouseId = async (eventId, houseId) => {
+    const event = await prisma.house_event.findFirst({
+        where: {
+            house_event_id: eventId,
+            house_id: houseId,
+            is_deleted: false,
+        },
+    });
+
+    return mapHouseEvent(event);
+};
+
+exports.findOverlappingHouseEvents = async ({
+    houseId,
+    start,
+    end,
+    excludeEventId,
+}) => {
+    const houseEvents = await prisma.house_event.findMany({
         where: {
             house_id: houseId,
+            house_event_id: { not: excludeEventId },
+            is_deleted: false,
+            start: { lt: end },
+            end: { gt: start },
+        },
+        select: {
+            house_event_id: true,
+            name: true,
+            start: true,
+            end: true,
+        },
+    });
+
+    return houseEvents.map(mapHouseEvent);
+};
+
+exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
+    const houseEvents = await prisma.house_event.findMany({
+        where: {
+            house_id: houseId,
+            is_deleted: false,
             start: {
                 lte: endDate,
             },
@@ -28,23 +80,84 @@ exports.getHouseEventsInRange = async (houseId, startDate, endDate) => {
             event_type: true,
         },
     });
+
+    return houseEvents.map(({ is_free_day, is_deleted, ...event }) => ({
+        ...event,
+        isFreeDay: is_free_day,
+        isDeleted: is_deleted,
+    }));
 };
 
 exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
-    return await prisma.employee_personal_event.findMany({
+    return await prisma.personal_event.findMany({
         where: {
-            employee_id: employeeId,
-            personal_event: {
-                date: {
-                    gte: startDate,
-                    lte: endDate,
+            is_deleted: false,
+            date: {
+                gte: startDate,
+                lte: endDate,
+            },
+            employee_personal_event: {
+                some: {
+                    employee: {
+                        employee_id: employeeId,
+                    },
                 },
             },
         },
         include: {
-            personal_event: {
+            event_type: true,
+            employee_personal_event: {
                 include: {
-                    event_type: true,
+                    employee: {
+                        select: {
+                            employee_id: true,
+                            name: true,
+                            surname: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+};
+
+exports.getHouseCalendarPersonalEventsInRange = async (
+    requesterId,
+    houseId,
+    startDate,
+    endDate,
+) => {
+    return await prisma.personal_event.findMany({
+        where: {
+            is_deleted: false,
+            date: {
+                gte: startDate,
+                lte: endDate,
+            },
+            employee_personal_event: {
+                some: {
+                    employee: {
+                        house_id: houseId,
+                    },
+                },
+                none: {
+                    employee: {
+                        employee_id: requesterId,
+                    },
+                },
+            },
+        },
+        include: {
+            event_type: true,
+            employee_personal_event: {
+                include: {
+                    employee: {
+                        select: {
+                            employee_id: true,
+                            name: true,
+                            surname: true,
+                        },
+                    },
                 },
             },
         },
@@ -52,8 +165,9 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
 };
 
 exports.getGlobalEventsInRange = async (startDate, endDate) => {
-    return await prisma.global_event.findMany({
+    const globalEvents = await prisma.global_event.findMany({
         where: {
+            is_deleted: false,
             start: {
                 lte: endDate,
             },
@@ -65,6 +179,12 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
             event_type: true,
         },
     });
+
+    return globalEvents.map(({ is_free_day, is_deleted, ...event }) => ({
+        ...event,
+        isFreeDay: is_free_day,
+        isDeleted: is_deleted,
+    }));
 };
 
 exports.getEventsByIds = async (eventIds) => {
@@ -175,19 +295,44 @@ exports.getEmployeesInHouse = (employeeIds, houseId) => {
     });
 };
 
+exports.findPersonalEventById = async (eventId, houseId) => {
+    return prisma.personal_event.findFirst({
+        where: {
+            personal_event_id: eventId,
+            is_deleted: false,
+            employee_personal_event: {
+                some: {
+                    employee: { house_id: houseId },
+                },
+            },
+        },
+        include: {
+            employee_personal_event: {
+                select: { employee_id: true },
+            },
+        },
+    });
+};
+
 exports.findOverlappingEmployees = async ({
     employeeIds,
     date,
     start,
     end,
+    endDate = date,
+    excludeEventId = null,
 }) => {
     const overlaps = await prisma.employee_personal_event.findMany({
         where: {
             employee_id: { in: employeeIds },
+            ...(excludeEventId
+                ? { personal_event_id: { not: excludeEventId } }
+                : {}),
             personal_event: {
+                is_deleted: false,
                 date: new Date(date),
                 start: {
-                    lt: personalEventTimeToUtc(date, end),
+                    lt: personalEventTimeToUtc(endDate, end),
                 },
                 end: {
                     gt: personalEventTimeToUtc(date, start),

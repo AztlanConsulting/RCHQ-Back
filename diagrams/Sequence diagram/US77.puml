@@ -10,7 +10,7 @@ database PostgreSQL
 
 autonumber
 
-Navegador -> routes : GET /events/house/add
+Navegador -> routes : GET /events/getAllTypes
 activate routes
 
 routes -> controller : getAllEventTypes(request, response)

@@ -12,7 +12,13 @@ const getPersonalEventModel = require("../../model/event/get.model");
 const { ROLES } = require("../../utils/roles");
 
 const ALL_DAY_START = "00:00:00";
-const ALL_DAY_END = "23:59:00";
+const ALL_DAY_END = "00:00:00";
+
+const addOneDay = (date) => {
+    const nextDate = new Date(`${date}T00:00:00.000Z`);
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    return nextDate.toISOString().slice(0, 10);
+};
 
 const validateAvailability = async (data) => {
     return await createModel.findOverlappingHouseEvents({
@@ -66,11 +72,18 @@ exports.createHouseEvent = async (data, user, req) => {
     let warning = null;
 
     try {
+        const ip = getClientIp(req);
         await createLog(
             user.id,
             LOG_ACTIONS.HOUSE_EVENT_CREATED,
-            getClientIp(req),
+            ip,
             houseEvent.houseEventId,
+        );
+        await createLog(
+            user.id,
+            LOG_ACTIONS.HOUSE_EVENT_ASSIGNED,
+            ip,
+            validData.houseId,
         );
     } catch (error) {
         console.error("Error creando log de evento:", error);
@@ -178,6 +191,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
     }
 
     const { start, end } = resolveSchedule(allDay, startInput, endInput);
+    const endDate = allDay === true ? addOneDay(date) : date;
 
     const overlappedEmployees =
         await getPersonalEventModel.findOverlappingEmployees({
@@ -185,6 +199,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
             date,
             start,
             end,
+            endDate,
         });
 
     const overlapError = getOverlapError(
@@ -204,6 +219,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
         date,
         start,
         end,
+        endDate,
         name,
         description,
         allDay,

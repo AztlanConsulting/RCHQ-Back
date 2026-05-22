@@ -81,7 +81,7 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
             return next();
         }
 
-        if (req.user.role !== ROLES.COORDINATOR) {
+        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",
@@ -120,7 +120,7 @@ exports.canAddToBlacklist = async (req, res, next) => {
             return res.status(400).json({ success: false, message: "CURP no proporcionada" });
         }
 
-        if (req.user.role !== ROLES.COORDINATOR) {
+        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
             return res.status(403).json({
                 success: false,
                 message: "No puede acceder a este recurso",

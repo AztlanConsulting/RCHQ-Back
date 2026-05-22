@@ -2,7 +2,6 @@
 INSERT INTO public.global_event (
   global_event_id,
   event_type_id,
-  date,
   start,
   "end",
   name,
@@ -12,9 +11,8 @@ INSERT INTO public.global_event (
 VALUES (
   'c1000000-0000-4000-8000-000000000010',
   'b1000000-0000-4000-8000-000000000001',
-  '2026-05-13',
-  '08:00:00',
-  '09:30:00',
+  '2026-05-13 08:00:00',
+  '2026-05-13 09:30:00',
   'Sync red de casas',
   'Revisión mensual con coordinadores (alcance global)',
   false
@@ -24,7 +22,6 @@ ON CONFLICT (global_event_id) DO NOTHING;
 INSERT INTO public.global_event (
   global_event_id,
   event_type_id,
-  date,
   start,
   "end",
   name,
@@ -34,9 +31,8 @@ INSERT INTO public.global_event (
 VALUES (
   'c1000000-0000-4000-8000-000000000011',
   'b1000000-0000-4000-8000-000000000004',
-  '2026-05-13',
-  '11:00:00',
-  '13:00:00',
+  '2026-05-13 11:00:00',
+  '2026-05-13 13:00:00',
   'Capacitación ERA',
   'Evacuación y riesgos — sesión presencial',
   false
@@ -57,9 +53,8 @@ VALUES (
   'c2000000-0000-4000-8000-000000000020',
   'b1000000-0000-4000-8000-000000000002',
   (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
-  '2026-05-13',
-  '14:00:00',
-  '15:15:00',
+  '2026-05-13 14:00:00',
+  '2026-05-13 15:00:00',
   'Visita proveedor alimentación',
   'Muestra de menú trimestral; seguimiento a compras coordinadas'
 )

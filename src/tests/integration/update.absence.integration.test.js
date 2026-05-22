@@ -8,6 +8,7 @@ const { randomUUID } = require("crypto");
 const app = require("../../app");
 const fs = require("fs");
 const path = require("path");
+const RESPONSES = require("../../utils/responses");
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/documents");
 const PDF = Buffer.from("%PDF-1.4 absence evidence");
@@ -38,10 +39,17 @@ const IDS = {
     adminA: randomUUID(),
     employeeA: randomUUID(),
     employeeB: randomUUID(),
+    noWorkdaysEmployeeA: randomUUID(),
     absenceTypeA: randomUUID(),
     absenceTypeB: randomUUID(),
     absenceA: randomUUID(),
     absenceB: randomUUID(),
+    absenceNoWorkdays: randomUUID(),
+    workdayLunes: randomUUID(),
+    workdayMartes: randomUUID(),
+    workdayMiercoles: randomUUID(),
+    workdayJueves: randomUUID(),
+    workdayViernes: randomUUID(),
 };
 
 const STATE = {
@@ -104,6 +112,43 @@ const resetAbsences = async () => {
     await prisma.absence.update({
         where: { absence_id: IDS.absenceB },
         data: ORIGINAL_ABSENCE_B,
+    });
+};
+
+const seedEmployeeWorkdays = async (employeeIds) => {
+    const workdays = [
+        { name: "Lunes", id: IDS.workdayLunes },
+        { name: "Martes", id: IDS.workdayMartes },
+        { name: "Miércoles", id: IDS.workdayMiercoles },
+        { name: "Jueves", id: IDS.workdayJueves },
+        { name: "Viernes", id: IDS.workdayViernes },
+    ];
+
+    const savedWorkdays = [];
+
+    for (const workday of workdays) {
+        const savedWorkday = await prisma.workday.upsert({
+            where: { name: workday.name },
+            update: {},
+            create: {
+                workday_id: workday.id,
+                name: workday.name,
+            },
+        });
+
+        savedWorkdays.push(savedWorkday);
+    }
+
+    await prisma.employee_workday.createMany({
+        data: employeeIds.flatMap((employeeId) =>
+            savedWorkdays.map((workday) => ({
+                employee_id: employeeId,
+                workday_id: workday.workday_id,
+                start: new Date("1970-01-01T09:00:00.000Z"),
+                end: new Date("1970-01-01T18:00:00.000Z"),
+            })),
+        ),
+        skipDuplicates: true,
     });
 };
 
@@ -267,6 +312,20 @@ const seed = async () => {
                 start_date: new Date("2024-01-01"),
                 type: "nomina",
             },
+            {
+                employee_id: IDS.noWorkdaysEmployeeA,
+                house_id: IDS.houseA,
+                role_id: IDS.employeeRole,
+                name: "Nora",
+                surname: "SinDias",
+                is_active: true,
+                email: "no.workdays.absence@test.com",
+                password: "hashed",
+                has_first_login: false,
+                curp: "NOSD900101MDFABC01",
+                start_date: new Date("2024-01-01"),
+                type: "nomina",
+            },
         ],
     });
 
@@ -282,6 +341,8 @@ const seed = async () => {
             },
         ],
     });
+
+    await seedEmployeeWorkdays([IDS.employeeA, IDS.employeeB]);
 
     await prisma.absence.createMany({
         data: [
@@ -305,6 +366,16 @@ const seed = async () => {
                 url: "https://example.com/b.pdf",
                 is_deleted: false,
             },
+            {
+                absence_id: IDS.absenceNoWorkdays,
+                employee_id: IDS.noWorkdaysEmployeeA,
+                absence_type_id: IDS.absenceTypeA,
+                start: new Date("2026-05-18T00:00:00.000Z"),
+                end: new Date("2026-05-20T00:00:00.000Z"),
+                description: "Ausencia sin días de trabajo",
+                url: "https://example.com/no-workdays.pdf",
+                is_deleted: false,
+            },
         ],
     });
 };
@@ -312,14 +383,40 @@ const seed = async () => {
 const cleanup = async () => {
     await prisma.absence.deleteMany({
         where: {
-            absence_id: { in: [IDS.absenceA, IDS.absenceB] },
+            absence_id: {
+                in: [
+                    IDS.absenceA,
+                    IDS.absenceB,
+                    IDS.absenceNoWorkdays,
+                ],
+            },
         },
     });
 
     await prisma.logs.deleteMany({
         where: {
             employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+                in: [
+                    IDS.coordinatorA,
+                    IDS.adminA,
+                    IDS.employeeA,
+                    IDS.employeeB,
+                    IDS.noWorkdaysEmployeeA,
+                ],
+            },
+        },
+    });
+
+    await prisma.employee_workday.deleteMany({
+        where: {
+            employee_id: {
+                in: [
+                    IDS.coordinatorA,
+                    IDS.adminA,
+                    IDS.employeeA,
+                    IDS.employeeB,
+                    IDS.noWorkdaysEmployeeA,
+                ],
             },
         },
     });
@@ -327,7 +424,13 @@ const cleanup = async () => {
     await prisma.employee.deleteMany({
         where: {
             employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+                in: [
+                    IDS.coordinatorA,
+                    IDS.adminA,
+                    IDS.employeeA,
+                    IDS.employeeB,
+                    IDS.noWorkdaysEmployeeA,
+                ],
             },
         },
     });
@@ -447,6 +550,27 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(res.statusCode).toBe(422);
         expect(res.body.message).toBe("Tipo de ausencia inválida");
+    });
+
+    it("406 si el empleado de la ausencia no tiene días de trabajo registrados", async () => {
+        const res = await request(app)
+            .put(`/absence/${IDS.absenceNoWorkdays}`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .send({
+                description: "No debería actualizar",
+            });
+
+        const absenceInDb = await prisma.absence.findUnique({
+            where: { absence_id: IDS.absenceNoWorkdays },
+        });
+
+        expect(RESPONSES.ABSENCE.WITHOUT_DATES).toBe("ABSENCE_WITHOUT_DATES");
+        expect(res.statusCode).toBe(406);
+        expect(res.body).toMatchObject({
+            success: false,
+            message: "Se necesitan tener registrados los días de trabajo",
+        });
+        expect(absenceInDb.description).toBe("Ausencia sin días de trabajo");
     });
 
     it("200 y actualiza la ausencia para un coordinador de la misma casa", async () => {

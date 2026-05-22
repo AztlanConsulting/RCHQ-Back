@@ -1,4 +1,7 @@
-const { getVacationsInRange } = require("../../model/vacation/get.model");
+const {
+    getVacationsInRange,
+    getHouseCalendarVacationsInRange,
+} = require("../../model/vacation/get.model");
 const {
     getHouseCalendarAbsenceInRange,
     getAbsencesInRange,
@@ -6,8 +9,8 @@ const {
 const { dateRangeSchema } = require("../../schemas/dates.schemas");
 const {
     calculateUsedDays,
-    combineDateAndTime,
     stringToDate,
+    convertUTCToMexicanTime,
 } = require("../../utils/dates");
 const {
     getHome,
@@ -20,9 +23,12 @@ const {
     getPersonalEventsInRange,
     getGlobalEventsInRange,
     getEmployeesByHouse,
+    getHouseCalendarPersonalEventsInRange,
 } = require("../../model/event/get.model");
 const {
     mapEmployeeAbsenceCalendarEvent,
+    mapHouseVacationCalendarEvent,
+    mapPersonalCalendarEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
 const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
@@ -93,8 +99,10 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         );
         houseEvents.forEach((event) => {
             events.push({
-                start: event.start,
-                end: event.end,
+                houseEventId: event.house_event_id,
+                eventTypeId: event.event_type_id,
+                start: convertUTCToMexicanTime(event.start),
+                end: convertUTCToMexicanTime(event.end),
                 date: "",
                 name: event.name,
                 type: event.event_type.name,
@@ -104,8 +112,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 description: event.description,
                 color: "#7FD447",
                 link: "",
-                lastsAllDay: false,
-                is_free_day: event.is_free_day || false,
+                allDay: event.all_day || false,
+                isFreeDay: event.isFreeDay || false,
             });
         });
     }
@@ -116,33 +124,14 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         endDate,
     );
     personalEvents.forEach((event) => {
-        events.push({
-            start: combineDateAndTime(
-                event.personal_event.date,
-                event.personal_event.start,
-            ),
-            end: combineDateAndTime(
-                event.personal_event.date,
-                event.personal_event.end,
-            ),
-            date: event.date,
-            name: event.personal_event.name,
-            type: event.personal_event.event_type.name,
-            subtitle: event.subtitle || "",
-            focus: "eventos",
-            scope: "personal",
-            description: event.description,
-            color: "#EFBF22",
-            link: "",
-            lastsAllDay: false,
-        });
+        events.push(mapPersonalCalendarEvent(event));
     });
 
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
     globalEvents.forEach((event) => {
         events.push({
-            start: event.start,
-            end: event.end,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
             date: "",
             name: event.name,
             subtitle: event.subtitle || "",
@@ -152,48 +141,41 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             description: event.description,
             color: "#C524FF",
             link: "",
-            lastsAllDay: false,
-            is_free_day: event.is_free_day || false,
+            allDay: event.all_day || false,
+            isFreeDay: event.isFreeDay || false,
         });
+    });
+
+    const workDays = await getWorkDays(employeeId);
+    const freeDays = events.filter((event) => {
+        return (
+            (event.scope === "global" || event.scope === "house") &&
+            event.isFreeDay === true &&
+            event.start instanceof Date &&
+            event.end instanceof Date
+        );
     });
 
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
     vacations.forEach((vacation) => {
-        const vacationEnd = new Date(vacation.end);
-        vacationEnd.setUTCDate(vacationEnd.getUTCDate() + 1);
+        const usedDays = calculateUsedDays(
+            workDays,
+            vacation.start,
+            vacation.end,
+            freeDays,
+        );
 
-        events.push({
-            start: vacation.start,
-            end: vacationEnd,
-            name: "Vacaciones",
-            type: "Vacaciones",
-            focus: "vacaciones",
-            scope: "personal",
-            status: vacation.status,
-            color: vacation.status == 0 ? "#86d982" : "#55c94f",
-            link: "",
-            lastsAllDay: true,
-        });
+        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
     });
 
     const absences = await getAbsencesInRange(employeeId, startDate, endDate);
-    const workDays = await getWorkDays(employeeId);
 
     absences.forEach((absence) => {
-        const absenceFreeDays = events.filter((event) => {
-            return (
-                (event.scope === "global" || event.scope === "house") &&
-                event.is_free_day === true &&
-                event.start instanceof Date &&
-                event.end instanceof Date
-            );
-        });
-
         const usedDays = calculateUsedDays(
             workDays,
             absence.start,
             absence.end,
-            absenceFreeDays,
+            freeDays,
         );
 
         events.push(mapEmployeeAbsenceCalendarEvent(absence, usedDays));
@@ -208,6 +190,7 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
 };
 
 exports.getHouseCalendarRecordsInRange = async (
+    requesterId,
     houseId,
     rawStartDate,
     rawEndDate,
@@ -232,41 +215,50 @@ exports.getHouseCalendarRecordsInRange = async (
         };
     }
 
+    const vacations = await getHouseCalendarVacationsInRange(
+        requesterId,
+        houseId,
+        startDate,
+        endDate,
+    );
     const absences = await getHouseCalendarAbsenceInRange(
+        requesterId,
         houseId,
         startDate,
         endDate,
     );
 
-    if (absences.length <= 0) {
-        return {
-            code: RESPONSES.EVENTS.FOUND,
-            data: {
-                events: [],
-            },
-        };
-    }
-
-    const supportRangeStart = absences.reduce(
-        (minDate, absence) =>
-            absence.start < minDate ? absence.start : minDate,
-        absences[0].start,
-    );
-    const supportRangeEnd = absences.reduce(
-        (maxDate, absence) => (absence.end > maxDate ? absence.end : maxDate),
-        absences[0].end,
-    );
-
-    const [houseEvents, globalEvents] = await Promise.all([
-        getHouseEventsInRange(houseId, supportRangeStart, supportRangeEnd),
-        getGlobalEventsInRange(supportRangeStart, supportRangeEnd),
+    const [houseEvents, globalEvents, personalEvents] = await Promise.all([
+        getHouseEventsInRange(houseId, startDate, endDate),
+        getGlobalEventsInRange(startDate, endDate),
+        getHouseCalendarPersonalEventsInRange(
+            requesterId,
+            houseId,
+            startDate,
+            endDate,
+        ),
     ]);
 
-    const freeDays = [...houseEvents, ...globalEvents].filter(
-        (event) => event.is_free_day === true,
-    );
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
 
     const events = [];
+
+    vacations.forEach((vacation) => {
+        const usedDays = calculateUsedDays(
+            vacation.employee.employee_workday,
+            vacation.start,
+            vacation.end,
+            freeDays,
+        );
+
+        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
+    });
 
     absences.forEach((absence) => {
         const usedDays = calculateUsedDays(
@@ -277,6 +269,10 @@ exports.getHouseCalendarRecordsInRange = async (
         );
 
         events.push(mapHouseAbsenceCalendarEvent(absence, usedDays));
+    });
+
+    personalEvents.forEach((event) => {
+        events.push(mapPersonalCalendarEvent(event));
     });
 
     return {

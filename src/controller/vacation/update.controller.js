@@ -9,11 +9,13 @@ const { getClientIp } = require("../../utils/ip");
 exports.approveVacationRequest = async (req, res) => {
     try {
         const actorEmployeeId = req.user.id;
+        const requesterHouseId = req.resolvedRequester?.houseId;
         const { vacationRequestId } = req.params;
         const ipAddress = getClientIp(req);
 
         const result = await approveVacationRequest({
             actorEmployeeId,
+            requesterHouseId,
             vacationRequestId,
             ipAddress,
         });
@@ -219,6 +221,7 @@ exports.rejectVacationRequest = async (req, res) => {
 exports.updateVacationRequestDates = async (req, res) => {
     try {
         const actorEmployeeId = req.user.id;
+        const requesterHouseId = req.resolvedRequester?.houseId;
         const { vacationRequestId } = req.params;
         const { startDate, endDate } = req.body;
         const ipAddress = getClientIp(req);
@@ -229,6 +232,7 @@ exports.updateVacationRequestDates = async (req, res) => {
             rawStartDate: startDate,
             rawEndDate: endDate,
             ipAddress,
+            requesterHouseId
         });
 
         if (result.code === RESPONSES.USER.NOT_ACCESS) {

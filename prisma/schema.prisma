@@ -65,6 +65,7 @@ model employee {
   picture                         String?                         @db.VarChar(150)
   start_date                      DateTime                        @db.Date
   end_date                        DateTime?                       @db.Date
+  deactivation_reason             String?                         @db.VarChar(250)
   nss                             String?                         @unique @db.VarChar(11)
   bank_account                    String?                         @db.VarChar(18)
   phone_number                    String?                         @db.VarChar(20)
@@ -185,6 +186,7 @@ model global_event {
   description     String?    @db.VarChar(250)
   all_day         Boolean
   is_free_day     Boolean
+  is_deleted      Boolean    @default(false)
   event_type      event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "global_event_event_type_fk")
 }
 
@@ -220,6 +222,7 @@ model house_event {
   description    String?    @db.VarChar(250)
   all_day        Boolean
   is_free_day    Boolean
+  is_deleted     Boolean    @default(false)
   event_type     event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "house_event_event_type_fk")
   house          house      @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "house_event_house_fk")
 }
@@ -254,11 +257,12 @@ model personal_event {
   personal_event_id       String                    @id(map: "personal_event_pk") @db.Uuid
   event_type_id           String                    @db.Uuid
   date                    DateTime                  @db.Date
-  start                   DateTime                  @db.Time(6)
-  end                     DateTime                  @db.Time(6)
+  start                   DateTime                  @db.Timestamp(6)
+  end                     DateTime                  @db.Timestamp(6)
   name                    String                    @db.VarChar(70)
   description             String?                   @db.VarChar(250)
   all_day                 Boolean
+  is_deleted              Boolean                   @default(false)
   employee_personal_event employee_personal_event[]
   event_type              event_type                @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "personal_event_event_type_fk")
 }
@@ -337,7 +341,7 @@ model frecuency_of_payment {
 }
 
 model blacklist {
-  blacklist_id String   @id(map: "blacklist_pk") @default(uuid()) @db.Uuid
+  blacklist_id String   @id(map: "blacklist_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   curp         String   @unique @db.VarChar(18)
   created_at   DateTime @default(now()) @db.Timestamp(6)
   employee     employee @relation(fields: [curp], references: [curp], onUpdate: NoAction, map: "blacklist_employee_fk")

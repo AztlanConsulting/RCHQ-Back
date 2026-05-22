@@ -69,7 +69,7 @@ describe("createHouseEvent service", () => {
                 createModel.findOverlappingHouseEvents,
             ).toHaveBeenCalledTimes(1);
             expect(createModel.createHouseEvent).toHaveBeenCalledTimes(1);
-            expect(createLog).toHaveBeenCalledTimes(1);
+            expect(createLog).toHaveBeenCalledTimes(2);
         });
 
         it("transforma las fechas string a Date antes de llamar al model", async () => {
@@ -118,10 +118,10 @@ describe("createHouseEvent service", () => {
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
             expect(createCall.start.toISOString()).toBe(
-                "2026-06-15T00:00:00.000Z",
+                "2026-06-15T06:00:00.000Z",
             );
             expect(createCall.end.toISOString()).toBe(
-                "2026-06-16T00:00:00.000Z",
+                "2026-06-16T06:00:00.000Z",
             );
         });
 
@@ -144,10 +144,10 @@ describe("createHouseEvent service", () => {
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
             expect(createCall.start.toISOString()).toBe(
-                "2026-06-15T00:00:00.000Z",
+                "2026-06-15T06:00:00.000Z",
             );
             expect(createCall.end.toISOString()).toBe(
-                "2026-06-18T00:00:00.000Z",
+                "2026-06-18T06:00:00.000Z",
             );
         });
     });
@@ -420,7 +420,7 @@ describe("createHouseEvent service", () => {
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
             expect(createModel.createHouseEvent).toHaveBeenCalledTimes(1);
-            expect(createLog).toHaveBeenCalledTimes(1);
+            expect(createLog).toHaveBeenCalledTimes(2);
         });
 
         it("retorna múltiples colisiones cuando hay varios empalmes", async () => {
