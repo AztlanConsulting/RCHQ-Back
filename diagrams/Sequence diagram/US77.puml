@@ -3,9 +3,9 @@
 actor Navegador
 boundary "event.house.routes" as routes
 boundary "React (calendarModal.jsx)" as ReactView
-control "event.house.controller" as controller
-control event.service
-entity event.model
+control "create.controller" as controller
+control "create.service" as event.service
+entity "event.model" as event.model
 database PostgreSQL
 
 autonumber
@@ -14,6 +14,7 @@ Navegador -> routes : GET /events/getAllTypes
 activate routes
 
 routes -> controller : getAllEventTypes(request, response)
+deactivate routes
 activate controller
 
 controller ->> event.service : getAllEventTypes()
@@ -31,6 +32,7 @@ deactivate event.service
 
 controller -->> routes : response.status(200).send({ eventTypes })
 deactivate controller
+activate routes
 
 routes -> ReactView : render(Modal con datos)
 deactivate routes
@@ -38,7 +40,7 @@ activate ReactView
 
 Navegador -> ReactView : Seleccionar opción "Casa"
 
-Navegador -> ReactView : Ingresa datos obligatorios:\n(name, start, end)
+Navegador -> ReactView : Ingresa datos obligatorios:\n(name, eventType, start, end)
 
 alt all_day?
     ReactView -> ReactView : Ocultar selectores de hora
@@ -61,63 +63,120 @@ else Campos completos
     Navegador -> routes : POST /events/house/add
     activate routes
 
-    routes -> controller : postAdd(request, response)
+    routes -> controller : createHouseEvent(request, response)
     deactivate routes
     activate controller
 
-    controller ->> event.service : validateAvailability(data)
+    controller ->> event.service : createHouseEvent(user, payload, clientIp)
     activate event.service
 
-    event.service ->> event.model : findOverlappingEvents(data)
+    event.service ->> event.model : findOverlappingHouseEvents({ houseId, start, end })
     activate event.model
-    event.model ->> PostgreSQL : prisma.event.findMany(overlap_query)
+    event.model ->> PostgreSQL : prisma.house_event.findMany(overlap_query)
     activate PostgreSQL
     PostgreSQL -->> event.model : collisionList
     deactivate PostgreSQL
     event.model -->> event.service : collisions[]
     deactivate event.model
 
-    event.service -->> controller : collisionFound / clear
-    deactivate event.service
-
     alt ¿Existe empalme? AND !forceOverlap
+        event.service -->> controller : { code: OVERLAP, data: { collisions } }
+        deactivate event.service
         controller -->> routes : response.status(409).send("Conflicto")
+        deactivate controller
         activate routes
         routes -->> ReactView : send("Conflicto")
         deactivate routes
         activate ReactView
         ReactView -> Navegador : Mostrar alerta de empalme
         deactivate ReactView
-        
+
         alt No desea traslape
             Navegador -> ReactView : Selecciona "No"
             activate ReactView
             ReactView -> Navegador : Regresa a editar datos
             deactivate ReactView
-        else Si desea traslape (forceOverlap = true)
-            Navegador -> ReactView : Selecciona "Si"
+        else Sí desea traslape (forceOverlap = true)
+            Navegador -> ReactView : Selecciona "Sí"
             activate ReactView
             ReactView -> routes : POST /events/house/add { ..., forceOverlap: true }
             deactivate ReactView
             activate routes
-            routes -> controller : postAdd(request, response)
+
+            routes -> controller : createHouseEvent(request, response)
             deactivate routes
+            activate controller
+
+            controller ->> event.service : createHouseEvent(user, payload, clientIp)
+            activate event.service
+
+            event.service ->> event.model : createHouseEvent(data)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.house_event.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : houseEventCreated
+            deactivate PostgreSQL
+            event.model -->> event.service : houseEvent
+            deactivate event.model
+
+            event.service ->> event.model : createLog(userId, HOUSE_EVENT_CREATED, clientIp, houseEventId)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.log.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : log
+            deactivate PostgreSQL
+            event.model -->> event.service : success
+            deactivate event.model
+
+            event.service ->> event.model : createLog(userId, HOUSE_EVENT_ASSIGNED, clientIp, houseId)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.log.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : log
+            deactivate PostgreSQL
+            event.model -->> event.service : success
+            deactivate event.model
+
+            event.service -->> controller : { code: CREATED, data: { houseEvent } }
+            controller -->> routes : response.status(201).send("Creado")
+            activate routes
+            routes -->> ReactView : send("Creado")
+            deactivate routes
+            activate ReactView
+            ReactView -> Navegador : Actualizar calendario y cerrar modal
+            deactivate ReactView
         end
-        
-    else No existe empalme OR forceOverlap == true
-        controller ->> event.service : createEvent(data)
-        activate event.service
-        event.service ->> event.model : create(data)
+
+    else No existe empalme
+        event.service ->> event.model : createHouseEvent(data)
         activate event.model
-        event.model ->> PostgreSQL : prisma.event.create()
+        event.model ->> PostgreSQL : prisma.house_event.create()
         activate PostgreSQL
-        PostgreSQL -->> event.model : eventCreated
+        PostgreSQL -->> event.model : houseEventCreated
+        deactivate PostgreSQL
+        event.model -->> event.service : houseEvent
+        deactivate event.model
+
+        event.service ->> event.model : createLog(userId, HOUSE_EVENT_CREATED, clientIp, houseEventId)
+        activate event.model
+        event.model ->> PostgreSQL : prisma.log.create()
+        activate PostgreSQL
+        PostgreSQL -->> event.model : log
         deactivate PostgreSQL
         event.model -->> event.service : success
         deactivate event.model
-        event.service -->> controller : success
-        deactivate event.service
 
+        event.service ->> event.model : createLog(userId, HOUSE_EVENT_ASSIGNED, clientIp, houseId)
+        activate event.model
+        event.model ->> PostgreSQL : prisma.log.create()
+        activate PostgreSQL
+        PostgreSQL -->> event.model : log
+        deactivate PostgreSQL
+        event.model -->> event.service : success
+        deactivate event.model
+
+        event.service -->> controller : { code: CREATED, data: { houseEvent } }
+        deactivate event.service
         controller -->> routes : response.status(201).send("Creado")
         deactivate controller
         activate routes
