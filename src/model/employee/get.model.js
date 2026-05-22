@@ -295,6 +295,60 @@ exports.getAllHouses = async () => {
     }));
 };
 
+exports.getHouseEmployeeScheduleReferences = async (houseId) => {
+    const employees = await prisma.employee.findMany({
+        where: {
+            house_id: houseId,
+            is_active: true,
+        },
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            role_id: true,
+            role: {
+                select: {
+                    name: true,
+                },
+            },
+            employee_workday: {
+                select: {
+                    start: true,
+                    end: true,
+                    workday: {
+                        select: {
+                            workday_id: true,
+                            name: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    workday: {
+                        name: "asc",
+                    },
+                },
+            },
+        },
+        orderBy: [
+            { name: "asc" },
+            { surname: "asc" },
+        ],
+    });
+
+    return employees.map((employee) => ({
+        employeeId: employee.employee_id,
+        name: [employee.name, employee.surname].filter(Boolean).join(" "),
+        roleId: employee.role_id,
+        roleName: employee.role?.name ?? "",
+        workdays: employee.employee_workday.map((workday) => ({
+            workdayId: workday.workday.workday_id,
+            name: workday.workday.name,
+            start: workday.start,
+            end: workday.end,
+        })),
+    }));
+};
+
 exports.findByIdWithRoleAndHouse = async (employeeId) => {
     return await prisma.employee.findUnique({
         where: {

@@ -19,6 +19,11 @@ const {
 } = require("../../model/employee/get.model");
 const { updateEmployeeDocument } = require("../../model/employee/update.model");
 
+const getMinutesFromTime = (timeValue) => {
+  const [hours = 0, minutes = 0] = String(timeValue).split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body }) => {
   if (!requesterId || !employeeId)
     return { type: RESPONSES.EMPLOYEE.BAD_REQUEST };
@@ -123,6 +128,35 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
   }
 
   if (workdays && workdays.length > 0) {
+    for (const workday of workdays) {
+      const startMinutes = getMinutesFromTime(workday.start);
+      const endMinutes = getMinutesFromTime(workday.end);
+      const isOvernight = endMinutes <= startMinutes;
+      const durationMinutes = isOvernight
+        ? (24 * 60 - startMinutes) + endMinutes
+        : endMinutes - startMinutes;
+
+      if (durationMinutes < 60) {
+        return {
+          type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+          errors: [{
+            campo: "workdays",
+            mensaje: `El turno del día ${workday.workdayId} debe durar al menos 1 hora`,
+          }],
+        };
+      }
+
+      if (durationMinutes > 24 * 60) {
+        return {
+          type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+          errors: [{
+            campo: "workdays",
+            mensaje: `El turno del día ${workday.workdayId} no puede durar más de 24 horas`,
+          }],
+        };
+      }
+    }
+
     await upsertWorkdays(employeeId, workdays);
   }
 

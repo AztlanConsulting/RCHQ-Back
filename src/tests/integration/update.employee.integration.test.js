@@ -175,7 +175,7 @@ describe("GET /employee/update-form", () => {
     expect(res.statusCode).toBe(401);
   });
 
-  it("retorna 200 con roles, casas y workdays", async () => {
+  it("retorna 200 con roles, casas, workdays y horarios de referencia", async () => {
     const res = await request(app)
       .get("/employee/update-form")
       .set(authHeader());
@@ -184,6 +184,7 @@ describe("GET /employee/update-form", () => {
     expect(Array.isArray(res.body.roles)).toBe(true);
     expect(Array.isArray(res.body.houses)).toBe(true);
     expect(Array.isArray(res.body.workdays)).toBe(true);
+    expect(Array.isArray(res.body.referenceSchedules)).toBe(true);
   });
 });
 

@@ -13,6 +13,7 @@ const {
     getAllWorkdays,
     getAllHouses,
     getFrecuencyPaymentOptions,
+    getHouseEmployeeScheduleReferences,
 } = require("../../model/employee/get.model");
 const {
     getEmployeeJustifiedAbsenceRecordsInRange,
@@ -257,11 +258,19 @@ exports.getWorkDays = async (employeeId) => {
 };
 
 exports.getUpdateFormData = async (user) => {
-    const [roles, houses, workdays, frecuencyOptions] = await Promise.all([
+    const [roles, houses, workdays, frecuencyOptions, referenceSchedules] = await Promise.all([
         getAllRoles(),
         getAllHouses(),
         getAllWorkdays(),
         getFrecuencyPaymentOptions(),
+        getHouseEmployeeScheduleReferences(user.houseId),
     ]);
-    return { roles, houses, workdays, frecuencyOptions, houseId: user.houseId };
+    return {
+        roles,
+        houses,
+        workdays,
+        frecuencyOptions,
+        houseId: user.houseId,
+        referenceSchedules,
+    };
 };

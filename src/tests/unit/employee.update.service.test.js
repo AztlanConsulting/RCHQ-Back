@@ -14,6 +14,7 @@ jest.mock("../../model/employee/get.model", () => ({
   getAllWorkdays:     jest.fn(),
   getAllHouses:       jest.fn(),
   getFrecuencyPaymentOptions: jest.fn(),
+  getHouseEmployeeScheduleReferences: jest.fn(),
 }));
 
 jest.mock("../../utils/password", () => ({
@@ -37,6 +38,7 @@ const {
   getAllWorkdays,
   getAllHouses,
   getFrecuencyPaymentOptions,
+  getHouseEmployeeScheduleReferences,
  } = require("../../model/employee/get.model");
 const { encryptValue }         = require("../../utils/password");
 
@@ -94,6 +96,15 @@ beforeEach(() => {
   getAllHouses.mockResolvedValue([{ houseId: "h1", name: "Casa Test" }]);
   getAllWorkdays.mockResolvedValue([{ workdayId: "wd1", name: "Lunes" }]);
   getFrecuencyPaymentOptions.mockResolvedValue([{ id: "f1", name: "Quincenal" }]);
+  getHouseEmployeeScheduleReferences.mockResolvedValue([
+    {
+      employeeId: "emp-ref-1",
+      name: "Empleado Referencia",
+      roleId: "r1",
+      roleName: "Administrador",
+      workdays: [],
+    },
+  ]);
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -109,11 +120,21 @@ describe("getUpdateFormData", () => {
       workdays: [{ workdayId: "wd1", name: "Lunes" }],
       houseId:  "h1",
       frecuencyOptions: [{ id: "f1", name: "Quincenal" }],
+      referenceSchedules: [
+        {
+          employeeId: "emp-ref-1",
+          name: "Empleado Referencia",
+          roleId: "r1",
+          roleName: "Administrador",
+          workdays: [],
+        },
+      ],
     });
     expect(getAllRoles).toHaveBeenCalledTimes(1);
     expect(getAllHouses).toHaveBeenCalledTimes(1);
     expect(getAllWorkdays).toHaveBeenCalledTimes(1);
     expect(getFrecuencyPaymentOptions).toHaveBeenCalledTimes(1);
+    expect(getHouseEmployeeScheduleReferences).toHaveBeenCalledWith("h1");
   });
 
   it("propaga el error si algún modelo falla", async () => {
@@ -630,6 +651,20 @@ describe("updateAdminInfoService", () => {
         },
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
+    });
+
+    it("retorna VALIDATION_ERROR si el turno dura menos de una hora usando minutos", async () => {
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body: {
+          workdays: [
+            { workdayId: "d0000001-0000-4000-8000-000000000001", start: "09:30", end: "10:00" },
+          ],
+        },
+      });
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors?.[0]?.campo).toBe("workdays");
     });
 
     it("retorna VALIDATION_ERROR con formato de hora inválido", async () => {
