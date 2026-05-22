@@ -34,8 +34,8 @@ const validateAvailability = async (data) => {
     });
 };
 
-exports.createHouseEvent = async (data, user, clientIp) => {
-    const parsed = houseEventCreateSchema.safeParse(data);
+exports.createHouseEvent = async (user, payload, clientIp) => {
+    const parsed = houseEventCreateSchema.safeParse({ ...payload, houseId: user.houseId });
 
     if (!parsed.success) {
         return {
