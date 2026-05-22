@@ -26,7 +26,19 @@ const ROLES = Object.freeze({
 
 const allRoles = Object.values(ROLES);
 
+const DOCUMENT_VIEWER_ROLES = Object.freeze([
+    ROLES.PSYCHOLOGIST_FEMALE,
+    ROLES.PSYCHOLOGIST_MALE,
+    ROLES.SOCIAL_WORKER,
+    ROLES.NURSE,
+    ROLES.THERAPIST,
+    ROLES.NNA_CARE_RESPONSIBLE,
+    ROLES.EXECUTIVE_ASSISTANT,
+    ROLES.FINANCE_ASSISTANT,
+]);
+
 module.exports = {
     ROLES,
+    DOCUMENT_VIEWER_ROLES,
     allRoles,
 };
