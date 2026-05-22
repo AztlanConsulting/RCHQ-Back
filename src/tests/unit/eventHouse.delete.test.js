@@ -35,7 +35,7 @@ describe("deleteHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Caso exitoso", () => {
         it("elimina el evento y retorna DELETED", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
             deleteModel.softDeleteHouseEvent.mockResolvedValue();
             createLog.mockResolvedValue();
 
@@ -48,19 +48,19 @@ describe("deleteHouseEvent service", () => {
             expect(result.code).toBe(RESPONSES.EVENTS.DELETED);
         });
 
-        it("llama a findHouseEventById con el id correcto", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockEvent);
+        it("llama a findHouseEventByIdAndHouseId con el id y houseId correctos", async () => {
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
             deleteModel.softDeleteHouseEvent.mockResolvedValue();
             createLog.mockResolvedValue();
 
             await deleteService.deleteHouseEvent(houseEventId, validUser, clientIp);
 
-            expect(getModel.findHouseEventById).toHaveBeenCalledWith(houseEventId);
-            expect(getModel.findHouseEventById).toHaveBeenCalledTimes(1);
+            expect(getModel.findHouseEventByIdAndHouseId).toHaveBeenCalledWith(houseEventId, validUser.houseId);
+            expect(getModel.findHouseEventByIdAndHouseId).toHaveBeenCalledTimes(1);
         });
 
         it("llama a softDeleteHouseEvent con el id correcto", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
             deleteModel.softDeleteHouseEvent.mockResolvedValue();
             createLog.mockResolvedValue();
 
@@ -76,7 +76,7 @@ describe("deleteHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Evento no encontrado", () => {
         it("retorna NOT_FOUND si el evento no existe (null)", async () => {
-            getModel.findHouseEventById.mockResolvedValue(null);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
 
             const result = await deleteService.deleteHouseEvent(
                 houseEventId,
@@ -89,33 +89,14 @@ describe("deleteHouseEvent service", () => {
             expect(createLog).not.toHaveBeenCalled();
         });
 
-        it("retorna NOT_FOUND si el evento ya estaba eliminado", async () => {
-            getModel.findHouseEventById.mockResolvedValue({
-                ...mockEvent,
-                isDeleted: true,
-            });
-
-            const result = await deleteService.deleteHouseEvent(
-                houseEventId,
-                validUser,
-                clientIp,
-            );
-
-            expect(result.code).toBe(RESPONSES.EVENTS.NOT_FOUND);
-            expect(deleteModel.softDeleteHouseEvent).not.toHaveBeenCalled();
-            expect(createLog).not.toHaveBeenCalled();
-        });
     });
 
     // ──────────────────────────────────────────────────────────
-    //  CASO 3: Acceso denegado por casa diferente
+    //  CASO 3: Evento de otra casa
     // ──────────────────────────────────────────────────────────
-    describe("Acceso denegado", () => {
-        it("retorna NOT_ACCESS si el coordinador intenta eliminar un evento de otra casa", async () => {
-            getModel.findHouseEventById.mockResolvedValue({
-                ...mockEvent,
-                houseId: "99999999-9999-4999-8999-999999999999",
-            });
+    describe("Evento de otra casa", () => {
+        it("retorna NOT_FOUND si el evento no pertenece a la casa del usuario", async () => {
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
 
             const result = await deleteService.deleteHouseEvent(
                 houseEventId,
@@ -123,7 +104,7 @@ describe("deleteHouseEvent service", () => {
                 clientIp,
             );
 
-            expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
+            expect(result.code).toBe(RESPONSES.EVENTS.NOT_FOUND);
             expect(deleteModel.softDeleteHouseEvent).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -134,7 +115,7 @@ describe("deleteHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna DELETED aunque el log falle", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
             deleteModel.softDeleteHouseEvent.mockResolvedValue();
             createLog.mockRejectedValue(new Error("Log DB error"));
 
@@ -155,7 +136,7 @@ describe("deleteHouseEvent service", () => {
         });
 
         it("el soft delete se ejecuta aunque el log falle después", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
             deleteModel.softDeleteHouseEvent.mockResolvedValue();
             createLog.mockRejectedValue(new Error("Log DB error"));
 
@@ -169,7 +150,7 @@ describe("deleteHouseEvent service", () => {
         });
 
         it("pasa los datos correctos a createLog", async () => {
-            getModel.findHouseEventById.mockResolvedValue(mockEvent);
+            getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
             deleteModel.softDeleteHouseEvent.mockResolvedValue();
             createLog.mockResolvedValue();
 

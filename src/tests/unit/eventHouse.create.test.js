@@ -1,12 +1,12 @@
 const createService = require("../../service/event/create.service");
 const createModel = require("../../model/event/create.model");
+const getModel = require("../../model/event/get.model");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 jest.mock("../../model/event/create.model");
+jest.mock("../../model/event/get.model");
 jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
 
 describe("createHouseEvent service", () => {
     const validUser = {
@@ -15,8 +15,6 @@ describe("createHouseEvent service", () => {
         houseId: "22222222-2222-4222-8222-222222222222",
         privileges: ["createEvent"],
     };
-
-    const validReq = { headers: {}, ip: "127.0.0.1" };
 
     const baseValidData = {
         eventTypeId: "33333333-3333-4333-8333-333333333333",
@@ -44,7 +42,6 @@ describe("createHouseEvent service", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        getClientIp.mockReturnValue("127.0.0.1");
     });
 
     // ──────────────────────────────────────────────────────────
@@ -52,34 +49,34 @@ describe("createHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento con hora", () => {
         it("crea el evento, retorna CREATED y registra el log", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
             createLog.mockResolvedValue();
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
             expect(result.data.houseEvent).toEqual(mockCreatedEvent);
             expect(result.data.warning).toBeNull();
             expect(
-                createModel.findOverlappingHouseEvents,
+                getModel.findOverlappingHouseEvents,
             ).toHaveBeenCalledTimes(1);
             expect(createModel.createHouseEvent).toHaveBeenCalledTimes(1);
             expect(createLog).toHaveBeenCalledTimes(2);
         });
 
         it("transforma las fechas string a Date antes de llamar al model", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -99,7 +96,7 @@ describe("createHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento allDay", () => {
         it("suma un día al end para un evento allDay de un solo día", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             const allDayData = {
@@ -110,9 +107,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                allDayData,
                 validUser,
-                validReq,
+                allDayData,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -126,7 +123,7 @@ describe("createHouseEvent service", () => {
         });
 
         it("suma un día al end para un evento allDay de varios días", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             const allDayData = {
@@ -137,9 +134,9 @@ describe("createHouseEvent service", () => {
             };
 
             await createService.createHouseEvent(
-                allDayData,
                 validUser,
-                validReq,
+                allDayData,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -161,9 +158,9 @@ describe("createHouseEvent service", () => {
             delete invalidData.eventTypeId;
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -171,34 +168,18 @@ describe("createHouseEvent service", () => {
                 result.data.errors.some((e) => e.field === "eventTypeId"),
             ).toBe(true);
             expect(
-                createModel.findOverlappingHouseEvents,
+                getModel.findOverlappingHouseEvents,
             ).not.toHaveBeenCalled();
             expect(createModel.createHouseEvent).not.toHaveBeenCalled();
-        });
-
-        it("retorna VALIDATION_ERROR si falta houseId", async () => {
-            const invalidData = { ...baseValidData };
-            delete invalidData.houseId;
-
-            const result = await createService.createHouseEvent(
-                invalidData,
-                validUser,
-                validReq,
-            );
-
-            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
-            expect(result.data.errors.some((e) => e.field === "houseId")).toBe(
-                true,
-            );
         });
 
         it("retorna VALIDATION_ERROR si el name está vacío", async () => {
             const invalidData = { ...baseValidData, name: "" };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -211,9 +192,9 @@ describe("createHouseEvent service", () => {
             const invalidData = { ...baseValidData, name: "a".repeat(71) };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -226,9 +207,9 @@ describe("createHouseEvent service", () => {
             const invalidData = { ...baseValidData, name: "Evento <script>" };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -244,9 +225,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -259,9 +240,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -279,9 +260,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -298,9 +279,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -317,9 +298,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -332,9 +313,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -347,9 +328,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -359,16 +340,16 @@ describe("createHouseEvent service", () => {
         });
 
         it("acepta description nulo u omitido", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             const dataWithoutDesc = { ...baseValidData };
             delete dataWithoutDesc.description;
 
             const result = await createService.createHouseEvent(
-                dataWithoutDesc,
                 validUser,
-                validReq,
+                dataWithoutDesc,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -387,14 +368,14 @@ describe("createHouseEvent service", () => {
         };
 
         it("retorna OVERLAP cuando hay empalme y forceOverlap es false", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([
+            getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
             ]);
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -404,7 +385,7 @@ describe("createHouseEvent service", () => {
         });
 
         it("crea el evento cuando hay empalme pero forceOverlap es true", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([
+            getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
             ]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
@@ -413,9 +394,9 @@ describe("createHouseEvent service", () => {
             const forceData = { ...baseValidData, forceOverlap: true };
 
             const result = await createService.createHouseEvent(
-                forceData,
                 validUser,
-                validReq,
+                forceData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -428,15 +409,15 @@ describe("createHouseEvent service", () => {
                 ...mockCollision,
                 houseEventId: "66666666-6666-4666-8666-666666666666",
             };
-            createModel.findOverlappingHouseEvents.mockResolvedValue([
+            getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
                 secondCollision,
             ]);
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -449,7 +430,7 @@ describe("createHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna CREATED con warning si el log falla", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
             createLog.mockRejectedValue(new Error("Log DB error"));
 
@@ -458,9 +439,9 @@ describe("createHouseEvent service", () => {
                 .mockImplementation(() => {});
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -472,14 +453,14 @@ describe("createHouseEvent service", () => {
         });
 
         it("retorna warning null si el log se crea correctamente", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
             createLog.mockResolvedValue();
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -487,15 +468,14 @@ describe("createHouseEvent service", () => {
         });
 
         it("pasa los datos correctos a createLog", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
             createLog.mockResolvedValue();
-            getClientIp.mockReturnValue("192.168.1.1");
 
             await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "192.168.1.1",
             );
 
             expect(createLog).toHaveBeenCalledWith(
@@ -512,16 +492,16 @@ describe("createHouseEvent service", () => {
     // ──────────────────────────────────────────────────────────
     describe("Defaults del schema", () => {
         it("aplica allDay=false por defecto si no se envía", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             const dataWithoutAllDay = { ...baseValidData };
             delete dataWithoutAllDay.allDay;
 
             const result = await createService.createHouseEvent(
-                dataWithoutAllDay,
                 validUser,
-                validReq,
+                dataWithoutAllDay,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -530,16 +510,16 @@ describe("createHouseEvent service", () => {
         });
 
         it("aplica isFreeDay=false por defecto si no se envía", async () => {
-            createModel.findOverlappingHouseEvents.mockResolvedValue([]);
+            getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             const dataWithoutFree = { ...baseValidData };
             delete dataWithoutFree.isFreeDay;
 
             await createService.createHouseEvent(
-                dataWithoutFree,
                 validUser,
-                validReq,
+                dataWithoutFree,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -553,7 +533,7 @@ describe("createHouseEvent service", () => {
                 start: new Date(),
                 end: new Date(),
             };
-            createModel.findOverlappingHouseEvents.mockResolvedValue([
+            getModel.findOverlappingHouseEvents.mockResolvedValue([
                 mockCollision,
             ]);
 
@@ -561,9 +541,9 @@ describe("createHouseEvent service", () => {
             delete dataWithoutForce.forceOverlap;
 
             const result = await createService.createHouseEvent(
-                dataWithoutForce,
                 validUser,
-                validReq,
+                dataWithoutForce,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
