@@ -1,6 +1,8 @@
 const { getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getFutureVacationRequests,
+    getPastVacationRequests,
     getEligibleVacationEmployees,
 } = require("../../service/vacation/get.service");
 const RESPONSES = require("../../utils/responses");
@@ -126,6 +128,90 @@ exports.getReviewedVacationRequests = async (req, res) => {
         });
     } catch (error) {
         console.error("getReviewedVacationRequests error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getFutureVacationRequests = async (req, res) => {
+    try {
+        const result = await getFutureVacationRequests({
+            actorEmployeeId: req.user.id,
+            query: req.query,
+        });
+
+        if (result.code === RESPONSES.USER.NOT_ACCESS) {
+            return res.status(401).json({
+                success: false,
+                message: "Usuario no autenticado",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.REQUESTS_FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: result.data.requests,
+                pagination: result.data.pagination,
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.VALIDATION_ERROR) {
+            return res.status(422).json({
+                success: false,
+                message: "Datos inválidos",
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    } catch (error) {
+        console.error("getFutureVacationRequests error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getPastVacationRequests = async (req, res) => {
+    try {
+        const result = await getPastVacationRequests({
+            actorEmployeeId: req.user.id,
+            query: req.query,
+        });
+
+        if (result.code === RESPONSES.USER.NOT_ACCESS) {
+            return res.status(401).json({
+                success: false,
+                message: "Usuario no autenticado",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.REQUESTS_FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: result.data.requests,
+                pagination: result.data.pagination,
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.VALIDATION_ERROR) {
+            return res.status(422).json({
+                success: false,
+                message: "Datos inválidos",
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    } catch (error) {
+        console.error("getPastVacationRequests error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

@@ -35,6 +35,20 @@ const reviewedStatusSchema = z
     .enum(["approved", "rejected", "all"])
     .optional();
 
+const ownVacationStatusSchema = z
+    .enum(["pending", "approved", "rejected", "all"])
+    .optional();
+
+const verifyValidOrderDates = (data) => {
+    if (!data.startDate || !data.endDate) return true;
+    return data.startDate <= data.endDate;
+};
+
+const invalidOrderMessage = {
+    message: "La fecha de inicio no puede ser posterior a la fecha de fin",
+    path: ["startDate"],
+};
+
 exports.getPendingVacationRequestsSchema = z.object({
     params: z.object({}).strict().optional(),
     query: z
@@ -45,16 +59,7 @@ exports.getPendingVacationRequestsSchema = z.object({
             endDate: optionalDateSchema,
         })
         .strict()
-        .refine(
-            (data) => {
-                if (!data.startDate || !data.endDate) return true;
-                return data.startDate <= data.endDate;
-            },
-            {
-                message: "La fecha de inicio no puede ser posterior a la fecha de fin",
-                path: ["startDate"],
-            },
-        ),
+        .refine(verifyValidOrderDates, invalidOrderMessage),
     body: z.object({}).strict().optional(),
 });
 
@@ -69,16 +74,22 @@ exports.getReviewedVacationRequestsSchema = z.object({
             endDate: optionalDateSchema,
         })
         .strict()
-        .refine(
-            (data) => {
-                if (!data.startDate || !data.endDate) return true;
-                return data.startDate <= data.endDate;
-            },
-            {
-                message: "La fecha de inicio no puede ser posterior a la fecha de fin",
-                path: ["startDate"],
-            },
-        ),
+        .refine(verifyValidOrderDates, invalidOrderMessage),
+    body: z.object({}).strict().optional(),
+});
+
+exports.getOwnVacationRequestsSchema = z.object({
+    params: z.object({}).strict().optional(),
+    query: z
+        .object({
+            ...paginationSchema,
+            search: searchSchema,
+            status: ownVacationStatusSchema,
+            startDate: optionalDateSchema,
+            endDate: optionalDateSchema,
+        })
+        .strict()
+        .refine(verifyValidOrderDates, invalidOrderMessage),
     body: z.object({}).strict().optional(),
 });
 
@@ -95,16 +106,23 @@ exports.getVacationRequestsInputSchema = z
                 endDate: optionalDateSchema,
             })
             .strict()
-            .refine(
-                (data) => {
-                    if (!data.startDate || !data.endDate) return true;
-                    return data.startDate <= data.endDate;
-                },
-                {
-                    message:
-                        "La fecha de inicio no puede ser posterior a la fecha de fin",
-                    path: ["startDate"],
-                }
-            ),
+            .refine(verifyValidOrderDates, invalidOrderMessage),
+    })
+    .strict();
+
+exports.getOwnVacationRequestsInputSchema = z
+    .object({
+        actorEmployeeId: z.string().uuid("ID de actor inválido"),
+        query: z
+            .object({
+                page: paginationSchema.page,
+                limit: paginationSchema.limit,
+                search: searchSchema,
+                status: ownVacationStatusSchema,
+                startDate: optionalDateSchema,
+                endDate: optionalDateSchema,
+            })
+            .strict()
+            .refine(verifyValidOrderDates, invalidOrderMessage),
     })
     .strict();

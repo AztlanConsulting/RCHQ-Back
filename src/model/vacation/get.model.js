@@ -271,6 +271,25 @@ exports.getReviewedVacationRequestsByHouse = async ({
     return { requests, total };
 };
 
+exports.getVacationRequestsByEmployee = async ({ where, skip, take }) => {
+    const [requests, total] = await Promise.all([
+        prisma.vacations_request.findMany({
+            where,
+            include: employeeBasicSearch,
+            orderBy: [
+                { created_at: "desc" },
+                { start: "desc" },
+                { vacations_request_id: "asc" },
+            ],
+            skip,
+            take,
+        }),
+        prisma.vacations_request.count({ where }),
+    ]);
+
+    return { requests, total };
+};
+
 exports.getEligibleVacationEmployees = async (where) => {
     return await prisma.employee.findMany({
         where,
