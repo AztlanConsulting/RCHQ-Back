@@ -271,16 +271,17 @@ exports.getReviewedVacationRequestsByHouse = async ({
     return { requests, total };
 };
 
-exports.getVacationRequestsByEmployee = async ({ where, skip, take }) => {
+exports.getVacationRequestsByEmployee = async ({
+    where,
+    skip,
+    take,
+    orderBy,
+}) => {
     const [requests, total] = await Promise.all([
         prisma.vacations_request.findMany({
             where,
             include: employeeBasicSearch,
-            orderBy: [
-                { created_at: "desc" },
-                { start: "desc" },
-                { vacations_request_id: "asc" },
-            ],
+            orderBy,
             skip,
             take,
         }),

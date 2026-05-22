@@ -1693,6 +1693,17 @@ VALUES
   NULL,
   NOW(),
   2
+),
+-- Solicitud para concurrencia en pasado
+(
+  'c3000000-0000-4000-8000-000000000096',
+  'e3000001-0000-4000-8000-000000000006',
+  '2026-01-27',
+  '2026-01-28',
+  2,
+  NULL,
+  NOW(),
+  2
 )
 ON CONFLICT (vacations_request_id) DO UPDATE SET
   employee_id = EXCLUDED.employee_id,

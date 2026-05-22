@@ -389,6 +389,11 @@ exports.getFutureVacationRequests = async ({ actorEmployeeId, query }) => {
         where,
         skip,
         take,
+        orderBy: [
+            { start: "asc" },
+            { created_at: "desc" },
+            { vacations_request_id: "asc" },
+        ],
     });
 
     return {
@@ -448,6 +453,11 @@ exports.getPastVacationRequests = async ({ actorEmployeeId, query }) => {
         where,
         skip,
         take,
+        orderBy: [
+            { start: "desc" },
+            { created_at: "desc" },
+            { vacations_request_id: "asc" },
+        ],
     });
 
     return {

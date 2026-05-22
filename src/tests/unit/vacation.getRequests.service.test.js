@@ -534,6 +534,11 @@ describe("getFutureVacationRequests y getPastVacationRequests service", () => {
             },
             skip: 0,
             take: 6,
+            orderBy: [
+                { start: "asc" },
+                { created_at: "desc" },
+                { vacations_request_id: "asc" },
+            ],
         });
         expect(result.data.requests).toEqual([
             {
@@ -572,6 +577,11 @@ describe("getFutureVacationRequests y getPastVacationRequests service", () => {
             },
             skip: 0,
             take: 6,
+            orderBy: [
+                { start: "desc" },
+                { created_at: "desc" },
+                { vacations_request_id: "asc" },
+            ],
         });
         expect(result.data.pagination.total).toBe(1);
     });
