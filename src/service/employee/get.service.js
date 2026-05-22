@@ -5,7 +5,6 @@ const {
     getEmployees,
     getEmployeeById,
     getEmployeeAddress,
-    getEmployeeFaults,
     getEmployeeWorkdays,
     getEmployeeVacationRequests,
     getDocumentTypes,
@@ -15,7 +14,9 @@ const {
     getAllHouses,
     getFrecuencyPaymentOptions,
 } = require("../../model/employee/get.model");
-const { getEmployeeAbsenceRecords } = require("../../model/absence/get.model");
+const {
+    getEmployeeJustifiedAbsenceRecordsInRange,
+} = require("../../model/absence/get.model");
 const { getHouseById } = require("../../model/house/get.model");
 const { calculateUsedDays } = require("../../utils/dates");
 const {
@@ -26,10 +27,32 @@ const { decryptValue } = require("../../utils/password");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
 
-const calculateAbsenceUsedDaysTotal = async (employeeId, houseId) => {
+const getCurrentMonthUtcRange = () => {
+    const now = new Date();
+    const monthStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
+    const monthEnd = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0),
+    );
+
+    return { monthStart, monthEnd };
+};
+
+const getClampedRange = (rangeStart, rangeEnd, minDate, maxDate) => ({
+    startDate: rangeStart > minDate ? rangeStart : minDate,
+    endDate: rangeEnd < maxDate ? rangeEnd : maxDate,
+});
+
+const calculateMonthlyJustifiedAbsenceUsedDays = async (employeeId, houseId) => {
+    const { monthStart, monthEnd } = getCurrentMonthUtcRange();
     const [workDays, absences] = await Promise.all([
         getWorkDays(employeeId),
-        getEmployeeAbsenceRecords(employeeId),
+        getEmployeeJustifiedAbsenceRecordsInRange(
+            employeeId,
+            monthStart,
+            monthEnd,
+        ),
     ]);
 
     if (workDays.length === 0 || absences.length === 0 || !houseId) {
@@ -39,8 +62,15 @@ const calculateAbsenceUsedDaysTotal = async (employeeId, houseId) => {
     let totalUsedDays = 0;
 
     for (const absence of absences) {
-        const startDate = toUtcDate(absence.start);
-        const endDate = toUtcDate(absence.end);
+        const {
+            startDate,
+            endDate,
+        } = getClampedRange(
+            toUtcDate(absence.start),
+            toUtcDate(absence.end),
+            monthStart,
+            monthEnd,
+        );
         const { freeDays, overlappingVacations } =
             await getAbsenceCalculationContext({
                 employeeId,
@@ -160,11 +190,10 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
     const employeeAddress = await getEmployeeAddress(employeeId);
     const employeeHouse = await getHouseById(employeeBasicInfo.houseId);
 
-    const employeeFaults = await getEmployeeFaults(employeeId);
     const employeeWorkdays = await getEmployeeWorkdays(employeeId);
     const employeeVacationRequests =
         await getEmployeeVacationRequests(employeeId);
-    const employeeAbsenceUsedDays = await calculateAbsenceUsedDaysTotal(
+    const employeeAbsenceUsedDays = await calculateMonthlyJustifiedAbsenceUsedDays(
         employeeId,
         employeeBasicInfo.houseId,
     );
@@ -179,7 +208,6 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
                     house: employeeHouse,
                 },
                 adminInfo: {
-                    faults: employeeFaults,
                     workdays: employeeWorkdays,
                     vacationRequests: employeeVacationRequests,
                     absenceUsedDays: employeeAbsenceUsedDays,

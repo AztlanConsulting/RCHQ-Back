@@ -176,3 +176,35 @@ exports.getEmployeeAbsenceRecords = async (employeeId) => {
         },
     });
 };
+
+exports.getEmployeeJustifiedAbsenceRecordsInRange = async (
+    employeeId,
+    startDate,
+    endDate,
+) => {
+    return await prisma.absence.findMany({
+        where: {
+            employee_id: employeeId,
+            is_deleted: false,
+            url: {
+                not: null,
+            },
+            NOT: {
+                url: "",
+            },
+            start: {
+                lte: endDate,
+            },
+            end: {
+                gte: startDate,
+            },
+        },
+        select: {
+            start: true,
+            end: true,
+        },
+        orderBy: {
+            start: "desc",
+        },
+    });
+};
