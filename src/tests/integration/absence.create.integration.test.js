@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const prisma = require("../../prisma");
 const app = require("../../app");
+const RESPONSES = require("../../utils/responses");
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/documents");
 const PDF = Buffer.from("%PDF-1.4 absence create evidence");
@@ -25,11 +26,19 @@ const IDS = {
     adminA: randomUUID(),
     employeeA: randomUUID(),
     inactiveEmployeeA: randomUUID(),
+    noWorkdaysEmployeeA: randomUUID(),
     employeeB: randomUUID(),
     roleDifferentEmployee: randomUUID(),
     absenceTypeA: randomUUID(),
     absenceTypeB: randomUUID(),
     vacationOverlap: randomUUID(),
+    workdayLunes: randomUUID(),
+    workdayMartes: randomUUID(),
+    workdayMiercoles: randomUUID(),
+    workdayJueves: randomUUID(),
+    workdayViernes: randomUUID(),
+    globalFreeEventType: randomUUID(),
+    houseFreeEventType: randomUUID(),
 };
 
 const STATE = {
@@ -45,6 +54,7 @@ const TEST_EMAILS = [
     "admin.absence.create@test.com",
     "empleado.a.absence.create@test.com",
     "inactive.a.absence.create@test.com",
+    "no.workdays.absence.create@test.com",
     "empleado.b.absence.create@test.com",
     "role.different.absence.create@test.com",
 ];
@@ -75,10 +85,40 @@ const dateFromTodayUTC = ({ years = 0, months = 0, days = 0 }) => {
     );
 };
 
-const validStartDate = (days = 5) =>
-    dateOnly(dateFromTodayUTC({ months: 1, days }));
-const validEndDate = (days = 6) =>
-    dateOnly(dateFromTodayUTC({ months: 1, days }));
+const addDays = (date, days) => {
+    const nextDate = new Date(date);
+    nextDate.setUTCDate(nextDate.getUTCDate() + days);
+
+    return nextDate;
+};
+
+const nextWeekdayDate = (fromDate, targetDay) => {
+    const date = new Date(fromDate);
+
+    while (date.getUTCDay() !== targetDay) {
+        date.setUTCDate(date.getUTCDate() + 1);
+    }
+
+    return date;
+};
+
+const BASE_VALID_MONDAY = nextWeekdayDate(
+    dateFromTodayUTC({ months: 1, days: 14 }),
+    1,
+);
+
+const futureWorkWeekRange = (weeks = 0) => {
+    const monday = addDays(BASE_VALID_MONDAY, weeks * 7);
+    const friday = addDays(monday, 4);
+
+    return {
+        startDate: dateOnly(monday),
+        endDate: dateOnly(friday),
+    };
+};
+
+const validStartDate = (weeks = 0) => futureWorkWeekRange(weeks).startDate;
+const validEndDate = (weeks = 0) => futureWorkWeekRange(weeks).endDate;
 
 const sign = (overrides = {}) =>
     jwt.sign(
@@ -131,12 +171,71 @@ const removeUploadedFilesForEmployees = async (employeeIds) => {
     }
 };
 
+const localDateRangeToUtcEventRange = (startDate, endDate) => {
+    const endDateUtc = new Date(`${endDate}T00:00:00.000Z`);
+    endDateUtc.setUTCDate(endDateUtc.getUTCDate() + 1);
+
+    return {
+        start: new Date(`${startDate}T06:00:00.000Z`),
+        end: new Date(`${dateOnly(endDateUtc)}T05:59:00.000Z`),
+    };
+};
+
+const seedEmployeeWorkdays = async (employeeIds) => {
+    const workdays = [
+        { name: "Lunes", id: IDS.workdayLunes },
+        { name: "Martes", id: IDS.workdayMartes },
+        { name: "Miércoles", id: IDS.workdayMiercoles },
+        { name: "Jueves", id: IDS.workdayJueves },
+        { name: "Viernes", id: IDS.workdayViernes },
+    ];
+
+    const savedWorkdays = [];
+
+    for (const workday of workdays) {
+        const savedWorkday = await prisma.workday.upsert({
+            where: { name: workday.name },
+            update: {},
+            create: {
+                workday_id: workday.id,
+                name: workday.name,
+            },
+        });
+
+        savedWorkdays.push(savedWorkday);
+    }
+
+    await prisma.employee_workday.createMany({
+        data: employeeIds.flatMap((employeeId) =>
+            savedWorkdays.map((workday) => ({
+                employee_id: employeeId,
+                workday_id: workday.workday_id,
+                start: new Date("1970-01-01T09:00:00.000Z"),
+                end: new Date("1970-01-01T18:00:00.000Z"),
+            })),
+        ),
+        skipDuplicates: true,
+    });
+};
+
+const createEventType = async (eventTypeId, name) => {
+    await prisma.event_type.upsert({
+        where: { name },
+        update: {},
+        create: {
+            event_type_id: eventTypeId,
+            name,
+        },
+    });
+};
+
 const cleanupCreatedAbsencesAndLogs = async () => {
     const employeeIds = [
         IDS.coordinatorA,
         IDS.adminA,
         IDS.employeeA,
         IDS.inactiveEmployeeA,
+        IDS.noWorkdaysEmployeeA,
         IDS.employeeB,
         IDS.roleDifferentEmployee,
     ];
@@ -155,6 +254,30 @@ const cleanupCreatedAbsencesAndLogs = async () => {
     await prisma.absence.deleteMany({
         where: {
             employee_id: { in: employeeIds },
+        },
+    });
+
+    await prisma.global_event.deleteMany({
+        where: {
+            event_type_id: {
+                in: [IDS.globalFreeEventType, IDS.houseFreeEventType],
+            },
+        },
+    });
+
+    await prisma.house_event.deleteMany({
+        where: {
+            event_type_id: {
+                in: [IDS.globalFreeEventType, IDS.houseFreeEventType],
+            },
+        },
+    });
+
+    await prisma.event_type.deleteMany({
+        where: {
+            event_type_id: {
+                in: [IDS.globalFreeEventType, IDS.houseFreeEventType],
+            },
         },
     });
 };
@@ -190,6 +313,36 @@ const cleanupTestData = async () => {
     });
 
     await prisma.vacations_request.deleteMany({
+        where: {
+            employee_id: { in: existingEmployeeIds },
+        },
+    });
+
+    await prisma.global_event.deleteMany({
+        where: {
+            event_type_id: {
+                in: [IDS.globalFreeEventType, IDS.houseFreeEventType],
+            },
+        },
+    });
+
+    await prisma.house_event.deleteMany({
+        where: {
+            event_type_id: {
+                in: [IDS.globalFreeEventType, IDS.houseFreeEventType],
+            },
+        },
+    });
+
+    await prisma.event_type.deleteMany({
+        where: {
+            event_type_id: {
+                in: [IDS.globalFreeEventType, IDS.houseFreeEventType],
+            },
+        },
+    });
+
+    await prisma.employee_workday.deleteMany({
         where: {
             employee_id: { in: existingEmployeeIds },
         },
@@ -407,6 +560,20 @@ const seed = async () => {
                 type: "nomina",
             },
             {
+                employee_id: IDS.noWorkdaysEmployeeA,
+                house_id: IDS.houseA,
+                role_id: IDS.employeeRole,
+                name: "Nora",
+                surname: "SinDias",
+                is_active: true,
+                email: "no.workdays.absence.create@test.com",
+                password: "hashed",
+                has_first_login: false,
+                curp: "NOAC900101MDFABC01",
+                start_date: new Date("2024-01-01T00:00:00.000Z"),
+                type: "nomina",
+            },
+            {
                 employee_id: IDS.employeeB,
                 house_id: IDS.houseB,
                 role_id: IDS.employeeRole,
@@ -449,6 +616,14 @@ const seed = async () => {
             },
         ],
     });
+
+    await seedEmployeeWorkdays([
+        IDS.coordinatorA,
+        IDS.adminA,
+        IDS.employeeA,
+        IDS.employeeB,
+        IDS.roleDifferentEmployee,
+    ]);
 };
 
 beforeAll(async () => {
@@ -547,6 +722,20 @@ describe("POST /absence/:employeeId/add", () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.body.message).toBe("tipo de ausencia no encontrado");
+    });
+
+    it("406 si el empleado no tiene días de trabajo registrados", async () => {
+        const res = await request(app)
+            .post(`/absence/${IDS.noWorkdaysEmployeeA}/add`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .send(validBody());
+
+        expect(RESPONSES.ABSENCE.WITHOUT_DATES).toBe("ABSENCE_WITHOUT_DATES");
+        expect(res.statusCode).toBe(406);
+        expect(res.body).toMatchObject({
+            success: false,
+            message: "Se necesitan tener registrados los días de trabajo",
+        });
     });
 
     it("422 si faltan campos obligatorios", async () => {
@@ -668,6 +857,91 @@ describe("POST /absence/:employeeId/add", () => {
 
         expect(res.statusCode).toBe(406);
         expect(res.body.message).toBe("Ya hay una vacación registrada para esa fecha");
+    });
+
+    it("406 si un evento global libre cubre todos los días hábiles", async () => {
+        const { startDate, endDate } = futureWorkWeekRange(6);
+        const eventRange = localDateRangeToUtcEventRange(startDate, endDate);
+
+        await createEventType(
+            IDS.globalFreeEventType,
+            `Aus glob ${IDS.globalFreeEventType.slice(0, 8)}`,
+        );
+
+        await prisma.global_event.create({
+            data: {
+                global_event_id: randomUUID(),
+                event_type_id: IDS.globalFreeEventType,
+                start: eventRange.start,
+                end: eventRange.end,
+                name: "Ausencia global libre",
+                description: "Días regalados por evento global",
+                all_day: true,
+                is_free_day: true,
+            },
+        });
+
+        const res = await request(app)
+            .post(`/absence/${IDS.employeeA}/add`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .send(validBody({ startDate, endDate }));
+
+        const absenceInDb = await prisma.absence.findFirst({
+            where: {
+                employee_id: IDS.employeeA,
+                start: new Date(`${startDate}T00:00:00.000Z`),
+                end: new Date(`${endDate}T00:00:00.000Z`),
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.message).toBe(
+            "Dentro del rango seleccionado no hay ningún día hábil para asignar la ausencia",
+        );
+        expect(absenceInDb).toBeNull();
+    });
+
+    it("406 si un evento de casa libre cubre todos los días hábiles", async () => {
+        const { startDate, endDate } = futureWorkWeekRange(7);
+        const eventRange = localDateRangeToUtcEventRange(startDate, endDate);
+
+        await createEventType(
+            IDS.houseFreeEventType,
+            `Aus casa ${IDS.houseFreeEventType.slice(0, 8)}`,
+        );
+
+        await prisma.house_event.create({
+            data: {
+                house_event_id: randomUUID(),
+                house_id: IDS.houseA,
+                event_type_id: IDS.houseFreeEventType,
+                start: eventRange.start,
+                end: eventRange.end,
+                name: "Ausencia casa libre",
+                description: "Días regalados por evento de casa",
+                all_day: true,
+                is_free_day: true,
+            },
+        });
+
+        const res = await request(app)
+            .post(`/absence/${IDS.employeeA}/add`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .send(validBody({ startDate, endDate }));
+
+        const absenceInDb = await prisma.absence.findFirst({
+            where: {
+                employee_id: IDS.employeeA,
+                start: new Date(`${startDate}T00:00:00.000Z`),
+                end: new Date(`${endDate}T00:00:00.000Z`),
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.message).toBe(
+            "Dentro del rango seleccionado no hay ningún día hábil para asignar la ausencia",
+        );
+        expect(absenceInDb).toBeNull();
     });
 
     it("404 si el trabajador pertenece a otra casa hogar", async () => {

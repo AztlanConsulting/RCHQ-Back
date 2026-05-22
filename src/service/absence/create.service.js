@@ -1,4 +1,4 @@
-const { findById } = require("../../model/employee/get.model");
+const { findById, getWorkDays } = require("../../model/employee/get.model");
 const {
     getAbsenceTypeById,
     getHouseAbsencesInRange,
@@ -7,9 +7,17 @@ const { getActiveVacationsInRange } = require("../../model/vacation/get.model");
 const {
     createAbsence: createAbsenceModel,
 } = require("../../model/absence/create.model");
+const { 
+    getGlobalEventsInRange, 
+    getHouseEventsInRange,
+} = require("../../model/event/get.model");
+const { 
+    calculateUsedDays,
+    stringToDate,
+    convertUTCToMexicanTime,
+} = require("../../utils/dates");
 const { absenceAddSchema } = require("../../schemas/absence/absenceAddSchema");
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
-const { stringToDate } = require("../../utils/dates");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 const RESPONSES = require("../../utils/responses");
 
@@ -47,6 +55,7 @@ const hasAbsenceLimitReached = (absences, startDate, endDate) => {
 
 exports.addAbsence = async ({
     actorEmployeeId,
+    requesterHouseId,
     targetEmployeeId,
     body,
     file,
@@ -100,13 +109,34 @@ exports.addAbsence = async ({
         };
     }
 
+    const workDays = await getWorkDays(absence.targetEmployeeId);
+    if (workDays.length == 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.ABSENCE.WITHOUT_DATES
+        }
+    }
+
     const startDate = stringToDate(absence.body.startDate);
     const endDate = stringToDate(absence.body.endDate);
+    const searchEndDate = new Date(endDate);
+    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+
+    const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
+    const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
+
+    const freeDays = [...houseEvents, ...globalEvents]
+        .filter((event) => event.isFreeDay === true)
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
 
     const overlappingVacations = await getActiveVacationsInRange(
         absence.targetEmployeeId,
         startDate,
-        endDate,
+        searchEndDate,
     );
 
     if (overlappingVacations.length > 0) {
@@ -119,7 +149,7 @@ exports.addAbsence = async ({
     const registeredAbsences = await getHouseAbsencesInRange(
         targetEmployee.house_id,
         startDate,
-        endDate,
+        searchEndDate,
     );
 
     if (hasAbsenceLimitReached(registeredAbsences, startDate, endDate)) {
@@ -127,6 +157,15 @@ exports.addAbsence = async ({
         return {
             code: RESPONSES.ABSENCE.LIMIT_REACHED,
         };
+    }
+
+    const usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true);
+
+    if (usedDays == 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.ABSENCE.NULL_DATES
+        }
     }
 
     const evidenceUrl = file ? `uploads/documents/${file.filename}` : null;

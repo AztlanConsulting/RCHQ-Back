@@ -48,7 +48,7 @@ const {
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
 
-router.post("/request", apiLimiter, verifyToken, requestVacation);
+router.post("/request", apiLimiter, verifyToken, resolveRequesterHouse, requestVacation);
 
 router.get(
     "/employees/eligible",
@@ -64,6 +64,7 @@ router.post(
     "/employees/:employeeId/register",
     apiLimiter,
     verifyToken,
+    resolveRequesterHouse,
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(employeeVacationCreateSchema, "all"),
@@ -75,6 +76,7 @@ router.patch(
     "/request/:vacationRequestId/approve",
     apiLimiter,
     verifyToken,
+    resolveRequesterHouse,
     requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(approveVacationRequestSchema, "all"),

@@ -9,6 +9,7 @@ jest.mock("../../model/vacation/get.model", () => ({
 
 jest.mock("../../model/event/get.model", () => ({
     getGlobalEventsInRange: jest.fn(),
+    getHouseEventsInRange: jest.fn(),
 }));
 
 jest.mock("../../model/vacation/update.model", () => ({
@@ -34,6 +35,7 @@ const {
 
 const {
     getGlobalEventsInRange,
+    getHouseEventsInRange,
 } = require("../../model/event/get.model");
 
 const {
@@ -53,12 +55,17 @@ const {
 const RESPONSES = require("../../utils/responses");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
+const {
+    calculateUsedDays,
+    convertUTCToMexicanTime,
+} = require("../../utils/dates");
 
 describe("US34 - approveVacationRequest service", () => {
     const actorAdminId = "11111111-1111-4111-8111-111111111111";
     const actorCoordinatorId = "22222222-2222-4222-8222-222222222222";
     const targetEmployeeId = "33333333-3333-4333-8333-333333333333";
     const vacationRequestId = "44444444-4444-4444-8444-444444444444";
+    const houseId = "55555555-5555-4555-8555-555555555555";
     const ipAddress = "127.0.0.1";
 
     const makeUTCDate = (year, month, day) => {
@@ -87,25 +94,25 @@ describe("US34 - approveVacationRequest service", () => {
 
     const adminActor = {
         employee_id: actorAdminId,
-        house_id: "house-1",
+        house_id: houseId,
         role: { name: "Administrador" },
     };
 
     const coordinatorActor = {
         employee_id: actorCoordinatorId,
-        house_id: "house-1",
+        house_id: houseId,
         role: { name: "Coordinador" },
     };
 
     const targetEmployee = {
         employee_id: targetEmployeeId,
-        house_id: "house-1",
+        house_id: houseId,
         role: { name: "Psicóloga" },
     };
 
     const targetAdminEmployee = {
         employee_id: targetEmployeeId,
-        house_id: "house-1",
+        house_id: houseId,
         role: { name: "Administrador" },
     };
 
@@ -123,12 +130,54 @@ describe("US34 - approveVacationRequest service", () => {
         { workday: { name: "Viernes" } },
     ];
 
+    const getSearchEndDate = (date) => {
+        const searchEndDate = new Date(date);
+        searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+
+        return searchEndDate;
+    };
+
+    const makeLocalFreeDayEvent = (dateString) => {
+        const nextDate = new Date(`${dateString}T00:00:00.000Z`);
+        nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+
+        return {
+            start: new Date(`${dateString}T06:00:00.000Z`),
+            end: new Date(`${nextDate.toISOString().slice(0, 10)}T05:59:00.000Z`),
+            isFreeDay: true,
+        };
+    };
+
+    const getExpectedUsedDays = ({
+        request = vacationRequest,
+        workDays = mondayToFridayWorkDays,
+        globalEvents = [],
+        houseEvents = [],
+    } = {}) => {
+        const freeDays = [...houseEvents, ...globalEvents]
+            .filter((event) => event.isFreeDay === true)
+            .map((event) => ({
+                ...event,
+                start: convertUTCToMexicanTime(event.start),
+                end: convertUTCToMexicanTime(event.end),
+            }));
+
+        return calculateUsedDays(
+            workDays,
+            request.start,
+            request.end,
+            freeDays,
+            true,
+        );
+    };
+
     function mockHappyPath({
         actor = coordinatorActor,
         target = targetEmployee,
         request = vacationRequest,
         workDays = mondayToFridayWorkDays,
         globalEvents = [],
+        houseEvents = [],
         maxDays = 14,
         atomicResult,
     } = {}) {
@@ -149,6 +198,7 @@ describe("US34 - approveVacationRequest service", () => {
 
         getWorkDays.mockResolvedValue(workDays);
         getGlobalEventsInRange.mockResolvedValue(globalEvents);
+        getHouseEventsInRange.mockResolvedValue(houseEvents);
 
         approveVacationRequestAtomically.mockResolvedValue(
             atomicResult || {
@@ -167,6 +217,7 @@ describe("US34 - approveVacationRequest service", () => {
     async function callApprove(options = {}) {
         return await approveVacationRequest({
             actorEmployeeId: options.actorEmployeeId ?? actorCoordinatorId,
+            requesterHouseId: options.requesterHouseId ?? houseId,
             vacationRequestId: options.vacationRequestId ?? vacationRequestId,
             ipAddress,
         });
@@ -179,6 +230,9 @@ describe("US34 - approveVacationRequest service", () => {
 
     describe("happy paths", () => {
         test("coordinador aprueba una solicitud pendiente correctamente", async () => {
+            const expectedUsedDays = getExpectedUsedDays();
+            const expectedSearchEndDate = getSearchEndDate(endDate);
+
             const result = await callApprove();
 
             expect(result.code).toBe(RESPONSES.VACATION.APPROVED);
@@ -187,12 +241,21 @@ describe("US34 - approveVacationRequest service", () => {
             expect(findByIdWithRoleAndHouse).toHaveBeenCalledWith(actorCoordinatorId);
             expect(getVacationRequestById).toHaveBeenCalledWith(vacationRequestId);
             expect(getWorkDays).toHaveBeenCalledWith(targetEmployeeId);
+            expect(getGlobalEventsInRange).toHaveBeenCalledWith(
+                startDate,
+                expectedSearchEndDate,
+            );
+            expect(getHouseEventsInRange).toHaveBeenCalledWith(
+                houseId,
+                startDate,
+                expectedSearchEndDate,
+            );
 
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
-                actorHouseId: "house-1",
-                usedDays: 5,
+                actorHouseId: houseId,
+                usedDays: expectedUsedDays,
                 anniversaryStartDate,
                 anniversaryEndDate,
                 maxDays: 14,
@@ -222,8 +285,8 @@ describe("US34 - approveVacationRequest service", () => {
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
-                actorHouseId: "house-1",
-                usedDays: 5,
+                actorHouseId: houseId,
+                usedDays: getExpectedUsedDays(),
                 anniversaryStartDate,
                 anniversaryEndDate,
                 maxDays: 14,
@@ -476,23 +539,66 @@ describe("US34 - approveVacationRequest service", () => {
         });
 
         test("descuenta eventos globales como días no usados", async () => {
-            getGlobalEventsInRange.mockResolvedValueOnce([
-                {
-                    start: makeUTCDate(2026, 6, 24),
-                    end: makeUTCDate(2026, 6, 24),
-                    isFreeDay: true,
-                },
-            ]);
+            const globalEvents = [makeLocalFreeDayEvent("2026-06-24")];
+            getGlobalEventsInRange.mockResolvedValueOnce(globalEvents);
 
             const result = await callApprove();
 
             expect(result.code).toBe(RESPONSES.VACATION.APPROVED);
+            expect(getGlobalEventsInRange).toHaveBeenCalledWith(
+                startDate,
+                getSearchEndDate(endDate),
+            );
 
             expect(approveVacationRequestAtomically).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    usedDays: 4,
+                    usedDays: getExpectedUsedDays({ globalEvents }),
                 })
             );
+        });
+
+        test("no toma en cuenta días feriados por eventos de casa", async () => {
+            const houseEvents = [makeLocalFreeDayEvent("2026-06-25")];
+            getHouseEventsInRange.mockResolvedValueOnce(houseEvents);
+
+            const result = await callApprove();
+
+            expect(result.code).toBe(RESPONSES.VACATION.APPROVED);
+            expect(getHouseEventsInRange).toHaveBeenCalledWith(
+                houseId,
+                startDate,
+                getSearchEndDate(endDate),
+            );
+
+            expect(approveVacationRequestAtomically).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    usedDays: getExpectedUsedDays({ houseEvents }),
+                }),
+            );
+        });
+
+        test("regresa error si no hay días hábiles debido a días feriados de casa", async () => {
+            const houseEvents = [
+                makeLocalFreeDayEvent("2026-06-22"),
+                makeLocalFreeDayEvent("2026-06-23"),
+                makeLocalFreeDayEvent("2026-06-24"),
+                makeLocalFreeDayEvent("2026-06-25"),
+                makeLocalFreeDayEvent("2026-06-26"),
+            ];
+
+            getHouseEventsInRange.mockResolvedValueOnce(houseEvents);
+
+            const result = await callApprove();
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.NULL_DATES,
+            });
+            expect(getHouseEventsInRange).toHaveBeenCalledWith(
+                houseId,
+                startDate,
+                getSearchEndDate(endDate),
+            );
+            expect(approveVacationRequestAtomically).not.toHaveBeenCalled();
         });
     });
 

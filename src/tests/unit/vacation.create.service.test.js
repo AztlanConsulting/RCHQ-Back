@@ -25,6 +25,7 @@ const logModel = require("../../model/log.model");
 const ipUtils = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 const datesUtils = require("../../utils/dates");
+const actualDatesUtils = jest.requireActual("../../utils/dates");
 
 const EMPLOYEE_ID = 1;
 const TODAY = new Date();
@@ -35,28 +36,36 @@ const START_DATE = `${RAW_START_DATE.getUTCFullYear()}-${RAW_START_DATE.getUTCMo
 const END_DATE = `${RAW_END_DATE.getUTCFullYear()}-${RAW_END_DATE.getUTCMonth() + 1}-${RAW_END_DATE.getUTCDate()}`;
 
 const CLIENT_IP = "127.0.0.1";
+const mondayToFridayWorkDays = [
+    { workday: { name: "Lunes" } },
+    { workday: { name: "Martes" } },
+    { workday: { name: "Miércoles" } },
+    { workday: { name: "Jueves" } },
+    { workday: { name: "Viernes" } },
+];
 
 describe("vacation.service — requestVacation", () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => {
+        jest.clearAllMocks();
+        employeeModel.getWorkDays.mockResolvedValue(mondayToFridayWorkDays);
+        vacationGetService.getRemainingVacations.mockResolvedValue({
+            data: {
+                remainingDays: 10,
+                startDate: new Date(Date.UTC(TODAY.getUTCFullYear(), 0, 1)),
+                endDate: new Date(Date.UTC(TODAY.getUTCFullYear(), 11, 31)),
+            },
+        });
+        eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
+        eventsModel.getHouseEventsInRange.mockResolvedValue([]);
+        datesUtils.calculateUsedDays.mockReturnValue(5);
+        vacationGetModel.getVacationsInRange.mockResolvedValue([]);
+        vacationGetModel.getOutsideVacations.mockResolvedValue([]);
+        ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
+    });
 
     describe("Flujo exitoso", () => {
         it("Crea una vacación", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 10 },
-            });
-
             employeeModel.getHome.mockResolvedValue("1");
-
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -69,26 +78,85 @@ describe("vacation.service — requestVacation", () => {
             expect(vacationAddModel.requestVacation).toHaveBeenCalled();
             expect(logModel.createLog).toHaveBeenCalled();
         });
+
+        it("no cuenta los días si el empleado no trabaja en ellos", async () => {
+            employeeModel.getWorkDays.mockResolvedValueOnce([
+                { workday: { name: "Lunes" } },
+                { workday: { name: "Miércoles" } },
+                { workday: { name: "Viernes" } },
+            ]);
+
+            vacationGetService.getRemainingVacations.mockResolvedValue({
+                data: {
+                    remainingDays: 10,
+                    startDate: new Date("2026-01-01T00:00:00.000Z"),
+                    endDate: new Date("2026-12-31T00:00:00.000Z"),
+                },
+            });
+
+            datesUtils.calculateUsedDays.mockImplementation(
+                actualDatesUtils.calculateUsedDays,
+            );
+            const result = await vacationCreateService.requestVacation(
+                EMPLOYEE_ID,
+                "2026-06-22",
+                "2026-06-26",
+                CLIENT_IP,
+                "house-1",
+            );
+
+            expect(result.code).toBe(RESPONSES.VACATION.REQUESTED);
+            expect(vacationAddModel.requestVacation).toHaveBeenCalledWith(
+                expect.any(String),
+                EMPLOYEE_ID,
+                new Date("2026-06-22T00:00:00.000Z"),
+                new Date("2026-06-26T00:00:00.000Z"),
+                3,
+            );
+        });
+
+        it("no cuenta los días feriados en eventos globales", async () => {
+            vacationGetService.getRemainingVacations.mockResolvedValue({
+                data: {
+                    remainingDays: 10,
+                    startDate: new Date("2026-01-01T00:00:00.000Z"),
+                    endDate: new Date("2026-12-31T00:00:00.000Z"),
+                },
+            });
+
+            eventsModel.getGlobalEventsInRange.mockResolvedValue([
+                {
+                    start: new Date("2026-06-24T06:00:00.000Z"),
+                    end: new Date("2026-06-25T05:59:00.000Z"),
+                    isFreeDay: true,
+                },
+            ]);
+            datesUtils.calculateUsedDays.mockImplementation(
+                actualDatesUtils.calculateUsedDays,
+            );
+
+            const result = await vacationCreateService.requestVacation(
+                EMPLOYEE_ID,
+                "2026-06-22",
+                "2026-06-26",
+                CLIENT_IP,
+                "house-1",
+            );
+
+            expect(result.code).toBe(RESPONSES.VACATION.REQUESTED);
+            expect(vacationAddModel.requestVacation).toHaveBeenCalledWith(
+                expect.any(String),
+                EMPLOYEE_ID,
+                new Date("2026-06-22T00:00:00.000Z"),
+                new Date("2026-06-26T00:00:00.000Z"),
+                4,
+            );
+        });
     });
 
     describe("Flujo - fechas inválidas", () => {
         it("Verifica si las fecha de inicio es después de la final", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 10 },
-            });
-
             employeeModel.getHome.mockResolvedValue("1");
-
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -103,22 +171,9 @@ describe("vacation.service — requestVacation", () => {
 
     describe("Flujo - sin días laborales", () => {
         it("Verifica que se tengan registrados los días de trabajo del empleado", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 10 },
-            });
+            employeeModel.getWorkDays.mockResolvedValueOnce([]);
 
             employeeModel.getHome.mockResolvedValue("1");
-
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -133,22 +188,11 @@ describe("vacation.service — requestVacation", () => {
 
     describe("Flujo - días insuficientes", () => {
         it("Verifica que se tengan los días suficientes para pedir las vacaciones", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
+            vacationGetService.getRemainingVacations.mockResolvedValueOnce({
                 data: { remainingDays: 2 },
             });
 
             employeeModel.getHome.mockResolvedValue("1");
-
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -163,22 +207,9 @@ describe("vacation.service — requestVacation", () => {
 
     describe("Flujo - traslape de vacaciones", () => {
         it("Verifica si se traslapan vacaciones dentro del rango pedido", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 10 },
-            });
-
             employeeModel.getHome.mockResolvedValue("1");
 
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([{}]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
+            vacationGetModel.getVacationsInRange.mockResolvedValueOnce([{}]);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -191,22 +222,9 @@ describe("vacation.service — requestVacation", () => {
         });
 
         it("Verifica si se traslapan vacaciones fuera del rango pedido", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 10 },
-            });
-
             employeeModel.getHome.mockResolvedValue("1");
 
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([{}]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
+            vacationGetModel.getOutsideVacations.mockResolvedValueOnce([{}]);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -221,22 +239,9 @@ describe("vacation.service — requestVacation", () => {
 
     describe("Flujo - sin días hábiles", () => {
         it("Verifica que se dentro de la solicitud haya al menos un día hábil seleciconado", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 2 },
-            });
-
             employeeModel.getHome.mockResolvedValue("1");
 
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(0);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
+            datesUtils.calculateUsedDays.mockReturnValueOnce(0);
 
             const result = await vacationCreateService.requestVacation(
                 EMPLOYEE_ID,
@@ -251,22 +256,7 @@ describe("vacation.service — requestVacation", () => {
 
     describe("Flujo - vacación en el pasado", () => {
         it("Verifica que no se puedan pedir vacaciones en el pasado", async () => {
-            employeeModel.getWorkDays.mockResolvedValue([1, 2, 3]);
-
-            vacationGetService.getRemainingVacations.mockResolvedValue({
-                data: { remainingDays: 10 },
-            });
-
             employeeModel.getHome.mockResolvedValue("1");
-
-            eventsModel.getGlobalEventsInRange.mockResolvedValue([]);
-
-            datesUtils.calculateUsedDays.mockReturnValue(5);
-
-            vacationGetModel.getVacationsInRange.mockResolvedValue([]);
-            vacationGetModel.getOutsideVacations.mockResolvedValue([]);
-
-            ipUtils.getClientIp.mockReturnValue(CLIENT_IP);
 
             const rawYesterday = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth(), TODAY.getUTCDate() - 10));
             const yesterday = `${rawYesterday.getUTCFullYear()}-${rawYesterday.getUTCMonth() + 1}-${rawYesterday.getUTCDate()}`;
