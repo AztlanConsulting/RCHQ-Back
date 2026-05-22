@@ -4,7 +4,6 @@ const {
 } = require("../../model/event/create.model");
 const { randomUUID } = require("crypto");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
 const {
@@ -35,7 +34,7 @@ const validateAvailability = async (data) => {
     });
 };
 
-exports.createHouseEvent = async (data, user, req) => {
+exports.createHouseEvent = async (data, user, clientIp) => {
     const parsed = houseEventCreateSchema.safeParse(data);
 
     if (!parsed.success) {
@@ -79,17 +78,16 @@ exports.createHouseEvent = async (data, user, req) => {
     let warning = null;
 
     try {
-        const ip = getClientIp(req);
         await createLog(
             user.id,
             LOG_ACTIONS.HOUSE_EVENT_CREATED,
-            ip,
+            clientIp,
             houseEvent.houseEventId,
         );
         await createLog(
             user.id,
             LOG_ACTIONS.HOUSE_EVENT_ASSIGNED,
-            ip,
+            clientIp,
             validData.houseId,
         );
     } catch (error) {
@@ -154,7 +152,7 @@ const getOverlapError = (user, overlappedEmployees, forceOverlap) => {
     return null;
 };
 
-exports.createPersonalEvent = async (user, payload, req) => {
+exports.createPersonalEvent = async (user, payload, clientIp) => {
     const parsed = createPersonalEventSchema.safeParse(payload);
 
     if (!parsed.success) {
@@ -187,10 +185,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
 
     const { employeeIds } = employeeIdsResult;
 
-    const foundEmployees = await getEmployeesInHouse(
-        employeeIds,
-        user.houseId,
-    );
+    const foundEmployees = await getEmployeesInHouse(employeeIds, user.houseId);
     if (foundEmployees.length !== employeeIds.length) {
         return {
             code: RESPONSES.EMPLOYEE.NOT_FOUND,
@@ -200,14 +195,13 @@ exports.createPersonalEvent = async (user, payload, req) => {
     const { start, end } = resolveSchedule(allDay, startInput, endInput);
     const endDate = allDay === true ? addOneDay(date) : date;
 
-    const overlappedEmployees =
-        await findOverlappingEmployees({
-            employeeIds,
-            date,
-            start,
-            end,
-            endDate,
-        });
+    const overlappedEmployees = await findOverlappingEmployees({
+        employeeIds,
+        date,
+        start,
+        end,
+        endDate,
+    });
 
     const overlapError = getOverlapError(
         user,
@@ -236,11 +230,10 @@ exports.createPersonalEvent = async (user, payload, req) => {
     let warning = null;
 
     try {
-        const ip = getClientIp(req);
         await createLog(
             user.id,
             LOG_ACTIONS.PERSONAL_EVENT_CREATED,
-            ip,
+            clientIp,
             personalEvent.personalEventId,
         );
         await Promise.all(
@@ -248,7 +241,7 @@ exports.createPersonalEvent = async (user, payload, req) => {
                 createLog(
                     user.id,
                     LOG_ACTIONS.PERSONAL_EVENT_ASSIGNED,
-                    ip,
+                    clientIp,
                     employeeId,
                 ),
             ),
