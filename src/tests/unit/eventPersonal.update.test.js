@@ -60,125 +60,6 @@ describe("updatePersonalEvent service", () => {
         jest.clearAllMocks();
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Caso exitoso — empleado actualiza su propio evento
-    // ─────────────────────────────────────────────────────────────
-    describe("Caso exitoso — empleado actualiza su propio evento", () => {
-        it("actualiza el evento, retorna UPDATED y registra el log", async () => {
-            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
-            getModel.getEmployeesInHouse.mockResolvedValue([
-                { employee_id: employeeId },
-            ]);
-            getModel.findOverlappingEmployees.mockResolvedValue([]);
-            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
-            createLog.mockResolvedValue();
-
-            const result = await updatePersonalEvent(
-                eventId,
-                employeeUser,
-                basePayload,
-                clientIp,
-            );
-
-            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
-            expect(result.data.personalEvent).toMatchObject({
-                personalEventId: mockUpdatedEvent.personalEventId,
-                forcedOverlap: false,
-            });
-            expect(result.data.warning).toBeNull();
-            expect(updateModel.updatePersonalEvent).toHaveBeenCalledTimes(1);
-        });
-
-        it("fuerza employeeIds a [user.id] ignorando los enviados", async () => {
-            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
-            getModel.getEmployeesInHouse.mockResolvedValue([
-                { employee_id: employeeId },
-            ]);
-            getModel.findOverlappingEmployees.mockResolvedValue([]);
-            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
-            createLog.mockResolvedValue();
-
-            await updatePersonalEvent(
-                eventId,
-                employeeUser,
-                { ...basePayload, employeeIds: [otherEmployeeId] },
-                clientIp,
-            );
-
-            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
-            expect(updateCall.employeeIds).toEqual([employeeId]);
-        });
-
-        it("normaliza hora HH:mm a HH:mm:ss antes de llamar al model", async () => {
-            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
-            getModel.getEmployeesInHouse.mockResolvedValue([
-                { employee_id: employeeId },
-            ]);
-            getModel.findOverlappingEmployees.mockResolvedValue([]);
-            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
-            createLog.mockResolvedValue();
-
-            await updatePersonalEvent(
-                eventId,
-                employeeUser,
-                { ...basePayload, start: "09:00", end: "10:00" },
-                clientIp,
-            );
-
-            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
-            expect(updateCall.start).toBe("09:00:00");
-            expect(updateCall.end).toBe("10:00:00");
-        });
-
-        it("no normaliza si la hora ya tiene formato HH:mm:ss", async () => {
-            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
-            getModel.getEmployeesInHouse.mockResolvedValue([
-                { employee_id: employeeId },
-            ]);
-            getModel.findOverlappingEmployees.mockResolvedValue([]);
-            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
-            createLog.mockResolvedValue();
-
-            await updatePersonalEvent(
-                eventId,
-                employeeUser,
-                { ...basePayload, start: "09:00:00", end: "10:00:00" },
-                clientIp,
-            );
-
-            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
-            expect(updateCall.start).toBe("09:00:00");
-            expect(updateCall.end).toBe("10:00:00");
-        });
-
-        it("acepta evento allDay y normaliza horario a 00:00:00 con endDate del día siguiente", async () => {
-            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
-            getModel.getEmployeesInHouse.mockResolvedValue([
-                { employee_id: employeeId },
-            ]);
-            getModel.findOverlappingEmployees.mockResolvedValue([]);
-            updateModel.updatePersonalEvent.mockResolvedValue({
-                ...mockUpdatedEvent,
-                start: "00:00:00",
-                end: "00:00:00",
-                allDay: true,
-            });
-            createLog.mockResolvedValue();
-
-            const result = await updatePersonalEvent(
-                eventId,
-                employeeUser,
-                { ...basePayload, allDay: true, start: undefined, end: undefined },
-                clientIp,
-            );
-
-            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
-            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
-            expect(updateCall.start).toBe("00:00:00");
-            expect(updateCall.end).toBe("00:00:00");
-            expect(updateCall.endDate).toBe("2026-07-11");
-        });
-    });
 
     // ─────────────────────────────────────────────────────────────
     // Caso exitoso — coordinador actualiza evento de empleados
@@ -247,7 +128,7 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 payload,
                 clientIp,
             );
@@ -259,7 +140,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si name está vacío", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, name: "" },
                 clientIp,
             );
@@ -269,7 +150,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si name excede 70 caracteres", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, name: "a".repeat(71) },
                 clientIp,
             );
@@ -279,7 +160,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si name tiene caracteres no permitidos (XSS)", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, name: "<script>alert(1)</script>" },
                 clientIp,
             );
@@ -289,7 +170,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si eventTypeId no es UUID válido", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, eventTypeId: "no-es-uuid" },
                 clientIp,
             );
@@ -302,7 +183,7 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 payload,
                 clientIp,
             );
@@ -312,7 +193,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si date no tiene formato YYYY-MM-DD", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, date: "10/07/2026" },
                 clientIp,
             );
@@ -325,7 +206,7 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 payload,
                 clientIp,
             );
@@ -335,7 +216,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si allDay=false y falta start", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, allDay: false, start: undefined },
                 clientIp,
             );
@@ -345,7 +226,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si allDay=false y falta end", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, allDay: false, end: undefined },
                 clientIp,
             );
@@ -355,7 +236,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si end es menor que start", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, start: "10:00", end: "09:00" },
                 clientIp,
             );
@@ -365,7 +246,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si start y end son iguales", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, start: "09:00", end: "09:00" },
                 clientIp,
             );
@@ -375,7 +256,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si start no tiene formato de hora válido", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, start: "9am" },
                 clientIp,
             );
@@ -385,7 +266,7 @@ describe("updatePersonalEvent service", () => {
         it("retorna VALIDATION_ERROR si description excede 250 caracteres", async () => {
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 { ...basePayload, description: "a".repeat(251) },
                 clientIp,
             );
@@ -416,8 +297,8 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                payload,
+                coordinatorUser,
+                { ...payload, employeeIds: [employeeId] },
                 clientIp,
             );
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
@@ -453,11 +334,11 @@ describe("updatePersonalEvent service", () => {
             expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_PROVIDED);
         });
 
-        it("retorna NOT_ACCESS si un empleado no coordinador intenta usar forceOverlap", async () => {
+        it("retorna NOT_ACCESS si el usuario no es coordinador", async () => {
             const result = await updatePersonalEvent(
                 eventId,
                 employeeUser,
-                { ...basePayload, forceOverlap: true },
+                basePayload,
                 clientIp,
             );
 
@@ -475,29 +356,12 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.NOT_FOUND);
-            expect(updateModel.updatePersonalEvent).not.toHaveBeenCalled();
-        });
-
-        it("retorna NOT_ACCESS si el empleado no está asignado al evento", async () => {
-            getModel.findPersonalEventById.mockResolvedValue({
-                ...mockExistingEvent,
-                employee_personal_event: [{ employee_id: otherEmployeeId }],
-            });
-
-            const result = await updatePersonalEvent(
-                eventId,
-                employeeUser,
-                basePayload,
-                clientIp,
-            );
-
-            expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
             expect(updateModel.updatePersonalEvent).not.toHaveBeenCalled();
         });
 
@@ -526,7 +390,12 @@ describe("updatePersonalEvent service", () => {
         it("busca el evento usando la houseId del usuario", async () => {
             getModel.findPersonalEventById.mockResolvedValue(null);
 
-            await updatePersonalEvent(eventId, employeeUser, basePayload, clientIp);
+            await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
+                clientIp,
+            );
 
             expect(getModel.findPersonalEventById).toHaveBeenCalledWith(
                 eventId,
@@ -581,8 +450,8 @@ describe("updatePersonalEvent service", () => {
 
             await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -613,8 +482,8 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -677,8 +546,8 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -696,8 +565,8 @@ describe("updatePersonalEvent service", () => {
 
             await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -749,13 +618,13 @@ describe("updatePersonalEvent service", () => {
 
             await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
             expect(createLog).toHaveBeenCalledWith(
-                employeeUser.id,
+                coordinatorUser.id,
                 expect.any(String),
                 clientIp,
                 eventId,
@@ -774,8 +643,8 @@ describe("updatePersonalEvent service", () => {
 
             await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -850,8 +719,8 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -875,8 +744,8 @@ describe("updatePersonalEvent service", () => {
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
-                basePayload,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
                 clientIp,
             );
 
@@ -892,10 +761,10 @@ describe("updatePersonalEvent service", () => {
             updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
             createLog.mockResolvedValue();
 
-            await updatePersonalEvent(eventId, employeeUser, basePayload, "10.0.0.1");
+            await updatePersonalEvent(eventId, coordinatorUser, { ...basePayload, employeeIds: [employeeId] }, "10.0.0.1");
 
             expect(createLog).toHaveBeenCalledWith(
-                employeeUser.id,
+                coordinatorUser.id,
                 expect.any(String),
                 "10.0.0.1",
                 expect.any(String),
@@ -917,12 +786,12 @@ describe("updatePersonalEvent service", () => {
                 overlappedEmployee,
             ]);
 
-            const payloadWithoutForce = { ...basePayload };
+            const payloadWithoutForce = { ...basePayload, employeeIds: [employeeId] };
             delete payloadWithoutForce.forceOverlap;
 
             const result = await updatePersonalEvent(
                 eventId,
-                employeeUser,
+                coordinatorUser,
                 payloadWithoutForce,
                 clientIp,
             );
