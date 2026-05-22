@@ -51,15 +51,6 @@ exports.deletePersonalEvent = async (personalEventId, user, clientIp) => {
         return { code: RESPONSES.EVENTS.NOT_FOUND };
     }
 
-    if (user.role !== ROLES.COORDINATOR) {
-        const isAssigned = event.employee_personal_event.some(
-            (ep) => ep.employee_id === user.id,
-        );
-        if (!isAssigned) {
-            return { code: RESPONSES.USER.NOT_ACCESS };
-        }
-    }
-
     try {
         await softDeletePersonalEvent(personalEventId);
     } catch (error) {

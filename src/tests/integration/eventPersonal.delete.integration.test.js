@@ -381,22 +381,6 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
             );
         });
 
-        it("empleado elimina su propio evento y retorna 200", async () => {
-            const token = generateToken({
-                employeeId: TEST_EMPLOYEE_ID,
-                id: TEST_EMPLOYEE_ID,
-                role: "Mantenimiento",
-            });
-            const event = await createTestPersonalEvent([TEST_EMPLOYEE_ID]);
-
-            const res = await request(app)
-                .delete(`${BASE_ROUTE}/${event.personal_event_id}`)
-                .set("Authorization", `Bearer ${token}`);
-
-            expect(res.statusCode).toBe(200);
-            expect(res.body.success).toBe(true);
-        });
-
         it("el evento queda con is_deleted=true en BD (soft delete)", async () => {
             const token = generateToken();
             const event = await createTestPersonalEvent([TEST_EMPLOYEE_ID]);
@@ -522,11 +506,12 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
     //  3. LÓGICA DE NEGOCIO
     // ──────────────────────────────────────────────────────
     describe("3. Lógica de negocio", () => {
-        it("retorna 403 si el empleado intenta eliminar un evento al que no está asignado", async () => {
+        it("retorna 403 si un empleado con rol Mantenimiento intenta eliminar", async () => {
             const token = generateToken({
-                employeeId: TEST_OTHER_EMPLOYEE_ID,
-                id: TEST_OTHER_EMPLOYEE_ID,
+                employeeId: TEST_EMPLOYEE_ID,
+                id: TEST_EMPLOYEE_ID,
                 role: "Mantenimiento",
+                privileges: ["deleteEvent"],
             });
             const event = await createTestPersonalEvent([TEST_EMPLOYEE_ID]);
 
@@ -537,11 +522,12 @@ describe(`DELETE ${BASE_ROUTE}/:eventId - Integration & Security`, () => {
             expect(res.statusCode).toBe(403);
         });
 
-        it("el evento no se modifica tras el intento fallido de un empleado no asignado", async () => {
+        it("el evento no se modifica tras el intento de un empleado con rol Mantenimiento", async () => {
             const token = generateToken({
-                employeeId: TEST_OTHER_EMPLOYEE_ID,
-                id: TEST_OTHER_EMPLOYEE_ID,
+                employeeId: TEST_EMPLOYEE_ID,
+                id: TEST_EMPLOYEE_ID,
                 role: "Mantenimiento",
+                privileges: ["deleteEvent"],
             });
             const event = await createTestPersonalEvent([TEST_EMPLOYEE_ID]);
 
