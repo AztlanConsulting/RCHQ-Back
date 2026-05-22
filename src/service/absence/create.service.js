@@ -3,19 +3,16 @@ const {
     getAbsenceTypeById,
     getHouseAbsencesInRange,
 } = require("../../model/absence/get.model");
-const { getActiveVacationsInRange } = require("../../model/vacation/get.model");
 const {
     createAbsence: createAbsenceModel,
 } = require("../../model/absence/create.model");
 const { 
-    getGlobalEventsInRange, 
-    getHouseEventsInRange,
-} = require("../../model/event/get.model");
-const { 
     calculateUsedDays,
     stringToDate,
-    convertUTCToMexicanTime,
 } = require("../../utils/dates");
+const {
+    getAbsenceCalculationContext,
+} = require("../../utils/absenceUsedDays");
 const { absenceAddSchema } = require("../../schemas/absence/absenceAddSchema");
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
@@ -119,25 +116,16 @@ exports.addAbsence = async ({
 
     const startDate = stringToDate(absence.body.startDate);
     const endDate = stringToDate(absence.body.endDate);
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
-
-    const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
-    const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
-
-    const freeDays = [...houseEvents, ...globalEvents]
-        .filter((event) => event.isFreeDay === true)
-        .map((event) => ({
-            ...event,
-            start: convertUTCToMexicanTime(event.start),
-            end: convertUTCToMexicanTime(event.end),
-        }));
-
-    const overlappingVacations = await getActiveVacationsInRange(
-        absence.targetEmployeeId,
-        startDate,
+    const {
         searchEndDate,
-    );
+        freeDays,
+        overlappingVacations,
+    } = await getAbsenceCalculationContext({
+        employeeId: absence.targetEmployeeId,
+        houseId: requesterHouseId,
+        startDate,
+        endDate,
+    });
 
     if (overlappingVacations.length > 0) {
         deleteFileIfExists(file?.path);

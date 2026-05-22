@@ -15,10 +15,57 @@ const {
     getAllHouses,
     getFrecuencyPaymentOptions,
 } = require("../../model/employee/get.model");
+const { getEmployeeAbsenceRecords } = require("../../model/absence/get.model");
 const { getHouseById } = require("../../model/house/get.model");
+const { calculateUsedDays } = require("../../utils/dates");
+const {
+    getAbsenceCalculationContext,
+    toUtcDate,
+} = require("../../utils/absenceUsedDays");
 const { decryptValue } = require("../../utils/password");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
+
+const calculateAbsenceUsedDaysTotal = async (employeeId, houseId) => {
+    const [workDays, absences] = await Promise.all([
+        getWorkDays(employeeId),
+        getEmployeeAbsenceRecords(employeeId),
+    ]);
+
+    if (workDays.length === 0 || absences.length === 0 || !houseId) {
+        return 0;
+    }
+
+    let totalUsedDays = 0;
+
+    for (const absence of absences) {
+        const startDate = toUtcDate(absence.start);
+        const endDate = toUtcDate(absence.end);
+        const { freeDays, overlappingVacations } =
+            await getAbsenceCalculationContext({
+                employeeId,
+                houseId,
+                startDate,
+                endDate,
+            });
+
+        totalUsedDays += calculateUsedDays(
+            workDays,
+            startDate,
+            endDate,
+            [
+                ...freeDays,
+                ...overlappingVacations.map((vacation) => ({
+                    isFreeDay: true,
+                    start: toUtcDate(vacation.start),
+                    end: toUtcDate(vacation.end),
+                })),
+            ],
+        );
+    }
+
+    return totalUsedDays;
+};
 
 exports.getEmployees = async (
     houseId,
@@ -117,6 +164,10 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
     const employeeWorkdays = await getEmployeeWorkdays(employeeId);
     const employeeVacationRequests =
         await getEmployeeVacationRequests(employeeId);
+    const employeeAbsenceUsedDays = await calculateAbsenceUsedDaysTotal(
+        employeeId,
+        employeeBasicInfo.houseId,
+    );
 
     return {
         code: RESPONSES.EMPLOYEE.FOUND,
@@ -131,6 +182,7 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
                     faults: employeeFaults,
                     workdays: employeeWorkdays,
                     vacationRequests: employeeVacationRequests,
+                    absenceUsedDays: employeeAbsenceUsedDays,
                 },
             },
         },

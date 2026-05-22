@@ -1,4 +1,3 @@
-const { dmmfToRuntimeDataModel } = require("@prisma/client/runtime/library");
 const prisma = require("../../prisma");
 
 exports.getAllAbsenceTypes = async () => {
@@ -147,6 +146,33 @@ exports.getHouseAbsencesInRange = async (houseId, startDate, endDate) => {
         select: {
             start: true,
             end: true,
+        },
+    });
+};
+
+exports.getEmployeeAbsenceRecords = async (employeeId) => {
+    return await prisma.absence.findMany({
+        where: {
+            employee_id: employeeId,
+            is_deleted: false,
+        },
+        include: {
+            absence_type: {
+                select: {
+                    name: true,
+                },
+            },
+            employee: {
+                select: {
+                    employee_id: true,
+                    name: true,
+                    surname: true,
+                    curp: true,
+                },
+            },
+        },
+        orderBy: {
+            start: "desc",
         },
     });
 };

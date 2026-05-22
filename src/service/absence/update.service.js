@@ -10,14 +10,12 @@ const {
     absenceUpdateInputSchema,
 } = require("../../schemas/absence/update.schemas");
 const { 
-    getGlobalEventsInRange, 
-    getHouseEventsInRange,
-} = require("../../model/event/get.model");
-const { 
     calculateUsedDays,
     stringToDate,
-    convertUTCToMexicanTime,
 } = require("../../utils/dates");
+const {
+    getAbsenceCalculationContext,
+} = require("../../utils/absenceUsedDays");
 const { mapAbsenceDetail } = require("../../utils/mappers/absence.map");
 const RESPONSES = require("../../utils/responses");
 const { deleteFileIfExists } = require("../../utils/deleteFile");
@@ -116,19 +114,22 @@ exports.updateAbsence = async ({
         };
     }
 
-    const searchEndDate = new Date(nextEndDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const {
+        freeDays,
+        overlappingVacations,
+    } = await getAbsenceCalculationContext({
+        employeeId: currentAbsence.employee.employee_id,
+        houseId: requesterHouseId,
+        startDate: nextStartDate,
+        endDate: nextEndDate,
+    });
 
-    const globalEvents = await getGlobalEventsInRange(nextStartDate, searchEndDate);
-    const houseEvents = await getHouseEventsInRange(requesterHouseId, nextStartDate, searchEndDate);
-
-    const freeDays = [...houseEvents, ...globalEvents]
-        .filter((event) => event.isFreeDay === true)
-        .map((event) => ({
-            ...event,
-            start: convertUTCToMexicanTime(event.start),
-            end: convertUTCToMexicanTime(event.end),
-        }));
+    if (overlappingVacations.length > 0) {
+        deleteFileIfExists(file?.path);
+        return {
+            code: RESPONSES.VACATION.ALREADY_REQUEST,
+        };
+    }
 
     const updateData = {};
 
