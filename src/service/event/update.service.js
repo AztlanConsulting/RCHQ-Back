@@ -17,57 +17,15 @@ const {
     updatePersonalEventSchema,
 } = require("../../schemas/event/update.schemas");
 const { ROLES } = require("../../utils/roles");
+const {
+    addOneDay,
+    resolveEmployeeIds,
+    resolveSchedule,
+    getOverlapError,
+} = require("../../utils/event/helpers");
 
-const ALL_DAY_START = "00:00:00";
-const ALL_DAY_END = "00:00:00";
-
-const addOneDay = (date) => {
-    const nextDate = new Date(`${date}T00:00:00.000Z`);
-    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
-    return nextDate.toISOString().slice(0, 10);
-};
-
-const resolveEmployeeIds = (user, employeeIdsInput, forceOverlap) => {
-    if (user.role === ROLES.COORDINATOR) {
-        if (!Array.isArray(employeeIdsInput) || employeeIdsInput.length === 0) {
-            return { code: RESPONSES.EMPLOYEE.NOT_PROVIDED };
-        }
-        return { employeeIds: [...new Set(employeeIdsInput)] };
-    }
-    if (forceOverlap === true) {
-        return { code: RESPONSES.USER.NOT_ACCESS };
-    }
-    return { employeeIds: [user.id] };
-};
-
-const resolveSchedule = (allDay, startInput, endInput) => {
-    if (allDay === true) {
-        return { start: ALL_DAY_START, end: ALL_DAY_END };
-    }
-    const normalizedStart =
-        startInput && startInput.length === 5
-            ? `${startInput}:00`
-            : (startInput ?? ALL_DAY_START);
-    const normalizedEnd =
-        endInput && endInput.length === 5
-            ? `${endInput}:00`
-            : (endInput ?? ALL_DAY_END);
-    return { start: normalizedStart, end: normalizedEnd };
-};
-
-const getOverlapError = (user, overlappedEmployees, forceOverlap) => {
-    if (overlappedEmployees.length === 0) return null;
-    if (user.role !== ROLES.COORDINATOR || forceOverlap !== true) {
-        return {
-            code: RESPONSES.EVENTS.OVERLAP,
-            data: { overlappedEmployees },
-        };
-    }
-    return null;
-};
-
-exports.updateHouseEvent = async (eventId, data, user, clientIp) => {
-    const parsed = houseEventUpdateSchema.safeParse(data);
+exports.updateHouseEvent = async (eventId, user, payload, clientIp) => {
+    const parsed = houseEventUpdateSchema.safeParse(payload);
 
     if (!parsed.success) {
         return {
@@ -137,6 +95,10 @@ exports.updateHouseEvent = async (eventId, data, user, clientIp) => {
 };
 
 exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
+    if (user.role !== ROLES.COORDINATOR) {
+        return { code: RESPONSES.USER.NOT_ACCESS };
+    }
+
     const parsed = updatePersonalEventSchema.safeParse(payload);
 
     if (!parsed.success) {
@@ -171,15 +133,6 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
     const existingEvent = await findPersonalEventById(eventId, user.houseId);
     if (!existingEvent) {
         return { code: RESPONSES.EVENTS.NOT_FOUND };
-    }
-
-    if (user.role !== ROLES.COORDINATOR) {
-        const isAssigned = existingEvent.employee_personal_event.some(
-            (ep) => ep.employee_id === user.id,
-        );
-        if (!isAssigned) {
-            return { code: RESPONSES.USER.NOT_ACCESS };
-        }
     }
 
     const foundEmployees = await getEmployeesInHouse(employeeIds, user.houseId);

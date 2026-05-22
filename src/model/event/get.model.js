@@ -16,17 +16,6 @@ exports.getAllEventTypes = async () => {
     });
 };
 
-exports.findHouseEventById = async (eventId) => {
-    const event = await prisma.house_event.findFirst({
-        where: {
-            house_event_id: eventId,
-            is_deleted: false,
-        },
-    });
-
-    return mapHouseEvent(event);
-};
-
 exports.findHouseEventByIdAndHouseId = async (eventId, houseId) => {
     const event = await prisma.house_event.findFirst({
         where: {

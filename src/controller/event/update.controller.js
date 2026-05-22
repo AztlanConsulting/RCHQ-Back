@@ -8,30 +8,11 @@ const RESPONSES = require("../../utils/responses");
 exports.updateHouseEvent = async (req, res) => {
     try {
         const { eventId } = req.params;
-        const {
-            eventTypeId,
-            name,
-            start,
-            end,
-            allDay,
-            isFreeDay,
-            description,
-            forceOverlap,
-        } = req.body;
 
         const result = await updateHouseEvent(
             eventId,
-            {
-                eventTypeId,
-                name,
-                start,
-                end,
-                allDay,
-                isFreeDay,
-                description,
-                forceOverlap,
-            },
             req.user,
+            req.body,
             getClientIp(req),
         );
 

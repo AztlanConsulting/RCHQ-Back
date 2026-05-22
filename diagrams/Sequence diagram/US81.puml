@@ -3,9 +3,9 @@
 actor Navegador
 boundary "event.house.routes" as routes
 boundary "React (calendarModal.jsx)" as ReactView
-control "event.house.controller" as controller
-control event.service
-entity event.model
+control "update.controller" as controller
+control "update.service" as event.service
+entity "event.model" as event.model
 database PostgreSQL
 
 autonumber
@@ -68,104 +68,127 @@ else Campos completos
     routes -> controller : updateHouseEvent(request, response)
     activate controller
 
-    controller ->> event.service : validateAvailability(data)
+    controller ->> event.service : updateHouseEvent(eventId, user, payload, clientIp)
     activate event.service
 
-    event.service ->> event.model : findOverlappingHouseEvents(data)
+    event.service ->> event.model : findHouseEventByIdAndHouseId(eventId, houseId)
     activate event.model
-
-    event.model ->> PostgreSQL : prisma.house_event.findMany(overlap_query)
+    event.model ->> PostgreSQL : prisma.house_event.findFirst()
     activate PostgreSQL
-    PostgreSQL -->> event.model : collisionList
+    PostgreSQL -->> event.model : houseEvent | null
     deactivate PostgreSQL
-
-    event.model -->> event.service : collisions[]
+    event.model -->> event.service : houseEvent | null
     deactivate event.model
-    event.service -->> controller : collisionFound / clear
-    deactivate event.service
 
-    alt ¿Existe empalme? AND !forceOverlap
-        controller -->> routes : response.status(409).send("Conflicto")
-        deactivate controller
-
-        routes -->> ReactView : send("Conflicto")
+    alt Evento no encontrado
+        event.service -->> controller : { code: NOT_FOUND }
+        controller -->> routes : response.status(404).send("Evento no encontrado")
+        routes -->> ReactView : send(404)
         deactivate routes
         activate ReactView
-
-        ReactView -> Navegador : Mostrar alerta de empalme
+        ReactView -> Navegador : Mostrar error "Evento no encontrado"
         deactivate ReactView
 
-        alt No desea traslape
-            Navegador -> ReactView : Selecciona "No"
-            activate ReactView
-            ReactView -> Navegador : Regresa a editar datos
-            deactivate ReactView
-        else Sí desea traslape
-            Navegador -> ReactView : Selecciona "Sí"
-            activate ReactView
+    else Evento encontrado
 
-            ReactView -> routes : PUT /events/house/:eventId { ..., forceOverlap: true }
-            deactivate ReactView
+        event.service ->> event.model : findOverlappingHouseEvents({ houseId, start, end, excludeEventId })
+        activate event.model
+        event.model ->> PostgreSQL : prisma.house_event.findMany(overlap_query)
+        activate PostgreSQL
+        PostgreSQL -->> event.model : collisionList
+        deactivate PostgreSQL
+        event.model -->> event.service : collisions[]
+        deactivate event.model
+
+        alt ¿Existe empalme? AND !forceOverlap
+            event.service -->> controller : { code: OVERLAP, data: { collisions } }
+            deactivate event.service
+            controller -->> routes : response.status(409).send("Conflicto")
+            deactivate controller
             activate routes
+            routes -->> ReactView : send("Conflicto")
+            deactivate routes
+            activate ReactView
+            ReactView -> Navegador : Mostrar alerta de empalme
+            deactivate ReactView
 
-            routes -> controller : updateHouseEvent(request, response)
-            activate controller
+            alt No desea traslape
+                Navegador -> ReactView : Selecciona "No"
+                activate ReactView
+                ReactView -> Navegador : Regresa a editar datos
+                deactivate ReactView
+            else Sí desea traslape
+                Navegador -> ReactView : Selecciona "Sí"
+                activate ReactView
 
-            controller ->> event.service : updateHouseEvent(eventId, data)
-            activate event.service
+                ReactView -> routes : PUT /events/house/:eventId { ..., forceOverlap: true }
+                deactivate ReactView
+                activate routes
+
+                routes -> controller : updateHouseEvent(request, response)
+                activate controller
+
+                controller ->> event.service : updateHouseEvent(eventId, user, payload, clientIp)
+                activate event.service
+
+                event.service ->> event.model : updateHouseEvent(eventId, data)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.house_event.update()
+                activate PostgreSQL
+                PostgreSQL -->> event.model : eventUpdated
+                deactivate PostgreSQL
+                event.model -->> event.service : houseEvent
+                deactivate event.model
+
+                event.service ->> event.model : createLog(userId, action, clientIp, eventId)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.log.create()
+                activate PostgreSQL
+                PostgreSQL -->> event.model : log
+                deactivate PostgreSQL
+                event.model -->> event.service : success
+                deactivate event.model
+
+                event.service -->> controller : { code: UPDATED, data: { houseEvent } }
+                controller -->> routes : response.status(200).send("Modificado")
+                routes -->> ReactView : send("Modificado")
+                deactivate routes
+                activate ReactView
+                ReactView -> Navegador : Actualizar calendario y cerrar modal
+                deactivate ReactView
+            end
+
+        else No existe empalme
 
             event.service ->> event.model : updateHouseEvent(eventId, data)
             activate event.model
-
             event.model ->> PostgreSQL : prisma.house_event.update()
             activate PostgreSQL
             PostgreSQL -->> event.model : eventUpdated
             deactivate PostgreSQL
+            event.model -->> event.service : houseEvent
+            deactivate event.model
 
+            event.service ->> event.model : createLog(userId, action, clientIp, eventId)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.log.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : log
+            deactivate PostgreSQL
             event.model -->> event.service : success
             deactivate event.model
-            event.service -->> controller : success
-            deactivate event.service
 
+            event.service -->> controller : { code: UPDATED, data: { houseEvent } }
+            deactivate event.service
             controller -->> routes : response.status(200).send("Modificado")
             deactivate controller
-
+            activate routes
             routes -->> ReactView : send("Modificado")
             deactivate routes
             activate ReactView
-
             ReactView -> Navegador : Actualizar calendario y cerrar modal
             deactivate ReactView
         end
-
-    else No existe empalme OR forceOverlap == true
-        controller ->> event.service : updateHouseEvent(eventId, data)
-        activate controller
-        activate event.service
-
-        event.service ->> event.model : updateHouseEvent(eventId, data)
-        activate event.model
-
-        event.model ->> PostgreSQL : prisma.house_event.update()
-        activate PostgreSQL
-        PostgreSQL -->> event.model : eventUpdated
-        deactivate PostgreSQL
-
-        event.model -->> event.service : success
-        deactivate event.model
-        event.service -->> controller : success
-        deactivate event.service
-
-        controller -->> routes : response.status(200).send("Modificado")
-        deactivate controller
-        activate routes
-
-        routes -->> ReactView : send("Modificado")
-        deactivate routes
-        activate ReactView
-
-        ReactView -> Navegador : Actualizar calendario y cerrar modal
-        deactivate ReactView
     end
 end
 

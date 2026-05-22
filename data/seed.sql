@@ -664,7 +664,7 @@ SELECT
   NULL,
   '2025-01-20',
   NULL,
-  '+52 55 5555 1002',
+  '55 5555 1002',
   NULL,
   NULL
 WHERE NOT EXISTS (
@@ -716,7 +716,7 @@ SELECT
   NULL,
   '2025-02-03',
   NULL,
-  '+52 55 5555 1003',
+  '55 5555 1003',
   NULL,
   NULL,
   'nomina'
@@ -730,7 +730,7 @@ SET
     (SELECT house_id FROM public.house WHERE house_id = 'a0000001-0000-4000-8000-000000000001'),
     house_id
   ),
-  phone_number = COALESCE(phone_number, '+52 442 479 2232')
+  phone_number = COALESCE(phone_number, '442 479 2232')
 WHERE email = 'andre@gmail.com';
 
 INSERT INTO public.employee_address (
