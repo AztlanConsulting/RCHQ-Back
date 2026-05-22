@@ -2,13 +2,11 @@ const createService = require("../../service/event/create.service");
 const createModel = require("../../model/event/create.model");
 const getModel = require("../../model/event/get.model");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 jest.mock("../../model/event/create.model");
 jest.mock("../../model/event/get.model");
 jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
 
 describe("createHouseEvent service", () => {
     const validUser = {
@@ -17,8 +15,6 @@ describe("createHouseEvent service", () => {
         houseId: "22222222-2222-4222-8222-222222222222",
         privileges: ["createEvent"],
     };
-
-    const validReq = { headers: {}, ip: "127.0.0.1" };
 
     const baseValidData = {
         eventTypeId: "33333333-3333-4333-8333-333333333333",
@@ -46,7 +42,6 @@ describe("createHouseEvent service", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        getClientIp.mockReturnValue("127.0.0.1");
     });
 
     // ──────────────────────────────────────────────────────────
@@ -59,9 +54,9 @@ describe("createHouseEvent service", () => {
             createLog.mockResolvedValue();
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -79,9 +74,9 @@ describe("createHouseEvent service", () => {
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
 
             await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -112,9 +107,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                allDayData,
                 validUser,
-                validReq,
+                allDayData,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -139,9 +134,9 @@ describe("createHouseEvent service", () => {
             };
 
             await createService.createHouseEvent(
-                allDayData,
                 validUser,
-                validReq,
+                allDayData,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -163,9 +158,9 @@ describe("createHouseEvent service", () => {
             delete invalidData.eventTypeId;
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -178,29 +173,13 @@ describe("createHouseEvent service", () => {
             expect(createModel.createHouseEvent).not.toHaveBeenCalled();
         });
 
-        it("retorna VALIDATION_ERROR si falta houseId", async () => {
-            const invalidData = { ...baseValidData };
-            delete invalidData.houseId;
-
-            const result = await createService.createHouseEvent(
-                invalidData,
-                validUser,
-                validReq,
-            );
-
-            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
-            expect(result.data.errors.some((e) => e.field === "houseId")).toBe(
-                true,
-            );
-        });
-
         it("retorna VALIDATION_ERROR si el name está vacío", async () => {
             const invalidData = { ...baseValidData, name: "" };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -213,9 +192,9 @@ describe("createHouseEvent service", () => {
             const invalidData = { ...baseValidData, name: "a".repeat(71) };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -228,9 +207,9 @@ describe("createHouseEvent service", () => {
             const invalidData = { ...baseValidData, name: "Evento <script>" };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -246,9 +225,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -261,9 +240,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -281,9 +260,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -300,9 +279,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -319,9 +298,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -334,9 +313,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -349,9 +328,9 @@ describe("createHouseEvent service", () => {
             };
 
             const result = await createService.createHouseEvent(
-                invalidData,
                 validUser,
-                validReq,
+                invalidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -368,9 +347,9 @@ describe("createHouseEvent service", () => {
             delete dataWithoutDesc.description;
 
             const result = await createService.createHouseEvent(
-                dataWithoutDesc,
                 validUser,
-                validReq,
+                dataWithoutDesc,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -394,9 +373,9 @@ describe("createHouseEvent service", () => {
             ]);
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -415,9 +394,9 @@ describe("createHouseEvent service", () => {
             const forceData = { ...baseValidData, forceOverlap: true };
 
             const result = await createService.createHouseEvent(
-                forceData,
                 validUser,
-                validReq,
+                forceData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -436,9 +415,9 @@ describe("createHouseEvent service", () => {
             ]);
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -460,9 +439,9 @@ describe("createHouseEvent service", () => {
                 .mockImplementation(() => {});
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -479,9 +458,9 @@ describe("createHouseEvent service", () => {
             createLog.mockResolvedValue();
 
             const result = await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -492,12 +471,11 @@ describe("createHouseEvent service", () => {
             getModel.findOverlappingHouseEvents.mockResolvedValue([]);
             createModel.createHouseEvent.mockResolvedValue(mockCreatedEvent);
             createLog.mockResolvedValue();
-            getClientIp.mockReturnValue("192.168.1.1");
 
             await createService.createHouseEvent(
-                baseValidData,
                 validUser,
-                validReq,
+                baseValidData,
+                "192.168.1.1",
             );
 
             expect(createLog).toHaveBeenCalledWith(
@@ -521,9 +499,9 @@ describe("createHouseEvent service", () => {
             delete dataWithoutAllDay.allDay;
 
             const result = await createService.createHouseEvent(
-                dataWithoutAllDay,
                 validUser,
-                validReq,
+                dataWithoutAllDay,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -539,9 +517,9 @@ describe("createHouseEvent service", () => {
             delete dataWithoutFree.isFreeDay;
 
             await createService.createHouseEvent(
-                dataWithoutFree,
                 validUser,
-                validReq,
+                dataWithoutFree,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createHouseEvent.mock.calls[0][0];
@@ -563,9 +541,9 @@ describe("createHouseEvent service", () => {
             delete dataWithoutForce.forceOverlap;
 
             const result = await createService.createHouseEvent(
-                dataWithoutForce,
                 validUser,
-                validReq,
+                dataWithoutForce,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);

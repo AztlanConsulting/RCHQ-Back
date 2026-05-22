@@ -2,13 +2,11 @@ const createService = require("../../service/event/create.service");
 const createModel = require("../../model/event/create.model");
 const getPersonalEventModel = require("../../model/event/get.model");
 const { createLog } = require("../../model/log.model");
-const { getClientIp } = require("../../utils/ip");
 const RESPONSES = require("../../utils/responses");
 
 jest.mock("../../model/event/create.model");
 jest.mock("../../model/event/get.model");
 jest.mock("../../model/log.model");
-jest.mock("../../utils/ip");
 
 describe("createPersonalEvent service", () => {
     const employeeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -28,8 +26,6 @@ describe("createPersonalEvent service", () => {
         role: "Coordinador",
         houseId,
     };
-
-    const validReq = { headers: {}, ip: "127.0.0.1" };
 
     const basePayload = {
         name: "Reunion medica",
@@ -54,7 +50,6 @@ describe("createPersonalEvent service", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        getClientIp.mockReturnValue("127.0.0.1");
     });
 
     describe("Caso exitoso — empleado crea evento para sí mismo", () => {
@@ -71,7 +66,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -97,7 +92,7 @@ describe("createPersonalEvent service", () => {
             await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
@@ -129,7 +124,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 allDayPayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -152,7 +147,7 @@ describe("createPersonalEvent service", () => {
             await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, start: "09:00", end: "10:00" },
-                validReq,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
@@ -173,7 +168,7 @@ describe("createPersonalEvent service", () => {
             await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, start: "09:00:00", end: "10:00:00" },
-                validReq,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
@@ -200,7 +195,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 coordinatorUser,
                 { ...basePayload, employeeIds },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -227,7 +222,7 @@ describe("createPersonalEvent service", () => {
             await createService.createPersonalEvent(
                 coordinatorUser,
                 { ...basePayload, employeeIds: duplicatedIds },
-                validReq,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
@@ -243,7 +238,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 payload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -254,7 +249,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, name: "" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -264,7 +259,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, name: "a".repeat(71) },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -274,7 +269,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, name: "<script>alert(1)</script>" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -284,7 +279,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, eventTypeId: "no-es-uuid" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -297,7 +292,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 payload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -307,7 +302,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, date: "10/07/2026" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -320,7 +315,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 payload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -330,7 +325,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, allDay: false, start: undefined },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -340,7 +335,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, allDay: false, end: undefined },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -350,7 +345,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, start: "10:00", end: "09:00" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -360,7 +355,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, start: "09:00", end: "09:00" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -370,7 +365,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, start: "9am" },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -380,7 +375,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, description: "a".repeat(251) },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -390,7 +385,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 coordinatorUser,
                 { ...basePayload, employeeIds: ["no-es-uuid"] },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
@@ -412,7 +407,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 payload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -427,7 +422,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 coordinatorUser,
                 payload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_PROVIDED);
@@ -438,7 +433,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 coordinatorUser,
                 { ...basePayload, employeeIds: [] },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_PROVIDED);
@@ -448,7 +443,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, forceOverlap: true },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
@@ -468,7 +463,7 @@ describe("createPersonalEvent service", () => {
             await createService.createPersonalEvent(
                 employeeUser,
                 { ...basePayload, employeeIds: [otherEmployeeId] },
-                validReq,
+                "127.0.0.1",
             );
 
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
@@ -483,7 +478,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 coordinatorUser,
                 { ...basePayload, employeeIds: [employeeId] },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
@@ -498,7 +493,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 coordinatorUser,
                 { ...basePayload, employeeIds: [employeeId, otherEmployeeId] },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
@@ -517,7 +512,7 @@ describe("createPersonalEvent service", () => {
             await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(
@@ -543,7 +538,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -570,7 +565,7 @@ describe("createPersonalEvent service", () => {
                     employeeIds: [employeeId],
                     forceOverlap: true,
                 },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -594,7 +589,7 @@ describe("createPersonalEvent service", () => {
                     employeeIds: [employeeId],
                     forceOverlap: true,
                 },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.data.personalEvent.forcedOverlap).toBe(true);
@@ -613,7 +608,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.data.personalEvent.forcedOverlap).toBe(false);
@@ -640,7 +635,7 @@ describe("createPersonalEvent service", () => {
                     employeeIds: [employeeId, otherEmployeeId],
                     forceOverlap: false,
                 },
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
@@ -666,7 +661,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -691,7 +686,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
@@ -707,12 +702,11 @@ describe("createPersonalEvent service", () => {
             );
             createModel.createPersonalEvent.mockResolvedValue(mockCreatedEvent);
             createLog.mockResolvedValue();
-            getClientIp.mockReturnValue("10.0.0.1");
 
             await createService.createPersonalEvent(
                 employeeUser,
                 basePayload,
-                validReq,
+                "10.0.0.1",
             );
 
             expect(createLog).toHaveBeenCalledWith(
@@ -740,7 +734,7 @@ describe("createPersonalEvent service", () => {
             const result = await createService.createPersonalEvent(
                 employeeUser,
                 payloadWithoutForce,
-                validReq,
+                "127.0.0.1",
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
