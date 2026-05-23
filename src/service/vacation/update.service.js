@@ -18,6 +18,7 @@ const {
     calculateUsedDays,
     stringToDate,
     convertUTCToMexicanTime,
+    hasDateStartedInMexico,
 } = require("../../utils/dates");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
@@ -36,23 +37,6 @@ const isAdminRole = (roleName) =>
 
 const isCoordinatorRole = (roleName) =>
     roleName === ROLES.COORDINATOR;
-
-const getMexicoTodayString = () => {
-    const dateParts = Object.fromEntries(new Intl.DateTimeFormat("es-MX", {
-        timeZone: "America/Mexico_City",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(new Date()).map((part) => [part.type, part.value]));
-
-    return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
-};
-
-const getStoredDateString = (date) =>
-    date.toISOString().slice(0, 10);
-
-const hasDateStarted = (startDate) =>
-    getStoredDateString(startDate) <= getMexicoTodayString();
 
 exports.approveVacationRequest = async ({
     actorEmployeeId,
@@ -365,7 +349,10 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    if (hasDateStarted(vacationRequest.start) || hasDateStarted(startDate)) {
+    if (
+        hasDateStartedInMexico(vacationRequest.start) ||
+        hasDateStartedInMexico(startDate)
+    ) {
         return {
             code: RESPONSES.VACATION.REQUEST_ALREADY_STARTED,
         };

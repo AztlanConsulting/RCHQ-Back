@@ -4,6 +4,20 @@ exports.convertUTCToMexicanTime = (timestamp) => {
     return new Date(timestamp.getTime() - MEXICO_TIME_OFFSET_MS);
 };
 
+exports.getUTCDateKey = (date) =>
+    date.getUTCFullYear() * 10000 +
+    (date.getUTCMonth() + 1) * 100 +
+    date.getUTCDate();
+
+exports.getMexicoTodayDateKey = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return this.getUTCDateKey(todayInMexico);
+};
+
+exports.hasDateStartedInMexico = (date) =>
+    this.getUTCDateKey(date) <= this.getMexicoTodayDateKey();
+
 exports.combineDateAndTime = (date, time) => {
     const mexicanTime = this.convertUTCToMexicanTime(time);
 
