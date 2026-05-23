@@ -5,17 +5,17 @@ actor "Coordinador" as Usuario
 boundary "Frontend" as Frontend
 control "vacation.route.js" as Router
 control "auth/rbac/validate middleware" as Middleware
-control "update.controller.js" as Controller
-control "update.service.js" as Service
+control "delete.controller.js" as Controller
+control "delete.service.js" as Service
 database "vacation/get.model.js" as VacationGetModel
 database "employee/get.model.js" as EmployeeGetModel
-database "vacation/update.model.js" as VacationUpdateModel
+database "vacation/delete.model.js" as VacationDeleteModel
 database "log.model.js" as LogModel
 database "Base de datos" as DB
 
 autonumber
 
-Usuario -> Frontend : Selecciona solicitud pendiente, aprobada o rechazada
+Usuario -> Frontend : Selecciona solicitud pendiente, aprobada futura o rechazada
 Usuario -> Frontend : Da clic en remover vacaciones
 Frontend -> Usuario : Muestra confirmación
 
@@ -78,24 +78,28 @@ Controller --> Frontend : 403 No puede acceder a este recurso
 else Empleado fuera de casa hogar
 Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
 Controller --> Frontend : 403 No puede acceder a este recurso
-else Actor autorizado
-Service -> VacationUpdateModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId\n})
+else Solicitud aprobada ya inició o terminó
+Service --> Controller : REQUEST_NOT_MODIFIABLE
+Controller --> Frontend : 406 No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron
+else Actor autorizado y solicitud removible
+Service -> VacationDeleteModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\ncurrentDate\n})
 
-VacationUpdateModel -> DB : BEGIN TRANSACTION
-VacationUpdateModel -> DB : SELECT employee FOR UPDATE
-VacationUpdateModel -> DB : Releer solicitud
-VacationUpdateModel -> DB : Validar que existe
-VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
-VacationUpdateModel -> DB : Releer empleado con rol
-VacationUpdateModel -> DB : Validar misma casa y que no sea Admin
-VacationUpdateModel -> DB : DELETE vacations_request
-DB --> VacationUpdateModel : Solicitud eliminada
-VacationUpdateModel -> DB : COMMIT
-VacationUpdateModel --> Service : Solicitud eliminada
+VacationDeleteModel -> DB : BEGIN TRANSACTION
+VacationDeleteModel -> DB : SELECT employee FOR UPDATE
+VacationDeleteModel -> DB : Releer solicitud
+VacationDeleteModel -> DB : Validar que existe
+VacationDeleteModel -> DB : Validar que pertenece al empleado esperado
+VacationDeleteModel -> DB : Releer empleado con rol
+VacationDeleteModel -> DB : Validar misma casa y que no sea Admin
+VacationDeleteModel -> DB : Validar que aprobada no haya iniciado ni terminado
+VacationDeleteModel -> DB : DELETE vacations_request
+DB --> VacationDeleteModel : Solicitud eliminada
+VacationDeleteModel -> DB : COMMIT
+VacationDeleteModel --> Service : Solicitud eliminada
 
-alt Transacción detecta solicitud inexistente o fuera de alcance
-Service --> Controller : NOT_FOUND / OUT_OF_SCOPE
-Controller --> Frontend : 404/403 Error de eliminación
+alt Transacción detecta solicitud inexistente, fuera de alcance o no removible
+Service --> Controller : NOT_FOUND / OUT_OF_SCOPE / REQUEST_NOT_MODIFIABLE
+Controller --> Frontend : 404/403/406 Error de eliminación
 else Eliminación exitosa
 Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
 LogModel -> DB : INSERT logs

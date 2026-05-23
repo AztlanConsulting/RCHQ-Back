@@ -4,7 +4,7 @@ title US32 - Coordinador remueve vacaciones de un empleado
 |Usuario|
 start
 :Entrar al módulo de solicitudes de vacaciones;
-:Seleccionar una solicitud pendiente, aprobada o rechazada;
+:Seleccionar una solicitud pendiente, aprobada futura o rechazada;
 :Dar clic en remover vacaciones;
 
 |Sistema|
@@ -136,9 +136,16 @@ else (No)
 stop
 endif
 
+if (¿Solicitud aprobada ya inició o terminó?) then (Sí)
+:Cancelar eliminación;
+:Mostrar error "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron";
+stop
+else (No)
+endif
+
 :Eliminar solicitud de vacaciones;
 
-if (¿Solicitud era pendiente o aprobada?) then (Sí)
+if (¿Solicitud era pendiente o aprobada futura?) then (Sí)
 :La solicitud deja de contar para disponibilidad, traslapes y calendario operativo;
 else (No, era rechazada)
 :La eliminación no modifica días disponibles porque la solicitud rechazada no consumía días;
