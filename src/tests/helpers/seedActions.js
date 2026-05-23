@@ -1,5 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../../prisma");
 
 const ACTIONS = [
     {
@@ -108,7 +107,7 @@ const ACTIONS = [
     },
     {
         action_id: "empl-001",
-        description: "Empleado creado",
+        description: "Empleado creado con éxito",
         important: false,
     },
     {
@@ -201,6 +200,8 @@ const ACTIONS = [
         action_id: "empl-008",
         description: "Fallo al dar de baja al empleado",
         important: true,
+    },
+    {
         action_id: "vaca-006",
         description: "Eliminación de vacaciones exitosa",
         important: false,
@@ -208,10 +209,11 @@ const ACTIONS = [
 ];
 
 async function seedActions(db = prisma) {
-    await db.action.createMany({
+    const xd = await db.action.createMany({
         data: ACTIONS,
         skipDuplicates: true,
     });
+    console.log(xd);
 }
 
 module.exports = {

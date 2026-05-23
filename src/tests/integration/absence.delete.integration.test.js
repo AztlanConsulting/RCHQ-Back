@@ -293,9 +293,18 @@ const resetAbsences = async () => {
 };
 
 const cleanup = async () => {
+    // ! Borrar esto??
     await prisma.absence.deleteMany({
         where: {
             absence_id: { in: [IDS.absenceA, IDS.absenceB, IDS.absenceDeleted] },
+        },
+    });
+
+    await prisma.absence.deleteMany({
+        where: {
+            employee_id: {
+                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+            },
         },
     });
 
@@ -305,7 +314,7 @@ const cleanup = async () => {
                 in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
             },
         },
-    });
+    });    
 
     await prisma.employee.deleteMany({
         where: {

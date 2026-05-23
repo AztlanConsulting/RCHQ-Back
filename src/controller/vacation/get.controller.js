@@ -29,7 +29,8 @@ exports.getRemainingVacations = async (req, res) => {
                 }
             });
         }
-    } catch {
+    } catch(error) {
+        console.error(error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
