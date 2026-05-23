@@ -60,7 +60,7 @@ exports.deleteVacationRequest = async (req, res) => {
         }
 
         if (result.code === RESPONSES.VACATION.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos",
             });
