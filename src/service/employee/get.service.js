@@ -182,8 +182,8 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
         };
     }
 
-    const decryptedSalary = parseInt(decryptValue(employeeBasicInfo.salary));
-    if (decryptedSalary) {
+    const decryptedSalary = decryptValue(employeeBasicInfo.salary);
+    if (decryptedSalary !== undefined && decryptedSalary !== null && decryptedSalary !== "") {
         employeeBasicInfo.salary = decryptedSalary;
     }
 

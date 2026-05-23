@@ -11,6 +11,7 @@ const ADDRESS_REGEX      = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.\-\s]*$/;
 const DATE_REGEX         = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX         = /^\d{2}:\d{2}$/;
 const SIMPLE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SALARY_REGEX       = /^\d+(\.\d{1,2})?$/;
 
 const emptyToNull = (val) => (val === "" ? null : val);
 
@@ -154,8 +155,9 @@ const workdayUpdateSchema = z
     workdayId: z.string().uuid("El workdayId debe ser un UUID válido"),
     start:     z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el inicio"),
     end:       z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el fin"),
+    allDay:    z.boolean().optional(),
   })
-  .refine(({ start, end }) => start !== end, {
+  .refine(({ start, end, allDay }) => allDay || start !== end, {
     message: "La hora de inicio y fin no pueden ser iguales",
   });
 
@@ -175,9 +177,10 @@ const employeeAdminUpdateSchema = z
     ),
     frequencyOfPaymentId: z.string().uuid().nullable().optional(),
 
-    salary: z.number()
-      .min(0, "El salario no puede ser negativo")
-      .max(1_000_000, "El salario excede el límite permitido")
+    salary: z.string()
+      .regex(SALARY_REGEX, "El salario debe ser un número válido con hasta 2 decimales")
+      .refine((val) => Number(val) >= 0, { message: "El salario no puede ser negativo" })
+      .refine((val) => Number(val) <= 1_000_000, { message: "El salario excede el límite permitido" })
       .optional(),
 
     workdays: z.array(workdayUpdateSchema).min(1, "Debe incluir al menos un día").optional(),
@@ -190,8 +193,9 @@ const employeeAdminUpdateSchema = z
   .refine(
     (data) => {
       if (data.salary === undefined || data.salary === null) return true;
-      if (data.type === "Voluntariado") return data.salary >= 0;
-      return data.salary > 0;
+      const salary = Number(data.salary);
+      if (data.type === "Voluntariado") return salary >= 0;
+      return salary > 0;
     },
     { message: "El salario debe ser mayor a 0 para este tipo de contrato", path: ["salary"] }
   );
