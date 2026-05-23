@@ -76,8 +76,6 @@ exports.requestVacation = async (req, res) => {
             });
         }
 
-        console.error("sepa la wea po causa wn");
-
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
