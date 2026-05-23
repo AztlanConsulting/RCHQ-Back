@@ -7,113 +7,223 @@ control "vacation.route.js" as Router
 control "auth/rbac/validate middleware" as Middleware
 control "delete.controller.js" as Controller
 control "delete.service.js" as Service
-database "vacation/get.model.js" as VacationGetModel
 database "employee/get.model.js" as EmployeeGetModel
+database "vacation/get.model.js" as VacationGetModel
 database "vacation/delete.model.js" as VacationDeleteModel
 database "log.model.js" as LogModel
 database "Base de datos" as DB
 
 autonumber
 
-Usuario -> Frontend : Selecciona solicitud pendiente, aprobada futura o rechazada
-Usuario -> Frontend : Da clic en remover vacaciones
-Frontend -> Usuario : Muestra confirmación
+Usuario ->> Frontend : Selecciona solicitud pendiente, aprobada futura o rechazada
+activate Frontend
+Usuario ->> Frontend : Da clic en remover vacaciones
+Frontend --> Usuario : Muestra confirmación
 
 alt Usuario cancela confirmación
-Frontend --> Usuario : No se realiza ningún cambio
+    Frontend --> Usuario : No se realiza ningún cambio
+    deactivate Frontend
 else Usuario confirma eliminación
-Frontend -> Router : DELETE /vacation/request/:vacationRequestId\nAuthorization: Bearer token
+    Frontend -> Router : DELETE /vacation/request/:vacationRequestId\nAuthorization: Bearer token
+    activate Router
 
-Router -> Middleware : apiLimiter
-Router -> Middleware : verifyToken
-Router -> Middleware : requireRole(Coordinador)
-Router -> Middleware : requirePrivileges(manageEmployees)
-Router -> Middleware : validate(deleteVacationRequestSchema, "all")
+    Router -> Middleware : apiLimiter
+    activate Middleware
+    Middleware --> Router : Request validada por rate limit
+    deactivate Middleware
 
-alt Middleware rechaza request
-Middleware --> Frontend : 400/401/403
-else Request HTTP válida
-Router -> Controller : deleteVacationRequest(req, res)
+    Router -> Middleware : verifyToken
+    activate Middleware
+    Middleware --> Router : Token válido
+    deactivate Middleware
 
-Controller -> Service : deleteVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
+    Router -> Middleware : requireRole(Coordinador)
+    activate Middleware
+    Middleware --> Router : Rol permitido
+    deactivate Middleware
 
-Service -> Service : Validar contrato interno con schema de caso de uso
+    Router -> Middleware : requirePrivileges(manageEmployees)
+    activate Middleware
+    Middleware --> Router : Privilegio permitido
+    deactivate Middleware
 
-alt Entrada interna inválida
-Service --> Controller : VALIDATION_ERROR
-Controller --> Frontend : 400 Datos inválidos
-else Entrada interna válida
-Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
-EmployeeGetModel -> DB : SELECT employee + role + house
-DB --> EmployeeGetModel : Actor coordinador
-EmployeeGetModel --> Service : Actor
+    Router -> Middleware : validate(deleteVacationRequestSchema, "all")
+    activate Middleware
 
-alt Actor no existe
-Service --> Controller : USER_NOT_AUTHENTICATED
-Controller --> Frontend : 401 Usuario no autenticado
-else Actor no es Coordinador
-Service --> Controller : INSUFFICIENT_PERMISSIONS
-Controller --> Frontend : 403 Sin permisos
-else Actor válido
-Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
-VacationGetModel -> DB : SELECT vacations_request
-DB --> VacationGetModel : Solicitud
-VacationGetModel --> Service : Solicitud
+    alt Middleware rechaza request
+        Middleware --> Frontend : 400/401/403 Error de validación, autenticación o permisos
+        deactivate Middleware
+        deactivate Router
+        deactivate Frontend
+    else Request HTTP válida
+        Middleware --> Router : Request HTTP válida
+        deactivate Middleware
 
-alt Solicitud no existe
-Service --> Controller : VACATION_REQUEST_NOT_FOUND
-Controller --> Frontend : 404 Solicitud no encontrada
-else Solicitud existe
-Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
-EmployeeGetModel -> DB : SELECT employee + role + house
-DB --> EmployeeGetModel : Empleado dueño
-EmployeeGetModel --> Service : Empleado
+        Router -> Controller : deleteVacationRequest(req, res)
+        activate Controller
 
-alt Empleado no existe
-Service --> Controller : EMPLOYEE_NOT_FOUND
-Controller --> Frontend : 404 Empleado no encontrado
-else Empleado es Admin
-Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 403 No puede acceder a este recurso
-else Empleado fuera de casa hogar
-Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 403 No puede acceder a este recurso
-else Solicitud aprobada ya inició o terminó
-Service --> Controller : REQUEST_NOT_MODIFIABLE
-Controller --> Frontend : 406 No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron
-else Actor autorizado y solicitud removible
-Service -> VacationDeleteModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\ncurrentDate\n})
+        Controller -> Service : deleteVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
+        activate Service
 
-VacationDeleteModel -> DB : BEGIN TRANSACTION
-VacationDeleteModel -> DB : SELECT employee FOR UPDATE
-VacationDeleteModel -> DB : Releer solicitud
-VacationDeleteModel -> DB : Validar que existe
-VacationDeleteModel -> DB : Validar que pertenece al empleado esperado
-VacationDeleteModel -> DB : Releer empleado con rol
-VacationDeleteModel -> DB : Validar misma casa y que no sea Admin
-VacationDeleteModel -> DB : Validar que aprobada no haya iniciado ni terminado
-VacationDeleteModel -> DB : DELETE vacations_request
-DB --> VacationDeleteModel : Solicitud eliminada
-VacationDeleteModel -> DB : COMMIT
-VacationDeleteModel --> Service : Solicitud eliminada
+        Service -> Service : Validar contrato interno con schema de caso de uso
 
-alt Transacción detecta solicitud inexistente, fuera de alcance o no removible
-Service --> Controller : NOT_FOUND / OUT_OF_SCOPE / REQUEST_NOT_MODIFIABLE
-Controller --> Frontend : 404/403/406 Error de eliminación
-else Eliminación exitosa
-Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
-LogModel -> DB : INSERT logs
-DB --> LogModel : Log creado
+        alt Entrada interna inválida
+            Service --> Controller : VALIDATION_ERROR
+            deactivate Service
+            Controller --> Frontend : 422 Datos inválidos
+            deactivate Controller
+            deactivate Router
+            deactivate Frontend
+        else Entrada interna válida
+            Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+            activate EmployeeGetModel
+            EmployeeGetModel -> DB : SELECT employee + role + house
+            activate DB
+            DB --> EmployeeGetModel : Actor coordinador
+            deactivate DB
+            EmployeeGetModel --> Service : Actor
+            deactivate EmployeeGetModel
 
-Service --> Controller : VACATION_DELETED
-Controller --> Frontend : 200 Vacaciones removidas correctamente
-Frontend --> Usuario : Mostrar confirmación
-end
-end
-end
-end
-end
-end
+            alt Actor no existe
+                Service --> Controller : USER_NOT_AUTHENTICATED
+                deactivate Service
+                Controller --> Frontend : 401 Usuario no autenticado
+                deactivate Controller
+                deactivate Router
+                deactivate Frontend
+            else Actor no es Coordinador
+                Service --> Controller : INSUFFICIENT_PERMISSIONS
+                deactivate Service
+                Controller --> Frontend : 403 Sin permisos
+                deactivate Controller
+                deactivate Router
+                deactivate Frontend
+            else Actor válido
+                Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
+                activate VacationGetModel
+                VacationGetModel -> DB : SELECT vacations_request
+                activate DB
+                DB --> VacationGetModel : Solicitud
+                deactivate DB
+                VacationGetModel --> Service : Solicitud
+                deactivate VacationGetModel
+
+                alt Solicitud no existe
+                    Service --> Controller : VACATION_REQUEST_NOT_FOUND
+                    deactivate Service
+                    Controller --> Frontend : 404 Solicitud no encontrada
+                    deactivate Controller
+                    deactivate Router
+                    deactivate Frontend
+                else Solicitud existe
+                    Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
+                    activate EmployeeGetModel
+                    EmployeeGetModel -> DB : SELECT employee + role + house
+                    activate DB
+                    DB --> EmployeeGetModel : Empleado dueño
+                    deactivate DB
+                    EmployeeGetModel --> Service : Empleado
+                    deactivate EmployeeGetModel
+
+                    alt Empleado no existe
+                        Service --> Controller : EMPLOYEE_NOT_FOUND
+                        deactivate Service
+                        Controller --> Frontend : 404 Empleado no encontrado
+                        deactivate Controller
+                        deactivate Router
+                        deactivate Frontend
+                    else Empleado es Admin
+                        Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
+                        deactivate Service
+                        Controller --> Frontend : 403 No puede acceder a este recurso
+                        deactivate Controller
+                        deactivate Router
+                        deactivate Frontend
+                    else Empleado fuera de casa hogar
+                        Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
+                        deactivate Service
+                        Controller --> Frontend : 403 No puede acceder a este recurso
+                        deactivate Controller
+                        deactivate Router
+                        deactivate Frontend
+                    else Solicitud aprobada ya inició o terminó
+                        Service --> Controller : REQUEST_NOT_MODIFIABLE
+                        deactivate Service
+                        Controller --> Frontend : 406 No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron
+                        deactivate Controller
+                        deactivate Router
+                        deactivate Frontend
+                    else Actor autorizado y solicitud removible
+                        Service -> VacationDeleteModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\ncurrentDate\n})
+                        activate VacationDeleteModel
+
+                        VacationDeleteModel -> DB : BEGIN TRANSACTION
+                        activate DB
+                        DB --> VacationDeleteModel : Transacción iniciada
+                        deactivate DB
+
+                        VacationDeleteModel -> DB : SELECT employee FOR UPDATE
+                        activate DB
+                        DB --> VacationDeleteModel : Empleado bloqueado
+                        deactivate DB
+
+                        VacationDeleteModel -> DB : SELECT vacations_request
+                        activate DB
+                        DB --> VacationDeleteModel : Solicitud actualizada
+                        deactivate DB
+
+                        VacationDeleteModel -> DB : SELECT employee + role
+                        activate DB
+                        DB --> VacationDeleteModel : Empleado actualizado
+                        deactivate DB
+
+                        VacationDeleteModel -> VacationDeleteModel : Validar existencia, pertenencia,\ncasa hogar, rol y fecha aprobada
+
+                        alt Transacción detecta solicitud inexistente, fuera de alcance o no removible
+                            VacationDeleteModel --> Service : NOT_FOUND / OUT_OF_SCOPE / REQUEST_NOT_MODIFIABLE
+                            deactivate VacationDeleteModel
+                            Service --> Controller : NOT_FOUND / OUT_OF_SCOPE / REQUEST_NOT_MODIFIABLE
+                            deactivate Service
+                            Controller --> Frontend : 404/403/406 Error de eliminación
+                            deactivate Controller
+                            deactivate Router
+                            deactivate Frontend
+                        else Eliminación válida
+                            VacationDeleteModel -> DB : DELETE vacations_request
+                            activate DB
+                            DB --> VacationDeleteModel : Solicitud eliminada
+                            deactivate DB
+
+                            VacationDeleteModel -> DB : COMMIT
+                            activate DB
+                            DB --> VacationDeleteModel : Transacción confirmada
+                            deactivate DB
+
+                            VacationDeleteModel --> Service : Solicitud eliminada
+                            deactivate VacationDeleteModel
+
+                            Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
+                            activate LogModel
+                            LogModel -> DB : INSERT logs
+                            activate DB
+                            DB --> LogModel : Log creado
+                            deactivate DB
+                            LogModel --> Service : Log registrado
+                            deactivate LogModel
+
+                            Service --> Controller : VACATION_DELETED
+                            deactivate Service
+                            Controller --> Frontend : 200 Vacaciones removidas correctamente
+                            deactivate Controller
+                            deactivate Router
+                            Frontend --> Usuario : Mostrar confirmación
+                            deactivate Frontend
+                        end
+                    end
+                end
+            end
+        end
+    end
 end
 
 @enduml
