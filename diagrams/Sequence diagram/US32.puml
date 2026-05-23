@@ -1,229 +1,209 @@
-@startuml
-title US32 - Coordinador remueve vacaciones de un empleado
+@startuml HU32 - Coordinador remueve vacaciones de un empleado
 
-actor "Coordinador" as Usuario
-boundary "Frontend" as Frontend
-control "vacation.route.js" as Router
-control "auth/rbac/validate middleware" as Middleware
-control "delete.controller.js" as Controller
-control "delete.service.js" as Service
-database "employee/get.model.js" as EmployeeGetModel
-database "vacation/get.model.js" as VacationGetModel
-database "vacation/delete.model.js" as VacationDeleteModel
-database "log.model.js" as LogModel
-database "Base de datos" as DB
+actor Navegador
+boundary "vacation.routes" as routes
+boundary "React (calendario.jsx)" as ReactView
+control "delete.controller" as controller
+control "delete.service" as vacation.service
+entity "employee/get.model" as employeeGet.model
+entity "vacation/get.model" as vacationGet.model
+entity "vacation/delete.model" as vacationDelete.model
+entity "log.model" as log.model
+database PostgreSQL
 
 autonumber
 
-Usuario ->> Frontend : Selecciona solicitud pendiente, aprobada futura o rechazada
-activate Frontend
-Usuario ->> Frontend : Da clic en remover vacaciones
-Frontend --> Usuario : Muestra confirmación
+Navegador -> ReactView : Selecciona vacaciones y da clic en Eliminar
+activate ReactView
 
-alt Usuario cancela confirmación
-    Frontend --> Usuario : No se realiza ningún cambio
-    deactivate Frontend
-else Usuario confirma eliminación
-    Frontend -> Router : DELETE /vacation/request/:vacationRequestId\nAuthorization: Bearer token
-    activate Router
+ReactView -> Navegador : Muestra modal de confirmación
 
-    Router -> Middleware : apiLimiter
-    activate Middleware
-    Middleware --> Router : Request validada por rate limit
-    deactivate Middleware
+alt Cancela eliminación
+Navegador -> ReactView : Selecciona Cancelar
+ReactView -> Navegador : Cierra modal sin cambios
+deactivate ReactView
 
-    Router -> Middleware : verifyToken
-    activate Middleware
-    Middleware --> Router : Token válido
-    deactivate Middleware
+else Confirma eliminación
+Navegador -> ReactView : Selecciona Eliminar
 
-    Router -> Middleware : requireRole(Coordinador)
-    activate Middleware
-    Middleware --> Router : Rol permitido
-    deactivate Middleware
+ReactView -> routes : DELETE /vacation/request/:vacationRequestId
+deactivate ReactView
+activate routes
 
-    Router -> Middleware : requirePrivileges(manageEmployees)
-    activate Middleware
-    Middleware --> Router : Privilegio permitido
-    deactivate Middleware
+routes -> controller : deleteVacationRequest(request, response)
+deactivate routes
+activate controller
 
-    Router -> Middleware : validate(deleteVacationRequestSchema, "all")
-    activate Middleware
+controller -> vacation.service : deleteVacationRequest(actorEmployeeId,\nvacationRequestId, ipAddress)
+activate vacation.service
 
-    alt Middleware rechaza request
-        Middleware --> Frontend : 400/401/403 Error de validación, autenticación o permisos
-        deactivate Middleware
-        deactivate Router
-        deactivate Frontend
-    else Request HTTP válida
-        Middleware --> Router : Request HTTP válida
-        deactivate Middleware
+vacation.service -> vacation.service : Validar datos de entrada
 
-        Router -> Controller : deleteVacationRequest(req, res)
-        activate Controller
+alt Datos inválidos
+vacation.service -->> controller : { code: VALIDATION_ERROR }
+deactivate vacation.service
+controller -->> routes : response.status(422).send(error)
+deactivate controller
+activate routes
+routes -->> ReactView : send(422)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Mostrar error de validación
+deactivate ReactView
 
-        Controller -> Service : deleteVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
-        activate Service
+else Datos válidos
+vacation.service -> employeeGet.model : findByIdWithRoleAndHouse(actorEmployeeId)
+activate employeeGet.model
+employeeGet.model -> PostgreSQL : SELECT employee + role + house
+activate PostgreSQL
+PostgreSQL -->> employeeGet.model : actor | null
+deactivate PostgreSQL
+employeeGet.model -->> vacation.service : actor | null
+deactivate employeeGet.model
 
-        Service -> Service : Validar contrato interno con schema de caso de uso
+alt Actor no existe o no tiene permisos
+vacation.service -->> controller : { code: USER_NOT_AUTHENTICATED / INSUFFICIENT_PERMISSIONS }
+deactivate vacation.service
+controller -->> routes : response.status(401/403).send(error)
+deactivate controller
+activate routes
+routes -->> ReactView : send(401/403)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Mostrar error de permisos
+deactivate ReactView
 
-        alt Entrada interna inválida
-            Service --> Controller : VALIDATION_ERROR
-            deactivate Service
-            Controller --> Frontend : 422 Datos inválidos
-            deactivate Controller
-            deactivate Router
-            deactivate Frontend
-        else Entrada interna válida
-            Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
-            activate EmployeeGetModel
-            EmployeeGetModel -> DB : SELECT employee + role + house
-            activate DB
-            DB --> EmployeeGetModel : Actor coordinador
-            deactivate DB
-            EmployeeGetModel --> Service : Actor
-            deactivate EmployeeGetModel
+else Actor autorizado
+vacation.service -> vacationGet.model : getVacationRequestById(vacationRequestId)
+activate vacationGet.model
+vacationGet.model -> PostgreSQL : SELECT vacations_request
+activate PostgreSQL
+PostgreSQL -->> vacationGet.model : vacationRequest | null
+deactivate PostgreSQL
+vacationGet.model -->> vacation.service : vacationRequest | null
+deactivate vacationGet.model
 
-            alt Actor no existe
-                Service --> Controller : USER_NOT_AUTHENTICATED
-                deactivate Service
-                Controller --> Frontend : 401 Usuario no autenticado
-                deactivate Controller
-                deactivate Router
-                deactivate Frontend
-            else Actor no es Coordinador
-                Service --> Controller : INSUFFICIENT_PERMISSIONS
-                deactivate Service
-                Controller --> Frontend : 403 Sin permisos
-                deactivate Controller
-                deactivate Router
-                deactivate Frontend
-            else Actor válido
-                Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
-                activate VacationGetModel
-                VacationGetModel -> DB : SELECT vacations_request
-                activate DB
-                DB --> VacationGetModel : Solicitud
-                deactivate DB
-                VacationGetModel --> Service : Solicitud
-                deactivate VacationGetModel
+alt Solicitud no existe
+vacation.service -->> controller : { code: REQUEST_NOT_FOUND }
+deactivate vacation.service
+controller -->> routes : response.status(404).send(error)
+deactivate controller
+activate routes
+routes -->> ReactView : send(404)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Mostrar solicitud no encontrada
+deactivate ReactView
 
-                alt Solicitud no existe
-                    Service --> Controller : VACATION_REQUEST_NOT_FOUND
-                    deactivate Service
-                    Controller --> Frontend : 404 Solicitud no encontrada
-                    deactivate Controller
-                    deactivate Router
-                    deactivate Frontend
-                else Solicitud existe
-                    Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
-                    activate EmployeeGetModel
-                    EmployeeGetModel -> DB : SELECT employee + role + house
-                    activate DB
-                    DB --> EmployeeGetModel : Empleado dueño
-                    deactivate DB
-                    EmployeeGetModel --> Service : Empleado
-                    deactivate EmployeeGetModel
+else Solicitud existe
+vacation.service -> employeeGet.model : findByIdWithRoleAndHouse(targetEmployeeId)
+activate employeeGet.model
+employeeGet.model -> PostgreSQL : SELECT employee + role + house
+activate PostgreSQL
+PostgreSQL -->> employeeGet.model : targetEmployee | null
+deactivate PostgreSQL
+employeeGet.model -->> vacation.service : targetEmployee | null
+deactivate employeeGet.model
 
-                    alt Empleado no existe
-                        Service --> Controller : EMPLOYEE_NOT_FOUND
-                        deactivate Service
-                        Controller --> Frontend : 404 Empleado no encontrado
-                        deactivate Controller
-                        deactivate Router
-                        deactivate Frontend
-                    else Empleado es Admin
-                        Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-                        deactivate Service
-                        Controller --> Frontend : 403 No puede acceder a este recurso
-                        deactivate Controller
-                        deactivate Router
-                        deactivate Frontend
-                    else Empleado fuera de casa hogar
-                        Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-                        deactivate Service
-                        Controller --> Frontend : 403 No puede acceder a este recurso
-                        deactivate Controller
-                        deactivate Router
-                        deactivate Frontend
-                    else Solicitud aprobada ya inició o terminó
-                        Service --> Controller : REQUEST_NOT_MODIFIABLE
-                        deactivate Service
-                        Controller --> Frontend : 406 No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron
-                        deactivate Controller
-                        deactivate Router
-                        deactivate Frontend
-                    else Actor autorizado y solicitud removible
-                        Service -> VacationDeleteModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\ncurrentDate\n})
-                        activate VacationDeleteModel
+alt Empleado no existe o está fuera de alcance
+vacation.service -->> controller : { code: EMPLOYEE_NOT_FOUND / EMPLOYEE_OUT_OF_SCOPE }
+deactivate vacation.service
+controller -->> routes : response.status(403/404).send(error)
+deactivate controller
+activate routes
+routes -->> ReactView : send(403/404)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Mostrar error
+deactivate ReactView
 
-                        VacationDeleteModel -> DB : BEGIN TRANSACTION
-                        activate DB
-                        DB --> VacationDeleteModel : Transacción iniciada
-                        deactivate DB
+else Solicitud no removible
+vacation.service -> vacation.service : canRemoveVacationRequest(vacationRequest)
 
-                        VacationDeleteModel -> DB : SELECT employee FOR UPDATE
-                        activate DB
-                        DB --> VacationDeleteModel : Empleado bloqueado
-                        deactivate DB
+vacation.service -->> controller : { code: REQUEST_NOT_MODIFIABLE }
+deactivate vacation.service
+controller -->> routes : response.status(406).send(error)
+deactivate controller
+activate routes
+routes -->> ReactView : send(406)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Mostrar que no se puede eliminar
+deactivate ReactView
 
-                        VacationDeleteModel -> DB : SELECT vacations_request
-                        activate DB
-                        DB --> VacationDeleteModel : Solicitud actualizada
-                        deactivate DB
+else Solicitud removible
+vacation.service -> vacationDelete.model : deleteVacationRequestAtomically(vacationRequestId,\ntargetEmployeeId, actorHouseId)
+activate vacationDelete.model
 
-                        VacationDeleteModel -> DB : SELECT employee + role
-                        activate DB
-                        DB --> VacationDeleteModel : Empleado actualizado
-                        deactivate DB
+vacationDelete.model -> PostgreSQL : BEGIN TRANSACTION
+activate PostgreSQL
+PostgreSQL -->> vacationDelete.model : transacción iniciada
 
-                        VacationDeleteModel -> VacationDeleteModel : Validar existencia, pertenencia,\ncasa hogar, rol y fecha aprobada
+vacationDelete.model -> PostgreSQL : SELECT employee FOR UPDATE
+PostgreSQL -->> vacationDelete.model : empleado bloqueado
 
-                        alt Transacción detecta solicitud inexistente, fuera de alcance o no removible
-                            VacationDeleteModel --> Service : NOT_FOUND / OUT_OF_SCOPE / REQUEST_NOT_MODIFIABLE
-                            deactivate VacationDeleteModel
-                            Service --> Controller : NOT_FOUND / OUT_OF_SCOPE / REQUEST_NOT_MODIFIABLE
-                            deactivate Service
-                            Controller --> Frontend : 404/403/406 Error de eliminación
-                            deactivate Controller
-                            deactivate Router
-                            deactivate Frontend
-                        else Eliminación válida
-                            VacationDeleteModel -> DB : DELETE vacations_request
-                            activate DB
-                            DB --> VacationDeleteModel : Solicitud eliminada
-                            deactivate DB
+vacationDelete.model -> PostgreSQL : SELECT vacations_request
+PostgreSQL -->> vacationDelete.model : vacationRequest actual
 
-                            VacationDeleteModel -> DB : COMMIT
-                            activate DB
-                            DB --> VacationDeleteModel : Transacción confirmada
-                            deactivate DB
+vacationDelete.model -> PostgreSQL : SELECT employee + role
+PostgreSQL -->> vacationDelete.model : empleado actual
 
-                            VacationDeleteModel --> Service : Solicitud eliminada
-                            deactivate VacationDeleteModel
+vacationDelete.model -> vacationDelete.model : Validar existencia, pertenencia,\nalcance y regla de eliminación
 
-                            Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
-                            activate LogModel
-                            LogModel -> DB : INSERT logs
-                            activate DB
-                            DB --> LogModel : Log creado
-                            deactivate DB
-                            LogModel --> Service : Log registrado
-                            deactivate LogModel
+alt Transacción detecta conflicto
+vacationDelete.model -> PostgreSQL : ROLLBACK
+PostgreSQL -->> vacationDelete.model : transacción revertida
+deactivate PostgreSQL
 
-                            Service --> Controller : VACATION_DELETED
-                            deactivate Service
-                            Controller --> Frontend : 200 Vacaciones removidas correctamente
-                            deactivate Controller
-                            deactivate Router
-                            Frontend --> Usuario : Mostrar confirmación
-                            deactivate Frontend
-                        end
-                    end
-                end
-            end
-        end
-    end
+vacationDelete.model -->> vacation.service : { success: false, code }
+deactivate vacationDelete.model
+
+vacation.service -->> controller : { code }
+deactivate vacation.service
+controller -->> routes : response.status(403/404/406).send(error)
+deactivate controller
+activate routes
+routes -->> ReactView : send(error)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Mostrar error de eliminación
+deactivate ReactView
+
+else Eliminación válida
+vacationDelete.model -> PostgreSQL : DELETE vacations_request
+PostgreSQL -->> vacationDelete.model : vacationRequest eliminada
+
+vacationDelete.model -> PostgreSQL : COMMIT
+PostgreSQL -->> vacationDelete.model : transacción confirmada
+deactivate PostgreSQL
+
+vacationDelete.model -->> vacation.service : vacationRequest eliminada
+deactivate vacationDelete.model
+
+vacation.service -> log.model : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS, ipAddress, targetEmployeeId)
+activate log.model
+log.model -> PostgreSQL : INSERT log
+activate PostgreSQL
+PostgreSQL -->> log.model : log creado
+deactivate PostgreSQL
+log.model -->> vacation.service : success
+deactivate log.model
+
+vacation.service -->> controller : { code: VACATION_DELETED, data }
+deactivate vacation.service
+controller -->> routes : response.status(200).send(data)
+deactivate controller
+activate routes
+routes -->> ReactView : send(200)
+deactivate routes
+activate ReactView
+ReactView -> Navegador : Actualizar calendario y mostrar éxito
+deactivate ReactView
+end
+end
+end
+end
+end
 end
 
 @enduml
