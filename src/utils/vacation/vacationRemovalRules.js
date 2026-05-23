@@ -1,4 +1,5 @@
 const { VACATION_STATUS } = require("../vacationStatus");
+const { convertUTCToMexicanTime, getUTCDateKey } = require("../dates");
 
 function toUtcDateOnly(date) {
     return new Date(
@@ -10,19 +11,24 @@ function getTodayUTC() {
     return toUtcDateOnly(new Date());
 }
 
+function getTodayMexicoDate() {
+    return toUtcDateOnly(convertUTCToMexicanTime(new Date()));
+}
+
 function canRemoveVacationRequest(
     vacationRequest,
-    currentDate = getTodayUTC(),
+    currentDate = getTodayMexicoDate(),
 ) {
     if (vacationRequest.status !== VACATION_STATUS.APPROVED) {
         return true;
     }
 
-    return toUtcDateOnly(vacationRequest.start) > toUtcDateOnly(currentDate);
+    return getUTCDateKey(vacationRequest.start) > getUTCDateKey(currentDate);
 }
 
 module.exports = {
     toUtcDateOnly,
     getTodayUTC,
+    getTodayMexicoDate,
     canRemoveVacationRequest,
 };

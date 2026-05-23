@@ -1,9 +1,5 @@
-const {
-    findByIdWithRoleAndHouse,
-} = require("../../model/employee/get.model");
-const {
-    getVacationRequestById,
-} = require("../../model/vacation/get.model");
+const { findByIdWithRoleAndHouse } = require("../../model/employee/get.model");
+const { getVacationRequestById } = require("../../model/vacation/get.model");
 const {
     deleteVacationRequestAtomically,
 } = require("../../model/vacation/delete.model");
@@ -14,7 +10,10 @@ const { ROLES } = require("../../utils/roles");
 const {
     deleteVacationRequestInputSchema,
 } = require("../../schemas/vacation/delete.schemas");
-const { getTodayUTC, canRemoveVacationRequest } = require("../../utils/vacation/vacationRemovalRules");
+const {
+    canRemoveVacationRequest,
+    getTodayMexicoDate,
+} = require("../../utils/vacation/vacationRemovalRules");
 
 exports.deleteVacationRequest = async ({
     actorEmployeeId,
@@ -41,14 +40,6 @@ exports.deleteVacationRequest = async ({
         };
     }
 
-    const actorRoleName = actorEmployee.role?.name;
-
-    if (actorRoleName !== ROLES.COORDINATOR) {
-        return {
-            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
-        };
-    }
-
     const vacationRequest = await getVacationRequestById(vacationRequestId);
 
     if (!vacationRequest) {
@@ -58,6 +49,10 @@ exports.deleteVacationRequest = async ({
     }
 
     const targetEmployeeId = vacationRequest.employee_id;
+    const actorRoleName = actorEmployee.role?.name;
+    const isSelfDeletion = actorEmployeeId === targetEmployeeId;
+    const isCoordinatorDeletion =
+        actorRoleName === ROLES.COORDINATOR && !isSelfDeletion;
 
     const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
 
@@ -69,19 +64,28 @@ exports.deleteVacationRequest = async ({
 
     const targetRoleName = targetEmployee.role?.name;
 
-    if (targetRoleName === ROLES.ADMIN) {
+    if (!isSelfDeletion && targetRoleName === ROLES.ADMIN) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
     }
 
-    if (actorEmployee.house_id !== targetEmployee.house_id) {
+    if (
+        isCoordinatorDeletion &&
+        actorEmployee.house_id !== targetEmployee.house_id
+    ) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
     }
 
-    const currentDate = getTodayUTC();
+    if (!isSelfDeletion && !isCoordinatorDeletion) {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+        };
+    }
+
+    const currentDate = getTodayMexicoDate();
 
     if (!canRemoveVacationRequest(vacationRequest, currentDate)) {
         return {
@@ -92,8 +96,6 @@ exports.deleteVacationRequest = async ({
     const deleteResult = await deleteVacationRequestAtomically({
         vacationRequestId,
         employeeId: targetEmployeeId,
-        actorHouseId: actorEmployee.house_id,
-        currentDate,
     });
 
     if (!deleteResult.success) {

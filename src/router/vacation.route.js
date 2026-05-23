@@ -10,6 +10,7 @@ const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
     canRegisterEmployeeVacation,
+    canDeleteVacationRequest,
 } = require("../middleware/abac");
 
 const { getRemainingVacations,
@@ -108,9 +109,8 @@ router.delete(
     "/request/:vacationRequestId",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(deleteVacationRequestSchema, "all"),
+    canDeleteVacationRequest,
     deleteVacationRequest,
 );
 
