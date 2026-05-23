@@ -4,7 +4,6 @@ const {
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
 
-
 exports.deleteVacationRequest = async (req, res) => {
     try {
         const actorEmployeeId = req.user.id;
@@ -49,6 +48,14 @@ exports.deleteVacationRequest = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Empleado no encontrado",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE) {
+            return res.status(406).json({
+                success: false,
+                message:
+                    "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron",
             });
         }
 

@@ -1,11 +1,34 @@
 const prisma = require("../../prisma");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
+const { VACATION_STATUS } = require("../../utils/vacationStatus");
+
+function toUtcDateOnly(date) {
+    return new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    );
+}
+
+function getTodayUTC() {
+    return toUtcDateOnly(new Date());
+}
+
+function canRemoveVacationRequest(
+    vacationRequest,
+    currentDate = getTodayUTC(),
+) {
+    if (vacationRequest.status !== VACATION_STATUS.APPROVED) {
+        return true;
+    }
+
+    return toUtcDateOnly(vacationRequest.start) > toUtcDateOnly(currentDate);
+}
 
 exports.deleteVacationRequestAtomically = async ({
     vacationRequestId,
     employeeId,
     actorHouseId,
+    currentDate = getTodayUTC(),
 }) => {
     return await prisma.$transaction(async (transaction) => {
         await transaction.$queryRaw`
@@ -60,6 +83,13 @@ exports.deleteVacationRequestAtomically = async ({
             return {
                 success: false,
                 code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+            };
+        }
+
+        if (!canRemoveVacationRequest(vacationRequest, currentDate)) {
+            return {
+                success: false,
+                code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
             };
         }
 

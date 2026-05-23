@@ -14,7 +14,28 @@ const { ROLES } = require("../../utils/roles");
 const {
     deleteVacationRequestInputSchema,
 } = require("../../schemas/vacation/delete.schemas");
+const { VACATION_STATUS } = require("../../utils/vacationStatus");
 
+function toUtcDateOnly(date) {
+    return new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+    );
+}
+
+function getTodayUTC() {
+    return toUtcDateOnly(new Date());
+}
+
+function canRemoveVacationRequest(
+    vacationRequest,
+    currentDate = getTodayUTC(),
+) {
+    if (vacationRequest.status !== VACATION_STATUS.APPROVED) {
+        return true;
+    }
+
+    return toUtcDateOnly(vacationRequest.start) > toUtcDateOnly(currentDate);
+}
 
 exports.deleteVacationRequest = async ({
     actorEmployeeId,
@@ -81,10 +102,19 @@ exports.deleteVacationRequest = async ({
         };
     }
 
+    const currentDate = getTodayUTC();
+
+    if (!canRemoveVacationRequest(vacationRequest, currentDate)) {
+        return {
+            code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+        };
+    }
+
     const deleteResult = await deleteVacationRequestAtomically({
         vacationRequestId,
         employeeId: targetEmployeeId,
         actorHouseId: actorEmployee.house_id,
+        currentDate,
     });
 
     if (!deleteResult.success) {
@@ -98,7 +128,7 @@ exports.deleteVacationRequest = async ({
             actorEmployeeId,
             LOG_ACTIONS.VACATION_DELETED_SUCCESS,
             ipAddress,
-            targetEmployeeId
+            targetEmployeeId,
         );
     } catch (error) {
         console.error("Error creando log de eliminación de vacaciones:", error);
