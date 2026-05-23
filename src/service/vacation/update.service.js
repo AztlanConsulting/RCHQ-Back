@@ -37,6 +37,23 @@ const isAdminRole = (roleName) =>
 const isCoordinatorRole = (roleName) =>
     roleName === ROLES.COORDINATOR;
 
+const getMexicoTodayString = () => {
+    const dateParts = Object.fromEntries(new Intl.DateTimeFormat("es-MX", {
+        timeZone: "America/Mexico_City",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+
+    return `${dateParts.year}-${dateParts.month}-${dateParts.day}`;
+};
+
+const getStoredDateString = (date) =>
+    date.toISOString().slice(0, 10);
+
+const hasDateStarted = (startDate) =>
+    getStoredDateString(startDate) <= getMexicoTodayString();
+
 exports.approveVacationRequest = async ({
     actorEmployeeId,
     requesterHouseId,
@@ -345,6 +362,12 @@ exports.updateVacationRequestDates = async ({
     if (!vacationRequest) {
         return {
             code: RESPONSES.VACATION.REQUEST_NOT_FOUND,
+        };
+    }
+
+    if (hasDateStarted(vacationRequest.start) || hasDateStarted(startDate)) {
+        return {
+            code: RESPONSES.VACATION.REQUEST_ALREADY_STARTED,
         };
     }
 
