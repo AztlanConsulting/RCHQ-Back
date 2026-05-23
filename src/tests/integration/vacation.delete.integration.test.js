@@ -119,6 +119,17 @@ function getUserToken() {
     });
 }
 
+function getOtherHouseUserToken() {
+    return generateSessionToken({
+        employee_id: OTHER_HOUSE_EMPLOYEE_ID,
+        email: "other.us32@test.com",
+        name: "Other",
+        roleName: "Usuario",
+        house_id: HOUSE_B_ID,
+        privileges: [],
+    });
+}
+
 async function getOrCreateRoleId(name) {
     const existingRole = await prisma.role.findUnique({
         where: { name },
@@ -698,12 +709,54 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(existingVacation).not.toBeNull();
     });
 
+    test("usuario no puede eliminar su propia solicitud si es aprobada y ya pasó", async () => {
+        const vacation = await createVacation({
+            employeeId: USER_ID,
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getUserToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(existingVacation).not.toBeNull();
+    });
+
     test("usuario no puede eliminar solicitudes de otros empleados", async () => {
         const vacation = await createVacation();
 
         const res = await request(app)
             .delete(`/vacation/request/${vacation.vacations_request_id}`)
             .set("Authorization", `Bearer ${getUserToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(403);
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("usuario de otra casa no puede eliminar solicitudes de otros empleados", async () => {
+        const vacation = await createVacation();
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getOtherHouseUserToken()}`)
             .send({});
 
         const existingVacation = await prisma.vacations_request.findUnique({

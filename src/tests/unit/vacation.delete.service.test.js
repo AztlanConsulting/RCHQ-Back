@@ -90,6 +90,14 @@ describe("US32 - deleteVacationRequest service", () => {
         },
     };
 
+    const otherHouseUserActor = {
+        employee_id: actorUserId,
+        house_id: "house-2",
+        role: {
+            name: "Usuario",
+        },
+    };
+
     const ownerActor = {
         employee_id: targetEmployeeId,
         house_id: "house-1",
@@ -393,6 +401,23 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
+
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor es de otra casa pero no es Coordinador ni dueño", async () => {
+            mockHappyPath({
+                actor: otherHouseUserActor,
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: actorUserId,
+            });
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+            });
+
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
     });
 
     describe("validaciones de solicitud y alcance", () => {
@@ -505,6 +530,30 @@ describe("US32 - deleteVacationRequest service", () => {
                     employee_id: targetEmployeeId,
                     start: dateFromToday(-2),
                     end: dateFromToday(2),
+                    status: VACATION_STATUS.APPROVED,
+                },
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: targetEmployeeId,
+            });
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+            });
+
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
+        test("retorna REQUEST_NOT_MODIFIABLE si el dueño intenta eliminar su solicitud aprobada ya terminada", async () => {
+            mockHappyPath({
+                actor: ownerActor,
+                request: {
+                    ...vacationRequest,
+                    employee_id: targetEmployeeId,
+                    start: dateFromToday(-30),
+                    end: dateFromToday(-26),
                     status: VACATION_STATUS.APPROVED,
                 },
             });
