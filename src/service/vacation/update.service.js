@@ -34,6 +34,9 @@ const { getVacationYearInfoForApproval } = require("./get.service");
 const isAdminRole = (roleName) =>
     roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
 
+const isCoordinatorRole = (roleName) =>
+    roleName === ROLES.COORDINATOR;
+
 exports.approveVacationRequest = async ({
     actorEmployeeId,
     requesterHouseId,
@@ -326,14 +329,6 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    const actorRoleName = actorEmployee.role?.name;
-
-    if (actorRoleName !== ROLES.COORDINATOR) {
-        return {
-            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
-        };
-    }
-
     const startDate = stringToDate(validation.data.rawStartDate);
     const endDate = stringToDate(validation.data.rawEndDate);
     const searchEndDate = new Date(endDate);
@@ -353,6 +348,21 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
+    const targetEmployeeId = vacationRequest.employee_id;
+    const actorRoleName = actorEmployee.role?.name;
+    const isSelfModification = actorEmployeeId === targetEmployeeId;
+    const isCoordinatorModification =
+        isCoordinatorRole(actorRoleName) && !isSelfModification;
+
+    if (
+        isSelfModification &&
+        vacationRequest.status !== VACATION_STATUS.PENDING
+    ) {
+        return {
+            code: RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE,
+        };
+    }
+
     if (
         vacationRequest.status !== VACATION_STATUS.PENDING &&
         vacationRequest.status !== VACATION_STATUS.APPROVED
@@ -362,8 +372,6 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    const targetEmployeeId = vacationRequest.employee_id;
-
     const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
 
     if (!targetEmployee) {
@@ -372,15 +380,24 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    if (isAdminRole(targetEmployee.role?.name)) {
+    if (!isSelfModification && isAdminRole(targetEmployee.role?.name)) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
     }
 
-    if (actorEmployee.house_id !== targetEmployee.house_id) {
+    if (
+        isCoordinatorModification &&
+        actorEmployee.house_id !== targetEmployee.house_id
+    ) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        };
+    }
+
+    if (!isSelfModification && !isCoordinatorModification) {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
     }
 

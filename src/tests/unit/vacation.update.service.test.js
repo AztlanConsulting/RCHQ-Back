@@ -320,6 +320,105 @@ describe("updateVacationRequestDates service", () => {
         expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
     });
 
+    it("permite que un empleado modifique su propia solicitud pendiente", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            status: VACATION_STATUS.PENDING,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
+        expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
+            expect.objectContaining({
+                employeeId: actorEmployeeId,
+                actorHouseId: houseId,
+                usedDays: 4,
+            }),
+        );
+        expect(createLog).toHaveBeenCalledWith(
+            actorEmployeeId,
+            LOG_ACTIONS.VACATION_UPDATED_SUCCESS,
+            "127.0.0.1",
+            actorEmployeeId,
+        );
+    });
+
+    it("no permite que un empleado modifique su propia solicitud aprobada", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            status: VACATION_STATUS.APPROVED,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
+    });
+
+    it("no permite que un empleado modifique su propia solicitud rechazada", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            status: VACATION_STATUS.REJECTED,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
+    });
+
     it("regresa BAD_DATES si startDate es posterior a endDate", async () => {
         const result = await updateVacationRequestDates({
             actorEmployeeId,

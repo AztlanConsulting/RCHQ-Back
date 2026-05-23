@@ -10,6 +10,7 @@ const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
     canRegisterEmployeeVacation,
+    canModifyVacationRequestDates,
 } = require("../middleware/abac");
 
 const { getRemainingVacations,
@@ -98,9 +99,8 @@ router.patch(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(updateVacationRequestDatesSchema, "all"),
+    canModifyVacationRequestDates,
     updateVacationRequestDates,
 );
 
