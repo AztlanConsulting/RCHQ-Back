@@ -95,12 +95,20 @@ exports.getLogsActions = async (req, res) => {
 exports.getLogsPdfByHouse = async (req, res) => {
     try {
         const houseId = req.resolvedRequester?.houseId || req.user?.houseId;
-        const result = await getLogsPdfByHouse(houseId);
+        const { year, currentYear } = req.query;
+        const result = await getLogsPdfByHouse(houseId, year, currentYear);
 
         if (result.code === RESPONSES.LOGS.NOT_PROVIDED) {
             return res.status(400).json({
                 success: false,
                 message: "No se pudo identificar la casa del coordinador",
+            });
+        }
+
+        if (result.code === RESPONSES.LOGS.INVALID_PAGINATION) {
+            return res.status(422).json({
+                success: false,
+                message: "Parámetros inválidos",
             });
         }
 

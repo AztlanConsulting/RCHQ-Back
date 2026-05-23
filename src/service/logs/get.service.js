@@ -19,6 +19,7 @@ const {
     mapLog,
 } = require("../../utils/mappers/logs.map");
 const { buildLogsPdfBuffer } = require("../../utils/logsPdf");
+const { convertUTCToMexicanTime } = require("../../utils/dates");
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -255,15 +256,37 @@ exports.getLogsActions = async () => {
     };
 };
 
-exports.getLogsPdfByHouse = async (houseId) => {
+exports.getLogsPdfByHouse = async (houseId, selectedYear, currentYear) => {
     if (!houseId) {
         return {
             code: RESPONSES.LOGS.NOT_PROVIDED,
         };
     }
 
+    const parsedSelectedYear = Number(selectedYear);
+    const parsedCurrentYear = Number(currentYear);
+
+    if (
+        !Number.isInteger(parsedSelectedYear)
+        || !Number.isInteger(parsedCurrentYear)
+        || parsedSelectedYear < 1900
+        || parsedCurrentYear < 1900
+    ) {
+        return {
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        };
+    }
+
+    const startYear = Math.min(parsedSelectedYear, parsedCurrentYear);
+    const endYear = Math.max(parsedSelectedYear, parsedCurrentYear);
+    const whereClause = getLogsByHouseBaseWhere(houseId);
+    whereClause.moment = {
+        gte: new Date(`${startYear}-01-01T00:00:00.000Z`),
+        lte: new Date(`${endYear}-12-31T23:59:59.999Z`),
+    };
+
     const [logs, house] = await Promise.all([
-        getLogsByHouseModel(houseId),
+        getLogsByHouseModel(whereClause),
         getHouseById(houseId),
     ]);
     const affectedIds = extractAffectedIds(logs);
@@ -281,14 +304,14 @@ exports.getLogsPdfByHouse = async (houseId) => {
     const pdfBuffer = await buildLogsPdfBuffer({
         houseName: house?.name || "Casa sin nombre",
         logs: mappedLogs,
-        generatedAt: new Date(),
+        generatedAt: convertUTCToMexicanTime(new Date()),
     });
 
     return {
         code: RESPONSES.LOGS.PDF_CREATED,
         data: {
             pdfBuffer,
-            fileName: `reporte-logs-${houseId}.pdf`,
+            fileName: `reporte-logs-${startYear}-${endYear}.pdf`,
         },
     };
 };
