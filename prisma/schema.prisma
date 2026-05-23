@@ -343,6 +343,7 @@ model frecuency_of_payment {
 model blacklist {
   blacklist_id String   @id(map: "blacklist_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   curp         String   @unique @db.VarChar(18)
+  reason       String   @db.VarChar(250)
   created_at   DateTime @default(now()) @db.Timestamp(6)
   employee     employee @relation(fields: [curp], references: [curp], onUpdate: NoAction, map: "blacklist_employee_fk")
 }
