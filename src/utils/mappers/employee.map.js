@@ -82,6 +82,7 @@ exports.mapEmployeeBasicData = (body) => {
   if (body.rfc         !== undefined) mapped.rfc           = body.rfc;
   if (body.nss         !== undefined) mapped.nss           = body.nss;
   if (body.bankAccount !== undefined) mapped.bank_account  = body.bankAccount;
+  if (body.picture     !== undefined) mapped.picture       = body.picture;
   if (body.birthDate   !== undefined) {
     mapped.birth_date = body.birthDate ? new Date(body.birthDate) : null;
   }

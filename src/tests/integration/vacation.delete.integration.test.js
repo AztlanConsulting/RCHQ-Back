@@ -30,11 +30,9 @@ const WORKDAY_IDS = {
 function getTodayUTC() {
     const now = new Date();
 
-    return new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate()
-    ));
+    return new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 }
 
 function addDays(date, days) {
@@ -63,11 +61,9 @@ function toDbDate(dateString) {
 
 const TODAY_UTC = getTodayUTC();
 
-const EMPLOYEE_START_DATE = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() - 1,
-    TODAY_UTC.getUTCMonth(),
-    1
-));
+const EMPLOYEE_START_DATE = new Date(
+    Date.UTC(TODAY_UTC.getUTCFullYear() - 1, TODAY_UTC.getUTCMonth(), 1),
+);
 
 const BASE_FUTURE_DATE = addDays(TODAY_UTC, 14);
 
@@ -86,7 +82,7 @@ function generateSessionToken(employee) {
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
     );
 }
 
@@ -187,13 +183,7 @@ async function seedBaseData() {
     const existingWorkdays = await prisma.workday.findMany({
         where: {
             name: {
-                in: [
-                    "Lunes",
-                    "Martes",
-                    "Miércoles",
-                    "Jueves",
-                    "Viernes",
-                ],
+                in: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
             },
         },
     });
@@ -201,8 +191,10 @@ async function seedBaseData() {
     for (const workday of existingWorkdays) {
         if (workday.name === "Lunes") WORKDAY_IDS.monday = workday.workday_id;
         if (workday.name === "Martes") WORKDAY_IDS.tuesday = workday.workday_id;
-        if (workday.name === "Miércoles") WORKDAY_IDS.wednesday = workday.workday_id;
-        if (workday.name === "Jueves") WORKDAY_IDS.thursday = workday.workday_id;
+        if (workday.name === "Miércoles")
+            WORKDAY_IDS.wednesday = workday.workday_id;
+        if (workday.name === "Jueves")
+            WORKDAY_IDS.thursday = workday.workday_id;
         if (workday.name === "Viernes") WORKDAY_IDS.friday = workday.workday_id;
     }
 
@@ -470,13 +462,36 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(res.body.success).toBe(true);
         expect(res.body.message).toBe("Vacaciones removidas correctamente");
         expect(res.body.data.vacationRequest.vacations_request_id).toBe(
-            vacation.vacations_request_id
+            vacation.vacations_request_id,
         );
         expect(deletedVacation).toBeNull();
         expect(logs).toHaveLength(1);
     });
 
-    test("coordinador elimina solicitud aprobada de empleado de su misma casa", async () => {
+    test("coordinador elimina solicitud pendiente pasada de empleado de su misma casa", async () => {
+        const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 0,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const deletedVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(deletedVacation).toBeNull();
+    });
+
+    test("coordinador elimina solicitud aprobada futura de empleado de su misma casa", async () => {
         const vacation = await createVacation({
             status: 1,
         });
@@ -497,8 +512,59 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(deletedVacation).toBeNull();
     });
 
-    test("coordinador elimina solicitud rechazada de empleado de su misma casa", async () => {
+    test("coordinador no elimina solicitud aprobada en curso", async () => {
         const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -2)),
+            endDate: formatDate(addDays(TODAY_UTC, 2)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toBe(
+            "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron",
+        );
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("coordinador no elimina solicitud aprobada pasada", async () => {
+        const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("coordinador elimina solicitud rechazada pasada de empleado de su misma casa", async () => {
+        const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
             status: 2,
             feedback: "No procede",
         });

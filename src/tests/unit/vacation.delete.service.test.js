@@ -14,13 +14,9 @@ jest.mock("../../model/log.model", () => ({
     createLog: jest.fn(),
 }));
 
-const {
-    findByIdWithRoleAndHouse,
-} = require("../../model/employee/get.model");
+const { findByIdWithRoleAndHouse } = require("../../model/employee/get.model");
 
-const {
-    getVacationRequestById,
-} = require("../../model/vacation/get.model");
+const { getVacationRequestById } = require("../../model/vacation/get.model");
 
 const {
     deleteVacationRequestAtomically,
@@ -45,11 +41,25 @@ describe("US32 - deleteVacationRequest service", () => {
     const vacationRequestId = "44444444-4444-4444-8444-444444444444";
     const ipAddress = "127.0.0.1";
 
+    function todayUTC() {
+        const now = new Date();
+
+        return new Date(
+            Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+        );
+    }
+
+    function dateFromToday(days) {
+        const date = todayUTC();
+        date.setUTCDate(date.getUTCDate() + days);
+        return date;
+    }
+
     const vacationRequest = {
         vacations_request_id: vacationRequestId,
         employee_id: targetEmployeeId,
-        start: new Date("2026-06-22T00:00:00.000Z"),
-        end: new Date("2026-06-26T00:00:00.000Z"),
+        start: dateFromToday(30),
+        end: dateFromToday(34),
         status: VACATION_STATUS.PENDING,
         feedback: null,
         used_days: 5,
@@ -122,7 +132,7 @@ describe("US32 - deleteVacationRequest service", () => {
                 data: {
                     vacationRequest,
                 },
-            }
+            },
         );
 
         createLog.mockResolvedValueOnce({
@@ -153,36 +163,39 @@ describe("US32 - deleteVacationRequest service", () => {
 
             expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(
                 1,
-                actorCoordinatorId
+                actorCoordinatorId,
             );
 
             expect(getVacationRequestById).toHaveBeenCalledWith(
-                vacationRequestId
+                vacationRequestId,
             );
 
             expect(findByIdWithRoleAndHouse).toHaveBeenNthCalledWith(
                 2,
-                targetEmployeeId
+                targetEmployeeId,
             );
 
             expect(deleteVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
                 actorHouseId: "house-1",
+                currentDate: expect.any(Date),
             });
 
             expect(createLog).toHaveBeenCalledWith(
                 actorCoordinatorId,
                 LOG_ACTIONS.VACATION_DELETED_SUCCESS,
                 ipAddress,
-                targetEmployeeId
+                targetEmployeeId,
             );
         });
 
-        test("permite eliminar solicitud pendiente", async () => {
+        test("permite eliminar solicitud pendiente futura", async () => {
             mockHappyPath({
                 request: {
                     ...vacationRequest,
+                    start: dateFromToday(30),
+                    end: dateFromToday(34),
                     status: VACATION_STATUS.PENDING,
                 },
             });
@@ -193,10 +206,28 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).toHaveBeenCalledTimes(1);
         });
 
-        test("permite eliminar solicitud aprobada", async () => {
+        test("permite eliminar solicitud pendiente pasada", async () => {
             mockHappyPath({
                 request: {
                     ...vacationRequest,
+                    start: dateFromToday(-30),
+                    end: dateFromToday(-26),
+                    status: VACATION_STATUS.PENDING,
+                },
+            });
+
+            const result = await callDelete();
+
+            expect(result.code).toBe(RESPONSES.VACATION.DELETED);
+            expect(deleteVacationRequestAtomically).toHaveBeenCalledTimes(1);
+        });
+
+        test("permite eliminar solicitud aprobada futura", async () => {
+            mockHappyPath({
+                request: {
+                    ...vacationRequest,
+                    start: dateFromToday(30),
+                    end: dateFromToday(34),
                     status: VACATION_STATUS.APPROVED,
                 },
             });
@@ -207,10 +238,12 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).toHaveBeenCalledTimes(1);
         });
 
-        test("permite eliminar solicitud rechazada", async () => {
+        test("permite eliminar solicitud rechazada pasada", async () => {
             mockHappyPath({
                 request: {
                     ...vacationRequest,
+                    start: dateFromToday(-30),
+                    end: dateFromToday(-26),
                     status: VACATION_STATUS.REJECTED,
                 },
             });
@@ -356,6 +389,46 @@ describe("US32 - deleteVacationRequest service", () => {
 
             expect(result).toEqual({
                 code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+            });
+
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
+        test("retorna REQUEST_NOT_MODIFIABLE si la solicitud aprobada ya inició", async () => {
+            mockHappyPath({
+                request: {
+                    ...vacationRequest,
+                    start: dateFromToday(-2),
+                    end: dateFromToday(2),
+                    status: VACATION_STATUS.APPROVED,
+                },
+            });
+
+            const result = await callDelete();
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+            });
+
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
+        test("retorna REQUEST_NOT_MODIFIABLE si la solicitud aprobada ya terminó", async () => {
+            mockHappyPath({
+                request: {
+                    ...vacationRequest,
+                    start: dateFromToday(-30),
+                    end: dateFromToday(-26),
+                    status: VACATION_STATUS.APPROVED,
+                },
+            });
+
+            const result = await callDelete();
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
             });
 
             expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();

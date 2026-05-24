@@ -484,7 +484,7 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
             expect(inDb.end.toISOString()).toBe("2026-07-11T06:00:00.000Z");
         });
 
-        it("empleado no coordinador actualiza su propio evento (200)", async () => {
+        it("retorna 403 si un empleado no coordinador intenta actualizar su propio evento", async () => {
             await seedPersonalEvent([TEST_EMPLOYEE_ID]);
             const token = generateToken({
                 employeeId: TEST_EMPLOYEE_ID,
@@ -498,8 +498,7 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send(buildEmployeeBody({ name: "Mi cita actualizada" }));
 
-            expect(res.statusCode).toBe(200);
-            expect(res.body.data.name).toBe("Mi cita actualizada");
+            expect(res.statusCode).toBe(403);
         });
 
         it("coordinador reasigna empleados y junction table se actualiza en BD", async () => {

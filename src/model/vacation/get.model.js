@@ -299,6 +299,7 @@ exports.getEligibleVacationEmployees = async (where) => {
             name: true,
             surname: true,
             curp: true,
+            picture: true,
             is_active: true,
         },
         orderBy: [

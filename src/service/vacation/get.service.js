@@ -524,6 +524,7 @@ exports.getEligibleVacationEmployees = async ({ actorEmployeeId }) => {
                 employeeId: employee.employee_id,
                 name: `${employee.name} ${employee.surname}`.trim(),
                 curp: employee.curp,
+                picture: employee.picture || null,
                 isActive: employee.is_active,
             })),
         },

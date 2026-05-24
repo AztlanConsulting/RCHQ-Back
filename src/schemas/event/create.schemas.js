@@ -9,7 +9,7 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
 
-const houseEventCreateSchema = z
+exports.houseEventCreateSchema = z
     .object({
         eventTypeId: z
             .string({ error: "El eventTypeId debe de ser obligatorio" })
@@ -152,8 +152,6 @@ const houseEventCreateSchema = z
         message: "La fecha de inicio debe ser anterior a la fecha de fin.",
         path: ["start"],
     });
-
-exports.houseEventCreateSchema = houseEventCreateSchema;
 
 exports.createPersonalEventSchema = z
     .object({

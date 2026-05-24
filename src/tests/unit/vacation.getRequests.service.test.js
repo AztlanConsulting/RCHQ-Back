@@ -682,6 +682,7 @@ describe("getEligibleVacationEmployees service", () => {
                 name: "Empleado",
                 surname: "Valido",
                 curp: "CURP000000000001",
+                picture: "empleado.jpg",
                 is_active: true,
             },
         ]);
@@ -705,6 +706,7 @@ describe("getEligibleVacationEmployees service", () => {
                 employeeId: "e8000000-0000-4000-8000-000000000002",
                 name: "Empleado Valido",
                 curp: "CURP000000000001",
+                picture: "empleado.jpg",
                 isActive: true,
             },
         ]);
@@ -734,6 +736,7 @@ describe("getEligibleVacationEmployees service", () => {
                 name: "Coordinador",
                 surname: "Prueba",
                 curp: "CURP000000000002",
+                picture: "coordinador.jpg",
                 is_active: true,
             },
         ]);
@@ -752,6 +755,7 @@ describe("getEligibleVacationEmployees service", () => {
                 employeeId: "e8000000-0000-4000-8000-000000000003",
                 name: "Coordinador Prueba",
                 curp: "CURP000000000002",
+                picture: "coordinador.jpg",
                 isActive: true,
             },
         ]);

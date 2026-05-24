@@ -7,25 +7,6 @@ const {
 const personalEventTimeToUtc = (date, time) =>
     new Date(`${date}T${time}-06:00`);
 
-exports.findOverlappingHouseEvents = async ({ houseId, start, end }) => {
-    const houseEvents = await prisma.house_event.findMany({
-        where: {
-            house_id: houseId,
-            is_deleted: false,
-            start: { lt: end },
-            end: { gt: start },
-        },
-        select: {
-            house_event_id: true,
-            name: true,
-            start: true,
-            end: true,
-        },
-    });
-
-    return houseEvents.map(mapHouseEvent);
-};
-
 exports.createHouseEvent = async (data) => {
     const houseEvent = await prisma.house_event.create({
         data: {

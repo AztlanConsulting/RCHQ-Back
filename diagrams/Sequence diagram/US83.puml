@@ -1,11 +1,11 @@
-@startuml HU - Coordinador elimina evento de casa
+@startuml HU83 - Coordinador elimina evento de casa
 
 actor Navegador
 boundary "React (calendarModal.jsx)" as ReactView
 boundary "event.house.routes" as routes
-control "event.house.controller" as controller
-control event.service
-entity event.model
+control "delete.controller" as controller
+control "delete.service" as event.service
+entity "event.model" as event.model
 database PostgreSQL
 
 autonumber
@@ -24,22 +24,20 @@ alt Confirma eliminación
     routes -> controller : deleteHouseEvent(request, response)
     activate controller
 
-    controller ->> event.service : deleteHouseEvent(eventId, user)
+    controller ->> event.service : deleteHouseEvent(eventId, user, clientIp)
     activate event.service
 
-    event.service ->> event.model : findHouseEventById(eventId)
+    event.service ->> event.model : findHouseEventByIdAndHouseId(eventId, houseId)
     activate event.model
-
-    event.model ->> PostgreSQL : prisma.house_event.findUnique()
+    event.model ->> PostgreSQL : prisma.house_event.findFirst()
     activate PostgreSQL
-    PostgreSQL -->> event.model : eventData
+    PostgreSQL -->> event.model : houseEvent | null
     deactivate PostgreSQL
-
-    event.model -->> event.service : eventData
+    event.model -->> event.service : houseEvent | null
     deactivate event.model
 
     alt Evento no existe
-        event.service -->> controller : error
+        event.service -->> controller : { code: NOT_FOUND }
 
         controller -->> routes : response.status(404).send("Evento no encontrado")
 
@@ -48,7 +46,25 @@ alt Confirma eliminación
         ReactView -> Navegador : Mostrar error 404
 
     else Evento existe
-        event.service -->> controller : success
+        event.service ->> event.model : softDeleteHouseEvent(eventId)
+        activate event.model
+        event.model ->> PostgreSQL : prisma.house_event.update({ is_deleted: true })
+        activate PostgreSQL
+        PostgreSQL -->> event.model : eventUpdated
+        deactivate PostgreSQL
+        event.model -->> event.service : success
+        deactivate event.model
+
+        event.service ->> event.model : createLog(userId, action, clientIp, eventId)
+        activate event.model
+        event.model ->> PostgreSQL : prisma.log.create()
+        activate PostgreSQL
+        PostgreSQL -->> event.model : log
+        deactivate PostgreSQL
+        event.model -->> event.service : success
+        deactivate event.model
+
+        event.service -->> controller : { code: DELETED }
         deactivate event.service
 
         controller -->> routes : response.status(200).send("Eliminado")

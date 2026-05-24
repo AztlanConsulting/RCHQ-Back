@@ -4,7 +4,6 @@ const {
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
 
-
 exports.deleteVacationRequest = async (req, res) => {
     try {
         const actorEmployeeId = req.user.id;
@@ -52,8 +51,16 @@ exports.deleteVacationRequest = async (req, res) => {
             });
         }
 
+        if (result.code === RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE) {
+            return res.status(406).json({
+                success: false,
+                message:
+                    "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron",
+            });
+        }
+
         if (result.code === RESPONSES.VACATION.VALIDATION_ERROR) {
-            return res.status(400).json({
+            return res.status(422).json({
                 success: false,
                 message: "Datos inválidos",
             });

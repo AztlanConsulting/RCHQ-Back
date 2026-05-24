@@ -77,6 +77,13 @@ exports.updateAbsence = async (req, res) => {
             });
         }
 
+        if (result.code === RESPONSES.VACATION.ALREADY_REQUEST) {
+            return res.status(406).json({
+                success: false,
+                message: "Ya hay una vacación registrada para esa fecha",
+            });
+        }
+
         if (result.code === RESPONSES.ABSENCE.VALIDATION_ERROR) {
             return res.status(400).json({
                 success: false,

@@ -19,22 +19,53 @@ const {
 } = require("../../model/employee/get.model");
 const { updateEmployeeDocument } = require("../../model/employee/update.model");
 
-exports.updateBasicInfoService = async ({ requesterId, employeeId, body }) => {
+exports.updateBasicInfoService = async ({ requesterId, employeeId, body, file }) => {
   if (!requesterId || !employeeId)
     return { type: RESPONSES.EMPLOYEE.BAD_REQUEST };
 
-  const parsed = employeeBasicUpdateSchema.safeParse(body);
-  if (!parsed.success) {
+  const hasBodyFields = body && Object.keys(body).length > 0;
+  let parsedBody = {};
+
+  if (hasBodyFields) {
+    const parsed = employeeBasicUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      deleteFileIfExists(file?.path);
+      return {
+        type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+        errors: parsed.error.issues.map((e) => ({ campo: e.path[0], mensaje: e.message })),
+      };
+    }
+    parsedBody = parsed.data;
+  } else if (!file) {
     return {
       type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
-      errors: parsed.error.issues.map((e) => ({ campo: e.path[0], mensaje: e.message })),
+      errors: [{
+        campo: "body",
+        mensaje: "Debe enviarse al menos un campo para actualizar",
+      }],
     };
   }
 
   const employee = await findById(employeeId);
-  if (!employee) return { type: RESPONSES.EMPLOYEE.NOT_FOUND };
+  if (!employee) {
+    deleteFileIfExists(file?.path);
+    return { type: RESPONSES.EMPLOYEE.NOT_FOUND };
+  }
 
-  await updateBasicInfo(employeeId, parsed.data);
+  const nextBasicInfo = {
+    ...parsedBody,
+    ...(file ? { picture: `uploads/${file.filename}` } : {}),
+  };
+
+  try {
+    await updateBasicInfo(employeeId, nextBasicInfo);
+    if (file && employee.picture && employee.picture !== nextBasicInfo.picture) {
+      deleteFileIfExists(employee.picture);
+    }
+  } catch (error) {
+    deleteFileIfExists(file?.path);
+    throw error;
+  }
 
   return { type: RESPONSES.EMPLOYEE.UPDATED };
 };

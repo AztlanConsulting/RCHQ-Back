@@ -119,7 +119,7 @@ router.put(
     "/personal/:eventId",
     apiLimiter,
     verifyToken,
-    requireRole(...allRoles),
+    requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.EDIT_EVENT),
     authorize(updatePersonalEventPolicy, (req) => ({
         houseId: req.user.houseId,
@@ -144,7 +144,9 @@ router.delete(
     verifyToken,
     requireRole(ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.DELETE_EVENT),
-    authorize(deletePersonalEventPolicy, (req) => ({ houseId: req.user.houseId })),
+    authorize(deletePersonalEventPolicy, (req) => ({
+        houseId: req.user.houseId,
+    })),
     deletePersonalEvent,
 );
 

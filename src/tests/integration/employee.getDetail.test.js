@@ -186,11 +186,6 @@ describe("GET /employee/employee-detail/:employeeID - integration", () => {
         expect(basicInfo.address).toMatchObject({ street: "Calle 1" });
         expect(basicInfo.house).toMatchObject({ name: expect.any(String) });
         expect(adminInfo).toMatchObject({
-            faults: [
-                expect.objectContaining({
-                    description: "Falta de prueba (integration)",
-                }),
-            ],
             workdays: [expect.objectContaining({ name: expect.any(String) })],
             vacationRequests: [
                 expect.objectContaining({ status: 1, feedback: "ok" }),

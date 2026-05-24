@@ -70,8 +70,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -97,8 +97,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -122,8 +122,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -153,8 +153,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                allDayData,
                 validUser,
+                allDayData,
                 validClientIp,
             );
 
@@ -184,8 +184,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                allDayData,
                 validUser,
+                allDayData,
                 validClientIp,
             );
 
@@ -208,8 +208,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -224,8 +224,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -246,8 +246,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -267,8 +267,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -283,8 +283,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -299,8 +299,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -315,8 +315,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -334,8 +334,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -350,8 +350,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -371,8 +371,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -391,8 +391,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -411,8 +411,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -427,8 +427,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -443,8 +443,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                invalidData,
                 validUser,
+                invalidData,
                 validClientIp,
             );
 
@@ -466,8 +466,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                dataWithoutDesc,
                 validUser,
+                dataWithoutDesc,
                 validClientIp,
             );
 
@@ -496,8 +496,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -521,8 +521,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                forceData,
                 validUser,
+                forceData,
                 validClientIp,
             );
 
@@ -546,8 +546,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -564,8 +564,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -593,8 +593,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -618,8 +618,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 validClientIp,
             );
 
@@ -637,8 +637,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                baseValidData,
                 validUser,
+                baseValidData,
                 "192.168.1.1",
             );
 
@@ -667,8 +667,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                dataWithoutAllDay,
                 validUser,
+                dataWithoutAllDay,
                 validClientIp,
             );
 
@@ -689,8 +689,8 @@ describe("updateHouseEvent service", () => {
 
             await updateService.updateHouseEvent(
                 validEventId,
-                dataWithoutFree,
                 validUser,
+                dataWithoutFree,
                 validClientIp,
             );
 
@@ -717,8 +717,8 @@ describe("updateHouseEvent service", () => {
 
             const result = await updateService.updateHouseEvent(
                 validEventId,
-                dataWithoutForce,
                 validUser,
+                dataWithoutForce,
                 validClientIp,
             );
 
