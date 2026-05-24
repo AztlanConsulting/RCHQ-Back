@@ -731,7 +731,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             });
 
         expect(response.status).toBe(403);
-        expect(response.body.message).toBe("No puede acceder a este recurso");
+        expect(response.body.message).toBe("Acceso denegado");
     });
 
     it("401 no permite modificar sin token", async () => {

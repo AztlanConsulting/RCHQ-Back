@@ -2,7 +2,10 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
-const { resolveRequesterHouse } = require("../middleware/resolvers");
+const {
+    resolveRequesterHouse,
+    resolveVacationRequestDatesResource,
+} = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
@@ -10,8 +13,11 @@ const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
     canRegisterEmployeeVacation,
-    canModifyVacationRequestDates,
+    authorize,
 } = require("../middleware/abac");
+const {
+    modifyVacationRequestDates,
+} = require("../policies/vacation.policies");
 
 const { getRemainingVacations,
     getPendingVacationRequests,
@@ -100,7 +106,8 @@ router.patch(
     verifyToken,
     resolveRequesterHouse,
     validate(updateVacationRequestDatesSchema, "all"),
-    canModifyVacationRequestDates,
+    resolveVacationRequestDatesResource,
+    authorize(modifyVacationRequestDates, (req) => req.resolvedVacationRequest),
     updateVacationRequestDates,
 );
 
