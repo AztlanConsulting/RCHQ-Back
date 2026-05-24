@@ -11,6 +11,7 @@ const blacklistCreateSchema = z.object({
         .string({
             required_error: "La razón es obligatoria",
         })
+            .trim()
         .min(1, "La razón no puede estar vacía.")
         .max(250, "La razón no puede exceder los 250 caracteres."),
 });
