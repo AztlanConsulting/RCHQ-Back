@@ -4,11 +4,22 @@ const { apiLimiter } = require("../utils/rateLimit");
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { canAddToBlacklist } = require("../middleware/abac");
-const { insertIntoBlacklist } = require("../controller/blacklist/create.controller");
+const {
+    insertIntoBlacklist,
+} = require("../controller/blacklist/create.controller");
+const { getBlacklist } = require("../controller/blacklist/get.controller");
 const validate = require("../middleware/validate");
 const { blacklistCreateSchema } = require("../schemas/blacklist/create.schemas");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
+
+router.get(
+    "/",
+    verifyToken,
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.VIEW_BLACKLIST),
+    getBlacklist
+);
 
 router.post(
     "/",

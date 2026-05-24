@@ -31,6 +31,13 @@ exports.deactivateEmployee = async (req) => {
         return { code: RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED };
     }
 
+    if (addToBlacklist && (!reason || reason.trim() === "")) {
+        return {
+            code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+            data: { message: "El campo 'Razón' es obligatorio para añadir a la lista negra." },
+        };
+    }
+
     if (employee.isActive && (!reason || reason.trim() === "")) {
         return {
             code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
@@ -44,6 +51,9 @@ exports.deactivateEmployee = async (req) => {
         
         try {
             await createLog(actorId, LOG_ACTIONS.EMPLOYEE_DEACTIVATED, ip, employeeId);
+            if (addToBlacklist) {
+                await createLog(actorId, LOG_ACTIONS.BLACKLIST_ADDED, ip, employee.curp);
+            }
         } catch (logError) {
             console.error("Baja exitosa pero falló el log de auditoría:", logError);
         }

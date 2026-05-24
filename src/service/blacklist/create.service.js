@@ -4,14 +4,14 @@ const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
 
-exports.insertIntoBlacklist = async (curp, executorId, ipAddress) => {
+exports.insertIntoBlacklist = async (curp, reason, executorId, ipAddress) => {
     try {
         const employee = await findEmployeeByCurp(curp);
         if (!employee) return { code: RESPONSES.EMPLOYEE.NOT_FOUND };
 
         if (employee.isBlacklisted) return { code: RESPONSES.BLACKLIST.ALREADY_EXISTS };
 
-        const blacklistEntry = await transactionalBlacklistInsert(curp);
+        const blacklistEntry = await transactionalBlacklistInsert(curp, reason);
         if (!blacklistEntry) return { code: RESPONSES.BLACKLIST.INSERT_FAILED };
 
         let warning = null;
