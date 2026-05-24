@@ -12,6 +12,7 @@ const PRIVILEGES = Object.freeze({
     DELETE_ABSENCES: "deleteAbsences",
     ADD_TO_BLACKLIST: "addToBlacklist",
     VIEW_BLACKLIST: "viewBlacklist",
+    REMOVE_FROM_BLACKLIST: "removeFromBlacklist",
     EDIT_EVENT: "editEvent",
 });
 
