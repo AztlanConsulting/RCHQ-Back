@@ -114,7 +114,7 @@ describe("deactivate.model", () => {
                 }));
             });
 
-            it("ejecuta blacklist.upsert si curpToBlacklist es provisto", async () => {
+            it("ejecuta blacklist.upsert si curpToBlacklist es provisto y utiliza la misma razón", async () => {
                 prisma.employee.update.mockReturnValue("update_action");
                 prisma.blacklist.upsert.mockReturnValue("upsert_action");
                 prisma.$transaction.mockResolvedValue(undefined);
@@ -122,8 +122,12 @@ describe("deactivate.model", () => {
                 await deactivateEmployee(EMPLOYEE_ID, "Motivo", "RAMC900101HDFRZN01", true);
                 
                 expect(prisma.$transaction).toHaveBeenCalledWith(["update_action", "upsert_action"]);
+                expect(prisma.employee.update).toHaveBeenCalledWith(expect.objectContaining({
+                    data: expect.objectContaining({ deactivation_reason: "Motivo" })
+                }));
                 expect(prisma.blacklist.upsert).toHaveBeenCalledWith(expect.objectContaining({
-                    where: { curp: "RAMC900101HDFRZN01" }
+                    where: { curp: "RAMC900101HDFRZN01" },
+                    create: { curp: "RAMC900101HDFRZN01", reason: "Motivo" }
                 }));
             });
 
