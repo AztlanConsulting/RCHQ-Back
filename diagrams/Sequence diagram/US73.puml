@@ -1,0 +1,124 @@
+@startuml HU73 - Usuario consulta lista de vacaciones
+
+actor navegador
+boundary vacation.routes
+control vacation.get.controller
+control vacation.get.service
+entity vacation.get.model
+database PostgreSQL
+
+autonumber
+
+navegador -> vacation.routes : GET /vacation/requests/future
+activate vacation.routes
+vacation.routes -> vacation.get.controller : getFutureVacationRequests(req, res)
+deactivate vacation.routes
+activate vacation.get.controller
+vacation.get.controller ->> vacation.get.service : getFutureVacationRequests(employeeId, query)
+activate vacation.get.service
+
+alt no existe employeeId
+vacation.get.service -->> vacation.get.controller : USER.NOT_ACCESS
+vacation.get.controller -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Usuario no autenticado"\n}
+end
+
+vacation.get.service -> vacation.get.service : getOwnVacationRequestsInputSchema.safeParse({\n\temployeeId,\n\tquery\n})
+alt datos inválidos
+vacation.get.service -->> vacation.get.controller : VACATION.VALIDATION_ERROR
+vacation.get.controller -> navegador : 422 Unprocessable Entity {\n\tsuccess: false,\n\tmessage: "Datos inválidos"\n}
+end
+
+rnote over vacation.get.service
+Se toman los filtros que vienen en query:
+paginación, rango de fechas, estado y búsqueda.
+
+Después se agrega la condición para que solamente
+regrese vacaciones futuras del empleado autenticado.
+endrnote
+
+vacation.get.service -> vacation.get.service : parsePagination(query.page, query.limit)
+vacation.get.service -> vacation.get.service : statusFilter = mapOwnVacationStatus(query.status || "all")
+vacation.get.service -> vacation.get.service : dateFilter = buildVacationDateFilter(startDate, endDate)
+vacation.get.service -> vacation.get.service : where = {\n\t...dateFilter,\n\temployee_id: employeeId,\n\tstatus: statusFilter,\n\tstart: { gte: today }\n}
+
+vacation.get.service ->> vacation.get.model : getVacationRequestsByEmployee({\n\twhere,\n\tskip,\n\ttake,\n\torderBy\n})
+activate vacation.get.model
+vacation.get.model ->> PostgreSQL : Promise.all([\n\tprisma.vacations_request.findMany({\n\t\twhere,\n\t\tinclude: employeeBasicSearch,\n\t\torderBy: [\n\t\t\t{ start: "asc" },\n\t\t\t{ created_at: "desc" },\n\t\t\t{ vacations_request_id: "asc" }\n\t\t],\n\t\tskip,\n\t\ttake\n\t}),\n\tprisma.vacations_request.count({ where })\n])
+activate PostgreSQL
+PostgreSQL -->> vacation.get.model : requests, total
+deactivate PostgreSQL
+vacation.get.model -->> vacation.get.service : requests, total
+deactivate vacation.get.model
+
+rnote over vacation.get.service
+Las vacaciones futuras se ordenan de la más cercana
+a la más lejana.
+
+Después se mapean los datos y se construye
+la paginación de la respuesta.
+endrnote
+vacation.get.service -> vacation.get.service : requests.map(mapVacationRequestForList)
+vacation.get.service -> vacation.get.service : buildPagination({ page, limit, total })
+vacation.get.service -->> vacation.get.controller : VACATION.REQUESTS_FOUND
+deactivate vacation.get.service
+vacation.get.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tdata: [],\n\tpagination: {\n\t\tpage: number,\n\t\tlimit: number,\n\t\ttotal: number,\n\t\ttotalPages: number\n\t}\n}
+deactivate vacation.get.controller
+deactivate navegador
+
+
+
+navegador -> vacation.routes : GET /vacation/requests/past
+activate navegador
+activate vacation.routes
+vacation.routes -> vacation.get.controller : getPastVacationRequests(req, res)
+deactivate vacation.routes
+activate vacation.get.controller
+vacation.get.controller ->> vacation.get.service : getPastVacationRequests(employeeId, query)
+activate vacation.get.service
+
+alt no existe employeeId
+vacation.get.service -->> vacation.get.controller : USER.NOT_ACCESS
+vacation.get.controller -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Usuario no autenticado"\n}
+end
+
+vacation.get.service -> vacation.get.service : getOwnVacationRequestsInputSchema.safeParse({\n\temployeeId,\n\tquery\n})
+alt datos inválidos
+vacation.get.service -->> vacation.get.controller : VACATION.VALIDATION_ERROR
+vacation.get.controller -> navegador : 422 Unprocessable Entity {\n\tsuccess: false,\n\tmessage: "Datos inválidos"\n}
+end
+
+rnote over vacation.get.service
+Se vuelven a tomar los mismos filtros de query,
+pero ahora se agrega la condición para consultar
+solamente las vacaciones que ya iniciaron.
+endrnote
+
+vacation.get.service -> vacation.get.service : parsePagination(query.page, query.limit)
+vacation.get.service -> vacation.get.service : statusFilter = mapOwnVacationStatus(query.status || "all")
+vacation.get.service -> vacation.get.service : dateFilter = buildVacationDateFilter(startDate, endDate)
+vacation.get.service -> vacation.get.service : where = {\n\t...dateFilter,\n\temployee_id: employeeId,\n\tstatus: statusFilter,\n\tstart: { lt: today }\n}
+
+vacation.get.service ->> vacation.get.model : getVacationRequestsByEmployee({\n\twhere,\n\tskip,\n\ttake,\n\torderBy\n})
+activate vacation.get.model
+vacation.get.model ->> PostgreSQL : Promise.all([\n\tprisma.vacations_request.findMany({\n\t\twhere,\n\t\tinclude: employeeBasicSearch,\n\t\torderBy: [\n\t\t\t{ start: "desc" },\n\t\t\t{ created_at: "desc" },\n\t\t\t{ vacations_request_id: "asc" }\n\t\t],\n\t\tskip,\n\t\ttake\n\t}),\n\tprisma.vacations_request.count({ where })\n])
+activate PostgreSQL
+PostgreSQL -->> vacation.get.model : requests, total
+deactivate PostgreSQL
+vacation.get.model -->> vacation.get.service : requests, total
+deactivate vacation.get.model
+
+rnote over vacation.get.service
+Las vacaciones pasadas se ordenan de la más reciente
+a la más antigua.
+
+Después se mapean los datos y se construye
+la paginación de la respuesta.
+endrnote
+vacation.get.service -> vacation.get.service : requests.map(mapVacationRequestForList)
+vacation.get.service -> vacation.get.service : buildPagination({ page, limit, total })
+vacation.get.service -->> vacation.get.controller : VACATION.REQUESTS_FOUND
+deactivate vacation.get.service
+vacation.get.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tdata: [],\n\tpagination: {\n\t\tpage: number,\n\t\tlimit: number,\n\t\ttotal: number,\n\t\ttotalPages: number\n\t}\n}
+deactivate vacation.get.controller
+
+@enduml
