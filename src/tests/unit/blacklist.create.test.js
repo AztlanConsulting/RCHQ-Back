@@ -34,6 +34,7 @@ const mockBlacklistEntry = {
 
 const mockExecutorId = "admin-123";
 const mockIp = "192.168.1.1";
+const mockReason = "Violación del código de conducta";
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -43,7 +44,7 @@ describe("insertIntoBlacklist", () => {
     it("retorna EMPLOYEE_NOT_FOUND si el empleado no existe", async () => {
         findEmployeeByCurp.mockResolvedValue(null);
 
-        const result = await insertIntoBlacklist("CURPINEXISTENTE00", mockExecutorId, mockIp);
+        const result = await insertIntoBlacklist("CURPINEXISTENTE00", mockReason, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
         expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
@@ -52,7 +53,7 @@ describe("insertIntoBlacklist", () => {
     it("retorna ALREADY_EXISTS si el empleado ya está en la lista negra", async () => {
         findEmployeeByCurp.mockResolvedValue({ ...mockEmployee, isBlacklisted: true });
 
-        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockReason, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.ALREADY_EXISTS);
         expect(transactionalBlacklistInsert).not.toHaveBeenCalled();
@@ -62,7 +63,7 @@ describe("insertIntoBlacklist", () => {
         findEmployeeByCurp.mockResolvedValue(mockEmployee);
         transactionalBlacklistInsert.mockResolvedValue(null);
 
-        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockReason, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.INSERT_FAILED);
         expect(createLog).not.toHaveBeenCalled();
@@ -73,7 +74,7 @@ describe("insertIntoBlacklist", () => {
         transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
         createLog.mockRejectedValue(new Error("Database error on log"));
 
-        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockReason, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.ADDED);
         expect(result.data.warning).toBe("Empleado agregado a la lista negra, pero falló el registro de auditoría (log).");
@@ -83,7 +84,7 @@ describe("insertIntoBlacklist", () => {
         const dbError = new Error("Error fatal de conexión");
         findEmployeeByCurp.mockRejectedValue(dbError);
 
-        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockReason, mockExecutorId, mockIp);
         expect(result.code).toBe(RESPONSES.BLACKLIST.INTERNAL_ERROR);
     });
 
@@ -92,14 +93,14 @@ describe("insertIntoBlacklist", () => {
         transactionalBlacklistInsert.mockResolvedValue(mockBlacklistEntry);
         createLog.mockResolvedValue(true);
 
-        const result = await insertIntoBlacklist(mockEmployee.curp, mockExecutorId, mockIp);
+        const result = await insertIntoBlacklist(mockEmployee.curp, mockReason, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.ADDED);
         expect(result.data.employeeFullName).toBe("Luis Pérez");
         expect(result.data.curp).toBe(mockEmployee.curp);
         expect(result.data.blacklistEntry).toEqual(mockBlacklistEntry);
         
-        expect(transactionalBlacklistInsert).toHaveBeenCalledWith(mockEmployee.curp);
+        expect(transactionalBlacklistInsert).toHaveBeenCalledWith(mockEmployee.curp, mockReason);
 
         expect(createLog).toHaveBeenCalledWith(
             mockExecutorId,

@@ -197,7 +197,7 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
@@ -211,7 +211,7 @@ describe("POST /blacklist - integración", () => {
         await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Infracción a políticas" });
 
         const employee = await prisma.employee.findUnique({
             where: { employee_id: TEST_TARGET_ID },
@@ -226,13 +226,14 @@ describe("POST /blacklist - integración", () => {
         await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Falta grave" });
 
         const entry = await prisma.blacklist.findFirst({
             where: { curp: TEST_TARGET_CURP },
         });
         expect(entry).not.toBeNull();
         expect(entry.curp).toBe(TEST_TARGET_CURP);
+        expect(entry.reason).toBe("Falta grave");
     });
 
     it("genera el log de la acción en BD", async () => {
@@ -242,7 +243,7 @@ describe("POST /blacklist - integración", () => {
         await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Infracción a políticas" });
 
         const log = await prisma.logs.findFirst({
             where: {
@@ -259,7 +260,7 @@ describe("POST /blacklist - integración", () => {
 
         const res = await request(app)
             .post(`/blacklist`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(401);
     });
@@ -271,7 +272,7 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(403);
     });
@@ -294,7 +295,7 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(403);
 
@@ -309,7 +310,7 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: curpInexistente });
+            .send({ curp: curpInexistente, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(404);
     });
@@ -321,7 +322,7 @@ describe("POST /blacklist - integración", () => {
         await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Primera infracción" });
 
         await prisma.employee.update({
             where: { employee_id: TEST_TARGET_ID },
@@ -331,7 +332,7 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_TARGET_CURP });
+            .send({ curp: TEST_TARGET_CURP, reason: "Reincidencia" });
 
         expect(res.statusCode).toBe(409);
         expect(res.body.success).toBe(false);
@@ -344,7 +345,7 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: TEST_COORDINADOR_CURP });
+            .send({ curp: TEST_COORDINADOR_CURP, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(403); 
         expect(res.body.message).toContain("No puedes agregarte a ti mismo");
@@ -356,7 +357,18 @@ describe("POST /blacklist - integración", () => {
         const res = await request(app)
             .post(`/blacklist`)
             .set("Authorization", `Bearer ${token}`)
-            .send({ curp: "no-soy-una-curp" });
+            .send({ curp: "no-soy-una-curp", reason: "Falta" });
+
+        expect(res.statusCode).toBe(400);
+    });
+
+    it("retorna 400 si el parámetro reason está ausente o vacío (Zod Schema)", async () => {
+        const token = await loginAndGetToken();
+
+        const res = await request(app)
+            .post(`/blacklist`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(400);
     });
