@@ -8,7 +8,7 @@ const {
     insertIntoBlacklist,
 } = require("../controller/blacklist/create.controller");
 const { getBlacklist } = require("../controller/blacklist/get.controller");
-const { removeFromBlacklistController } = require("../controller/blacklist/delete.controller");
+const { removeFromBlacklist } = require("../controller/blacklist/delete.controller");
 const validate = require("../middleware/validate");
 const { blacklistCreateSchema } = require("../schemas/blacklist/create.schemas");
 const { blacklistDeleteSchema } = require("../schemas/blacklist/delete.schemas");
