@@ -16,6 +16,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
     const vacationRequestId = "44444444-4444-4444-8444-444444444444";
     const employeeId = "33333333-3333-4333-8333-333333333333";
     const actorHouseId = "house-1";
+    const currentDate = new Date(Date.UTC(2026, 4, 22));
 
     const baseVacationRequest = {
         vacations_request_id: vacationRequestId,
@@ -57,13 +58,13 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         });
 
         transaction.vacations_request.findUnique.mockResolvedValue(
-            baseVacationRequest
+            baseVacationRequest,
         );
 
         transaction.employee.findUnique.mockResolvedValue(targetEmployee);
 
         transaction.vacations_request.delete.mockResolvedValue(
-            baseVacationRequest
+            baseVacationRequest,
         );
     });
 
@@ -72,6 +73,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
             vacationRequestId: options.vacationRequestId ?? vacationRequestId,
             employeeId: options.employeeId ?? employeeId,
             actorHouseId: options.actorHouseId ?? actorHouseId,
+            currentDate: options.currentDate ?? currentDate,
         });
     }
 
@@ -188,9 +190,11 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("permite eliminar solicitud pendiente", async () => {
+    test("permite eliminar solicitud pendiente futura", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
+            start: new Date(Date.UTC(2026, 5, 22)),
+            end: new Date(Date.UTC(2026, 5, 26)),
             status: VACATION_STATUS.PENDING,
         });
 
@@ -200,9 +204,25 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
     });
 
-    test("permite eliminar solicitud aprobada", async () => {
+    test("permite eliminar solicitud pendiente pasada", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
+            start: new Date(Date.UTC(2026, 3, 22)),
+            end: new Date(Date.UTC(2026, 3, 26)),
+            status: VACATION_STATUS.PENDING,
+        });
+
+        const result = await callDelete();
+
+        expect(result.success).toBe(true);
+        expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
+    });
+
+    test("permite eliminar solicitud aprobada futura", async () => {
+        transaction.vacations_request.findUnique.mockResolvedValueOnce({
+            ...baseVacationRequest,
+            start: new Date(Date.UTC(2026, 5, 22)),
+            end: new Date(Date.UTC(2026, 5, 26)),
             status: VACATION_STATUS.APPROVED,
         });
 
@@ -212,9 +232,45 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
     });
 
-    test("permite eliminar solicitud rechazada", async () => {
+    test("rechaza eliminar solicitud aprobada en curso", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
+            start: new Date(Date.UTC(2026, 4, 20)),
+            end: new Date(Date.UTC(2026, 4, 24)),
+            status: VACATION_STATUS.APPROVED,
+        });
+
+        const result = await callDelete();
+
+        expect(result).toEqual({
+            success: false,
+            code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+        });
+        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
+    });
+
+    test("rechaza eliminar solicitud aprobada pasada", async () => {
+        transaction.vacations_request.findUnique.mockResolvedValueOnce({
+            ...baseVacationRequest,
+            start: new Date(Date.UTC(2026, 3, 22)),
+            end: new Date(Date.UTC(2026, 3, 26)),
+            status: VACATION_STATUS.APPROVED,
+        });
+
+        const result = await callDelete();
+
+        expect(result).toEqual({
+            success: false,
+            code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+        });
+        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
+    });
+
+    test("permite eliminar solicitud rechazada pasada", async () => {
+        transaction.vacations_request.findUnique.mockResolvedValueOnce({
+            ...baseVacationRequest,
+            start: new Date(Date.UTC(2026, 3, 22)),
+            end: new Date(Date.UTC(2026, 3, 26)),
             status: VACATION_STATUS.REJECTED,
         });
 
