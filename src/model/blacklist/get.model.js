@@ -1,4 +1,5 @@
 const prisma = require("../../prisma");
+const { ROLES } = require("../../utils/roles");
 
 exports.findEmployeeByCurp = async (curp) => {
     try {
@@ -30,11 +31,16 @@ exports.findEmployeeByCurp = async (curp) => {
     }
 };
 
-exports.getBlacklistedEmployees = async ({ page, limit, curp, isBlacklisted }) => {
+exports.getBlacklistedEmployees = async ({ page, limit, curp, isBlacklisted, role, houseId }) => {
     try {
         const skip = (page - 1) * limit;
 
         const whereClause = {};
+
+        if (role === ROLES.COORDINATOR) {
+            whereClause.house_id = houseId;
+        }
+
         if (curp) {
             whereClause.curp = { contains: curp, mode: "insensitive" };
         }

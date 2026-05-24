@@ -3,7 +3,11 @@ const RESPONSES = require("../../utils/responses");
 
 exports.getBlacklist = async (req, res) => {
     try {
-        const result = await getBlacklist(req.query);
+        const result = await getBlacklist({
+            ...req.query,
+            role: req.user.role,
+            houseId: req.user.houseId
+        });
 
         switch (result.code) {
             case RESPONSES.BLACKLIST.FETCHED:

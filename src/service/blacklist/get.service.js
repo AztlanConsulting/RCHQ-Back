@@ -2,7 +2,7 @@ const { getBlacklistedEmployees } = require("../../model/blacklist/get.model");
 const { getBlacklistSchema } = require("../../schemas/blacklist/get.schemas");
 const RESPONSES = require("../../utils/responses");
 
-exports.getBlacklist = async (queryParams) => {
+exports.getBlacklist = async ({ role, houseId, ...queryParams }) => {
     try {
         const validationResult = getBlacklistSchema.safeParse(queryParams);
         if (!validationResult.success) {
@@ -12,7 +12,11 @@ exports.getBlacklist = async (queryParams) => {
             };
         }
 
-        const filters = validationResult.data;
+        const filters = {
+            ...validationResult.data,
+            role,
+            houseId,
+        };
 
         const result = await getBlacklistedEmployees(filters);
 
