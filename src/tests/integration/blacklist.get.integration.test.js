@@ -8,11 +8,12 @@ const PRIVILEGES = require("../../utils/privileges");
 
 const prisma = new PrismaClient();
 
-// IDs fijos distintos a los del create para evitar colisiones
 const TEST_HOUSE_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3c";
+const TEST_HOUSE_2_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b50";
 const TEST_COORDINADOR_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3d";
 const TEST_NORMAL_EMP_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3e";
 const TEST_BLACKLIST_EMP_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b42";
+const TEST_OTHER_HOUSE_EMP_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b51";
 const TEST_COORDINADOR_ROLE_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b3f";
 const TEST_TARGET_ROLE_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b40";
 const TEST_PRIVILEGE_ID = "c0a1b2c3-d4e5-4f6a-8b7c-8d9e0f1a2b41";
@@ -21,6 +22,7 @@ const TEST_PASSWORD = "TestPass123";
 const TEST_COORDINADOR_EMAIL = "coordinador.get@test.com";
 const TEST_NORMAL_CURP = "NORM900101HDFXXX01";
 const TEST_BLACKLIST_CURP = "BLCK900101HDFXXX02";
+const TEST_OTHER_CURP = "OTRO900101HDFXXX03";
 
 let testCoordinadorRoleId;
 let testTargetRoleId;
@@ -37,6 +39,19 @@ const seedDependencies = async () => {
             phone_number: "4421234567",
             description: "Casa usada solo para tests de GET blacklist",
             image: "test-image.jpg",
+        },
+    });
+
+    await prisma.house.upsert({
+        where: { house_id: TEST_HOUSE_2_ID },
+        update: {},
+        create: {
+            house_id: TEST_HOUSE_2_ID,
+            name: "Casa Externa GET Blacklist",
+            location: "Otro lugar",
+            phone_number: "4429999999",
+            description: "Casa para testear ABAC",
+            image: "otra.jpg",
         },
     });
 
@@ -101,7 +116,6 @@ const createCoordinador = async () => {
 };
 
 const createTargetEmployees = async () => {
-    // Empleado Limpio
     await prisma.employee.create({
         data: {
             employee_id: TEST_NORMAL_EMP_ID,
@@ -119,7 +133,6 @@ const createTargetEmployees = async () => {
         },
     });
 
-    // Empleado en lista negra
     await prisma.employee.create({
         data: {
             employee_id: TEST_BLACKLIST_EMP_ID,
@@ -143,6 +156,23 @@ const createTargetEmployees = async () => {
             reason: "Motivo de prueba IT",
         }
     });
+
+    await prisma.employee.create({
+        data: {
+            employee_id: TEST_OTHER_HOUSE_EMP_ID,
+            house_id: TEST_HOUSE_2_ID,
+            role_id: testTargetRoleId,
+            name: "Externo",
+            surname: "Gómez",
+            email: "externo@test.com",
+            password: "hashed",
+            curp: TEST_OTHER_CURP,
+            start_date: new Date("2024-01-01"),
+            has_first_login: false,
+            is_active: true,
+            type: "nomina",
+        },
+    });
 };
 
 const generateSessionToken = (overrides = {}) => {
@@ -163,9 +193,9 @@ const generateSessionToken = (overrides = {}) => {
 };
 
 const cleanDb = async () => {
-    await prisma.blacklist.deleteMany({ where: { curp: { in: [TEST_NORMAL_CURP, TEST_BLACKLIST_CURP] } } });
+    await prisma.blacklist.deleteMany({ where: { curp: { in: [TEST_NORMAL_CURP, TEST_BLACKLIST_CURP, TEST_OTHER_CURP] } } });
     await prisma.employee.deleteMany({
-        where: { employee_id: { in: [TEST_COORDINADOR_ID, TEST_NORMAL_EMP_ID, TEST_BLACKLIST_EMP_ID] } },
+        where: { employee_id: { in: [TEST_COORDINADOR_ID, TEST_NORMAL_EMP_ID, TEST_BLACKLIST_EMP_ID, TEST_OTHER_HOUSE_EMP_ID] } },
     });
 };
 
@@ -188,12 +218,12 @@ afterAll(async () => {
     await prisma.privileges.deleteMany({
         where: { name: PRIVILEGES.VIEW_BLACKLIST },
     });
-    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
+    await prisma.house.deleteMany({ where: { house_id: { in: [TEST_HOUSE_ID, TEST_HOUSE_2_ID] } } });
     await prisma.$disconnect();
 });
 
 describe("GET /blacklist - integración", () => {
-    it("retorna 200 y una lista paginada de todos los empleados independientemente de su estado", async () => {
+    it("retorna 200 y filtra correctamente para que el Coordinador SOLO vea a los empleados de su propia casa", async () => {
         const token = generateSessionToken();
 
         const res = await request(app)
@@ -202,7 +232,21 @@ describe("GET /blacklist - integración", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.employees.length).toBeGreaterThanOrEqual(2); 
+        expect(res.body.employees.length).toBe(3);
+        expect(res.body.employees.some(emp => emp.curp === TEST_OTHER_CURP)).toBe(false);
+    });
+
+    it("retorna 200 y permite al Administrador ver a los empleados de TODAS las casas", async () => {
+        const token = generateSessionToken({ role: ROLES.ADMIN });
+
+        const res = await request(app)
+            .get("/blacklist?page=1&limit=10")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.employees.length).toBe(4);
+        expect(res.body.employees.some(emp => emp.curp === TEST_OTHER_CURP)).toBe(true);
     });
 
     it("retorna 200 y filtra correctamente solo a los que ESTÁN en la lista negra (isBlacklisted=true)", async () => {
@@ -250,7 +294,6 @@ describe("GET /blacklist - integración", () => {
     });
 
     it("retorna 403 si el rol del usuario no tiene los privilegios adecuados", async () => {
-        // Token sin el privilegio VIEW_BLACKLIST
         const token = generateSessionToken({ privileges: [] });
 
         const res = await request(app)

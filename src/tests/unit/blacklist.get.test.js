@@ -28,10 +28,10 @@ describe("getBlacklist service", () => {
     it("debe retornar NOT_FOUND si no se encuentran empleados en la base de datos", async () => {
         getBlacklistedEmployees.mockResolvedValue({ employees: [], pagination: {} });
 
-        const result = await getBlacklist({ page: "1", limit: "10" });
+        const result = await getBlacklist({ page: "1", limit: "10", role: "Coordinador", houseId: "house-123" });
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.NOT_FOUND);
-        expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10 });
+        expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10, role: "Coordinador", houseId: "house-123" });
     });
 
     it("debe retornar FETCHED y los datos si existen empleados que coincidan", async () => {
@@ -41,11 +41,11 @@ describe("getBlacklist service", () => {
         };
         getBlacklistedEmployees.mockResolvedValue(mockData);
 
-        const result = await getBlacklist({ isBlacklisted: "true" });
+        const result = await getBlacklist({ isBlacklisted: "true", role: "Administrador" });
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.FETCHED);
         expect(result.data).toEqual(mockData);
-        expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10, isBlacklisted: true });
+        expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10, isBlacklisted: true, role: "Administrador", houseId: undefined });
     });
 
     it("debe retornar INTERNAL_ERROR si ocurre una excepción inesperada en el modelo", async () => {
