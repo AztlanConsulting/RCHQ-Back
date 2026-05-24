@@ -3,9 +3,6 @@ const {
     findByIdWithRoleAndHouse,
     findByCurpWithRoleAndHouse,
 } = require("../model/employee/get.model");
-const {
-    getVacationRequestById,
-} = require("../model/vacation/get.model");
 const { ROLES } = require("../utils/roles");
 
 const isAdminRole = (roleName) =>
@@ -108,60 +105,7 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
         return next();
     } catch (error) {
         console.error("Error en canRegisterEmployeeVacation:", error);
-        return res.status(403).json({
-            success: false,
-            message: "No puede acceder a este recurso",
-        });
-    }
-};
-
-exports.canDeleteVacationRequest = async (req, res, next) => {
-    try {
-        const vacationRequestId = req.params.vacationRequestId;
-        const actorEmployeeId = req.user?.id;
-
-        const vacationRequest = await getVacationRequestById(vacationRequestId);
-
-        if (!vacationRequest) {
-            return res.status(404).json({
-                success: false,
-                message: "Solicitud de vacaciones no encontrada",
-            });
-        }
-
-        const targetEmployeeId = vacationRequest.employee_id;
-
-        if (actorEmployeeId === targetEmployeeId) {
-            return next();
-        }
-
-        if (req.user.role !== ROLES.COORDINATOR) {
-            return res.status(403).json({
-                success: false,
-                message: "No puede acceder a este recurso",
-            });
-        }
-
-        const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
-
-        if (!targetEmployee) {
-            return res.status(404).json({
-                success: false,
-                message: "Empleado no encontrado",
-            });
-        }
-
-        if (req.user.houseId !== targetEmployee.house_id) {
-            return res.status(403).json({
-                success: false,
-                message: "No puede acceder a este recurso",
-            });
-        }
-
-        return next();
-    } catch (error) {
-        console.error("Error en canDeleteVacationRequest:", error);
-        return res.status(403).json({
+         return res.status(403).json({
             success: false,
             message: "No puede acceder a este recurso",
         });

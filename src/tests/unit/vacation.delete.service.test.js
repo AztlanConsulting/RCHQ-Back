@@ -194,6 +194,9 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
+                actorHouseId: coordinatorActor.house_id,
+                currentDate: expect.any(Date),
+                isSelfDeletion: false,
             });
 
             expect(createLog).toHaveBeenCalledWith(
@@ -288,6 +291,9 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).toHaveBeenCalledWith(
                 expect.objectContaining({
                     employeeId: targetEmployeeId,
+                    actorHouseId: ownerActor.house_id,
+                    currentDate: expect.any(Date),
+                    isSelfDeletion: true,
                 }),
             );
             expect(createLog).toHaveBeenCalledWith(
@@ -318,6 +324,9 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).toHaveBeenCalledWith(
                 expect.objectContaining({
                     employeeId: targetEmployeeId,
+                    actorHouseId: ownerActor.house_id,
+                    currentDate: expect.any(Date),
+                    isSelfDeletion: true,
                 }),
             );
         });

@@ -96,6 +96,9 @@ exports.deleteVacationRequest = async ({
     const deleteResult = await deleteVacationRequestAtomically({
         vacationRequestId,
         employeeId: targetEmployeeId,
+        actorHouseId: actorEmployee.house_id,
+        currentDate,
+        isSelfDeletion,
     });
 
     if (!deleteResult.success) {

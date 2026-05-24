@@ -2,16 +2,22 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
-const { resolveRequesterHouse } = require("../middleware/resolvers");
+const {
+    resolveRequesterHouse,
+    resolveVacationRequestResource,
+} = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
     canRegisterEmployeeVacation,
-    canDeleteVacationRequest,
+    authorize,
 } = require("../middleware/abac");
+const {
+    deleteVacationRequestPolicy,
+} = require("../policies/vacation.policies");
 
 const { getRemainingVacations,
     getPendingVacationRequests,
@@ -110,7 +116,10 @@ router.delete(
     apiLimiter,
     verifyToken,
     validate(deleteVacationRequestSchema, "all"),
-    canDeleteVacationRequest,
+    resolveRequesterHouse,
+    resolveVacationRequestResource,
+    requireRole(...allRoles),
+    authorize(deleteVacationRequestPolicy, (req) => req.resolvedVacationRequest),
     deleteVacationRequest,
 );
 

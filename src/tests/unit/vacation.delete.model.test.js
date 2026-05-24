@@ -14,6 +14,8 @@ const { VACATION_STATUS } = require("../../utils/vacationStatus");
 describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
     const vacationRequestId = "44444444-4444-4444-8444-444444444444";
     const employeeId = "33333333-3333-4333-8333-333333333333";
+    const actorHouseId = "house-1";
+    const currentDate = new Date(Date.UTC(2026, 4, 22));
 
     const baseVacationRequest = {
         vacations_request_id: vacationRequestId,
@@ -69,6 +71,9 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         return await deleteVacationRequestAtomically({
             vacationRequestId: options.vacationRequestId ?? vacationRequestId,
             employeeId: options.employeeId ?? employeeId,
+            actorHouseId: options.actorHouseId ?? actorHouseId,
+            currentDate: options.currentDate ?? currentDate,
+            isSelfDeletion: options.isSelfDeletion ?? false,
         });
     }
 
@@ -151,7 +156,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("elimina la solicitud aunque el empleado sea Admin porque el alcance se valida en service/ABAC", async () => {
+    test("retorna EMPLOYEE_OUT_OF_SCOPE si no es eliminación propia y la solicitud pertenece a un Admin", async () => {
         transaction.employee.findUnique.mockResolvedValueOnce({
             ...targetEmployee,
             role: {
@@ -161,17 +166,41 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
 
         const result = await callDelete();
 
-        expect(result.success).toBe(true);
-        expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
+        expect(result).toEqual({
+            success: false,
+            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        });
+
+        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("elimina la solicitud aunque el empleado tenga otra casa porque el alcance se valida en service/ABAC", async () => {
+    test("retorna EMPLOYEE_OUT_OF_SCOPE si no es eliminación propia y el empleado pertenece a otra casa", async () => {
         transaction.employee.findUnique.mockResolvedValueOnce({
             ...targetEmployee,
             house_id: "house-2",
         });
 
         const result = await callDelete();
+
+        expect(result).toEqual({
+            success: false,
+            code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        });
+
+        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
+    });
+
+    test("permite eliminar aunque sea Admin si es una eliminación propia", async () => {
+        transaction.employee.findUnique.mockResolvedValueOnce({
+            ...targetEmployee,
+            role: {
+                name: "Administrador",
+            },
+        });
+
+        const result = await callDelete({
+            isSelfDeletion: true,
+        });
 
         expect(result.success).toBe(true);
         expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
@@ -219,7 +248,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
     });
 
-    test("elimina solicitud aprobada en curso porque la regla de fecha se valida en service", async () => {
+    test("retorna REQUEST_NOT_MODIFIABLE si la solicitud aprobada ya inició", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
             start: new Date(Date.UTC(2026, 4, 20)),
@@ -229,11 +258,15 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
 
         const result = await callDelete();
 
-        expect(result.success).toBe(true);
-        expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
+        expect(result).toEqual({
+            success: false,
+            code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+        });
+
+        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("elimina solicitud aprobada pasada porque la regla de fecha se valida en service", async () => {
+    test("retorna REQUEST_NOT_MODIFIABLE si la solicitud aprobada ya terminó", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
             start: new Date(Date.UTC(2026, 3, 22)),
@@ -243,8 +276,12 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
 
         const result = await callDelete();
 
-        expect(result.success).toBe(true);
-        expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
+        expect(result).toEqual({
+            success: false,
+            code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+        });
+
+        expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
     test("permite eliminar solicitud rechazada pasada", async () => {
