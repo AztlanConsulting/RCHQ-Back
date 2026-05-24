@@ -464,7 +464,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado con éxito",
+            action: "Empleado creado",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
@@ -504,7 +504,7 @@ describe("GET /logs/house", () => {
         expect(res.body.totalRecords).toBe(1);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0]).toMatchObject({
-            action: "Empleado creado con éxito",
+            action: "Empleado creado",
             responsibleName: "Carla Coord",
         });
     });
@@ -518,7 +518,7 @@ describe("GET /logs/house", () => {
         expect(res.body.totalRecords).toBe(1);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0]).toMatchObject({
-            action: "Empleado creado con éxito",
+            action: "Empleado creado",
             affectedName: "Luis CasaA",
         });
     });
@@ -553,7 +553,7 @@ describe("GET /logs/house", () => {
 
     it("genera un reporte pdf de los logs de la casa", async () => {
         const res = await request(app)
-            .get("/logs/house/report/pdf")
+            .get("/logs/house/report/pdf?year=2026&currentYear=2026")
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(201);
