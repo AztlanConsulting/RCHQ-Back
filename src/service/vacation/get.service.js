@@ -382,7 +382,7 @@ exports.getFutureVacationRequests = async (employeeId, query) => {
 
     where.start = {
         ...(where.start || {}),
-        gte: getTodayUtcDate(),
+        gt: getTodayUtcDate(),
     };
 
     const { requests, total } = await getVacationRequestsByEmployee({
@@ -446,7 +446,7 @@ exports.getPastVacationRequests = async (employeeId, query) => {
 
     where.start = {
         ...(where.start || {}),
-        lt: getTodayUtcDate(),
+        lte: getTodayUtcDate(),
     };
 
     const { requests, total } = await getVacationRequestsByEmployee({

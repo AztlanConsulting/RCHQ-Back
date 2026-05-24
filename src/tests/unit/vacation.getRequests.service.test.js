@@ -523,7 +523,7 @@ describe("getFutureVacationRequests y getPastVacationRequests service", () => {
                 status: VACATION_STATUS.PENDING,
                 start: {
                     lte: new Date("2026-06-30T00:00:00.000Z"),
-                    gte: new Date("2026-05-22T00:00:00.000Z"),
+                    gt: new Date("2026-05-22T00:00:00.000Z"),
                 },
                 end: {
                     gte: new Date("2026-06-01T00:00:00.000Z"),
@@ -569,7 +569,7 @@ describe("getFutureVacationRequests y getPastVacationRequests service", () => {
                 employee_id: "e8000000-0000-4000-8000-000000000002",
                 status: VACATION_STATUS.APPROVED,
                 start: {
-                    lt: new Date("2026-05-22T00:00:00.000Z"),
+                    lte: new Date("2026-05-22T00:00:00.000Z"),
                 },
             },
             skip: 0,
