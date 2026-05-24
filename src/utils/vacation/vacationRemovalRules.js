@@ -1,34 +1,37 @@
 const { VACATION_STATUS } = require("../vacationStatus");
 const { convertUTCToMexicanTime, getUTCDateKey } = require("../dates");
 
-function toUtcDateOnly(date) {
+exports.toUtcDateOnly = (date) => {
     return new Date(
         Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
     );
+};
+
+exports.getTodayUTC = () => {
+    return exports.toUtcDateOnly(new Date());
+};
+
+exports.getTodayMexicoDate = () => {
+    return this.toUtcDateOnly(convertUTCToMexicanTime(new Date()));
 }
 
-function getTodayUTC() {
-    return toUtcDateOnly(new Date());
-}
-
-function getTodayMexicoDate() {
-    return toUtcDateOnly(convertUTCToMexicanTime(new Date()));
-}
-
-function canRemoveVacationRequest(
+exports.canRemoveVacationRequest = (
     vacationRequest,
-    currentDate = getTodayMexicoDate(),
-) {
+    currentDate = this.getTodayMexicoDate(),
+) => {
+    return getUTCDateKey(vacationRequest.start) > getUTCDateKey(currentDate);
+}
+
+exports.canRemoveVacationRequest = (
+    vacationRequest,
+    currentDate = exports.getTodayUTC(),
+) => {
     if (vacationRequest.status !== VACATION_STATUS.APPROVED) {
         return true;
     }
 
-    return getUTCDateKey(vacationRequest.start) > getUTCDateKey(currentDate);
+    return (
+        exports.toUtcDateOnly(vacationRequest.start) >
+        exports.toUtcDateOnly(currentDate)
+    );
 }
-
-module.exports = {
-    toUtcDateOnly,
-    getTodayUTC,
-    getTodayMexicoDate,
-    canRemoveVacationRequest,
-};
