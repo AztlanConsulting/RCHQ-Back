@@ -8,7 +8,7 @@ const {
 } = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
+const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
@@ -118,7 +118,6 @@ router.delete(
     validate(deleteVacationRequestSchema, "all"),
     resolveRequesterHouse,
     resolveVacationRequestResource,
-    requireRole(...allRoles),
     authorize(deleteVacationRequestPolicy, (req) => req.resolvedVacationRequest),
     deleteVacationRequest,
 );
