@@ -17,10 +17,10 @@ const getBlacklistSchema = z.object({
     isBlacklisted: z
         .string()
         .optional()
-        .transform((val) => (val === "true" ? true : val === "false" ? false : undefined))
-        .refine((val) => typeof val === "boolean" || val === undefined, {
+        .refine((val) => val === undefined || val === "true" || val === "false", {
             message: "isBlacklisted debe ser 'true' o 'false'",
-        }),
+        })
+        .transform((val) => (val === "true" ? true : val === "false" ? false : undefined)),
 });
 
 module.exports = { getBlacklistSchema };
