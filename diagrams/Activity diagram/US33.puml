@@ -1,0 +1,51 @@
+@startuml
+
+|Usuario|
+start
+:Ingresar al calendario o lista de vacaciones;
+:Presionar en eliminar vacación;
+:Confirmar eliminación;
+
+|Sistema|
+:Buscar la solicitud de vacaciones;
+
+if (¿La solicitud existe?) then (Sí)
+else (No)
+:Mostrar mensaje de solicitud no encontrada;
+stop
+endif
+
+:Validar si el usuario puede eliminarla;
+
+if (¿Es dueño de la vacación?) then (Sí)
+else (No)
+    if (¿Es Coordinador de la misma casa?) then (Sí)
+    else (No)
+    :Mostrar mensaje de permisos insuficientes;
+    stop
+    endif
+endif
+
+if (¿La vacación pertenece a un Admin?) then (Sí)
+:Mostrar mensaje de recurso no permitido;
+stop
+else (No)
+endif
+
+if (¿La vacación ya inició?) then (Sí)
+    if (¿La vacación está aprobada?) then (Sí)
+    :Mostrar mensaje de que no se puede remover;
+    stop
+    else (No)
+    endif
+else (No)
+endif
+
+:Bloquear el registro dentro de una transacción;
+:Validar nuevamente que siga siendo removible;
+:Eliminar solicitud de vacaciones;
+:Registrar acción en logs;
+:Mostrar mensaje de eliminación exitosa;
+
+stop
+@enduml
