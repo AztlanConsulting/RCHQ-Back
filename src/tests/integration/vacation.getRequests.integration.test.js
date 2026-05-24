@@ -24,7 +24,7 @@ jest.mock("../../../src/middleware/auth", () => {
                 id: "e8000000-0000-4000-8000-000000000001",
                 role: "Coordinador",
                 houseId: "a0000001-0000-4000-8000-000000000001",
-                privileges: ["manageEmployees"],
+                privileges: ["manageEmployees", "viewSelfVacations"],
                 tokenType: "SESSION",
             };
             return next();
@@ -35,7 +35,7 @@ jest.mock("../../../src/middleware/auth", () => {
                 id: "b8f54b14-701e-4e87-a019-caef53dcda99",
                 role: "Administrador",
                 houseId: "a0000001-0000-4000-8000-000000000001",
-                privileges: ["manageEmployees"],
+                privileges: ["manageEmployees", "viewSelfVacations"],
                 tokenType: "SESSION",
             };
             return next();
@@ -46,7 +46,7 @@ jest.mock("../../../src/middleware/auth", () => {
                 id: "e8000000-0000-4000-8000-000000000002",
                 role: "Mantenimiento",
                 houseId: "a0000001-0000-4000-8000-000000000001",
-                privileges: [],
+                privileges: ["viewSelfVacations"],
                 tokenType: "SESSION",
             };
             return next();
@@ -292,12 +292,12 @@ describe("GET /vacation/requests/future", () => {
         expect(response.body.success).toBe(true);
         expect(response.body.data).toHaveLength(1);
         expect(response.body.pagination.total).toBe(1);
-        expect(vacationGetService.getFutureVacationRequests).toHaveBeenCalledWith({
-            actorEmployeeId: "e8000000-0000-4000-8000-000000000002",
-            query: {
+        expect(vacationGetService.getFutureVacationRequests).toHaveBeenCalledWith(
+            "e8000000-0000-4000-8000-000000000002",
+            {
                 status: "pending",
             },
-        });
+        );
     });
 
     test("debe validar status inválido en vacaciones futuras", async () => {
@@ -349,12 +349,12 @@ describe("GET /vacation/requests/past", () => {
         expect(response.body.success).toBe(true);
         expect(response.body.data).toHaveLength(1);
         expect(response.body.pagination.total).toBe(1);
-        expect(vacationGetService.getPastVacationRequests).toHaveBeenCalledWith({
-            actorEmployeeId: "e8000000-0000-4000-8000-000000000002",
-            query: {
+        expect(vacationGetService.getPastVacationRequests).toHaveBeenCalledWith(
+            "e8000000-0000-4000-8000-000000000002",
+            {
                 status: "approved",
             },
-        });
+        );
     });
 
     test("debe validar rango de fechas inválido en vacaciones pasadas", async () => {

@@ -73,7 +73,8 @@ VALUES
 ('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
 ('00000001-0000-4000-8000-000000000011', 'addAbsences'),
 ('00000001-0000-4000-8000-000000000013', 'deleteEvent'),
-('00000001-0000-4000-8000-000000000014', 'editEvent')
+('00000001-0000-4000-8000-000000000014', 'editEvent'),
+('00000001-0000-4000-8000-000000000015', 'viewSelfVacations')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -131,6 +132,14 @@ SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
 WHERE p.name = 'viewEvents'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
+-- Todos los roles pueden consultar sus propias vacaciones
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'viewSelfVacations'
 ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Coordinadores de área — ver empleados y documentos

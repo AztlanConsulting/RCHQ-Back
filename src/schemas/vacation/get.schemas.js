@@ -112,7 +112,7 @@ exports.getVacationRequestsInputSchema = z
 
 exports.getOwnVacationRequestsInputSchema = z
     .object({
-        actorEmployeeId: z.string().uuid("ID de actor inválido"),
+        employeeId: z.string().uuid("ID de empleado inválido"),
         query: z
             .object({
                 page: paginationSchema.page,

@@ -5,7 +5,7 @@ const validate = require("../middleware/validate");
 const { resolveRequesterHouse } = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
@@ -141,6 +141,8 @@ router.get(
     "/requests/future",
     apiLimiter,
     verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
     validate(getOwnVacationRequestsSchema, "all"),
     getFutureVacationRequests
 );
@@ -149,6 +151,8 @@ router.get(
     "/requests/past",
     apiLimiter,
     verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
     validate(getOwnVacationRequestsSchema, "all"),
     getPastVacationRequests
 );

@@ -138,10 +138,10 @@ exports.getReviewedVacationRequests = async (req, res) => {
 
 exports.getFutureVacationRequests = async (req, res) => {
     try {
-        const result = await getFutureVacationRequests({
-            actorEmployeeId: req.user.id,
-            query: req.query,
-        });
+        const employeeId = req.user.id;
+        const query = req.query;
+
+        const result = await getFutureVacationRequests(employeeId, query);
 
         if (result.code === RESPONSES.USER.NOT_ACCESS) {
             return res.status(401).json({
@@ -180,10 +180,10 @@ exports.getFutureVacationRequests = async (req, res) => {
 
 exports.getPastVacationRequests = async (req, res) => {
     try {
-        const result = await getPastVacationRequests({
-            actorEmployeeId: req.user.id,
-            query: req.query,
-        });
+        const employeeId = req.user.id;
+        const query = req.query;
+
+        const result = await getPastVacationRequests(employeeId, query);
 
         if (result.code === RESPONSES.USER.NOT_ACCESS) {
             return res.status(401).json({

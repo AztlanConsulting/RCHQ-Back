@@ -341,15 +341,15 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
     };
 };
 
-exports.getFutureVacationRequests = async ({ actorEmployeeId, query }) => {
-    if (!actorEmployeeId) {
+exports.getFutureVacationRequests = async (employeeId, query) => {
+    if (!employeeId) {
         return {
             code: RESPONSES.USER.NOT_ACCESS,
         };
     }
 
     const validation = getOwnVacationRequestsInputSchema.safeParse({
-        actorEmployeeId,
+        employeeId,
         query,
     });
 
@@ -375,7 +375,7 @@ exports.getFutureVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const where = {
         ...dateFilter,
-        employee_id: actorEmployeeId,
+        employee_id: employeeId,
         status: statusFilter,
         ...buildVacationEmployeeSearchFilter(search),
     };
@@ -405,15 +405,15 @@ exports.getFutureVacationRequests = async ({ actorEmployeeId, query }) => {
     };
 };
 
-exports.getPastVacationRequests = async ({ actorEmployeeId, query }) => {
-    if (!actorEmployeeId) {
+exports.getPastVacationRequests = async (employeeId, query) => {
+    if (!employeeId) {
         return {
             code: RESPONSES.USER.NOT_ACCESS,
         };
     }
 
     const validation = getOwnVacationRequestsInputSchema.safeParse({
-        actorEmployeeId,
+        employeeId,
         query,
     });
 
@@ -439,7 +439,7 @@ exports.getPastVacationRequests = async ({ actorEmployeeId, query }) => {
 
     const where = {
         ...dateFilter,
-        employee_id: actorEmployeeId,
+        employee_id: employeeId,
         status: statusFilter,
         ...buildVacationEmployeeSearchFilter(search),
     };
