@@ -293,7 +293,6 @@ const resetAbsences = async () => {
 };
 
 const cleanup = async () => {
-    // ! Borrar esto??
     await prisma.absence.deleteMany({
         where: {
             absence_id: { in: [IDS.absenceA, IDS.absenceB, IDS.absenceDeleted] },

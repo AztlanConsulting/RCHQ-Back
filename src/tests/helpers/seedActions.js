@@ -209,11 +209,10 @@ const ACTIONS = [
 ];
 
 async function seedActions(db = prisma) {
-    const xd = await db.action.createMany({
+    await db.action.createMany({
         data: ACTIONS,
         skipDuplicates: true,
     });
-    console.log(xd);
 }
 
 module.exports = {
