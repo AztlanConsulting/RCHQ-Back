@@ -8,7 +8,7 @@ const {
 } = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
@@ -16,12 +16,15 @@ const {
     authorize,
 } = require("../middleware/abac");
 const {
+    modifyVacationRequestDates,
     deleteVacationRequestPolicy,
 } = require("../policies/vacation.policies");
 
 const { getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getFutureVacationRequests,
+    getPastVacationRequests,
     getEligibleVacationEmployees
 } = require("../controller/vacation/get.controller");
 
@@ -51,6 +54,7 @@ const {
 const {
     getPendingVacationRequestsSchema,
     getReviewedVacationRequestsSchema,
+    getOwnVacationRequestsSchema,
 } = require("../schemas/vacation/get.schemas");
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
@@ -104,10 +108,12 @@ router.patch(
     "/request/:vacationRequestId/dates",
     apiLimiter,
     verifyToken,
+    requireRole(...allRoles),
     resolveRequesterHouse,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    requirePrivileges(PRIVILEGES.EDIT_VACATIONS),
     validate(updateVacationRequestDatesSchema, "all"),
+    resolveVacationRequestResource,
+    authorize(modifyVacationRequestDates, (req) => req.resolvedVacationRequest),
     updateVacationRequestDates,
 );
 
@@ -140,6 +146,26 @@ router.get(
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getReviewedVacationRequestsSchema, "all"),
     getReviewedVacationRequests
+);
+
+router.get(
+    "/requests/future",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
+    validate(getOwnVacationRequestsSchema, "all"),
+    getFutureVacationRequests
+);
+
+router.get(
+    "/requests/past",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
+    validate(getOwnVacationRequestsSchema, "all"),
+    getPastVacationRequests
 );
 
 module.exports = router;

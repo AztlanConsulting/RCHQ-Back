@@ -9,8 +9,14 @@ exports.getUTCDateKey = (date) =>
     (date.getUTCMonth() + 1) * 100 +
     date.getUTCDate();
 
-exports.getMexicoTodayDateKey = () =>
-    this.getUTCDateKey(this.convertUTCToMexicanTime(new Date()));
+exports.getMexicoTodayDateKey = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return this.getUTCDateKey(todayInMexico);
+};
+
+exports.hasDateStartedInMexico = (date) =>
+    this.getUTCDateKey(date) <= this.getMexicoTodayDateKey();
 
 exports.combineDateAndTime = (date, time) => {
     const mexicanTime = this.convertUTCToMexicanTime(time);

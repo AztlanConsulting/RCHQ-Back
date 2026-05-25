@@ -13,6 +13,8 @@ const PRIVILEGES = Object.freeze({
     ADD_TO_BLACKLIST: "addToBlacklist",
     VIEW_BLACKLIST: "viewBlacklist",
     EDIT_EVENT: "editEvent",
+    VIEW_OWN_VACATIONS: "viewSelfVacations",
+    EDIT_VACATIONS: "editVacations",
 });
 
 module.exports = PRIVILEGES;

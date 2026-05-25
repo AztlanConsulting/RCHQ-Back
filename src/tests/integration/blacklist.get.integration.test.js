@@ -213,10 +213,9 @@ beforeEach(async () => {
 afterAll(async () => {
     await cleanDb();
     await prisma.role.deleteMany({
-        where: { role_id: { in: [testCoordinadorRoleId, testTargetRoleId].filter(Boolean) } },
-    });
-    await prisma.privileges.deleteMany({
-        where: { name: PRIVILEGES.VIEW_BLACKLIST },
+        where: {
+            role_id: testTargetRoleId,
+        },
     });
     await prisma.house.deleteMany({ where: { house_id: { in: [TEST_HOUSE_ID, TEST_HOUSE_2_ID] } } });
     await prisma.$disconnect();
