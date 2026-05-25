@@ -100,3 +100,44 @@ exports.resolveAbsenceHouse = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.resolveVacationRequestResource = async (req, res, next) => {
+    try {
+        const vacationRequestId = req.params.vacationRequestId;
+
+        const vacationRequest = await prisma.vacations_request.findUnique({
+            where: { vacations_request_id: vacationRequestId },
+            select: {
+                employee_id: true,
+                employee: {
+                    select: {
+                        house_id: true,
+                    },
+                },
+            },
+        });
+
+        if (!vacationRequest) {
+            return res.status(404).json({
+                success: false,
+                message: "Solicitud de vacaciones no encontrada",
+            });
+        }
+
+        if (!vacationRequest.employee) {
+            return res.status(404).json({
+                success: false,
+                message: "Empleado no encontrado",
+            });
+        }
+
+        req.resolvedVacationRequest = {
+            employeeId: vacationRequest.employee_id,
+            houseId: vacationRequest.employee.house_id,
+        };
+
+        next();
+    } catch (error) {
+        next(error);
+    }
+};

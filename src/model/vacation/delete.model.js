@@ -1,13 +1,14 @@
 const prisma = require("../../prisma");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
-const { getTodayUTC, canRemoveVacationRequest } = require("../../utils/vacation/vacationRemovalRules");
+const { canRemoveVacationRequest } = require("../../utils/vacation/vacationRemovalRules");
 
 exports.deleteVacationRequestAtomically = async ({
     vacationRequestId,
     employeeId,
     actorHouseId,
-    currentDate = getTodayUTC(),
+    currentDate,
+    isSelfDeletion = false,
 }) => {
     return await prisma.$transaction(async (transaction) => {
         await transaction.$queryRaw`
@@ -56,8 +57,9 @@ exports.deleteVacationRequestAtomically = async ({
         const targetRoleName = targetEmployee.role?.name;
 
         if (
-            targetRoleName === ROLES.ADMIN ||
-            targetEmployee.house_id !== actorHouseId
+            !isSelfDeletion &&
+            (targetRoleName === ROLES.ADMIN ||
+                targetEmployee.house_id !== actorHouseId)
         ) {
             return {
                 success: false,
