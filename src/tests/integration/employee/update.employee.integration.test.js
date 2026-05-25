@@ -14,13 +14,11 @@ const FALLBACK_ADMIN_ROLE_ID = "f2000001-0000-4000-8000-000000000002";
 const WD_ID       = "f3000001-0000-4000-8000-000000000001";
 const WD_NAME     = "LunIT";
 const EMP_ID      = "eee00001-0000-4000-8000-000000000001";
-const OTHER_EMP   = "eee00002-0000-4000-8000-000000000002";
 const UNKNOWN_ID  = "ffffffff-ffff-4fff-bfff-ffffffffffff";
 const PRIVILEGE_ID = "b0000001-0000-4000-8000-000000000001";
 
 let token;
 let adminRoleId = FALLBACK_ADMIN_ROLE_ID;
-let shouldCleanupAdminRole = false;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,17 +33,6 @@ const json = () => ({
 
 beforeEach(async () => {
     await cleanIntegrationDb();
-  // 1. Limpieza inicial profunda (Orden inverso de dependencias)
-  await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-  await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-  await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-  await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-  await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
-  await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-  await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
-  await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
-  await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
-  await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
 
   // 2. Preparar dependencias (Catálogos)
   await prisma.workday.upsert({
@@ -94,7 +81,6 @@ beforeEach(async () => {
   if (existingAdminRole) {
     adminRoleId = existingAdminRole.role_id;
   } else {
-    shouldCleanupAdminRole = true;
     await prisma.role.create({
       data: { role_id: adminRoleId, name: "Administrador" },
     });
@@ -150,21 +136,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    // Limpieza final
-    await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-    await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-    await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-    await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-    await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
-    await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
-    await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
-    if (shouldCleanupAdminRole) {
-      await prisma.role.deleteMany({ where: { role_id: adminRoleId } });
-    }
-    await prisma.house.deleteMany({ where: { house_id: HOUSE_ID } });
-    await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
-    await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
-
     await prisma.$disconnect();
 });
 

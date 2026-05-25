@@ -97,25 +97,14 @@ const generateSessionToken = () => {
     );
 };
 
-const cleanDb = async () => {
-    await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
-    await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
-};
-
 // ─── Hooks ────────────────────────────────────────────────
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await seedDependencies();
     await seedActions();
 });
 afterEach(async () => {
-    await cleanDb();
-});
-afterEach(async () => {
     await cleanIntegrationDb();
-    await prisma.role.deleteMany({ where: { role_id: TEST_ROLE_ID } });
-    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
     await prisma.$disconnect();
 });
 

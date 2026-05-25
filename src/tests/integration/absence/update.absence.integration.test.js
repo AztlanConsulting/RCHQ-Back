@@ -83,39 +83,6 @@ const ensureUploadsDir = () => {
     }
 };
 
-const removeLocalAbsenceFiles = async () => {
-    const absences = await prisma.absence.findMany({
-        where: {
-            absence_id: { in: [IDS.absenceA, IDS.absenceB] },
-        },
-        select: {
-            url: true,
-        },
-    });
-
-    for (const absence of absences) {
-        if (!absence.url || !absence.url.startsWith("uploads/documents/")) continue;
-        const fullPath = path.resolve(process.cwd(), absence.url);
-        if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
-        }
-    }
-};
-
-const resetAbsences = async () => {
-    await removeLocalAbsenceFiles();
-
-    await prisma.absence.update({
-        where: { absence_id: IDS.absenceA },
-        data: ORIGINAL_ABSENCE_A,
-    });
-
-    await prisma.absence.update({
-        where: { absence_id: IDS.absenceB },
-        data: ORIGINAL_ABSENCE_B,
-    });
-};
-
 const seedEmployeeWorkdays = async (employeeIds) => {
     const workdays = [
         { name: "Lunes", id: IDS.workdayLunes },
@@ -381,111 +348,6 @@ const seed = async () => {
     });
 };
 
-const cleanup = async () => {
-    await prisma.absence.deleteMany({
-        where: {
-            absence_id: {
-                in: [
-                    IDS.absenceA,
-                    IDS.absenceB,
-                    IDS.absenceNoWorkdays,
-                ],
-            },
-        },
-    });
-
-    await prisma.logs.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinatorA,
-                    IDS.adminA,
-                    IDS.employeeA,
-                    IDS.employeeB,
-                    IDS.noWorkdaysEmployeeA,
-                ],
-            },
-        },
-    });
-
-    await prisma.employee_workday.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinatorA,
-                    IDS.adminA,
-                    IDS.employeeA,
-                    IDS.employeeB,
-                    IDS.noWorkdaysEmployeeA,
-                ],
-            },
-        },
-    });
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinatorA,
-                    IDS.adminA,
-                    IDS.employeeA,
-                    IDS.employeeB,
-                    IDS.noWorkdaysEmployeeA,
-                ],
-            },
-        },
-    });
-
-    await prisma.role_privilege.deleteMany({
-        where: {
-            privilege_id: IDS.editAbsencesPrivilege,
-            role_id: {
-                in: [IDS.coordinatorRole, IDS.adminRole],
-            },
-        },
-    });
-
-    await prisma.absence_type.deleteMany({
-        where: {
-            absence_type_id: {
-                in: [IDS.absenceTypeA, IDS.absenceTypeB],
-            },
-        },
-    });
-
-    await prisma.role.deleteMany({
-        where: {
-            role_id: IDS.employeeRole,
-        },
-    });
-
-    if (STATE.createdCoordinatorRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.coordinatorRole },
-        });
-    }
-
-    if (STATE.createdAdminRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.adminRole },
-        });
-    }
-
-    if (STATE.createdPrivilege) {
-        await prisma.privileges.deleteMany({
-            where: { privilege_id: IDS.editAbsencesPrivilege },
-        });
-    }
-
-    await prisma.house.deleteMany({
-        where: {
-            house_id: {
-                in: [IDS.houseA, IDS.houseB],
-            },
-        },
-    });
-};
-
 beforeEach(async () => {
     await cleanIntegrationDb();
     ensureUploadsDir();
@@ -493,12 +355,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-    await resetAbsences();
-});
-
-afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanup();
     await prisma.$disconnect();
 });
 

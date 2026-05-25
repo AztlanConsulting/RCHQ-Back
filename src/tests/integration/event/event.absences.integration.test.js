@@ -137,69 +137,6 @@ const employeeData = ({
     };
 };
 
-const clean = async () => {
-    const employeeIds = [
-        IDS.admin,
-        IDS.coordinatorA,
-        IDS.coordinatorB,
-        IDS.employee,
-        IDS.noWorkdaysEmployee,
-        IDS.otherEmployee,
-    ];
-
-    await prisma.logs.deleteMany({
-        where: { employee_id: { in: employeeIds } },
-    });
-    await prisma.absence.deleteMany({
-        where: {
-            absence_id: {
-                in: [
-                    IDS.absenceMain,
-                    IDS.absenceWeekend,
-                    IDS.absenceNonFreeGlobal,
-                    IDS.absenceDeleted,
-                    IDS.absenceNoWorkdays,
-                ],
-            },
-        },
-    });
-    await prisma.vacations_request.deleteMany({
-        where: { employee_id: { in: employeeIds } },
-    });
-    await prisma.employee_workday.deleteMany({
-        where: { employee_id: { in: employeeIds } },
-    });
-    await prisma.employee_personal_event.deleteMany({
-        where: { employee_id: { in: employeeIds } },
-    });
-    await prisma.house_event.deleteMany({
-        where: { house_event_id: IDS.ordinaryHouseEvent },
-    });
-    await prisma.global_event.deleteMany({
-        where: {
-            global_event_id: {
-                in: [
-                    IDS.freeGlobalA,
-                    IDS.freeGlobalDuplicate,
-                    IDS.nonFreeGlobal,
-                ],
-            },
-        },
-    });
-    await prisma.employee.deleteMany({
-        where: { employee_id: { in: employeeIds } },
-    });
-    await prisma.event_type.deleteMany({
-        where: { event_type_id: IDS.eventType },
-    });
-    await prisma.absence_type.deleteMany({
-        where: { absence_type_id: IDS.absenceType },
-    });
-    await prisma.house.deleteMany({
-        where: { house_id: { in: [IDS.houseA, IDS.houseB] } },
-    });
-};
-
 const seed = async () => {
     const adminRoleId = await getRoleId("Administrador");
     const coordinatorRoleId = await getRoleId("Coordinador");
@@ -416,13 +353,11 @@ const seed = async () => {
 
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await clean();
     await seed();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await clean();
     await prisma.$disconnect();
 });
 

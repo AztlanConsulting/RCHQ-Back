@@ -302,93 +302,13 @@ const seed = async () => {
     });
 };
 
-const clean = async () => {
-    await prisma.absence.deleteMany({
-        where: {
-            absence_id: { in: [IDS.absenceA, IDS.absenceB] },
-        },
-    });
-    await prisma.global_event.deleteMany({
-        where: { global_event_id: IDS.globalFreeDay },
-    });
-    await prisma.event_type.deleteMany({
-        where: { event_type_id: IDS.eventType },
-    });
-    await prisma.employee_workday.deleteMany({
-        where: {
-            employee_id: { in: [IDS.absentEmployeeA, IDS.absentEmployeeB] },
-        },
-    });
-    const workdayIdsToDelete = [
-        ...(STATE.createdWorkdays.monday ? [IDS.workdayMonday] : []),
-        ...(STATE.createdWorkdays.tuesday ? [IDS.workdayTuesday] : []),
-        ...(STATE.createdWorkdays.friday ? [IDS.workdayFriday] : []),
-    ];
-    if (workdayIdsToDelete.length > 0) {
-        await prisma.workday.deleteMany({
-            where: {
-                workday_id: {
-                    in: workdayIdsToDelete,
-                },
-            },
-        });
-    }
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.requester,
-                    IDS.unprivilegedEmployee,
-                    IDS.absentEmployeeA,
-                    IDS.absentEmployeeB,
-                ],
-            },
-        },
-    });
-    if (STATE.createdCoordinatorViewEventsRelation) {
-        await prisma.role_privilege.deleteMany({
-            where: {
-                role_id: IDS.coordinatorRole,
-                privilege_id: IDS.viewEventsPrivilege,
-            },
-        });
-    }
-    await prisma.absence_type.deleteMany({
-        where: { absence_type_id: IDS.absenceType },
-    });
-    await prisma.role.deleteMany({
-        where: {
-            role_id: {
-                in: [
-                    IDS.employeeRole,
-                    ...(STATE.createdCoordinatorRole
-                        ? [IDS.coordinatorRole]
-                        : []),
-                ],
-            },
-        },
-    });
-    if (STATE.createdPrivilege) {
-        await prisma.privileges.deleteMany({
-            where: { privilege_id: IDS.viewEventsPrivilege },
-        });
-    }
-    await prisma.house.deleteMany({
-        where: {
-            house_id: { in: [IDS.houseA, IDS.houseB] },
-        },
-    });
-};
-
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await clean();
     await seed();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await clean();
     await prisma.$disconnect();
 });
 

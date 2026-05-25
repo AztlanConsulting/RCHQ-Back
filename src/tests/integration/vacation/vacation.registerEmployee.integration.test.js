@@ -14,9 +14,6 @@ let ADMIN_ROLE_ID;
 let COORDINATOR_ROLE_ID;
 let USER_ROLE_ID;
 let MANAGE_EMPLOYEES_PRIVILEGE_ID;
-let CREATED_MANAGE_EMPLOYEES_PRIVILEGE = false;
-let CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE = false;
-let CREATED_COORDINATOR_MANAGE_EMPLOYEES_PRIVILEGE = false;
 
 const ADMIN_ID = randomUUID();
 const COORDINATOR_ID = randomUUID();
@@ -225,7 +222,6 @@ async function seedManageEmployeesPrivilege() {
         MANAGE_EMPLOYEES_PRIVILEGE_ID = existingPrivilege.privilege_id;
     } else {
         MANAGE_EMPLOYEES_PRIVILEGE_ID = randomUUID();
-        CREATED_MANAGE_EMPLOYEES_PRIVILEGE = true;
 
         await prisma.privileges.create({
             data: {
@@ -245,8 +241,6 @@ async function seedManageEmployeesPrivilege() {
     });
 
     if (!adminPrivilege) {
-        CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE = true;
-
         await prisma.role_privilege.create({
             data: {
                 role_id: ADMIN_ROLE_ID,
@@ -265,8 +259,6 @@ async function seedManageEmployeesPrivilege() {
     });
 
     if (!coordinatorPrivilege) {
-        CREATED_COORDINATOR_MANAGE_EMPLOYEES_PRIVILEGE = true;
-
         await prisma.role_privilege.create({
             data: {
                 role_id: COORDINATOR_ROLE_ID,
@@ -490,173 +482,14 @@ async function seedBaseData() {
     });
 }
 
-async function cleanTestData() {
-    const employeeIds = [
-        ADMIN_ID,
-        COORDINATOR_ID,
-        USER_ID,
-        TARGET_EMPLOYEE_ID,
-        OTHER_HOUSE_EMPLOYEE_ID,
-        NO_WORKDAYS_EMPLOYEE_ID,
-    ];
-
-    await prisma.logs.deleteMany({
-        where: {
-            OR: [
-                { employee_id: { in: employeeIds } },
-                { affected: { in: employeeIds } },
-            ],
-        },
-    });
-
-    await prisma.vacations_request.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.global_event.deleteMany({
-        where: {
-            event_type_id: {
-                in: [GLOBAL_FREE_EVENT_TYPE_ID, HOUSE_FREE_EVENT_TYPE_ID],
-            },
-        },
-    });
-
-    await prisma.house_event.deleteMany({
-        where: {
-            event_type_id: {
-                in: [GLOBAL_FREE_EVENT_TYPE_ID, HOUSE_FREE_EVENT_TYPE_ID],
-            },
-        },
-    });
-
-    await prisma.event_type.deleteMany({
-        where: {
-            event_type_id: {
-                in: [GLOBAL_FREE_EVENT_TYPE_ID, HOUSE_FREE_EVENT_TYPE_ID],
-            },
-        },
-    });
-
-    await prisma.employee_workday.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.house.deleteMany({
-        where: {
-            house_id: {
-                in: [HOUSE_A_ID, HOUSE_B_ID],
-            },
-        },
-    });
-}
-
-async function cleanVacationAndLogsOnly() {
-    const employeeIds = [
-        ADMIN_ID,
-        COORDINATOR_ID,
-        USER_ID,
-        TARGET_EMPLOYEE_ID,
-        OTHER_HOUSE_EMPLOYEE_ID,
-        NO_WORKDAYS_EMPLOYEE_ID,
-    ];
-
-    await prisma.logs.deleteMany({
-        where: {
-            OR: [
-                { employee_id: { in: employeeIds } },
-                { affected: { in: employeeIds } },
-            ],
-        },
-    });
-
-    await prisma.vacations_request.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.global_event.deleteMany({
-        where: {
-            event_type_id: {
-                in: [GLOBAL_FREE_EVENT_TYPE_ID, HOUSE_FREE_EVENT_TYPE_ID],
-            },
-        },
-    });
-
-    await prisma.house_event.deleteMany({
-        where: {
-            event_type_id: {
-                in: [GLOBAL_FREE_EVENT_TYPE_ID, HOUSE_FREE_EVENT_TYPE_ID],
-            },
-        },
-    });
-
-    await prisma.event_type.deleteMany({
-        where: {
-            event_type_id: {
-                in: [GLOBAL_FREE_EVENT_TYPE_ID, HOUSE_FREE_EVENT_TYPE_ID],
-            },
-        },
-    });
-}
-
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanTestData();
     await seedActions();
     await seedBaseData();
 });
 
 afterEach(async () => {
-    await cleanVacationAndLogsOnly();
-});
-
-afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanTestData();
-
-    if (CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE) {
-        await prisma.role_privilege.deleteMany({
-            where: {
-                role_id: ADMIN_ROLE_ID,
-                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
-            },
-        });
-    }
-
-    if (CREATED_COORDINATOR_MANAGE_EMPLOYEES_PRIVILEGE) {
-        await prisma.role_privilege.deleteMany({
-            where: {
-                role_id: COORDINATOR_ROLE_ID,
-                privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID,
-            },
-        });
-    }
-
-    if (CREATED_MANAGE_EMPLOYEES_PRIVILEGE) {
-        await prisma.privileges.deleteMany({
-            where: { privilege_id: MANAGE_EMPLOYEES_PRIVILEGE_ID },
-        });
-    }
-
     await prisma.$disconnect();
 });
 

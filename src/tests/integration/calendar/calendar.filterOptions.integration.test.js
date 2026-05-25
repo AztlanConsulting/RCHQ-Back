@@ -175,88 +175,14 @@ const seed = async () => {
     });
 };
 
-const cleanup = async () => {
-    await prisma.absence.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinator,
-                    IDS.houseEmployeeA,
-                    IDS.houseEmployeeB,
-                    IDS.adminA,
-                ],
-            },
-        },
-    });
-
-    await prisma.employee_workday.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinator,
-                    IDS.houseEmployeeA,
-                    IDS.houseEmployeeB,
-                    IDS.adminA,
-                ],
-            },
-        },
-    });
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinator,
-                    IDS.houseEmployeeA,
-                    IDS.houseEmployeeB,
-                    IDS.adminA,
-                ],
-            },
-        },
-    });
-
-    await prisma.absence_type.deleteMany({
-        where: {
-            absence_type_id: {
-                in: [IDS.absenceTypeA, IDS.absenceTypeB],
-            },
-        },
-    });
-
-    await prisma.role.deleteMany({
-        where: {
-            role_id: IDS.employeeRole,
-        },
-    });
-
-    if (STATE.createdCoordinatorRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.coordinatorRole },
-        });
-    }
-
-    if (STATE.createdAdminRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.adminRole },
-        });
-    }
-
-    await prisma.house.deleteMany({
-        where: {
-            house_id: { in: [IDS.houseA, IDS.houseB] },
-        },
-    });
-};
-
 describe("Calendar filter option routes", () => {
     beforeEach(async () => {
-    await cleanIntegrationDb();
+        await cleanIntegrationDb();
         await seed();
     });
 
     afterEach(async () => {
-    await cleanIntegrationDb();
-        await cleanup();
+        await cleanIntegrationDb();
         await prisma.$disconnect();
     });
 

@@ -265,67 +265,13 @@ async function seedBaseData() {
     });
 }
 
-async function cleanTestData() {
-    const employeeIds = [
-        ADMIN_ID,
-        COORDINATOR_ID,
-        USER_ID,
-        TARGET_EMPLOYEE_ID,
-        OTHER_HOUSE_EMPLOYEE_ID,
-        ADMIN_TARGET_ID,
-    ];
-
-    await prisma.logs.deleteMany({
-        where: {
-            OR: [
-                { employee_id: { in: employeeIds } },
-                { affected: { in: employeeIds } },
-            ],
-        },
-    });
-
-    await prisma.vacations_request.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.employee_workday.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: employeeIds,
-            },
-        },
-    });
-
-    await prisma.house.deleteMany({
-        where: {
-            house_id: {
-                in: [HOUSE_A_ID, HOUSE_B_ID],
-            },
-        },
-    });
-}
-
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanTestData();
     await seedBaseData();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanTestData();
     await prisma.$disconnect();
 });
 

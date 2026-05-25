@@ -176,26 +176,6 @@ const seedDependencies = async (hashedPassword) => {
     });
 };
 
-const cleanDb = async () => {
-    const allEmployeeIds = [
-        TEST_ACTOR_ID,
-        TEST_NO_PRIV_ACTOR_ID,
-        TEST_TARGET_ID,
-        TEST_NEW_TARGET_ID,
-        TEST_TARGET_INACT_ID,
-    ];
-    await prisma.logs.deleteMany({
-        where: { employee_id: { in: allEmployeeIds } },
-    });
-    await prisma.blacklist.deleteMany({
-        where: { curp: { in: [TEST_ACTOR_CURP, TEST_TARGET_CURP, TEST_INACT_CURP, TEST_NEW_INACT_CURP, TEST_NO_PRIV_CURP] } }
-    });
-    await prisma.employee.deleteMany({
-        where: { employee_id: { in: allEmployeeIds } },
-    });
-    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
-};
-
 const loginAndGetToken = async () => {
     const res = await request(app)
         .post("/auth/login")
@@ -207,8 +187,7 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
     let token;
 
     beforeEach(async () => {
-    await cleanIntegrationDb();
-        await cleanDb();
+        await cleanIntegrationDb();
         await seedActions(prisma);
         const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 10);
         await seedDependencies(hashedPassword);
@@ -216,8 +195,7 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
     });
 
     afterEach(async () => {
-    await cleanIntegrationDb();
-        await cleanDb();
+        await cleanIntegrationDb();
         await prisma.$disconnect();
     });
 

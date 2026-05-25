@@ -1,7 +1,14 @@
+const fs = require("fs");
+const path = require("path");
 const prisma = require("../../prisma");
 const { seedActions } = require("./seedActions");
 
 let schemaEnsured = false;
+const UPLOADS_DIRS = [
+    path.resolve(process.cwd(), "uploads"),
+    path.resolve(process.cwd(), "uploads/documents"),
+];
+let initialUploadFiles = null;
 
 const ensureIntegrationSchema = async () => {
     if (schemaEnsured) {
@@ -21,8 +28,52 @@ const ensureIntegrationSchema = async () => {
     schemaEnsured = true;
 };
 
+const cleanGeneratedFiles = () => {
+    const collectFilesRecursively = (dirPath, files = new Set()) => {
+        if (!fs.existsSync(dirPath)) {
+            return files;
+        }
+
+        for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+            const entryPath = path.join(dirPath, entry.name);
+
+            if (entry.isDirectory()) {
+                collectFilesRecursively(entryPath, files);
+                continue;
+            }
+
+            files.add(entryPath);
+        }
+
+        return files;
+    };
+
+    if (initialUploadFiles === null) {
+        initialUploadFiles = new Set();
+
+        for (const dirPath of UPLOADS_DIRS) {
+            collectFilesRecursively(dirPath, initialUploadFiles);
+        }
+
+        return;
+    }
+
+    const currentFiles = new Set();
+
+    for (const dirPath of UPLOADS_DIRS) {
+        collectFilesRecursively(dirPath, currentFiles);
+    }
+
+    for (const filePath of currentFiles) {
+        if (!initialUploadFiles.has(filePath) && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    }
+};
+
 const cleanIntegrationDb = async () => {
     await ensureIntegrationSchema();
+    cleanGeneratedFiles();
 
     const tables = await prisma.$queryRawUnsafe(`
         SELECT tablename

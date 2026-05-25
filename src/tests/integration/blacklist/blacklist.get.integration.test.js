@@ -193,34 +193,18 @@ const generateSessionToken = (overrides = {}) => {
     );
 };
 
-const cleanDb = async () => {
-    await prisma.blacklist.deleteMany({ where: { curp: { in: [TEST_NORMAL_CURP, TEST_BLACKLIST_CURP, TEST_OTHER_CURP] } } });
-    await prisma.employee.deleteMany({
-        where: { employee_id: { in: [TEST_COORDINADOR_ID, TEST_NORMAL_EMP_ID, TEST_BLACKLIST_EMP_ID, TEST_OTHER_HOUSE_EMP_ID] } },
-    });
-};
-
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await seedDependencies();
 });
 
 beforeEach(async () => {
-    await cleanDb();
     await createCoordinador();
     await createTargetEmployees();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
-    await prisma.role.deleteMany({
-        where: {
-            role_id: testTargetRoleId,
-        },
-    });
-    await prisma.house.deleteMany({ where: { house_id: { in: [TEST_HOUSE_ID, TEST_HOUSE_2_ID] } } });
     await prisma.$disconnect();
 });
 

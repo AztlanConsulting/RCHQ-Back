@@ -233,92 +233,15 @@ const seedDependencies = async () => {
     });
 };
 
-const cleanDb = async () => {
-    await prisma.logs.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    TEST_COORDINATOR_ID,
-                    TEST_RATE_EMPLOYEE_ID,
-                    TEST_LEGIT_EMPLOYEE_ID,
-                ],
-            },
-        },
-    });
-
-    await prisma.house_event.deleteMany({
-        where: {
-            OR: [
-                { house_id: TEST_HOUSE_ID },
-                { house_id: TEST_OTHER_HOUSE_ID },
-            ],
-        },
-    });
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    TEST_COORDINATOR_ID,
-                    TEST_RATE_EMPLOYEE_ID,
-                    TEST_LEGIT_EMPLOYEE_ID,
-                ],
-            },
-        },
-    });
-
-    await prisma.house.deleteMany({
-        where: {
-            OR: [
-                { house_id: TEST_HOUSE_ID },
-                { house_id: TEST_OTHER_HOUSE_ID },
-            ],
-        },
-    });
-
-    await prisma.event_type.deleteMany({
-        where: { event_type_id: TEST_EVENT_TYPE_ID },
-    });
-};
-
-const cleanEvents = async () => {
-    await prisma.logs.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    TEST_COORDINATOR_ID,
-                    TEST_RATE_EMPLOYEE_ID,
-                    TEST_LEGIT_EMPLOYEE_ID,
-                ],
-            },
-        },
-    });
-
-    await prisma.house_event.deleteMany({
-        where: {
-            OR: [
-                { house_id: TEST_HOUSE_ID },
-                { house_id: TEST_OTHER_HOUSE_ID },
-            ],
-        },
-    });
-};
-
 // ─── Hooks ────────────────────────────────────────────────
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await seedDependencies();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await prisma.$disconnect();
-});
-
-beforeEach(async () => {
-    await cleanEvents();
 });
 
 // ─── SUITE DE PRUEBAS ─────────────────────────────────────

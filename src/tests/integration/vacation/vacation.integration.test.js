@@ -287,113 +287,14 @@ const seed = async () => {
     });
 };
 
-const clean = async () => {
-    await prisma.global_event.deleteMany({
-        where: {
-            event_type_id: {
-                in: [
-                    IDS.globalFreeEventType,
-                    IDS.houseFreeEventType,
-                    IDS.remainingFreeEventType,
-                ],
-            },
-        },
-    });
-
-    await prisma.house_event.deleteMany({
-        where: {
-            event_type_id: {
-                in: [
-                    IDS.globalFreeEventType,
-                    IDS.houseFreeEventType,
-                    IDS.remainingFreeEventType,
-                ],
-            },
-        },
-    });
-
-    await prisma.event_type.deleteMany({
-        where: {
-            event_type_id: {
-                in: [
-                    IDS.globalFreeEventType,
-                    IDS.houseFreeEventType,
-                    IDS.remainingFreeEventType,
-                ],
-            },
-        },
-    });
-
-    await prisma.logs.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.employeeAdmin,
-                    IDS.employeeCoordinator,
-                    IDS.employeeCook,
-                ],
-            },
-        },
-    });
-    await prisma.vacations_request.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.employeeAdmin,
-                    IDS.employeeCoordinator,
-                    IDS.employeeCook,
-                ],
-            },
-        },
-    });
-    await prisma.employee_workday.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.employeeAdmin,
-                    IDS.employeeCoordinator,
-                    IDS.employeeCook,
-                ],
-            },
-        },
-    });
-    await prisma.workday.deleteMany({
-        where: {
-            workday_id: {
-                in: [
-                    IDS.workdayLunes,
-                    IDS.workdayMartes,
-                    IDS.workdayMiercoles,
-                    IDS.workdayJueves,
-                    IDS.workdayViernes,
-                ]
-            }
-        }
-    });
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.employeeAdmin,
-                    IDS.employeeCoordinator,
-                    IDS.employeeCook,
-                ],
-            },
-        },
-    });
-    await prisma.house.deleteMany({ where: { house_id: IDS.house } });
-};
-
 describe("Flujo integración /vacation/request", () => {
     beforeEach(async () => {
-    await cleanIntegrationDb();
-        await clean();
+        await cleanIntegrationDb();
         await seed();
     });
 
     afterEach(async () => {
-    await cleanIntegrationDb();
-        await clean();
+        await cleanIntegrationDb();
         await prisma.$disconnect();
     });
 

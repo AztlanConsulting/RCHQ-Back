@@ -287,90 +287,14 @@ const seed = async () => {
     });
 };
 
-const cleanup = async () => {
-    await prisma.logs.deleteMany({
-        where: {
-            log_id: {
-                in: [IDS.logA1, IDS.logA2, IDS.logA3, IDS.logA4, IDS.logB1],
-            },
-        },
-    });
-
-    await prisma.personal_event.deleteMany({
-        where: {
-            personal_event_id: IDS.personalEventA,
-        },
-    });
-
-    await prisma.event_type.deleteMany({
-        where: {
-            event_type_id: IDS.eventType,
-        },
-    });
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [
-                    IDS.coordinator,
-                    IDS.unprivilegedCoordinator,
-                    IDS.admin,
-                    IDS.employeeA,
-                    IDS.employeeB,
-                ],
-            },
-        },
-    });
-
-    await prisma.role.deleteMany({
-        where: {
-            role_id: IDS.employeeRole,
-        },
-    });
-
-    if (STATE.createdCoordinatorRolePrivilege) {
-        await prisma.role_privilege.deleteMany({
-            where: {
-                role_id: IDS.coordinatorRole,
-                privilege_id: IDS.viewLogsPrivilege,
-            },
-        });
-    }
-
-    if (STATE.createdPrivilege) {
-        await prisma.privileges.deleteMany({
-            where: { privilege_id: IDS.viewLogsPrivilege },
-        });
-    }
-
-    if (STATE.createdCoordinatorRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.coordinatorRole },
-        });
-    }
-
-    if (STATE.createdAdminRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.adminRole },
-        });
-    }
-
-    await prisma.house.deleteMany({
-        where: {
-            house_id: { in: [IDS.houseA, IDS.houseB] },
-        },
-    });
-};
-
 describe("GET /logs/house", () => {
     beforeAll(async () => {
-    await cleanIntegrationDb();
+        await cleanIntegrationDb();
         await seed();
     });
 
     afterAll(async () => {
-    await cleanIntegrationDb();
-        await cleanup();
+        await cleanIntegrationDb();
         await prisma.$disconnect();
     });
 

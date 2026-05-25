@@ -94,27 +94,15 @@ const seedDependencies = async () => {
     }
 };
 
-const cleanDb = async () => {
-    await prisma.employee.deleteMany({
-        where: { house_id: TEST_HOUSE_ID },
-    });
-
-    await prisma.house.deleteMany({
-        where: { house_id: TEST_HOUSE_ID },
-    });
-};
-
 // ─── Hooks ────────────────────────────────────────────────
 beforeEach(async () => {
     await cleanIntegrationDb();
     await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS unaccent;`);
-    await cleanDb();
     await seedDependencies();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await prisma.$disconnect();
 });
 

@@ -22,7 +22,7 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 const request = require("supertest");
 const bcrypt = require("bcryptjs");
 const app = require("../../../index");
-const { seedDb, cleanDb, disconnectDb, IDS } = require("../../helpers/dbSetup");
+const { seedDb, disconnectDb, IDS } = require("../../helpers/dbSetup");
 
 // ─── Credenciales de prueba (deben coincidir con el seed) ────────────────────
 const VALID_EMAIL = "andre@gmail.com";
@@ -54,8 +54,7 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     });
 
     afterEach(async () => {
-    await cleanIntegrationDb();
-        await cleanDb();
+        await cleanIntegrationDb();
         await disconnectDb();
     });
 

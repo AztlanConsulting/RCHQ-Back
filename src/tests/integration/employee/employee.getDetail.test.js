@@ -7,7 +7,6 @@ const app = require("../../../index");
 const {
     prisma,
     seedDb,
-    cleanDb,
     disconnectDb,
     IDS,
     SEED,
@@ -116,40 +115,13 @@ const seedSubjectEmployeeWithRelations = async () => {
   });
 };
 
-// ─── Cleanup del empleado sujeto (hijos primero) ──────────────────────────────
-const cleanSubjectGraph = async () => {
-    await prisma.vacations_request.deleteMany({
-        where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
-    });
-    await prisma.employee_address.deleteMany({
-        where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
-    });
-    await prisma.employee_workday.deleteMany({
-        where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
-    });
-    await prisma.employee_fault.deleteMany({
-        where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
-    });
-    await prisma.employee.deleteMany({
-        where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
-    });
-    await prisma.fault.deleteMany({ where: { fault_id: TEST_FAULT_ID } });
-    await prisma.workday.deleteMany({ where: { workday_id: TEST_WORKDAY_ID } });
-};
-
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanSubjectGraph();
     await seedDb();
 });
 afterEach(async () => {
-    await cleanSubjectGraph();
-});
-afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanSubjectGraph();
-    await cleanDb();
     await disconnectDb();
 });
 

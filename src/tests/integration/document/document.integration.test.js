@@ -5,22 +5,6 @@ const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
 const app = require("../../../index");
 const jwt = require("jsonwebtoken");
-const {deleteFileIfExists} = require("../../../utils/deleteFile")
-const fs = require("fs");
-const path = require("path");
-
-const clearUploadsFolder = () => {
-    const uploadsPath = path.resolve(process.cwd(),"uploads/documents");
-
-    if(fs.existsSync(uploadsPath)) {
-        const files = fs.readdirSync(uploadsPath);
-        for (const file of files) {
-            if(file.toLowerCase().endsWith(".pdf")) {
-                fs.unlinkSync(path.join(uploadsPath, file));
-            }
-        }
-    }
-};
 
 const prisma = new PrismaClient();
 
@@ -82,18 +66,6 @@ const seed = async () => {
         type:            "nomina",
     };
 
-    for (const { email, id } of [
-        { email: "docmain@test.com",    id: IDS.employee },
-        { email: "docstranger@test.com", id: IDS.stranger },
-    ]) {
-        const old = await prisma.employee.findFirst({ where: { email } });
-        if (old && old.employee_id !== id) {
-            await prisma.logs.deleteMany({ where: { employee_id: old.employee_id } });
-            await prisma.employee_documents.deleteMany({ where: { employee_id: old.employee_id } });
-            await prisma.employee.delete({ where: { employee_id: old.employee_id } });
-        }
-    }
-
     await prisma.employee.upsert({
         where:  { employee_id: IDS.employee },
         update: {},
@@ -113,46 +85,14 @@ const seed = async () => {
     });
 };
 
-const clean = async () => {
-
-    const docsToClean = await prisma.employee_documents.findMany({ 
-        where: { employee_id: { in: [IDS.employee, IDS.stranger] } } 
-    });
-
-    for (const doc of docsToClean) {
-        if (doc.url) deleteFileIfExists(doc.url);
-    }
-
-    await prisma.employee_documents.deleteMany({ where: { employee_id: { in: [IDS.employee, IDS.stranger] } } });
-    await prisma.logs.deleteMany({ where: { employee_id: { in: [IDS.employee, IDS.stranger] } } });
-    await prisma.employee.deleteMany({ where: { employee_id: { in: [IDS.employee, IDS.stranger] } } });
-    await prisma.documents.deleteMany({ where: { document_id: IDS.doc } });
-    await prisma.role.deleteMany({ where: { role_id: IDS.role } });
-    await prisma.house.deleteMany({ where: { house_id: IDS.house } });
-};
-
 beforeEach(async () => {
     await cleanIntegrationDb();
-    clearUploadsFolder();
-     await clean(); 
-     await seed(); 
-    });
+    await seed();
+});
 
-afterAll(async () => { 
-    clearUploadsFolder();
-    await clean(); 
-    await prisma.$disconnect(); });
-afterEach(async () => {
-
-    const docs = await prisma.employee_documents.findMany({ 
-        where: { employee_id: IDS.employee } 
-    });
-    
-    for (const doc of docs) {
-        if (doc.url) deleteFileIfExists(doc.url);
-    }
-    clearUploadsFolder();
-    await prisma.employee_documents.deleteMany({ where: { employee_id: IDS.employee } });
+afterAll(async () => {
+    await cleanIntegrationDb();
+    await prisma.$disconnect();
 });
 
 // ─── Helper ───────────────────────────────────────────────

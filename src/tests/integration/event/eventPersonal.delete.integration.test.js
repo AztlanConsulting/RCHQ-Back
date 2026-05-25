@@ -303,64 +303,15 @@ const seedDependencies = async () => {
     });
 };
 
-const cleanEvents = async () => {
-    const junctionRecords = await prisma.employee_personal_event.findMany({
-        where: { employee_id: { in: ALL_TEST_EMPLOYEE_IDS } },
-        select: { personal_event_id: true },
-    });
-    const personalEventIds = junctionRecords.map((r) => r.personal_event_id);
-
-    await prisma.logs.deleteMany({
-        where: { employee_id: { in: ALL_TEST_EMPLOYEE_IDS } },
-    });
-
-    await prisma.employee_personal_event.deleteMany({
-        where: { employee_id: { in: ALL_TEST_EMPLOYEE_IDS } },
-    });
-
-    if (personalEventIds.length > 0) {
-        await prisma.personal_event.deleteMany({
-            where: { personal_event_id: { in: personalEventIds } },
-        });
-    }
-};
-
-const cleanDb = async () => {
-    await cleanEvents();
-
-    await prisma.employee.deleteMany({
-        where: { employee_id: { in: ALL_TEST_EMPLOYEE_IDS } },
-    });
-
-    await prisma.house.deleteMany({
-        where: {
-            OR: [
-                { house_id: TEST_HOUSE_ID },
-                { house_id: TEST_OTHER_HOUSE_ID },
-            ],
-        },
-    });
-
-    await prisma.event_type.deleteMany({
-        where: { event_type_id: TEST_EVENT_TYPE_ID },
-    });
-};
-
 // ─── Hooks ────────────────────────────────────────────────
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await seedDependencies();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await prisma.$disconnect();
-});
-
-beforeEach(async () => {
-    await cleanEvents();
 });
 
 // ─── SUITE DE PRUEBAS ─────────────────────────────────────

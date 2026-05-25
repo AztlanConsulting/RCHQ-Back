@@ -160,34 +160,17 @@ const loginAndGetToken = async () => {
     return res.body.data.token;
 };
 
-const cleanDb = async () => {
-    await prisma.blacklist.deleteMany({ where: { curp: TEST_TARGET_CURP } });
-    await prisma.logs.deleteMany({ where: { employee_id: TEST_COORDINADOR_ID } });
-    await prisma.employee.deleteMany({
-        where: { employee_id: { in: [TEST_COORDINADOR_ID, TEST_TARGET_ID] } },
-    });
-};
-
 beforeEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
     await seedDependencies();
 });
 
 beforeEach(async () => {
-    await cleanDb();
     await createCoordinador();
 });
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanDb();
-    await prisma.role.deleteMany({
-        where: {
-            role_id: testTargetRoleId,
-        },
-    });
-    await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
     await prisma.$disconnect();
 });
 

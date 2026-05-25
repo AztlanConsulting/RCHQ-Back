@@ -133,69 +133,8 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         });
     }
 
-    async function cleanTestData() {
-        await prisma.logs.deleteMany({
-            where: {
-                OR: [
-                    {
-                        employee_id: {
-                            in: testEmployeeIds,
-                        },
-                    },
-                    {
-                        affected: {
-                            in: testEmployeeIds,
-                        },
-                    },
-                ],
-            },
-        });
-
-        await prisma.vacations_request.deleteMany({
-            where: {
-                OR: [
-                    {
-                        vacations_request_id: {
-                            in: testVacationIds,
-                        },
-                    },
-                    {
-                        employee_id: {
-                            in: testEmployeeIds,
-                        },
-                    },
-                ],
-            },
-        });
-
-        await prisma.employee_workday.deleteMany({
-            where: {
-                employee_id: {
-                    in: testEmployeeIds,
-                },
-            },
-        });
-
-        await prisma.employee.deleteMany({
-            where: {
-                employee_id: {
-                    in: testEmployeeIds,
-                },
-            },
-        });
-
-        await prisma.house.deleteMany({
-            where: {
-                house_id: {
-                    in: [houseId, otherHouseId],
-                },
-            },
-        });
-    }
-
     beforeEach(async () => {
-    await cleanIntegrationDb();
-        await cleanTestData();
+        await cleanIntegrationDb();
         await seedActions();
 
         coordinatorRoleId = await getOrCreateRoleId(
@@ -509,8 +448,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
     });
 
     afterEach(async () => {
-    await cleanIntegrationDb();
-        await cleanTestData();
+        await cleanIntegrationDb();
         await prisma.$disconnect();
     });
 

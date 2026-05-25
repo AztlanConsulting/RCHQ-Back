@@ -293,91 +293,6 @@ const resetAbsences = async () => {
     });
 };
 
-const cleanup = async () => {
-    await prisma.absence.deleteMany({
-        where: {
-            absence_id: { in: [IDS.absenceA, IDS.absenceB, IDS.absenceDeleted] },
-        },
-    });
-
-    await prisma.absence.deleteMany({
-        where: {
-            employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
-            },
-        },
-    });
-
-    await prisma.logs.deleteMany({
-        where: {
-            employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
-            },
-        },
-    });    
-
-    await prisma.employee.deleteMany({
-        where: {
-            employee_id: {
-                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
-            },
-        },
-    });
-
-    await prisma.role_privilege.deleteMany({
-        where: {
-            privilege_id: IDS.deleteAbsencesPrivilege,
-            role_id: {
-                in: [IDS.coordinatorRole, IDS.adminRole],
-            },
-        },
-    });
-
-    await prisma.absence_type.deleteMany({
-        where: {
-            absence_type_id: IDS.absenceTypeA,
-        },
-    });
-
-    await prisma.role.deleteMany({
-        where: {
-            role_id: IDS.employeeRole,
-        },
-    });
-
-    if (STATE.createdCoordinatorRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.coordinatorRole },
-        });
-    }
-
-    if (STATE.createdAdminRole) {
-        await prisma.role.deleteMany({
-            where: { role_id: IDS.adminRole },
-        });
-    }
-
-    if (STATE.createdPrivilege) {
-        await prisma.privileges.deleteMany({
-            where: { privilege_id: IDS.deleteAbsencesPrivilege },
-        });
-    }
-
-    if (STATE.createdAction) {
-        await prisma.action.deleteMany({
-            where: { action_id: "ausn-002" },
-        });
-    }
-
-    await prisma.house.deleteMany({
-        where: {
-            house_id: {
-                in: [IDS.houseA, IDS.houseB],
-            },
-        },
-    });
-};
-
 beforeEach(async () => {
     await cleanIntegrationDb();
     await seed();
@@ -389,7 +304,6 @@ beforeEach(async () => {
 
 afterEach(async () => {
     await cleanIntegrationDb();
-    await cleanup();
     await prisma.$disconnect();
 });
 
