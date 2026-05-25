@@ -360,12 +360,14 @@ exports.updateVacationRequestDates = async ({
 
     const targetEmployeeId = vacationRequest.employee_id;
     const actorRoleName = actorEmployee.role?.name;
+    
+    const isCoordinator = isCoordinatorRole(actorRoleName);
     const isSelfModification = actorEmployeeId === targetEmployeeId;
-    const isCoordinatorModification =
-        isCoordinatorRole(actorRoleName) && !isSelfModification;
+    const isCoordinatorModification = isCoordinator && !isSelfModification;
 
     if (
         isSelfModification &&
+        !isCoordinator &&
         vacationRequest.status !== VACATION_STATUS.PENDING
     ) {
         return {

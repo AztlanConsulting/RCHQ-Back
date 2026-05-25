@@ -71,7 +71,7 @@ describe("US28 - registerEmployeeVacation service", () => {
         return new Date(Date.UTC(year, month - 1, day));
     };
 
-    const frozenToday = makeUTCDate(2026, 4, 30);
+    const frozenToday = new Date("2026-04-30T18:00:00.000Z");
 
     const validStartDate = "2026-06-22";
     const validEndDate = "2026-06-26";
@@ -420,6 +420,28 @@ describe("US28 - registerEmployeeVacation service", () => {
                 parsedTodayDate,
                 1
             );
+        });
+
+        test("permite registrar vacaciones de hoy México aunque UTC ya sea mañana", async () => {
+            jest.setSystemTime(new Date("2026-05-26T01:30:00.000Z"));
+
+            try {
+                const result = await callRegisterVacation({
+                    startDate: "2026-05-25",
+                    endDate: "2026-05-25",
+                });
+
+                expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
+                expect(registerVacation).toHaveBeenCalledWith(
+                    vacationId,
+                    targetEmployeeId,
+                    makeUTCDate(2026, 5, 25),
+                    makeUTCDate(2026, 5, 25),
+                    1
+                );
+            } finally {
+                jest.setSystemTime(frozenToday);
+            }
         });
 
         test("retorna OUT_OF_RANGE si está fuera del año laboral actual", async () => {

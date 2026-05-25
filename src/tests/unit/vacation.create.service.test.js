@@ -79,6 +79,41 @@ describe("vacation.service — requestVacation", () => {
             expect(logModel.createLog).toHaveBeenCalled();
         });
 
+        it("permite pedir vacaciones para mañana en México aunque UTC ya sea ese día", async () => {
+            jest.useFakeTimers().setSystemTime(
+                new Date("2026-05-26T01:30:00.000Z"),
+            );
+
+            try {
+                vacationGetService.getRemainingVacations.mockResolvedValueOnce({
+                    data: {
+                        remainingDays: 10,
+                        startDate: new Date("2026-01-01T00:00:00.000Z"),
+                        endDate: new Date("2026-12-31T00:00:00.000Z"),
+                    },
+                });
+
+                const result = await vacationCreateService.requestVacation(
+                    EMPLOYEE_ID,
+                    "2026-05-26",
+                    "2026-05-26",
+                    CLIENT_IP,
+                    "house-1",
+                );
+
+                expect(result.code).toBe(RESPONSES.VACATION.REQUESTED);
+                expect(vacationAddModel.requestVacation).toHaveBeenCalledWith(
+                    expect.any(String),
+                    EMPLOYEE_ID,
+                    new Date("2026-05-26T00:00:00.000Z"),
+                    new Date("2026-05-26T00:00:00.000Z"),
+                    5,
+                );
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
         it("no cuenta los días si el empleado no trabaja en ellos", async () => {
             employeeModel.getWorkDays.mockResolvedValueOnce([
                 { workday: { name: "Lunes" } },
