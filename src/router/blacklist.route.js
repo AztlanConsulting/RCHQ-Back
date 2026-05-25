@@ -3,7 +3,7 @@ const router = express.Router();
 const { apiLimiter } = require("../utils/rateLimit");
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
-const { canAddToBlacklist, canRemoveFromBlacklist } = require("../middleware/abac");
+const { canAddToBlacklist, canRemoveFromBlacklist } = require("../policies/blacklist.policies");
 const {
     insertIntoBlacklist,
 } = require("../controller/blacklist/create.controller");
