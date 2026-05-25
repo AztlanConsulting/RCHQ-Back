@@ -74,8 +74,9 @@ VALUES
 ('00000001-0000-4000-8000-000000000011', 'addAbsences'),
 ('00000001-0000-4000-8000-000000000013', 'deleteEvent'),
 ('00000001-0000-4000-8000-000000000014', 'editEvent'),
-('00000001-0000-4000-8000-000000000015', 'editVacations'),
-('00000001-0000-4000-8000-000000000015', 'viewBlacklist')
+('00000001-0000-4000-8000-000000000015', 'viewBlacklist'),
+('00000001-0000-4000-8000-000000000017', 'viewSelfVacations'),
+('00000001-0000-4000-8000-000000000018', 'editVacations')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -133,6 +134,14 @@ SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
 WHERE p.name = 'viewEvents'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
+-- Todos los roles pueden consultar sus propias vacaciones
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'viewSelfVacations'
 ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Coordinadores de área — ver empleados y documentos
@@ -1700,6 +1709,17 @@ VALUES
   '2026-10-27',
   '2026-10-28',
   0,
+  NULL,
+  NOW(),
+  2
+),
+-- Solicitud para concurrencia en pasado
+(
+  'c3000000-0000-4000-8000-000000000097',
+  'e3000001-0000-4000-8000-000000000006',
+  '2026-01-27',
+  '2026-01-28',
+  2,
   NULL,
   NOW(),
   2

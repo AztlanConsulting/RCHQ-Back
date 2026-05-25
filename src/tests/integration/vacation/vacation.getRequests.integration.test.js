@@ -24,7 +24,7 @@ jest.mock("../../../../src/middleware/auth", () => {
                 id: "e8000000-0000-4000-8000-000000000001",
                 role: "Coordinador",
                 houseId: "a0000001-0000-4000-8000-000000000001",
-                privileges: ["manageEmployees"],
+                privileges: ["manageEmployees", "viewSelfVacations"],
                 tokenType: "SESSION",
             };
             return next();
@@ -35,7 +35,7 @@ jest.mock("../../../../src/middleware/auth", () => {
                 id: "b8f54b14-701e-4e87-a019-caef53dcda99",
                 role: "Administrador",
                 houseId: "a0000001-0000-4000-8000-000000000001",
-                privileges: ["manageEmployees"],
+                privileges: ["manageEmployees", "viewSelfVacations"],
                 tokenType: "SESSION",
             };
             return next();
@@ -46,7 +46,7 @@ jest.mock("../../../../src/middleware/auth", () => {
                 id: "e8000000-0000-4000-8000-000000000002",
                 role: "Mantenimiento",
                 houseId: "a0000001-0000-4000-8000-000000000001",
-                privileges: [],
+                privileges: ["viewSelfVacations"],
                 tokenType: "SESSION",
             };
             return next();
@@ -63,6 +63,8 @@ jest.mock("../../../../src/service/vacation/get.service", () => ({
     getRemainingVacations: jest.fn(),
     getPendingVacationRequests: jest.fn(),
     getReviewedVacationRequests: jest.fn(),
+    getFutureVacationRequests: jest.fn(),
+    getPastVacationRequests: jest.fn(),
 }));
 
 const vacationGetService = require("../../../../src/service/vacation/get.service");
@@ -241,5 +243,127 @@ describe("US80 - GET /vacation/requests/reviewed", () => {
 
         expect(response.status).toBe(400);
         expect(response.body.code).toBe("VALIDATION_ERROR");
+    });
+});
+
+describe("GET /vacation/requests/future", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test("debe rechazar si no hay token", async () => {
+        const response = await request(app)
+            .get("/vacation/requests/future");
+
+        expect(response.status).toBe(401);
+        expect(response.body.success).toBe(false);
+    });
+
+    test("debe permitir consultar vacaciones futuras del empleado autenticado", async () => {
+        vacationGetService.getFutureVacationRequests.mockResolvedValue({
+            code: RESPONSES.VACATION.REQUESTS_FOUND,
+            data: {
+                requests: [
+                    {
+                        vacationRequestId: "c8000000-0000-4000-8000-000000000005",
+                        status: 0,
+                        statusLabel: "Pendiente",
+                        usedDays: 2,
+                        employee: {
+                            employeeId: "e8000000-0000-4000-8000-000000000002",
+                            fullName: "Empleado Propio",
+                        },
+                    },
+                ],
+                pagination: {
+                    page: 1,
+                    limit: 6,
+                    total: 1,
+                    totalPages: 1,
+                },
+            },
+        });
+
+        const response = await request(app)
+            .get("/vacation/requests/future?status=pending")
+            .set("Authorization", "Bearer employee-token");
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toHaveLength(1);
+        expect(response.body.pagination.total).toBe(1);
+        expect(vacationGetService.getFutureVacationRequests).toHaveBeenCalledWith(
+            "e8000000-0000-4000-8000-000000000002",
+            {
+                status: "pending",
+            },
+        );
+    });
+
+    test("debe validar status inválido en vacaciones futuras", async () => {
+        const response = await request(app)
+            .get("/vacation/requests/future?status=cancelled")
+            .set("Authorization", "Bearer employee-token");
+
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe("VALIDATION_ERROR");
+        expect(vacationGetService.getFutureVacationRequests).not.toHaveBeenCalled();
+    });
+});
+
+describe("GET /vacation/requests/past", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test("debe permitir consultar vacaciones pasadas del empleado autenticado", async () => {
+        vacationGetService.getPastVacationRequests.mockResolvedValue({
+            code: RESPONSES.VACATION.REQUESTS_FOUND,
+            data: {
+                requests: [
+                    {
+                        vacationRequestId: "c8000000-0000-4000-8000-000000000006",
+                        status: 1,
+                        statusLabel: "Aprobada",
+                        usedDays: 3,
+                        employee: {
+                            employeeId: "e8000000-0000-4000-8000-000000000002",
+                            fullName: "Empleado Propio",
+                        },
+                    },
+                ],
+                pagination: {
+                    page: 1,
+                    limit: 6,
+                    total: 1,
+                    totalPages: 1,
+                },
+            },
+        });
+
+        const response = await request(app)
+            .get("/vacation/requests/past?status=approved")
+            .set("Authorization", "Bearer employee-token");
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toHaveLength(1);
+        expect(response.body.pagination.total).toBe(1);
+        expect(vacationGetService.getPastVacationRequests).toHaveBeenCalledWith(
+            "e8000000-0000-4000-8000-000000000002",
+            {
+                status: "approved",
+            },
+        );
+    });
+
+    test("debe validar rango de fechas inválido en vacaciones pasadas", async () => {
+        const response = await request(app)
+            .get("/vacation/requests/past?startDate=2026-12-31&endDate=2026-01-01")
+            .set("Authorization", "Bearer employee-token");
+
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe("VALIDATION_ERROR");
+        expect(vacationGetService.getPastVacationRequests).not.toHaveBeenCalled();
     });
 });

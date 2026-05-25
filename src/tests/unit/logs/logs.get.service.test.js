@@ -135,7 +135,7 @@ describe("logs.get.service", () => {
                     ip_address: "hashed-ip",
                     moment,
                     action: {
-                        description: "Empleado creado",
+                        description: "Empleado creado con éxito",
                         important: true,
                     },
                     employee: {
@@ -236,7 +236,7 @@ describe("logs.get.service", () => {
                 responsiblePicture: "ana.jpg",
                 affectedName: "María López",
                 ipAddress: "decoded:hashed-ip",
-                action: "Empleado creado",
+                action: "Empleado creado con éxito",
                 important: true,
                 moment,
             },
@@ -420,7 +420,7 @@ describe("logs.get.service", () => {
         getLogActions.mockResolvedValue([
             {
                 action_id: "empl-001",
-                description: "Empleado creado",
+                description: "Empleado creado con éxito",
             },
             {
                 action_id: "ausn-001",
@@ -435,7 +435,7 @@ describe("logs.get.service", () => {
             data: [
                 {
                     actionId: "empl-001",
-                    description: "Empleado creado",
+                    description: "Empleado creado con éxito",
                 },
                 {
                     actionId: "ausn-001",
@@ -456,7 +456,7 @@ describe("logs.get.service", () => {
                 ip_address: "hashed-ip",
                 moment,
                 action: {
-                    description: "Empleado creado",
+                    description: "Empleado creado con éxito",
                     important: true,
                 },
                 employee: {
@@ -497,7 +497,7 @@ describe("logs.get.service", () => {
                     responsiblePicture: "ana.jpg",
                     affectedName: "María López",
                     ipAddress: "decoded:hashed-ip",
-                    action: "Empleado creado",
+                    action: "Empleado creado con éxito",
                     important: true,
                     moment,
                 },
