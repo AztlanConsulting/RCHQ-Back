@@ -206,6 +206,11 @@ const ACTIONS = [
         description: "Eliminación de vacaciones exitosa",
         important: false,
     },
+    {
+        action_id: "blck-001",
+        description: "Empleado agregado a la lista negra",
+        important: true,
+    },
 ];
 
 async function seedActions(db = prisma) {
