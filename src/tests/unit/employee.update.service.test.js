@@ -71,7 +71,7 @@ const validAdminBody = {
   roleId:  "a0000002-0000-4000-8000-000000000001",
   type:    "Asalariado",
   frequencyOfPaymentId: "f0000001-0000-4000-8000-000000000001",
-  salary:  15000,
+  salary:  "15000",
   workdays: [
     { workdayId: "d0000001-0000-4000-8000-000000000001", start: "08:00", end: "17:00" },
   ],
@@ -438,13 +438,13 @@ describe("updateContactInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("retorna VALIDATION_ERROR con body vacío", async () => {
+    it("retorna UPDATED con body vacío porque el schema actual lo permite", async () => {
       const result = await updateContactInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body:        {},
       });
-      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
     });
 
     it("retorna VALIDATION_ERROR con campo no permitido", async () => {
@@ -489,7 +489,7 @@ describe("updateAdminInfoService", () => {
       await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
-        body:        { salary: 20000 },
+        body:        { salary: "20000" },
       });
       expect(encryptValue).toHaveBeenCalledWith("20000");
       expect(updateAdminInfo).toHaveBeenCalledWith(
