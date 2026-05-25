@@ -11,15 +11,12 @@ exports.removeFromBlacklist = async (curp, reason, executorId, ipAddress) => {
 
         if (!employee.isBlacklisted) return { code: RESPONSES.BLACKLIST.NOT_IN_BLACKLIST };
 
-        const deletedEntry = await deleteFromBlacklist(curp);
+        const deletedEntry = await deleteFromBlacklist(curp, reason);
         if (!deletedEntry) return { code: RESPONSES.BLACKLIST.INTERNAL_ERROR };
 
         let warning = null;
         try {
-            let affectedText = `${employee.name} ${employee.surname} - ${curp} Razón: ${reason}`;
-            if (affectedText.length > 120) {
-                affectedText = affectedText.substring(0, 117) + "...";
-            }
+            const affectedText = `${employee.name} ${employee.surname} - ${curp}`;
             await createLog(executorId, LOG_ACTIONS.BLACKLIST_REMOVED, ipAddress, affectedText);
         } catch (err) {
             console.error("Error creando log removeFromBlacklist:", err);

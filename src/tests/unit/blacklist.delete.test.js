@@ -88,27 +88,24 @@ describe("removeFromBlacklist", () => {
         expect(result.code).toBe(RESPONSES.BLACKLIST.INTERNAL_ERROR);
     });
 
-    it("retorna REMOVED con data correcta y genera el log truncando a 120 caracteres si es muy largo", async () => {
+    it("retorna REMOVED con data correcta y genera el log de forma simplificada", async () => {
         findEmployeeByCurp.mockResolvedValue(mockEmployee);
         deleteFromBlacklist.mockResolvedValue(mockDeletedEntry);
         createLog.mockResolvedValue(true);
 
-        const longReason = "Esta es una razón exageradamente larga que superará el límite de los ciento veinte caracteres configurados en el campo affected de la tabla logs para probar el truncamiento inteligente";
-        const result = await removeFromBlacklist(mockEmployee.curp, longReason, mockExecutorId, mockIp);
+        const result = await removeFromBlacklist(mockEmployee.curp, mockReason, mockExecutorId, mockIp);
 
         expect(result.code).toBe(RESPONSES.BLACKLIST.REMOVED);
         expect(result.data.employeeFullName).toBe("Luis Pérez");
         expect(result.data.curp).toBe(mockEmployee.curp);
 
-        expect(deleteFromBlacklist).toHaveBeenCalledWith(mockEmployee.curp);
-
-        const expectedTruncatedText = `Luis Pérez - PELM900101HDFRZS09 Razón: ${longReason}`.substring(0, 117) + "...";
+        expect(deleteFromBlacklist).toHaveBeenCalledWith(mockEmployee.curp, mockReason);
 
         expect(createLog).toHaveBeenCalledWith(
             mockExecutorId,
             LOG_ACTIONS.BLACKLIST_REMOVED,
             mockIp,
-            expectedTruncatedText
+            `Luis Pérez - PELM900101HDFRZS09`
         );
     });
 });

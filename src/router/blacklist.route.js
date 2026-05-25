@@ -10,8 +10,7 @@ const {
 const { getBlacklist } = require("../controller/blacklist/get.controller");
 const { removeFromBlacklist } = require("../controller/blacklist/delete.controller");
 const validate = require("../middleware/validate");
-const { blacklistCreateSchema } = require("../schemas/blacklist/create.schemas");
-const { blacklistDeleteSchema } = require("../schemas/blacklist/delete.schemas");
+const { blacklistCreateSchema, blacklistDeleteSchema } = require("../schemas/blacklist/blacklist.schema");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
 

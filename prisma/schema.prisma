@@ -66,6 +66,7 @@ model employee {
   start_date                      DateTime                        @db.Date
   end_date                        DateTime?                       @db.Date
   deactivation_reason             String?                         @db.VarChar(250)
+  out_of_blacklist_reason         String?                         @db.VarChar(250)
   nss                             String?                         @unique @db.VarChar(11)
   bank_account                    String?                         @db.VarChar(18)
   phone_number                    String?                         @db.VarChar(20)

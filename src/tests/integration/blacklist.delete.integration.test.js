@@ -197,7 +197,7 @@ afterAll(async () => {
 });
 
 describe("PATCH /blacklist/delete - integración", () => {
-    it("retorna 200 y elimina físicamente al empleado de la lista negra", async () => {
+    it("retorna 200, elimina físicamente al empleado de la lista negra y guarda la razón en out_of_blacklist_reason", async () => {
         await createTargetEmployeeWithBlacklist();
         const token = await loginAndGetToken();
 
@@ -214,6 +214,11 @@ describe("PATCH /blacklist/delete - integración", () => {
             where: { curp: TEST_TARGET_CURP },
         });
         expect(entry).toBeNull();
+
+        const employee = await prisma.employee.findUnique({
+            where: { employee_id: TEST_TARGET_ID },
+        });
+        expect(employee.out_of_blacklist_reason).toBe("Se aclaró el malentendido");
     });
 
     it("genera el log de la acción en BD", async () => {

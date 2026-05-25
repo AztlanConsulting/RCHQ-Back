@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS public.employee (
     start_date                       date          NOT NULL,
     end_date                         date          NULL,
     deactivation_reason              varchar(250)  NULL,
+    out_of_blacklist_reason          varchar(250)  NULL,
     nss                              varchar(11)   NULL UNIQUE,
     bank_account                     varchar(18)   NULL,
     phone_number                     varchar(20)   NULL,
