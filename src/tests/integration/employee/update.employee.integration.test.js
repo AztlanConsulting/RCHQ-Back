@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const app     = require("../../../index");
 const prisma  = require("../../../prisma");
@@ -32,7 +33,8 @@ const json = () => ({
 
 // ─── Seed / teardown ──────────────────────────────────────────────────────────
 
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
   // 1. Limpieza inicial profunda (Orden inverso de dependencias)
   await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
@@ -146,7 +148,8 @@ beforeAll(async () => {
   });
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     // Limpieza final
     await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });

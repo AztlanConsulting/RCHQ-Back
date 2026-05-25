@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
@@ -593,7 +594,8 @@ async function cleanTestData() {
     });
 }
 
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanTestData();
     await seedActions();
     await seedBaseData();
@@ -603,7 +605,8 @@ afterEach(async () => {
     await cleanVacationAndLogsOnly();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanTestData();
 
     if (CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE) {

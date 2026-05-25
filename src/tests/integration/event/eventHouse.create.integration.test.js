@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/eventHouseCreate.integration.test.js
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
@@ -335,12 +336,14 @@ const cleanEvents = async () => {
 };
 
 // ─── Hooks ────────────────────────────────────────────────
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await seedDependencies();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await prisma.$disconnect();
 });

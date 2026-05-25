@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
@@ -199,7 +200,8 @@ const cleanDb = async () => {
     });
 };
 
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await seedDependencies();
 });
@@ -210,7 +212,8 @@ beforeEach(async () => {
     await createTargetEmployees();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await prisma.role.deleteMany({
         where: {

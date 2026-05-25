@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/employeeGetAll.integration.test.js
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
@@ -104,13 +105,15 @@ const cleanDb = async () => {
 };
 
 // ─── Hooks ────────────────────────────────────────────────
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS unaccent;`);
     await cleanDb();
     await seedDependencies();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await prisma.$disconnect();
 });

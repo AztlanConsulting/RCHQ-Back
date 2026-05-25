@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 require("dotenv").config({ path: ".env.test" });
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
@@ -248,11 +249,13 @@ const cleanup = async () => {
 };
 
 describe("Calendar filter option routes", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
         await seed();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
+    await cleanIntegrationDb();
         await cleanup();
         await prisma.$disconnect();
     });

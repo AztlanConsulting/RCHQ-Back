@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/auth.integration.test.js
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
@@ -102,7 +103,8 @@ const cleanDb = async () => {
 };
 
 // ─── Hooks ────────────────────────────────────────────────
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await seedDependencies();
     await seedActions();
@@ -110,7 +112,8 @@ beforeAll(async () => {
 afterEach(async () => {
     await cleanDb();
 });
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await prisma.role.deleteMany({ where: { role_id: TEST_ROLE_ID } });
     await prisma.house.deleteMany({ where: { house_id: TEST_HOUSE_ID } });
     await prisma.$disconnect();

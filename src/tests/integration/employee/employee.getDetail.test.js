@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/employee.getDetail.test.js
 const request = require("supertest");
 const { randomUUID } = require("crypto");
@@ -137,14 +138,16 @@ const cleanSubjectGraph = async () => {
 };
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanSubjectGraph();
     await seedDb();
 });
 afterEach(async () => {
     await cleanSubjectGraph();
 });
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanSubjectGraph();
     await cleanDb();
     await disconnectDb();

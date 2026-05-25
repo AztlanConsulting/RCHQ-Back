@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const employee = require("../../../model/employee/create.model");
 const { createLog } = require("../../../model/log.model");
 const consult = require("../../../model/employee/get.model");
@@ -31,6 +32,14 @@ const { createEmployee } = require("../../../service/employee/create.service");
 // =====================================================
 
 describe("Employee Service - createEmployee", () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
+    });
+
+    afterEach(async () => {
+    await cleanIntegrationDb();
+    });
+
     // Variables globales para las pruebas
     const mockUserAdmin = {
         id: "user-1",

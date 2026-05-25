@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 require("dotenv").config({ path: ".env.test" });
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
@@ -205,7 +206,8 @@ const loginAndGetToken = async () => {
 describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
     let token;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
         await cleanDb();
         await seedActions(prisma);
         const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 10);
@@ -213,7 +215,8 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
         token = await loginAndGetToken();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
+    await cleanIntegrationDb();
         await cleanDb();
         await prisma.$disconnect();
     });
@@ -331,6 +334,11 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
         });
 
         it("el empleado queda inactivo en la DB después de la baja", async () => {
+            await request(app)
+                .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
+                .set("Authorization", `Bearer ${token}`)
+                .send({ reason: "Renuncia voluntaria" });
+
             const employee = await prisma.employee.findUnique({
                 where: { employee_id: TEST_TARGET_ID },
             });
@@ -367,6 +375,11 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
         });
 
         it("409 — retorna error si se intenta bloquear a alguien ya en lista negra", async () => {
+            await request(app)
+                .patch(`/employee/${TEST_NEW_TARGET_ID}/deactivate`)
+                .set("Authorization", `Bearer ${token}`)
+                .send({ reason: "Fraude comprobado", addToBlacklist: true });
+
             const res = await request(app)
                 .patch(`/employee/${TEST_NEW_TARGET_ID}/deactivate`)
                 .set("Authorization", `Bearer ${token}`)
@@ -379,10 +392,18 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
     describe("Flujo encadenado end-to-end", () => {
         it("Login → dar de baja → verificar estado en DB (debería dar 409 porque ya se dio de baja)", async () => {
             const freshToken = await loginAndGetToken();
+            const firstRes = await request(app)
+                .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
+                .set("Authorization", `Bearer ${freshToken}`)
+                .send({ reason: "Verificación e2e" });
+
+            expect(firstRes.status).toBe(200);
+
             const res = await request(app)
                 .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
                 .set("Authorization", `Bearer ${freshToken}`)
                 .send({ reason: "Verificación e2e" });
+
             expect(res.status).toBe(409);
         });
     });

@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/profile.flow.integration.test.js
 /**
  * Prueba de integración — Flujo completo: Login → GET /user/profile
@@ -45,13 +46,15 @@ const loginAndGetToken = async () => {
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
 describe("Flujo integración: Login → GET /user/profile", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
         // Hash de la contraseña conocida para el seed
         const hashedPassword = await bcrypt.hash(VALID_PASSWORD, 10);
         await seedDb({ passwordOverride: hashedPassword });
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
+    await cleanIntegrationDb();
         await cleanDb();
         await disconnectDb();
     });
@@ -116,7 +119,7 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     describe("PASO 2 — GET /user/profile (con token del login)", () => {
         let sessionToken;
 
-        beforeAll(async () => {
+        beforeEach(async () => {
             sessionToken = await loginAndGetToken();
         });
 

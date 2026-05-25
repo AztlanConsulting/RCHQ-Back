@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/eventHouseUpdate.integration.test.js
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
@@ -20,7 +21,7 @@ const TEST_PRIVILEGE_EDIT_ID = randomUUID();
 const TEST_PRIVILEGE_VIEW_ID = randomUUID();
 const TEST_HOUSE_EVENT_ID = randomUUID();
 const TEST_CREATE_ACTION_ID = "even-001";
-const TEST_UPDATE_ACTION_ID = "even-005";
+const TEST_UPDATE_ACTION_ID = "even-006";
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_BASE = "/event/house";
@@ -352,12 +353,14 @@ const cleanEvents = async () => {
 };
 
 // ─── Hooks ────────────────────────────────────────────────
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await seedDependencies();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await prisma.$disconnect();
 });

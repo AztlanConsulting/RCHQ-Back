@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 // tests/integration/document.integration.test.js
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
@@ -130,7 +131,8 @@ const clean = async () => {
     await prisma.house.deleteMany({ where: { house_id: IDS.house } });
 };
 
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     clearUploadsFolder();
      await clean(); 
      await seed(); 

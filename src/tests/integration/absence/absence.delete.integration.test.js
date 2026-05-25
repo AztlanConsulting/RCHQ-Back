@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 require("dotenv").config({ path: ".env.test" });
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
@@ -377,7 +378,8 @@ const cleanup = async () => {
     });
 };
 
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await seed();
 });
 
@@ -385,7 +387,8 @@ beforeEach(async () => {
     await resetAbsences();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanup();
     await prisma.$disconnect();
 });

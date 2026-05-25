@@ -1,47 +1,51 @@
 const prisma = require("../../prisma");
+const { seedActions } = require("./seedActions");
 
-const TRUNCATE_EXCLUDED_TABLES = new Set(["_prisma_migrations"]);
+let schemaEnsured = false;
 
-const quoteIdentifier = (value) => `"${String(value).replace(/"/g, "\"\"")}"`;
+const ensureIntegrationSchema = async () => {
+    if (schemaEnsured) {
+        return;
+    }
 
-const getPublicTables = async () => {
+    await prisma.$executeRawUnsafe(`
+        ALTER TABLE IF EXISTS public.blacklist
+        ADD COLUMN IF NOT EXISTS reason VARCHAR(250)
+    `);
+
+    await prisma.$executeRawUnsafe(`
+        ALTER TABLE IF EXISTS public.employee
+        ADD COLUMN IF NOT EXISTS deactivation_reason VARCHAR(250)
+    `);
+
+    schemaEnsured = true;
+};
+
+const cleanIntegrationDb = async () => {
+    await ensureIntegrationSchema();
+
     const tables = await prisma.$queryRawUnsafe(`
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'public'
+          AND tablename <> '_prisma_migrations'
     `);
 
-    return tables
-        .map(({ tablename }) => tablename)
-        .filter((tablename) => !TRUNCATE_EXCLUDED_TABLES.has(tablename));
-};
-
-const resetIntegrationDb = async () => {
-    const tables = await getPublicTables();
-
-    if (tables.length === 0) {
+    if (!tables.length) {
         return;
     }
 
-    const truncateSql = `
-        TRUNCATE TABLE ${tables.map(quoteIdentifier).join(", ")}
-        RESTART IDENTITY CASCADE
-    `;
+    const identifiers = tables
+        .map(({ tablename }) => `"public"."${tablename.replace(/"/g, "\"\"")}"`)
+        .join(", ");
 
-    await prisma.$executeRawUnsafe(truncateSql);
-};
+    await prisma.$executeRawUnsafe(
+        `TRUNCATE TABLE ${identifiers} RESTART IDENTITY CASCADE`
+    );
 
-const useIsolatedIntegrationDb = () => {
-    beforeEach(async () => {
-        await resetIntegrationDb();
-    });
-
-    afterEach(async () => {
-        await resetIntegrationDb();
-    });
+    await seedActions(prisma);
 };
 
 module.exports = {
-    resetIntegrationDb,
-    useIsolatedIntegrationDb,
+    cleanIntegrationDb,
 };

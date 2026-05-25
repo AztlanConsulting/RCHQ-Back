@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
@@ -346,12 +347,14 @@ const cleanDb = async () => {
 };
 
 // ─── Hooks ────────────────────────────────────────────────
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await seedDependencies();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanDb();
     await prisma.$disconnect();
 });

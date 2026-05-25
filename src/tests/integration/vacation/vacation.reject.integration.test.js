@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const app = require("../../../../src/index");
@@ -82,7 +83,8 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         return jwt.sign(payload, process.env.JWT_SECRET);
     };
 
-    beforeAll(() => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
         process.env = {
             ...OLD_ENV,
             JWT_SECRET: "test-secret",
@@ -90,7 +92,8 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         };
     });
 
-    afterAll(() => {
+    afterEach(async () => {
+    await cleanIntegrationDb();
         process.env = OLD_ENV;
     });
 

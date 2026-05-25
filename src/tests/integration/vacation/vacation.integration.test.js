@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const app = require("../../../index");
@@ -122,6 +123,46 @@ const createEventType = async (eventTypeId, name) => {
         create: {
             event_type_id: eventTypeId,
             name,
+        },
+    });
+};
+
+const seedCookWorkdays = async () => {
+    const workDays = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+
+    for (const workDay of workDays) {
+        await prisma.employee_workday.create({
+            data: {
+                employee: {
+                    connect: { employee_id: IDS.employeeCook },
+                },
+                workday: {
+                    connect: { name: workDay },
+                },
+                start: new Date("1970-01-01T09:00:00Z"),
+                end: new Date("1970-01-01T18:00:00Z"),
+            },
+        });
+    }
+};
+
+const createVacationRequest = async ({
+    employeeId = IDS.employeeCook,
+    startDate,
+    endDate,
+    status = 0,
+    usedDays,
+}) => {
+    await prisma.vacations_request.create({
+        data: {
+            vacations_request_id: randomUUID(),
+            employee_id: employeeId,
+            start: new Date(`${startDate}T00:00:00.000Z`),
+            end: new Date(`${endDate}T00:00:00.000Z`),
+            status,
+            feedback: null,
+            created_at: new Date(),
+            used_days: usedDays,
         },
     });
 };
@@ -344,12 +385,14 @@ const clean = async () => {
 };
 
 describe("Flujo integración /vacation/request", () => {
-    beforeAll(async () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
         await clean();
         await seed();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
+    await cleanIntegrationDb();
         await clean();
         await prisma.$disconnect();
     });
@@ -408,6 +451,10 @@ describe("Flujo integración /vacation/request", () => {
     });
 
     describe("PASO 2 - GET /vacation/request", () => {
+        beforeEach(async () => {
+            await seedCookWorkdays();
+        });
+
         it("Empleado manda solicitud sin parámetros", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
@@ -455,6 +502,9 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Manda error por falta de días de trabajo", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
+            await prisma.employee_workday.deleteMany({
+                where: { employee_id: IDS.employeeCook },
+            });
 
             const startDate = dateOnly(START_DATE);
             const endDate = dateOnly(END_DATE);
@@ -478,28 +528,6 @@ describe("Flujo integración /vacation/request", () => {
 
             const startDate = dateOnly(START_DATE);
             const endDate = dateOnly(END_DATE);
-
-            const workDays = [
-                "Lunes",
-                "Martes",
-                "Miércoles",
-                "Jueves",
-                "Viernes",
-            ];
-            for (const workDay of workDays) {
-                await prisma.employee_workday.create({
-                    data: {
-                        employee: {
-                            connect: { employee_id: IDS.employeeCook },
-                        },
-                        workday: {
-                            connect: { name: workDay },
-                        },
-                        start: new Date("1970-01-01T09:00:00Z"),
-                        end: new Date("1970-01-01T18:00:00Z"),
-                    },
-                });
-            }
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -536,6 +564,11 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Error al pedir vacaciones dentro de unas ya existentes", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
+            await createVacationRequest({
+                startDate: dateOnly(START_DATE),
+                endDate: dateOnly(END_DATE),
+                usedDays: 5,
+            });
 
             const startDate = dateOnly(addDays(START_DATE, 1));
             const endDate = dateOnly(addDays(END_DATE, -1));
@@ -556,6 +589,11 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Error al pedir vacaciones con otras vacaciones dentro del rango", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
+            await createVacationRequest({
+                startDate: dateOnly(START_DATE),
+                endDate: dateOnly(END_DATE),
+                usedDays: 5,
+            });
 
             const startDate = dateOnly(addDays(START_DATE, -1));
             const endDate = dateOnly(addDays(END_DATE, 1));
@@ -776,6 +814,12 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Error al pedir más días de los que se tienen disponibles", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
+            await createVacationRequest({
+                startDate: dateOnly(addDays(START_DATE, 1)),
+                endDate: dateOnly(addDays(START_DATE, 21)),
+                status: 1,
+                usedDays: 15,
+            });
 
             const startDate = dateOnly(addDays(START_DATE, 8));
             const endDate = dateOnly(new Date(Date.UTC(
@@ -800,6 +844,12 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Error al pedir más días de los que se tienen disponibles", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
+            await createVacationRequest({
+                startDate: "2026-10-20",
+                endDate: "2026-10-27",
+                status: 1,
+                usedDays: 6,
+            });
 
             const startDate = "2026-11-09";
             const endDate = "2026-11-25";
@@ -820,6 +870,12 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Pedir vacaciones tomando en cuenta eventos", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
+            await createVacationRequest({
+                startDate: "2026-10-20",
+                endDate: "2026-10-27",
+                status: 1,
+                usedDays: 6,
+            });
 
             const startDate = "2026-11-09";
             const endDate = "2026-11-25";
@@ -874,6 +930,13 @@ describe("Flujo integración /vacation/request", () => {
 
     describe("PASO 3 - GET /vacation/remaining/", () => {
         it("Empleado obtiene sus propias vacaciones después de solicitar varias", async () => {
+            await createVacationRequest({
+                startDate: "2026-06-02",
+                endDate: "2026-06-24",
+                status: 1,
+                usedDays: 17,
+            });
+
             const token = sign(IDS.employeeCook, "Cocinero");
             const res = await request(app)
                 .get(`/vacation/remaining/${IDS.employeeCook}`)

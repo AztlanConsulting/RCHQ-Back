@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const app = require("../../../../src/index");
 
@@ -71,6 +72,14 @@ const vacationGetService = require("../../../../src/service/vacation/get.service
 const RESPONSES = require("../../../../src/utils/responses");
 
 describe("US80 - GET /vacation/requests/pending", () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
+    });
+
+    afterEach(async () => {
+    await cleanIntegrationDb();
+    });
+
     beforeEach(() => {
         jest.clearAllMocks();
     });

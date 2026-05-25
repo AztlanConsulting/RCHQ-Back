@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const app = require("../../../index");
 const prisma = require("../../../prisma");
@@ -192,7 +193,8 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         });
     }
 
-    beforeAll(async () => {
+    beforeEach(async () => {
+    await cleanIntegrationDb();
         await cleanTestData();
         await seedActions();
 
@@ -506,7 +508,8 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         });
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
+    await cleanIntegrationDb();
         await cleanTestData();
         await prisma.$disconnect();
     });

@@ -1,3 +1,4 @@
+const { cleanIntegrationDb } = require("../../helpers/integrationIsolation");
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
@@ -617,7 +618,8 @@ async function cleanVacationAndLogsOnly() {
     });
 }
 
-beforeAll(async () => {
+beforeEach(async () => {
+    await cleanIntegrationDb();
     await cleanTestData();
     await seedActions();
     await seedBaseData();
@@ -627,7 +629,8 @@ afterEach(async () => {
     await cleanVacationAndLogsOnly();
 });
 
-afterAll(async () => {
+afterEach(async () => {
+    await cleanIntegrationDb();
     await cleanTestData();
 
     if (CREATED_ADMIN_MANAGE_EMPLOYEES_PRIVILEGE) {
@@ -904,7 +907,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body.success).toBe(false);
     });
 
-    test("retorna 404 si el empleado objetivo no existe", async () => {
+    test("retorna 403 si el empleado objetivo no existe", async () => {
         const nonExistingEmployeeId = randomUUID();
 
         const res = await request(app)
