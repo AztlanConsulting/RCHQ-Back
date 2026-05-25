@@ -10,7 +10,6 @@ const {
 
 const RESPONSES = require("../../utils/responses");
 const { VACATION_STATUS } = require("../../utils/vacationStatus");
-const { ROLES } = require("../../utils/roles");
 
 describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
     const vacationRequestId = "44444444-4444-4444-8444-444444444444";
@@ -31,7 +30,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
 
     const targetEmployee = {
         employee_id: employeeId,
-        house_id: actorHouseId,
+        house_id: "house-1",
         role: {
             name: "Psicóloga",
         },
@@ -74,6 +73,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
             employeeId: options.employeeId ?? employeeId,
             actorHouseId: options.actorHouseId ?? actorHouseId,
             currentDate: options.currentDate ?? currentDate,
+            isSelfDeletion: options.isSelfDeletion ?? false,
         });
     }
 
@@ -156,11 +156,11 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("retorna EMPLOYEE_OUT_OF_SCOPE si el empleado es Admin", async () => {
+    test("retorna EMPLOYEE_OUT_OF_SCOPE si no es eliminación propia y la solicitud pertenece a un Admin", async () => {
         transaction.employee.findUnique.mockResolvedValueOnce({
             ...targetEmployee,
             role: {
-                name: ROLES.ADMIN,
+                name: "Administrador",
             },
         });
 
@@ -174,7 +174,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("retorna EMPLOYEE_OUT_OF_SCOPE si el empleado pertenece a otra casa", async () => {
+    test("retorna EMPLOYEE_OUT_OF_SCOPE si no es eliminación propia y el empleado pertenece a otra casa", async () => {
         transaction.employee.findUnique.mockResolvedValueOnce({
             ...targetEmployee,
             house_id: "house-2",
@@ -188,6 +188,22 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         });
 
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
+    });
+
+    test("permite eliminar aunque sea Admin si es una eliminación propia", async () => {
+        transaction.employee.findUnique.mockResolvedValueOnce({
+            ...targetEmployee,
+            role: {
+                name: "Administrador",
+            },
+        });
+
+        const result = await callDelete({
+            isSelfDeletion: true,
+        });
+
+        expect(result.success).toBe(true);
+        expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
     });
 
     test("permite eliminar solicitud pendiente futura", async () => {
@@ -232,7 +248,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
         expect(transaction.vacations_request.delete).toHaveBeenCalledTimes(1);
     });
 
-    test("rechaza eliminar solicitud aprobada en curso", async () => {
+    test("retorna REQUEST_NOT_MODIFIABLE si la solicitud aprobada ya inició", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
             start: new Date(Date.UTC(2026, 4, 20)),
@@ -246,10 +262,11 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
             success: false,
             code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
         });
+
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
-    test("rechaza eliminar solicitud aprobada pasada", async () => {
+    test("retorna REQUEST_NOT_MODIFIABLE si la solicitud aprobada ya terminó", async () => {
         transaction.vacations_request.findUnique.mockResolvedValueOnce({
             ...baseVacationRequest,
             start: new Date(Date.UTC(2026, 3, 22)),
@@ -263,6 +280,7 @@ describe("vacation.delete.model — deleteVacationRequestAtomically", () => {
             success: false,
             code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
         });
+
         expect(transaction.vacations_request.delete).not.toHaveBeenCalled();
     });
 
