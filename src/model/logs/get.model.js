@@ -123,14 +123,9 @@ exports.getLogActions = async () => {
     });
 };
 
-exports.getLogsByHouse = async (houseId) => {
-
+exports.getLogsByHouse = async (whereClause) => {
     return prisma.logs.findMany({
-        where: {
-            employee: {
-                house_id: houseId,
-            },
-        },
+        where: whereClause,
         include: logInclude,
         orderBy: { moment: "desc" },
     });
