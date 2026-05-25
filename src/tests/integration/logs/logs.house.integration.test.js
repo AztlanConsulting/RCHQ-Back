@@ -5,7 +5,7 @@ const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
 const prisma = require("../../../prisma");
-const app = require("../../../app");
+const app = require("../../../index");
 const { seedActions } = require("../../helpers/seedActions");
 const { encryptLogIp } = require("../../../utils/logIp");
 

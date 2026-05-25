@@ -2,7 +2,7 @@ const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
-const app = require("../../../app");
+const app = require("../../../index");
 
 const prisma = new PrismaClient();
 

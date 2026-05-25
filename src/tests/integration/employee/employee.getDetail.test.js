@@ -2,7 +2,7 @@
 const request = require("supertest");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
-const app = require("../../../app");
+const app = require("../../../index");
 const {
     prisma,
     seedDb,

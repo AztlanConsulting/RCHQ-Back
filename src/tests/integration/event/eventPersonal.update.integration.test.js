@@ -1,7 +1,7 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
-const app = require("../../../app");
+const app = require("../../../index");
 const { prisma, disconnectDb } = require("../../helpers/dbSetup");
 
 // ─── Constantes de prueba ─────────────────────────────────

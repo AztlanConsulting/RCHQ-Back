@@ -2,7 +2,7 @@ const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const app = require("../../../app");
+const app = require("../../../index");
 const { ROLES } = require("../../../utils/roles");
 const PRIVILEGES = require("../../../utils/privileges");
 

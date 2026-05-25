@@ -7,7 +7,7 @@ const { randomUUID } = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const prisma = require("../../../prisma");
-const app = require("../../../app");
+const app = require("../../../index");
 const RESPONSES = require("../../../utils/responses");
 
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/documents");

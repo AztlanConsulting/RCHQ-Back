@@ -1,5 +1,5 @@
 const request = require("supertest");
-const app = require("../../../app");
+const app = require("../../../index");
 const prisma = require("../../../prisma");
 const jwt = require("jsonwebtoken");
 const { VACATION_STATUS } = require("../../../utils/vacationStatus");
