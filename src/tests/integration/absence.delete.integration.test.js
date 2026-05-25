@@ -299,13 +299,21 @@ const cleanup = async () => {
         },
     });
 
-    await prisma.logs.deleteMany({
+    await prisma.absence.deleteMany({
         where: {
             employee_id: {
                 in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
             },
         },
     });
+
+    await prisma.logs.deleteMany({
+        where: {
+            employee_id: {
+                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+            },
+        },
+    });    
 
     await prisma.employee.deleteMany({
         where: {

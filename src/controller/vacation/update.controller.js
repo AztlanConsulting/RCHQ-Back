@@ -125,7 +125,8 @@ exports.approveVacationRequest = async (req, res) => {
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
         });
-    } catch {
+    } catch(error) {
+        console.log(error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
@@ -274,6 +275,20 @@ exports.updateVacationRequestDates = async (req, res) => {
             return res.status(406).json({
                 success: false,
                 message: "No se pueden modificar vacaciones rechazadas",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE) {
+            return res.status(406).json({
+                success: false,
+                message: "Solo puedes modificar solicitudes de vacaciones pendientes",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.REQUEST_ALREADY_STARTED) {
+            return res.status(406).json({
+                success: false,
+                message: "No se pueden modificar vacaciones que ya comenzaron",
             });
         }
 

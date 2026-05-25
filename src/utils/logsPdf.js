@@ -4,7 +4,7 @@ const formatMoment = (momentValue) =>
     new Intl.DateTimeFormat("es-MX", {
         dateStyle: "medium",
         timeStyle: "short",
-        timeZone: "America/Mexico_City",
+        timeZone: "UTC",
     }).format(new Date(momentValue));
 
 exports.buildLogsPdfBuffer = async ({

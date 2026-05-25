@@ -105,7 +105,7 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
         return next();
     } catch (error) {
         console.error("Error en canRegisterEmployeeVacation:", error);
-        return res.status(403).json({
+         return res.status(403).json({
             success: false,
             message: "No puede acceder a este recurso",
         });

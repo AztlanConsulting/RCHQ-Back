@@ -18,6 +18,7 @@ const {
     calculateUsedDays,
     stringToDate,
     convertUTCToMexicanTime,
+    hasDateStartedInMexico,
 } = require("../../utils/dates");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
@@ -33,6 +34,9 @@ const { getVacationYearInfoForApproval } = require("./get.service");
 
 const isAdminRole = (roleName) =>
     roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
+
+const isCoordinatorRole = (roleName) =>
+    roleName === ROLES.COORDINATOR;
 
 exports.approveVacationRequest = async ({
     actorEmployeeId,
@@ -326,14 +330,6 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    const actorRoleName = actorEmployee.role?.name;
-
-    if (actorRoleName !== ROLES.COORDINATOR) {
-        return {
-            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
-        };
-    }
-
     const startDate = stringToDate(validation.data.rawStartDate);
     const endDate = stringToDate(validation.data.rawEndDate);
     const searchEndDate = new Date(endDate);
@@ -354,6 +350,30 @@ exports.updateVacationRequestDates = async ({
     }
 
     if (
+        hasDateStartedInMexico(vacationRequest.start) ||
+        hasDateStartedInMexico(startDate)
+    ) {
+        return {
+            code: RESPONSES.VACATION.REQUEST_ALREADY_STARTED,
+        };
+    }
+
+    const targetEmployeeId = vacationRequest.employee_id;
+    const actorRoleName = actorEmployee.role?.name;
+    const isSelfModification = actorEmployeeId === targetEmployeeId;
+    const isCoordinatorModification =
+        isCoordinatorRole(actorRoleName) && !isSelfModification;
+
+    if (
+        isSelfModification &&
+        vacationRequest.status !== VACATION_STATUS.PENDING
+    ) {
+        return {
+            code: RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE,
+        };
+    }
+
+    if (
         vacationRequest.status !== VACATION_STATUS.PENDING &&
         vacationRequest.status !== VACATION_STATUS.APPROVED
     ) {
@@ -361,8 +381,6 @@ exports.updateVacationRequestDates = async ({
             code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
         };
     }
-
-    const targetEmployeeId = vacationRequest.employee_id;
 
     const targetEmployee = await findByIdWithRoleAndHouse(targetEmployeeId);
 
@@ -372,15 +390,24 @@ exports.updateVacationRequestDates = async ({
         };
     }
 
-    if (isAdminRole(targetEmployee.role?.name)) {
+    if (!isSelfModification && isAdminRole(targetEmployee.role?.name)) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
         };
     }
 
-    if (actorEmployee.house_id !== targetEmployee.house_id) {
+    if (
+        isCoordinatorModification &&
+        actorEmployee.house_id !== targetEmployee.house_id
+    ) {
         return {
             code: RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE,
+        };
+    }
+
+    if (!isSelfModification && !isCoordinatorModification) {
+        return {
+            code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
         };
     }
 

@@ -135,7 +135,7 @@ describe("logs.get.service", () => {
                     ip_address: "hashed-ip",
                     moment,
                     action: {
-                        description: "Empleado creado",
+                        description: "Empleado creado con éxito",
                         important: true,
                     },
                     employee: {
@@ -236,7 +236,7 @@ describe("logs.get.service", () => {
                 responsiblePicture: "ana.jpg",
                 affectedName: "María López",
                 ipAddress: "decoded:hashed-ip",
-                action: "Empleado creado",
+                action: "Empleado creado con éxito",
                 important: true,
                 moment,
             },
@@ -420,7 +420,7 @@ describe("logs.get.service", () => {
         getLogActions.mockResolvedValue([
             {
                 action_id: "empl-001",
-                description: "Empleado creado",
+                description: "Empleado creado con éxito",
             },
             {
                 action_id: "ausn-001",
@@ -435,7 +435,7 @@ describe("logs.get.service", () => {
             data: [
                 {
                     actionId: "empl-001",
-                    description: "Empleado creado",
+                    description: "Empleado creado con éxito",
                 },
                 {
                     actionId: "ausn-001",
@@ -456,7 +456,7 @@ describe("logs.get.service", () => {
                 ip_address: "hashed-ip",
                 moment,
                 action: {
-                    description: "Empleado creado",
+                    description: "Empleado creado con éxito",
                     important: true,
                 },
                 employee: {
@@ -483,7 +483,7 @@ describe("logs.get.service", () => {
         getEventsByIds.mockResolvedValue([]);
         buildLogsPdfBuffer.mockResolvedValue(pdfBuffer);
 
-        const result = await getLogsPdfByHouse("house-1");
+        const result = await getLogsPdfByHouse("house-1", 2026, 2026);
 
         expect(result.code).toBe(RESPONSES.LOGS.PDF_CREATED);
         expect(buildLogsPdfBuffer).toHaveBeenCalledWith({
@@ -497,7 +497,7 @@ describe("logs.get.service", () => {
                     responsiblePicture: "ana.jpg",
                     affectedName: "María López",
                     ipAddress: "decoded:hashed-ip",
-                    action: "Empleado creado",
+                    action: "Empleado creado con éxito",
                     important: true,
                     moment,
                 },
@@ -505,7 +505,7 @@ describe("logs.get.service", () => {
             generatedAt: expect.any(Date),
         });
         expect(result.data.pdfBuffer).toBe(pdfBuffer);
-        expect(result.data.fileName).toBe("reporte-logs-house-1.pdf");
+        expect(result.data.fileName).toBe("reporte-logs-2026-2026.pdf");
     });
 
 });
