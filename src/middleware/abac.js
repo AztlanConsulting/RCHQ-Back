@@ -19,8 +19,18 @@ exports.authorize = (policyFn, getResource) => async (req, res, next) => {
                 ? await getResource(req)
                 : getResource;
 
-        if (await exports.canAccess(req.user, policyFn, resource)) {
+        const isAllowed = await exports.canAccess(req.user, policyFn, resource);
+
+        if (isAllowed === true) {
             return next();
+        }
+
+        if (typeof isAllowed === "object" && isAllowed !== null) {
+            return res.status(isAllowed.status || 403).json({
+                success: false,
+                message: isAllowed.message || "Acceso denegado",
+                error: isAllowed.message || "Acceso denegado",
+            });
         }
 
         return res.status(403).json({

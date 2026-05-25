@@ -299,6 +299,7 @@ describe("PATCH /blacklist/delete - integración", () => {
             .send({ curp: curpInexistente, reason: "Justificación" });
 
         expect(res.statusCode).toBe(404);
+        expect(res.body.message).toBe("Empleado no encontrado");
     });
 
     it("retorna 409 si se intenta eliminar a un empleado que no está en la lista negra", async () => {

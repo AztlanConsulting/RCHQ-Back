@@ -8,7 +8,10 @@ exports.canAddToBlacklist = async (user, resource) => {
         const targetCurp = resource?.curp;
 
         if (!targetCurp) {
-            return false;
+            return {
+                status: 400,
+                message: "CURP no proporcionada",
+            };
         }
 
         if (user.role !== ROLES.COORDINATOR && user.role !== ROLES.ADMIN) {
@@ -19,13 +22,19 @@ exports.canAddToBlacklist = async (user, resource) => {
         const currentUserCurp = currentUser?.curp;
 
         if (currentUserCurp && String(currentUserCurp) === String(targetCurp)) {
-            return false;
+            return {
+                status: 403,
+                message: "Acción denegada: No puedes agregarte a ti mismo a la lista negra.",
+            };
         }
 
         const targetEmployee = await findByCurpWithRoleAndHouse(targetCurp);
 
         if (!targetEmployee) {
-            return false;
+            return {
+                status: 404,
+                message: "Empleado no encontrado",
+            };
         }
 
         if (user.role === ROLES.COORDINATOR && user.houseId !== targetEmployee.house_id) {
@@ -46,7 +55,10 @@ exports.canRemoveFromBlacklist = async (user, resource) => {
         const targetCurp = resource?.curp;
 
         if (!targetCurp) {
-            return false;
+            return {
+                status: 400,
+                message: "CURP no proporcionada",
+            };
         }
 
         if (user.role !== ROLES.COORDINATOR && user.role !== ROLES.ADMIN) {
@@ -56,7 +68,10 @@ exports.canRemoveFromBlacklist = async (user, resource) => {
         const targetEmployee = await findByCurpWithRoleAndHouse(targetCurp);
 
         if (!targetEmployee) {
-            return false;
+            return {
+                status: 404,
+                message: "Empleado no encontrado",
+            };
         }
 
         if (user.role === ROLES.COORDINATOR && user.houseId !== targetEmployee.house_id) {

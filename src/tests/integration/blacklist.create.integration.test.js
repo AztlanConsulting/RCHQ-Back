@@ -312,6 +312,7 @@ describe("POST /blacklist - integración", () => {
             .send({ curp: curpInexistente, reason: "Infracción a políticas" });
 
         expect(res.statusCode).toBe(404);
+        expect(res.body.message).toBe("Empleado no encontrado");
     });
 
     it("retorna 409 si se intenta agregar dos veces al mismo empleado (curp duplicada)", async () => {
