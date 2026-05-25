@@ -145,6 +145,24 @@ describe("deactivate.service — deactivateEmployee", () => {
                 "uuid-empleado-001",
             );
         });
+
+        it("crea log BLACKLIST_ADDED si también se añade a la lista negra", async () => {
+            const req = buildReq({ body: { reason: "Falta grave", addToBlacklist: true } });
+            await deactivateEmployee(req);
+            
+            expect(createLog).toHaveBeenCalledWith(
+                "uuid-actor-001",
+                LOG_ACTIONS.EMPLOYEE_DEACTIVATED,
+                expect.any(String),
+                "uuid-empleado-001",
+            );
+            expect(createLog).toHaveBeenCalledWith(
+                "uuid-actor-001",
+                LOG_ACTIONS.BLACKLIST_ADDED,
+                expect.any(String),
+                "RAMC900101HDFRZN01",
+            );
+        });
     });
 
     describe("Flujo alternativo — fallo al dar de baja", () => {

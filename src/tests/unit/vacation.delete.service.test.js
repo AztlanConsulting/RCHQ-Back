@@ -90,6 +90,22 @@ describe("US32 - deleteVacationRequest service", () => {
         },
     };
 
+    const otherHouseUserActor = {
+        employee_id: actorUserId,
+        house_id: "house-2",
+        role: {
+            name: "Usuario",
+        },
+    };
+
+    const ownerActor = {
+        employee_id: targetEmployeeId,
+        house_id: "house-1",
+        role: {
+            name: "Usuario",
+        },
+    };
+
     const targetEmployee = {
         employee_id: targetEmployeeId,
         house_id: "house-1",
@@ -178,8 +194,9 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(deleteVacationRequestAtomically).toHaveBeenCalledWith({
                 vacationRequestId,
                 employeeId: targetEmployeeId,
-                actorHouseId: "house-1",
+                actorHouseId: coordinatorActor.house_id,
                 currentDate: expect.any(Date),
+                isSelfDeletion: false,
             });
 
             expect(createLog).toHaveBeenCalledWith(
@@ -253,6 +270,66 @@ describe("US32 - deleteVacationRequest service", () => {
             expect(result.code).toBe(RESPONSES.VACATION.DELETED);
             expect(deleteVacationRequestAtomically).toHaveBeenCalledTimes(1);
         });
+
+        test("permite que el dueño elimine su propia solicitud pendiente futura", async () => {
+            mockHappyPath({
+                actor: ownerActor,
+                request: {
+                    ...vacationRequest,
+                    employee_id: targetEmployeeId,
+                    start: dateFromToday(30),
+                    end: dateFromToday(34),
+                    status: VACATION_STATUS.PENDING,
+                },
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: targetEmployeeId,
+            });
+
+            expect(result.code).toBe(RESPONSES.VACATION.DELETED);
+            expect(deleteVacationRequestAtomically).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    employeeId: targetEmployeeId,
+                    actorHouseId: ownerActor.house_id,
+                    currentDate: expect.any(Date),
+                    isSelfDeletion: true,
+                }),
+            );
+            expect(createLog).toHaveBeenCalledWith(
+                targetEmployeeId,
+                LOG_ACTIONS.VACATION_DELETED_SUCCESS,
+                ipAddress,
+                targetEmployeeId,
+            );
+        });
+
+        test("permite que el dueño elimine su propia solicitud rechazada pasada", async () => {
+            mockHappyPath({
+                actor: ownerActor,
+                request: {
+                    ...vacationRequest,
+                    employee_id: targetEmployeeId,
+                    start: dateFromToday(-30),
+                    end: dateFromToday(-26),
+                    status: VACATION_STATUS.REJECTED,
+                },
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: targetEmployeeId,
+            });
+
+            expect(result.code).toBe(RESPONSES.VACATION.DELETED);
+            expect(deleteVacationRequestAtomically).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    employeeId: targetEmployeeId,
+                    actorHouseId: ownerActor.house_id,
+                    currentDate: expect.any(Date),
+                    isSelfDeletion: true,
+                }),
+            );
+        });
     });
 
     describe("validaciones de input y permisos", () => {
@@ -301,7 +378,9 @@ describe("US32 - deleteVacationRequest service", () => {
         });
 
         test("retorna INSUFFICIENT_PERMISSIONS si el actor es Admin", async () => {
-            findByIdWithRoleAndHouse.mockResolvedValueOnce(adminActor);
+            mockHappyPath({
+                actor: adminActor,
+            });
 
             const result = await callDelete({
                 actorEmployeeId: actorAdminId,
@@ -311,13 +390,14 @@ describe("US32 - deleteVacationRequest service", () => {
                 code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
             });
 
-            expect(getVacationRequestById).not.toHaveBeenCalled();
             expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
 
-        test("retorna INSUFFICIENT_PERMISSIONS si el actor no es Coordinador", async () => {
-            findByIdWithRoleAndHouse.mockResolvedValueOnce(userActor);
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor no es Coordinador ni dueño", async () => {
+            mockHappyPath({
+                actor: userActor,
+            });
 
             const result = await callDelete({
                 actorEmployeeId: actorUserId,
@@ -327,7 +407,23 @@ describe("US32 - deleteVacationRequest service", () => {
                 code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
             });
 
-            expect(getVacationRequestById).not.toHaveBeenCalled();
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
+        test("retorna INSUFFICIENT_PERMISSIONS si el actor es de otra casa pero no es Coordinador ni dueño", async () => {
+            mockHappyPath({
+                actor: otherHouseUserActor,
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: actorUserId,
+            });
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS,
+            });
+
             expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
             expect(createLog).not.toHaveBeenCalled();
         });
@@ -426,6 +522,54 @@ describe("US32 - deleteVacationRequest service", () => {
             });
 
             const result = await callDelete();
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+            });
+
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
+        test("retorna REQUEST_NOT_MODIFIABLE si el dueño intenta eliminar su solicitud aprobada que ya inició", async () => {
+            mockHappyPath({
+                actor: ownerActor,
+                request: {
+                    ...vacationRequest,
+                    employee_id: targetEmployeeId,
+                    start: dateFromToday(-2),
+                    end: dateFromToday(2),
+                    status: VACATION_STATUS.APPROVED,
+                },
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: targetEmployeeId,
+            });
+
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,
+            });
+
+            expect(deleteVacationRequestAtomically).not.toHaveBeenCalled();
+            expect(createLog).not.toHaveBeenCalled();
+        });
+
+        test("retorna REQUEST_NOT_MODIFIABLE si el dueño intenta eliminar su solicitud aprobada ya terminada", async () => {
+            mockHappyPath({
+                actor: ownerActor,
+                request: {
+                    ...vacationRequest,
+                    employee_id: targetEmployeeId,
+                    start: dateFromToday(-30),
+                    end: dateFromToday(-26),
+                    status: VACATION_STATUS.APPROVED,
+                },
+            });
+
+            const result = await callDelete({
+                actorEmployeeId: targetEmployeeId,
+            });
 
             expect(result).toEqual({
                 code: RESPONSES.VACATION.REQUEST_NOT_MODIFIABLE,

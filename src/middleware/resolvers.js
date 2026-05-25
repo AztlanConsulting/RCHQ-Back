@@ -101,7 +101,7 @@ exports.resolveAbsenceHouse = async (req, res, next) => {
     }
 };
 
-exports.resolveVacationRequestDatesResource = async (req, res, next) => {
+exports.resolveVacationRequestResource = async (req, res, next) => {
     try {
         const vacationRequestId = req.params.vacationRequestId;
 
