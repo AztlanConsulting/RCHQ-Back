@@ -106,6 +106,7 @@ router.patch(
     verifyToken,
     requireRole(...allRoles),
     resolveRequesterHouse,
+    requirePrivileges(PRIVILEGES.EDIT_VACATIONS),
     validate(updateVacationRequestDatesSchema, "all"),
     resolveVacationRequestDatesResource,
     authorize(modifyVacationRequestDates, (req) => req.resolvedVacationRequest),

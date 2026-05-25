@@ -37,6 +37,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
     let maintenanceRoleId = "92000000-0000-4000-8000-000000000003";
 
     let manageEmployeesPrivilegeId = "93000000-0000-4000-8000-000000000001";
+    let editVacationsPrivilegeId = "93000000-0000-4000-8000-000000000002";
 
     const coordinatorId = "94000000-0000-4000-8000-000000000001";
     const maintenanceId = "94000000-0000-4000-8000-000000000002";
@@ -209,6 +210,10 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             "manageEmployees",
             manageEmployeesPrivilegeId
         );
+        editVacationsPrivilegeId = await getOrCreatePrivilegeId(
+            "editVacations",
+            editVacationsPrivilegeId
+        );
 
         await prisma.role_privilege.upsert({
             where: {
@@ -223,6 +228,26 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                 privilege_id: manageEmployeesPrivilegeId,
             },
         });
+
+        for (const roleId of [
+            coordinatorRoleId,
+            adminRoleId,
+            maintenanceRoleId,
+        ]) {
+            await prisma.role_privilege.upsert({
+                where: {
+                    role_id_privilege_id: {
+                        role_id: roleId,
+                        privilege_id: editVacationsPrivilegeId,
+                    },
+                },
+                update: {},
+                create: {
+                    role_id: roleId,
+                    privilege_id: editVacationsPrivilegeId,
+                },
+            });
+        }
 
         await prisma.house.createMany({
             data: [
@@ -459,7 +484,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             name: "Coordinador",
             role: "Coordinador",
             houseId,
-            privileges: ["manageEmployees"],
+            privileges: ["manageEmployees", "editVacations"],
         });
 
         employeeToken = generateSessionToken({
@@ -468,7 +493,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             name: "Empleado",
             role: "Mantenimiento",
             houseId,
-            privileges: [],
+            privileges: ["editVacations"],
         });
 
         otherHouseEmployeeToken = generateSessionToken({
@@ -477,7 +502,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             name: "Empleado Otra Casa",
             role: "Mantenimiento",
             houseId: otherHouseId,
-            privileges: [],
+            privileges: ["editVacations"],
         });
     });
 
