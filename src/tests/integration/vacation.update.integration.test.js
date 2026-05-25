@@ -668,7 +668,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.status).toBe(406);
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
-            "No se pueden modificar vacaciones que ya comenzaron"
+            "No se pueden modificar vacaciones que ya comenzaron o asignar una fecha de inicio anterior al día de hoy"
         );
     });
 
@@ -684,7 +684,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.status).toBe(406);
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
-            "No se pueden modificar vacaciones que ya comenzaron"
+            "No se pueden modificar vacaciones que ya comenzaron o asignar una fecha de inicio anterior al día de hoy"
         );
     });
 
