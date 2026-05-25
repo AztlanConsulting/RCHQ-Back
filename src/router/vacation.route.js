@@ -23,6 +23,8 @@ const {
 const { getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getFutureVacationRequests,
+    getPastVacationRequests,
     getEligibleVacationEmployees
 } = require("../controller/vacation/get.controller");
 
@@ -52,6 +54,7 @@ const {
 const {
     getPendingVacationRequestsSchema,
     getReviewedVacationRequestsSchema,
+    getOwnVacationRequestsSchema,
 } = require("../schemas/vacation/get.schemas");
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
@@ -143,6 +146,26 @@ router.get(
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getReviewedVacationRequestsSchema, "all"),
     getReviewedVacationRequests
+);
+
+router.get(
+    "/requests/future",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
+    validate(getOwnVacationRequestsSchema, "all"),
+    getFutureVacationRequests
+);
+
+router.get(
+    "/requests/past",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
+    validate(getOwnVacationRequestsSchema, "all"),
+    getPastVacationRequests
 );
 
 module.exports = router;
