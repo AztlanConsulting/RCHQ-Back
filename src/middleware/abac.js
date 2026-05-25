@@ -19,7 +19,7 @@ exports.authorize = (policyFn, getResource) => async (req, res, next) => {
                 ? await getResource(req)
                 : getResource;
 
-        if (exports.canAccess(req.user, policyFn, resource)) {
+        if (await exports.canAccess(req.user, policyFn, resource)) {
             return next();
         }
 
