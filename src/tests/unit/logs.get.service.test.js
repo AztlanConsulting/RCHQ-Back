@@ -483,7 +483,7 @@ describe("logs.get.service", () => {
         getEventsByIds.mockResolvedValue([]);
         buildLogsPdfBuffer.mockResolvedValue(pdfBuffer);
 
-        const result = await getLogsPdfByHouse("house-1");
+        const result = await getLogsPdfByHouse("house-1", 2026, 2026);
 
         expect(result.code).toBe(RESPONSES.LOGS.PDF_CREATED);
         expect(buildLogsPdfBuffer).toHaveBeenCalledWith({
@@ -505,7 +505,7 @@ describe("logs.get.service", () => {
             generatedAt: expect.any(Date),
         });
         expect(result.data.pdfBuffer).toBe(pdfBuffer);
-        expect(result.data.fileName).toBe("reporte-logs-house-1.pdf");
+        expect(result.data.fileName).toBe("reporte-logs-2026-2026.pdf");
     });
 
 });

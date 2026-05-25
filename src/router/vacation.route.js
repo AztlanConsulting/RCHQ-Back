@@ -16,6 +16,7 @@ const {
     authorize,
 } = require("../middleware/abac");
 const {
+    modifyVacationRequestDates,
     deleteVacationRequestPolicy,
 } = require("../policies/vacation.policies");
 
@@ -107,10 +108,12 @@ router.patch(
     "/request/:vacationRequestId/dates",
     apiLimiter,
     verifyToken,
+    requireRole(...allRoles),
     resolveRequesterHouse,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    requirePrivileges(PRIVILEGES.EDIT_VACATIONS),
     validate(updateVacationRequestDatesSchema, "all"),
+    resolveVacationRequestResource,
+    authorize(modifyVacationRequestDates, (req) => req.resolvedVacationRequest),
     updateVacationRequestDates,
 );
 
