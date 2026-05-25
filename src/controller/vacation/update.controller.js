@@ -277,6 +277,20 @@ exports.updateVacationRequestDates = async (req, res) => {
             });
         }
 
+        if (result.code === RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE) {
+            return res.status(406).json({
+                success: false,
+                message: "Solo puedes modificar solicitudes de vacaciones pendientes",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.REQUEST_ALREADY_STARTED) {
+            return res.status(406).json({
+                success: false,
+                message: "No se pueden modificar vacaciones que ya comenzaron",
+            });
+        }
+
         if (result.code === RESPONSES.VACATION.OUT_OF_RANGE) {
             return res.status(406).json({
                 success: false,

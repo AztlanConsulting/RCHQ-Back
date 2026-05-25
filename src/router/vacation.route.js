@@ -8,7 +8,7 @@ const {
 } = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
@@ -16,6 +16,7 @@ const {
     authorize,
 } = require("../middleware/abac");
 const {
+    modifyVacationRequestDates,
     deleteVacationRequestPolicy,
 } = require("../policies/vacation.policies");
 
@@ -104,10 +105,12 @@ router.patch(
     "/request/:vacationRequestId/dates",
     apiLimiter,
     verifyToken,
+    requireRole(...allRoles),
     resolveRequesterHouse,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    requirePrivileges(PRIVILEGES.EDIT_VACATIONS),
     validate(updateVacationRequestDatesSchema, "all"),
+    resolveVacationRequestResource,
+    authorize(modifyVacationRequestDates, (req) => req.resolvedVacationRequest),
     updateVacationRequestDates,
 );
 

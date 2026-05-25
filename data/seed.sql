@@ -74,6 +74,7 @@ VALUES
 ('00000001-0000-4000-8000-000000000011', 'addAbsences'),
 ('00000001-0000-4000-8000-000000000013', 'deleteEvent'),
 ('00000001-0000-4000-8000-000000000014', 'editEvent'),
+('00000001-0000-4000-8000-000000000015', 'editVacations'),
 ('00000001-0000-4000-8000-000000000015', 'viewBlacklist')
 ON CONFLICT DO NOTHING;
 
@@ -174,6 +175,14 @@ SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
 WHERE p.name = 'editEvent'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
+-- Modificar vacaciones - todos los roles
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'editVacations'
 ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Crear eventos personales - todos los roles
