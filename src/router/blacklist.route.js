@@ -4,6 +4,7 @@ const { apiLimiter } = require("../utils/rateLimit");
 const verifyToken = require("../middleware/auth");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { canAddToBlacklist, canRemoveFromBlacklist } = require("../policies/blacklist.policies");
+const { authorize } = require("../middleware/abac");
 const {
     insertIntoBlacklist,
 } = require("../controller/blacklist/create.controller");
@@ -29,7 +30,7 @@ router.post(
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.ADD_TO_BLACKLIST),
     validate(blacklistCreateSchema),
-    canAddToBlacklist,
+    authorize(canAddToBlacklist, (req) => req.body),
     insertIntoBlacklist
 );
 
@@ -40,7 +41,7 @@ router.patch(
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.REMOVE_FROM_BLACKLIST),
     validate(blacklistDeleteSchema),
-    canRemoveFromBlacklist,
+    authorize(canRemoveFromBlacklist, (req) => req.body),
     removeFromBlacklist
 );
 
