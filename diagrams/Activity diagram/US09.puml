@@ -1,0 +1,38 @@
+@startuml
+title US - Filtrar Empleados (Activity Diagram)
+
+|Usuario|
+start
+:Ingresa un término de búsqueda o cambia el filtro de estado (Activo/Inactivo);
+:Presiona buscar o aplica el filtro;
+
+|Frontend|
+:Construye la URL con query params (ej. ?search=Juan&active=true);
+:Envía solicitud GET /getAll al backend;
+
+|API|
+:Pasa middlewares (auth, roles, privilegios) y llega al Controller;
+:El Controller extrae los query params (search, active);
+:Delega al Service (getEmployees);
+:El Service convierte 'active' a booleano y limpia espacios (trim);
+:Delega al Model (getEmployees);
+:El Model inicializa whereClause con house_id e is_active;
+
+if (¿El parámetro search tiene texto?) then (Sí)
+  :Separa el texto en un arreglo de palabras (split);
+  :Agrega al whereClause condiciones OR (insensibles a mayúsculas)\npara coincidir cada palabra con 'name' o 'surname';
+else (No)
+  :Mantiene el whereClause solo con los filtros base;
+endif
+
+:Ejecuta consulta a BD (prisma.employee.findMany) usando el whereClause;
+:Ejecuta conteo total (prisma.employee.count) con el mismo whereClause;
+:Retorna los empleados filtrados al Service;
+:El Service mapea los datos para ocultar información sensible;
+:Retorna status 200 con la data filtrada y paginación;
+
+|Frontend|
+:Actualiza la tabla mostrando solo los empleados que coinciden;
+stop
+
+@enduml
