@@ -27,6 +27,7 @@ const IDS = {
     personalEventA: randomUUID(),
     eventType: randomUUID(),
     logA4: randomUUID(),
+    logA5: randomUUID(),
     logB1: randomUUID(),
 };
 
@@ -215,7 +216,7 @@ const seed = async () => {
                 house_id: IDS.houseB,
                 role_id: IDS.employeeRole,
                 name: "María",
-                surname: "CasaB",
+                surname: "González",
                 is_active: true,
                 email: "employee.b@test.com",
                 password: "hashed",
@@ -275,6 +276,14 @@ const seed = async () => {
                 ip_address: encryptLogIp("10.10.10.14"),
             },
             {
+                log_id: IDS.logA5,
+                employee_id: IDS.coordinator,
+                moment: new Date("2026-05-07T09:00:00.000Z"),
+                action_id: "empl-001",
+                affected: IDS.employeeB,
+                ip_address: encryptLogIp("10.10.10.15"),
+            },
+            {
                 log_id: IDS.logB1,
                 employee_id: IDS.employeeB,
                 moment: new Date("2026-05-08T08:00:00.000Z"),
@@ -290,7 +299,7 @@ const cleanup = async () => {
     await prisma.logs.deleteMany({
         where: {
             log_id: {
-                in: [IDS.logA1, IDS.logA2, IDS.logA3, IDS.logA4, IDS.logB1],
+                in: [IDS.logA1, IDS.logA2, IDS.logA3, IDS.logA4, IDS.logA5, IDS.logB1],
             },
         },
     });
@@ -458,10 +467,10 @@ describe("GET /logs/house", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.totalRecords).toBe(4);
+        expect(res.body.totalRecords).toBe(5);
         expect(res.body.totalPages).toBe(1);
         expect(res.body.currentPage).toBe(1);
-        expect(res.body.data).toHaveLength(4);
+        expect(res.body.data).toHaveLength(5);
         expect(res.body.data[0]).toMatchObject({
             responsibleName: "Carla Coord",
             responsibleCurp: "COOC900101MDFABC01",
@@ -481,8 +490,12 @@ describe("GET /logs/house", () => {
             affectedName: "Visita médica",
             ipAddress: "10.10.10.14",
         });
-        expect(typeof res.body.data[3].action).toBe("string");
-        expect(res.body.data[3].action.length).toBeGreaterThan(0);
+        expect(res.body.data[4]).toMatchObject({
+            affectedName: "María González",
+            ipAddress: "10.10.10.15",
+        });
+        expect(typeof res.body.data[4].action).toBe("string");
+        expect(res.body.data[4].action.length).toBeGreaterThan(0);
     });
 
     it("pagina los resultados", async () => {
@@ -491,8 +504,8 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.totalRecords).toBe(4);
-        expect(res.body.totalPages).toBe(4);
+        expect(res.body.totalRecords).toBe(5);
+        expect(res.body.totalPages).toBe(5);
         expect(res.body.currentPage).toBe(2);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
@@ -560,6 +573,34 @@ describe("GET /logs/house", () => {
         expect(res.body.data[0]).toMatchObject({
             responsibleName: "Carla Coord",
             affectedName: "Luis CasaA",
+        });
+    });
+
+    it("filtra afectados por nombre sin acentos aunque pertenezcan a otra casa", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&affected=Maria%20Gonzalez")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "María González",
+        });
+    });
+
+    it("filtra afectados aunque se busquen con s en lugar de z", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&affected=maria%20gonzales")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "María González",
         });
     });
 

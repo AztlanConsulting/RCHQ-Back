@@ -3,6 +3,7 @@ const {
     getLogsByHouseBaseWhere,
     getLogsByHouse: getLogsByHouseModel,
     getEmployeeIdsBySearch,
+    getLogIdsByAffectedSearch,
     getLogActions,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
@@ -75,7 +76,10 @@ const buildLogsWhereClause = async (
     }
 
     if (search) {
-        const matchedEmployeeIds = await getEmployeeIdsBySearch(houseId, search);
+        const [matchedEmployeeIds, matchedAffectedLogIds] = await Promise.all([
+            getEmployeeIdsBySearch(houseId, search),
+            getLogIdsByAffectedSearch(houseId, search),
+        ]);
 
         andConditions.push({
             OR: [
@@ -85,14 +89,8 @@ const buildLogsWhereClause = async (
                     },
                 },
                 {
-                    affected: {
-                        in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
-                    },
-                },
-                {
-                    affected: {
-                        contains: search,
-                        mode: "insensitive",
+                    log_id: {
+                        in: matchedAffectedLogIds.length > 0 ? matchedAffectedLogIds : ["00000000-0000-0000-0000-000000000000"],
                     },
                 },
             ],
@@ -115,27 +113,17 @@ const buildLogsWhereClause = async (
     }
 
     if (affected) {
-        const matchedAffectedIds = await getEmployeeIdsBySearch(
+        const matchedAffectedLogIds = await getLogIdsByAffectedSearch(
             houseId,
             affected,
         );
 
         andConditions.push({
-            OR: [
-                {
-                    affected: {
-                        in: matchedAffectedIds.length > 0
-                            ? matchedAffectedIds
-                            : ["00000000-0000-0000-0000-000000000000"],
-                    },
-                },
-                {
-                    affected: {
-                        contains: affected,
-                        mode: "insensitive",
-                    },
-                },
-            ],
+            log_id: {
+                in: matchedAffectedLogIds.length > 0
+                    ? matchedAffectedLogIds
+                    : ["00000000-0000-0000-0000-000000000000"],
+            },
         });
     }
 

@@ -1,12 +1,13 @@
 const prisma = require("../../prisma");
 
-const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñç";
-const SEARCHABLE_REPLACEMENT_CHARS = "aeiouaeiouaeiouaeiounc";
+const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñçz";
+const SEARCHABLE_REPLACEMENT_CHARS = "aeiouaeiouaeiouaeiouncs";
 
 const normalizeSearchTerm = (value) => String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/z/g, "s");
 
 const logInclude = {
     action: {
@@ -54,6 +55,69 @@ exports.getLogsByHouseBaseWhere = (houseId) => ({
         house_id: houseId,
     },
 });
+
+const buildTranslateSearchConditions = (searchTerms, queryParams, expressions) => {
+    return searchTerms.map((term) => {
+        const normalizedLike = `%${term}%`;
+        const termConditions = expressions.map((expression) => {
+            queryParams.push(
+                SEARCHABLE_ACCENTED_CHARS,
+                SEARCHABLE_REPLACEMENT_CHARS,
+                normalizedLike,
+            );
+
+            const firstParamIndex = queryParams.length - 2;
+
+            return `translate(lower(${expression}), $${firstParamIndex}, $${firstParamIndex + 1}) LIKE $${firstParamIndex + 2}`;
+        });
+
+        return `(${termConditions.join(" OR ")})`;
+    });
+};
+
+exports.getLogIdsByAffectedSearch = async (houseId, search) => {
+    if (!search) {
+        return [];
+    }
+
+    const searchTerms = String(search)
+        .trim()
+        .split(/\s+/)
+        .map(normalizeSearchTerm)
+        .filter(Boolean);
+
+    if (searchTerms.length === 0) {
+        return [];
+    }
+
+    const queryParams = [houseId];
+    const searchConditions = buildTranslateSearchConditions(searchTerms, queryParams, [
+        "coalesce(ae.name, '') || ' ' || coalesce(ae.surname, '')",
+        "coalesce(ae.curp, '')",
+        "coalesce(h.name, '')",
+        "coalesce(he.name, '')",
+        "coalesce(pe.name, '')",
+        "coalesce(ge.name, '')",
+        "coalesce(l.affected, '')",
+    ]);
+
+    const query = `
+        SELECT DISTINCT l.log_id
+        FROM logs l
+        INNER JOIN employee re ON re.employee_id = l.employee_id
+        LEFT JOIN employee ae ON ae.employee_id::text = l.affected
+        LEFT JOIN house h ON h.house_id::text = l.affected
+        LEFT JOIN house_event he ON he.house_event_id::text = l.affected
+        LEFT JOIN personal_event pe ON pe.personal_event_id::text = l.affected
+        LEFT JOIN global_event ge ON ge.global_event_id::text = l.affected
+        WHERE re.house_id::text = $1
+        AND ${searchConditions.join(" AND ")}
+    `;
+
+    const logs = await prisma.$queryRawUnsafe(query, ...queryParams);
+
+    return logs.map((log) => log.log_id);
+};
 
 exports.getEmployeeIdsBySearch = async (houseId, search) => {
     if (!search) {

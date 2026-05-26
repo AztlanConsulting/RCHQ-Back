@@ -7,6 +7,7 @@ jest.mock("../../model/logs/get.model", () => ({
     })),
     getLogsByHouse: jest.fn(),
     getEmployeeIdsBySearch: jest.fn(),
+    getLogIdsByAffectedSearch: jest.fn(),
     getLogActions: jest.fn(),
     getAffectedEmployeesByIds: jest.fn(),
 }));
@@ -40,6 +41,7 @@ const {
 const {
     getLogsByHousePage,
     getEmployeeIdsBySearch,
+    getLogIdsByAffectedSearch,
     getLogActions,
     getLogsByHouse: getLogsByHouseModel,
     getAffectedEmployeesByIds,
@@ -301,6 +303,7 @@ describe("logs.get.service", () => {
 
     it("filtra logs por acciones y nombre", async () => {
         getEmployeeIdsBySearch.mockResolvedValue(["emp-1"]);
+        getLogIdsByAffectedSearch.mockResolvedValue(["log-affected-1"]);
         getLogsByHousePage.mockResolvedValue({
             logs: [],
             totalRecords: 0,
@@ -310,6 +313,7 @@ describe("logs.get.service", () => {
         await getLogsByHouse("house-1", "1", "6", "empl-001,ausn-001", "Car");
 
         expect(getEmployeeIdsBySearch).toHaveBeenCalledWith("house-1", "Car");
+        expect(getLogIdsByAffectedSearch).toHaveBeenCalledWith("house-1", "Car");
         expect(getLogsByHousePage).toHaveBeenCalledWith(
             {
                 employee: {
@@ -327,14 +331,8 @@ describe("logs.get.service", () => {
                                 },
                             },
                             {
-                                affected: {
-                                    in: ["emp-1"],
-                                },
-                            },
-                            {
-                                affected: {
-                                    contains: "Car",
-                                    mode: "insensitive",
+                                log_id: {
+                                    in: ["log-affected-1"],
                                 },
                             },
                         ],
@@ -347,9 +345,8 @@ describe("logs.get.service", () => {
     });
 
     it("filtra logs por responsable y afectado de forma separada", async () => {
-        getEmployeeIdsBySearch
-            .mockResolvedValueOnce(["emp-responsible"])
-            .mockResolvedValueOnce(["emp-affected"]);
+        getEmployeeIdsBySearch.mockResolvedValueOnce(["emp-responsible"]);
+        getLogIdsByAffectedSearch.mockResolvedValueOnce(["log-affected-1"]);
         getLogsByHousePage.mockResolvedValue({
             logs: [],
             totalRecords: 0,
@@ -369,7 +366,7 @@ describe("logs.get.service", () => {
         );
 
         expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(1, "house-1", "Carla");
-        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(2, "house-1", "Luis");
+        expect(getLogIdsByAffectedSearch).toHaveBeenNthCalledWith(1, "house-1", "Luis");
         expect(getLogsByHousePage).toHaveBeenCalledWith(
             {
                 employee: {
@@ -382,19 +379,9 @@ describe("logs.get.service", () => {
                         },
                     },
                     {
-                        OR: [
-                            {
-                                affected: {
-                                    in: ["emp-affected"],
-                                },
-                            },
-                            {
-                                affected: {
-                                    contains: "Luis",
-                                    mode: "insensitive",
-                                },
-                            },
-                        ],
+                        log_id: {
+                            in: ["log-affected-1"],
+                        },
                     },
                 ],
             },
