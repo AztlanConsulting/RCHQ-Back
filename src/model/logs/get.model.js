@@ -1,8 +1,5 @@
 const prisma = require("../../prisma");
 
-const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñçz";
-const SEARCHABLE_REPLACEMENT_CHARS = "aeiouaeiouaeiouaeiouncs";
-
 const normalizeSearchTerm = (value) => String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -56,23 +53,22 @@ exports.getLogsByHouseBaseWhere = (houseId) => ({
     },
 });
 
-const buildTranslateSearchConditions = (searchTerms, queryParams, expressions) => {
-    return searchTerms.map((term) => {
-        const normalizedLike = `%${term}%`;
-        const termConditions = expressions.map((expression) => {
-            queryParams.push(
-                SEARCHABLE_ACCENTED_CHARS,
-                SEARCHABLE_REPLACEMENT_CHARS,
-                normalizedLike,
-            );
+const getSearchTerms = (search) => String(search)
+    .trim()
+    .split(/\s+/)
+    .map(normalizeSearchTerm)
+    .filter(Boolean);
 
-            const firstParamIndex = queryParams.length - 2;
+const matchesNormalizedTerms = (values, searchTerms) => {
+    if (searchTerms.length === 0) {
+        return true;
+    }
 
-            return `translate(lower(${expression}), $${firstParamIndex}, $${firstParamIndex + 1}) LIKE $${firstParamIndex + 2}`;
-        });
+    const normalizedValues = values.map((value) => normalizeSearchTerm(value));
 
-        return `(${termConditions.join(" OR ")})`;
-    });
+    return searchTerms.every((term) =>
+        normalizedValues.some((value) => value.includes(term)),
+    );
 };
 
 exports.getLogIdsByAffectedSearch = async (houseId, search) => {
@@ -80,43 +76,123 @@ exports.getLogIdsByAffectedSearch = async (houseId, search) => {
         return [];
     }
 
-    const searchTerms = String(search)
-        .trim()
-        .split(/\s+/)
-        .map(normalizeSearchTerm)
-        .filter(Boolean);
+    const searchTerms = getSearchTerms(search);
 
     if (searchTerms.length === 0) {
         return [];
     }
 
-    const queryParams = [houseId];
-    const searchConditions = buildTranslateSearchConditions(searchTerms, queryParams, [
-        "coalesce(ae.name, '') || ' ' || coalesce(ae.surname, '')",
-        "coalesce(ae.curp, '')",
-        "coalesce(h.name, '')",
-        "coalesce(he.name, '')",
-        "coalesce(pe.name, '')",
-        "coalesce(ge.name, '')",
-        "coalesce(l.affected, '')",
+    const logs = await prisma.logs.findMany({
+        where: {
+            employee: {
+                house_id: houseId,
+            },
+        },
+        select: {
+            log_id: true,
+            affected: true,
+        },
+    });
+
+    const affectedIds = logs
+        .map((log) => log.affected)
+        .filter(Boolean);
+
+    const [employees, houses, houseEvents, personalEvents, globalEvents] = await Promise.all([
+        prisma.employee.findMany({
+            where: {
+                employee_id: {
+                    in: affectedIds,
+                },
+            },
+            select: {
+                employee_id: true,
+                name: true,
+                surname: true,
+                curp: true,
+            },
+        }),
+        prisma.house.findMany({
+            where: {
+                house_id: {
+                    in: affectedIds,
+                },
+            },
+            select: {
+                house_id: true,
+                name: true,
+            },
+        }),
+        prisma.house_event.findMany({
+            where: {
+                house_event_id: {
+                    in: affectedIds,
+                },
+            },
+            select: {
+                house_event_id: true,
+                name: true,
+            },
+        }),
+        prisma.personal_event.findMany({
+            where: {
+                personal_event_id: {
+                    in: affectedIds,
+                },
+            },
+            select: {
+                personal_event_id: true,
+                name: true,
+            },
+        }),
+        prisma.global_event.findMany({
+            where: {
+                global_event_id: {
+                    in: affectedIds,
+                },
+            },
+            select: {
+                global_event_id: true,
+                name: true,
+            },
+        }),
     ]);
 
-    const query = `
-        SELECT DISTINCT l.log_id
-        FROM logs l
-        INNER JOIN employee re ON re.employee_id = l.employee_id
-        LEFT JOIN employee ae ON ae.employee_id::text = l.affected
-        LEFT JOIN house h ON h.house_id::text = l.affected
-        LEFT JOIN house_event he ON he.house_event_id::text = l.affected
-        LEFT JOIN personal_event pe ON pe.personal_event_id::text = l.affected
-        LEFT JOIN global_event ge ON ge.global_event_id::text = l.affected
-        WHERE re.house_id::text = $1
-        AND ${searchConditions.join(" AND ")}
-    `;
+    const affectedMap = new Map();
 
-    const logs = await prisma.$queryRawUnsafe(query, ...queryParams);
+    employees.forEach((employee) => {
+        affectedMap.set(employee.employee_id, [
+            `${employee.name || ""} ${employee.surname || ""}`,
+            employee.curp || "",
+        ]);
+    });
 
-    return logs.map((log) => log.log_id);
+    houses.forEach((house) => {
+        affectedMap.set(house.house_id, [house.name || ""]);
+    });
+
+    houseEvents.forEach((event) => {
+        affectedMap.set(event.house_event_id, [event.name || ""]);
+    });
+
+    personalEvents.forEach((event) => {
+        affectedMap.set(event.personal_event_id, [event.name || ""]);
+    });
+
+    globalEvents.forEach((event) => {
+        affectedMap.set(event.global_event_id, [event.name || ""]);
+    });
+
+    return logs
+        .filter((log) => {
+            const values = [
+                ...(affectedMap.get(log.affected) || []),
+                log.affected || "",
+            ];
+
+            return matchesNormalizedTerms(values, searchTerms);
+        })
+        .map((log) => log.log_id);
 };
 
 exports.getEmployeeIdsBySearch = async (houseId, search) => {
@@ -124,55 +200,35 @@ exports.getEmployeeIdsBySearch = async (houseId, search) => {
         return [];
     }
 
-    const searchTerms = String(search)
-        .trim()
-        .split(/\s+/)
-        .map(normalizeSearchTerm)
-        .filter(Boolean);
+    const searchTerms = getSearchTerms(search);
 
     if (searchTerms.length === 0) {
         return [];
     }
 
-    const queryParams = [houseId];
-    const searchConditions = searchTerms.map((term) => {
-        const normalizedLike = `%${term}%`;
-        queryParams.push(
-            SEARCHABLE_ACCENTED_CHARS,
-            SEARCHABLE_REPLACEMENT_CHARS,
-            normalizedLike,
-            SEARCHABLE_ACCENTED_CHARS,
-            SEARCHABLE_REPLACEMENT_CHARS,
-            normalizedLike,
-        );
-
-        const firstParamIndex = queryParams.length - 5;
-        const secondParamIndex = queryParams.length - 2;
-
-        return `(
-            translate(
-                lower(coalesce(name, '') || ' ' || coalesce(surname, '')),
-                $${firstParamIndex},
-                $${firstParamIndex + 1}
-            ) LIKE $${firstParamIndex + 2}
-            OR translate(
-                lower(coalesce(curp, '')),
-                $${secondParamIndex},
-                $${secondParamIndex + 1}
-            ) LIKE $${secondParamIndex + 2}
-        )`;
+    const employees = await prisma.employee.findMany({
+        where: {
+            house_id: houseId,
+        },
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            curp: true,
+        },
     });
 
-    const query = `
-        SELECT employee_id
-        FROM employee
-        WHERE house_id::text = $1
-        AND ${searchConditions.join(" AND ")}
-    `;
-
-    const employees = await prisma.$queryRawUnsafe(query, ...queryParams);
-
-    return employees.map((employee) => employee.employee_id);
+    return employees
+        .filter((employee) =>
+            matchesNormalizedTerms(
+                [
+                    `${employee.name || ""} ${employee.surname || ""}`,
+                    employee.curp || "",
+                ],
+                searchTerms,
+            ),
+        )
+        .map((employee) => employee.employee_id);
 };
 
 exports.getLogActions = async () => {
