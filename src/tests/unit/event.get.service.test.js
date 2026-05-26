@@ -116,13 +116,14 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
             link: "https://example.com/evidence.pdf",
             isDeleted: false,
             usedDays: 1,
+            totalDays: 2,
             focus: "ausencias",
             scope: "house",
             allDay: true,
         });
 
         expect(result.data.events[0].end.toISOString()).toBe(
-            "2026-05-16T06:00:00.000Z",
+            "2026-05-16T05:59:59.999Z",
         );
     });
 });

@@ -35,10 +35,17 @@ const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
-const {
-    isAllDayInTimeZone,
-    resolveCalendarTimeZone,
-} = require("../../utils/event/dateTime");
+const normalizeFreeDayCalendarRange = (event) => {
+    if (event.isFreeDay !== true) return event;
+
+    return {
+        ...event,
+        end:
+            event.end instanceof Date
+                ? new Date(event.end.getTime() - 1)
+                : event.end,
+    };
+};
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -66,9 +73,7 @@ exports.getEventsInRange = async (
     employeeId,
     rawStartDate,
     rawEndDate,
-    rawTimeZone,
 ) => {
-    const calendarTimeZone = resolveCalendarTimeZone(rawTimeZone);
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -107,7 +112,8 @@ exports.getEventsInRange = async (
             startDate,
             endDate,
         );
-        houseEvents.forEach((event) => {
+        houseEvents.forEach((rawEvent) => {
+            const event = normalizeFreeDayCalendarRange(rawEvent);
             events.push({
                 houseEventId: event.house_event_id,
                 eventTypeId: event.event_type_id,
@@ -122,13 +128,7 @@ exports.getEventsInRange = async (
                 description: event.description,
                 color: "#7FD447",
                 link: "",
-                allDay: event.all_day
-                    ? isAllDayInTimeZone(
-                          event.start,
-                          event.end,
-                          calendarTimeZone,
-                      )
-                    : false,
+                allDay: event.all_day,
                 isFreeDay: event.isFreeDay || false,
             });
         });
@@ -140,13 +140,12 @@ exports.getEventsInRange = async (
         endDate,
     );
     personalEvents.forEach((event) => {
-        events.push(
-            mapPersonalCalendarEvent(event, { timeZone: calendarTimeZone }),
-        );
+        events.push(mapPersonalCalendarEvent(event));
     });
 
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
-    globalEvents.forEach((event) => {
+    globalEvents.forEach((rawEvent) => {
+        const event = normalizeFreeDayCalendarRange(rawEvent);
         events.push({
             start: event.start,
             end: event.end,
@@ -159,9 +158,7 @@ exports.getEventsInRange = async (
             description: event.description,
             color: "#C524FF",
             link: "",
-            allDay: event.all_day
-                ? isAllDayInTimeZone(event.start, event.end, calendarTimeZone)
-                : false,
+            allDay: event.all_day,
             isFreeDay: event.isFreeDay || false,
         });
     });
@@ -191,11 +188,7 @@ exports.getEventsInRange = async (
             freeDays,
         );
 
-        events.push(
-            mapHouseVacationCalendarEvent(vacation, usedDays, {
-                timeZone: calendarTimeZone,
-            }),
-        );
+        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
     });
 
     const absences = await getAbsencesInRange(employeeId, startDate, endDate);
@@ -208,11 +201,7 @@ exports.getEventsInRange = async (
             freeDays,
         );
 
-        events.push(
-            mapEmployeeAbsenceCalendarEvent(absence, usedDays, {
-                timeZone: calendarTimeZone,
-            }),
-        );
+        events.push(mapEmployeeAbsenceCalendarEvent(absence, usedDays));
     });
 
     return {
@@ -228,9 +217,7 @@ exports.getHouseCalendarRecordsInRange = async (
     houseId,
     rawStartDate,
     rawEndDate,
-    rawTimeZone,
 ) => {
-    const calendarTimeZone = resolveCalendarTimeZone(rawTimeZone);
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -293,11 +280,7 @@ exports.getHouseCalendarRecordsInRange = async (
             freeDays,
         );
 
-        events.push(
-            mapHouseVacationCalendarEvent(vacation, usedDays, {
-                timeZone: calendarTimeZone,
-            }),
-        );
+        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
     });
 
     absences.forEach((absence) => {
@@ -308,17 +291,11 @@ exports.getHouseCalendarRecordsInRange = async (
             freeDays,
         );
 
-        events.push(
-            mapHouseAbsenceCalendarEvent(absence, usedDays, {
-                timeZone: calendarTimeZone,
-            }),
-        );
+        events.push(mapHouseAbsenceCalendarEvent(absence, usedDays));
     });
 
     personalEvents.forEach((event) => {
-        events.push(
-            mapPersonalCalendarEvent(event, { timeZone: calendarTimeZone }),
-        );
+        events.push(mapPersonalCalendarEvent(event));
     });
 
     return {

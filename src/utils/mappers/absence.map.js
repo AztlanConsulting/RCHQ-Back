@@ -1,14 +1,9 @@
 const {
+    calculateMexicoDateRangeDays,
     dateRangeToMexicoCalendarInterval,
-    isAllDayInTimeZone,
-    MEXICO_TIME_ZONE,
 } = require("../event/dateTime");
 
-exports.mapHouseAbsenceCalendarEvent = (
-    absence,
-    usedDays,
-    { timeZone = MEXICO_TIME_ZONE } = {},
-) => {
+exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
     const { start, end } = dateRangeToMexicoCalendarInterval(
         absence.start,
         absence.end,
@@ -29,10 +24,11 @@ exports.mapHouseAbsenceCalendarEvent = (
         link: absence.url || "",
         isDeleted: absence.is_deleted,
         usedDays,
+        totalDays: calculateMexicoDateRangeDays(absence.start, absence.end),
         focus: "ausencias",
         scope: "house",
         color: "#F97316",
-        allDay: isAllDayInTimeZone(start, end, timeZone),
+        allDay: true,
     };
 };
 

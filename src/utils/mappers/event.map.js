@@ -1,7 +1,6 @@
 const {
+    calculateMexicoDateRangeDays,
     dateRangeToMexicoCalendarInterval,
-    isAllDayInTimeZone,
-    MEXICO_TIME_ZONE,
 } = require("../event/dateTime");
 
 exports.mapHouseEvent = (event) => {
@@ -21,11 +20,7 @@ exports.mapHouseEvent = (event) => {
     };
 };
 
-exports.mapEmployeeAbsenceCalendarEvent = (
-    absence,
-    usedDays,
-    { timeZone = MEXICO_TIME_ZONE } = {},
-) => {
+exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
     const { start, end } = dateRangeToMexicoCalendarInterval(
         absence.start,
         absence.end,
@@ -46,18 +41,15 @@ exports.mapEmployeeAbsenceCalendarEvent = (
         link: absence.url || "",
         isDeleted: absence.is_deleted,
         usedDays,
+        totalDays: calculateMexicoDateRangeDays(absence.start, absence.end),
         focus: "ausencias",
         scope: "personal",
         color: "#F97316",
-        allDay: isAllDayInTimeZone(start, end, timeZone),
+        allDay: true,
     };
 };
 
-exports.mapHouseVacationCalendarEvent = (
-    vacation,
-    usedDays,
-    { timeZone = MEXICO_TIME_ZONE } = {},
-) => {
+exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
     const { start, end } = dateRangeToMexicoCalendarInterval(
         vacation.start,
         vacation.end,
@@ -78,15 +70,13 @@ exports.mapHouseVacationCalendarEvent = (
         focus: "vacaciones",
         scope: "house",
         color: vacation.status == 1 ? "#1439BA" : "#5673DB",
-        allDay: isAllDayInTimeZone(start, end, timeZone),
+        allDay: true,
         usedDays,
+        totalDays: calculateMexicoDateRangeDays(vacation.start, vacation.end),
     };
 };
 
-exports.mapPersonalCalendarEvent = (
-    event,
-    { timeZone = MEXICO_TIME_ZONE } = {},
-) => {
+exports.mapPersonalCalendarEvent = (event) => {
     const peopleData = [];
     const start = event.start;
     const end = event.end;
@@ -111,9 +101,7 @@ exports.mapPersonalCalendarEvent = (
         scope: "personal",
         description: event.description ?? "",
         color: "#EFBF22",
-        allDay: event.all_day
-            ? isAllDayInTimeZone(start, end, timeZone)
-            : false,
+        allDay: event.all_day,
         peopleInsideEvent: peopleData,
     };
 };

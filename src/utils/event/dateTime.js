@@ -50,12 +50,26 @@ const toUtcDateOnly = (date) =>
 exports.dateOnlyToMexicoUtcStart = (date) =>
     new Date(`${toUtcDateOnly(date)}T06:00:00.000Z`);
 
+exports.dateOnlyToMexicoUtcEnd = (date) =>
+    new Date(`${toUtcDateOnly(date)}T05:59:59.999Z`);
+
 exports.dateRangeToMexicoCalendarInterval = (startDate, endDate) => {
     const start = exports.dateOnlyToMexicoUtcStart(startDate);
-    const end = exports.dateOnlyToMexicoUtcStart(endDate);
+    const end = exports.dateOnlyToMexicoUtcEnd(endDate);
     end.setUTCDate(end.getUTCDate() + 1);
 
     return { start, end };
+};
+
+exports.calculateMexicoDateRangeDays = (startDate, endDate) => {
+    const start = new Date(`${toUtcDateOnly(startDate)}T00:00:00.000Z`);
+    const end = new Date(`${toUtcDateOnly(endDate)}T00:00:00.000Z`);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        return null;
+    }
+
+    return Math.round((end - start) / 86400000) + 1;
 };
 
 exports.resolveCalendarTimeZone = (timeZone) => {
