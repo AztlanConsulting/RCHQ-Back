@@ -53,7 +53,6 @@ else Contiene houseId válido
     alt Exito
         Controller --> Router : res.status(200).json({ success: true, data, pagination })
         Router --> Usuario : 200 OK (Data y paginación)
-    catch Error en Controller
         Controller --> Router : res.status(500).json(Error interno)
         Router --> Usuario : 500 Internal Server Error
     end

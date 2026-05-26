@@ -1,171 +1,132 @@
-front:
 @startuml
-title Activar / Desactivar 2FA — Frontend (React + Atomic Design)
-
-actor Usuario
-
-boundary "Page\n(MoreOptions)" as Page
-boundary "Organism\n(TwoFactorAuth)" as Organism
-boundary "Molecule\n(TwoFactorCode)" as Molecule
-boundary "Atom\n(TextField / Button / Alert)" as Atom
-control "Service\n(AuthService)" as Service
-control "back/api" as API
-
-== Activar 2FA ==
-
-Usuario -> Page : Click "Activar 2FA"
-Page -> Organism : show2FAModal = true\nRenderiza TwoFactorAuth
-
-Organism -> Service : activateTwoFactorAuthService()
-Service --> API: fetch POST /users/2fa/setup\nAuthorization: Bearer token
-
-Service --> Organism : { qrImage, otpauthUrl }
-Organism -> Atom : Renderiza <img src=qrImage />\ny código manual
-
-Usuario -> Organism : Presiona "Continuar"
-Organism -> Molecule : Renderiza TwoFactorCode\n(step = "code")
-Molecule -> Atom : Renderiza TextField + Button
-
-Usuario -> Atom : Ingresa código 6 dígitos
-Atom -> Molecule : setValue(code)
-Molecule -> Organism : onSubmit()
-
-Organism -> Service : verify2FAService(code)
-Service --> API: fetch POST /users/2fa/verify\nAuthorization: Bearer token\nbody: { token: code }
-
-alt Código válido
-    Service --> Organism : { nextStep: "2FA_SETUP_COMPLETE" }
-    Organism -> Page : onClose()
-    Page -> Atom : <Alert type="success" />\n"2FA activado correctamente"
-    Page -> Page : setIs2FAActive(true)\nBotón cambia a "Desactivar 2FA"
-else Código inválido
-    Service --> Organism : Error
-    Organism -> Atom : <Alert type="error" />\n"Código 2FA inválido"
-end
-
-== Desactivar 2FA ==
-
-Usuario -> Page : Click "Desactivar 2FA"
-Page -> Page : showDisableModal = true
-
-Page -> Atom : Renderiza TextField (password)\n+ Button "Confirmar"
-
-Usuario -> Atom : Ingresa contraseña
-Atom -> Page : setValue(password)
-
-Usuario -> Page : Click "Confirmar"
-Page -> Service : desactivate2FAService(password)
-Service --> API: fetch POST /users/2fa/disable\nAuthorization: Bearer token\nbody: { password }
-
-alt Contraseña válida
-    Service --> Page : { nextStep: "2FA_DISABLED" }
-    Page -> Page : setIs2FAActive(false)\nBotón cambia a "Activar 2FA"
-    Page -> Atom : <Alert type="success" />\n"2FA desactivado correctamente"\n(auto-oculta en 4s)
-else Contraseña inválida
-    Service --> Page : Error "Invalid credentials"
-    Page -> Atom : <Alert type="error" />\n"Credenciales inválidas"
-end
-
-@enduml
-
-
-back:
-@startuml
-title Activar / Desactivar 2FA — Backend (MVC + Service + Prisma)
+title US04 - Activar 2FA Backend (MVC + Service + Prisma)
 
 actor Cliente as "Frontend"
-boundary "Router\n(user.routes.js)" as Router
-control "Controller\n(user.controller.js)" as Controller
+boundary "Router\n(auth.route.js)" as Router
+control "Middleware\n(auth.js)" as AuthMiddleware
+control "Middleware\n(validate)" as ValidateMiddleware
+control "Controller\n(auth.controller.js)" as Controller
 control "Service\n(auth.service.js)" as Service
-entity "Model\n(user.model.js)" as Model
-entity "Middleware\n(verifyToken)" as Middleware
+entity "Model\n(auth.model.js)" as Model
+entity "Model\n(log.model.js)" as LogModel
+collections "speakeasy / QRCode" as Providers
 database "PostgreSQL\n(via Prisma)" as Postgres
 
 == Setup 2FA (Generar QR) ==
 
-Cliente -> Router : POST /users/2fa/setup\nAuthorization: Bearer token
-Router -> Middleware : verifyToken(req)
-Middleware --> Router : req.user = { id, email, role }
+Cliente -> Router : POST /auth/2fa/setup\nAuthorization: Bearer token
+Router -> AuthMiddleware : verifyToken(req, res, next)
+AuthMiddleware --> Router : req.user = { id, employeeId }
 Router -> Controller : setupTwoFactorAuth(req, res)
-Controller -> Service : setupTwoFactorAuth(req)
+Controller -> Controller : employeeId = req.user?.id || req.user?.employeeId\nipAddress = getClientIp(req)
+Controller -> Service : setupTwoFactorAuth({ employeeId, ipAddress })
 
-Service -> Model : getEmployeeById(req.body.id)
-Model -> Postgres : prisma.employee.findUnique\n(employee_id)
+Service -> Model : getEmployeeById(employeeId)
+Model -> Postgres : prisma.employee.findUnique({\nwhere: { employee_id: employeeId },\ninclude: { role }\n})
 Postgres --> Model : employee
 Model --> Service : employee
 
-alt Empleado no encontrado
-    Service --> Controller : { status: 404 }
-    Controller --> Cliente : { success: false,\nmessage: "Employee not found" }
+alt Usuario no autenticado
+    Service --> Controller : { status: 401,\nbody: { success: false,\nmessage: "Usuario no autenticado" } }
+    Controller --> Cliente : 401 Unauthorized
+else Empleado no encontrado
+    Service --> Controller : { status: 404,\nbody: { success: false,\nmessage: "Empleado no encontrado" } }
+    Controller --> Cliente : 404 Not Found
+else Empleado inactivo
+    Service -> LogModel : createLog(employeeId,\nTWO_FA_SETUP_INACTIVE,\nipAddress)
+    LogModel -> Postgres : prisma.logs.create(...)
+    Postgres --> LogModel : result
+    LogModel --> Service : result
+    Service --> Controller : { status: 403,\nbody: { success: false,\nmessage: "Accesso no permitido" } }
+    Controller --> Cliente : 403 Forbidden
 else 2FA ya activo
-    Service --> Controller : { status: 409 }
-    Controller --> Cliente : { success: false,\nmessage: "2FA already enabled" }
+    Service --> Controller : { status: 409,\nbody: { success: false,\nmessage: "TwoFactorAuth ya esta activo en esta cuenta" } }
+    Controller --> Cliente : 409 Conflict
 else OK
-    Service -> Service : speakeasy.generateSecret()
-    Service -> Model : saveTempTotpSecret(employeeId, secret)
-    Model -> Postgres : prisma.employee.update\n(temp_totp_secret,\ntemp_totp_secret_created_at)
+    Service -> Providers : speakeasy.generateSecret({\nname: "RCHQ (email)", issuer: "RCHQ", length: 20\n})
+    Providers --> Service : { base32, otpauth_url }
+    Service -> Model : saveTempTotpSecret(employee.employeeId, base32)
+    Model -> Postgres : prisma.employee.update({\ndata: {\n temp_totp_secret,\n temp_totp_secret_created_at\n}\n})
     Postgres --> Model : OK
-    Service -> Service : QRCode.toDataURL(otpauthUrl)
-    Service --> Controller : { status: 200, qrImage, otpauthUrl }
-    Controller --> Cliente : { success: true,\ndata: { qrImage, otpauthUrl } }
+    Model --> Service : OK
+    Service -> Providers : QRCode.toDataURL(otpauth_url)
+    Providers --> Service : qrImage
+    Service --> Controller : { status: 200,\nbody: { success: true,\nnextStep: "VERIFY_TWO_FACTOR_AUTH_SETUP",\ndata: { employeeId, qrImage, otpauthUrl } } }
+    Controller --> Cliente : 200 OK
 end
 
-== Verify 2FA (Confirmar código) ==
+== Verify 2FA (Confirmar codigo) ==
 
-Cliente -> Router : POST /users/2fa/verify\nAuthorization: Bearer token\nbody: { token: code }
-Router -> Middleware : verifyToken(req)
-Middleware --> Router : req.user = { id }
+Cliente -> Router : POST /auth/2fa/verify\nAuthorization: Bearer token\nbody: { token }
+Router -> AuthMiddleware : verifyToken(req, res, next)
+AuthMiddleware --> Router : req.user = { id }
+Router -> ValidateMiddleware : validate(twoFactorTokenSchema)
+ValidateMiddleware --> Router : req.body = { token }
 Router -> Controller : verifyTwoFactorSetup(req, res)
 Controller -> Service : verifyTwoFactorSetup(req)
 
-Service -> Model : getEmployeeById(req.user.id)
-Model -> Postgres : prisma.employee.findUnique
+Service -> Service : token = req.body.token\nemployeeId = req.user?.id\nipAddress = getClientIp(req)
+Service -> Model : getEmployeeById(employeeId)
+Model -> Postgres : prisma.employee.findUnique({\nwhere: { employee_id: employeeId },\ninclude: { role }\n})
 Postgres --> Model : employee
 Model --> Service : employee
 
-Service -> Service : speakeasy.totp.verify\n(tempTotpSecret, code)
-
-alt Código válido
-    Service -> Postgres : prisma.$transaction\n- update totp_secret\n- clear temp_totp_secret\n- is_active_2fa = true
-    Postgres --> Service : OK
-    Service -> Model : createLog(TWO_FA_SETUP_SUCCESS)
-    Model -> Postgres : insert log
-    Service --> Controller : { status: 200,\nnextStep: "2FA_SETUP_COMPLETE" }
-    Controller --> Cliente : { success: true,\nnextStep: "2FA_SETUP_COMPLETE" }
-else Código inválido
-    Service -> Model : createLog(TWO_FA_SETUP_FAILED)
-    Model -> Postgres : insert log
-    Service --> Controller : { status: 400 }
-    Controller --> Cliente : { success: false,\nmessage: "Invalid 2FA code" }
-end
-
-== Disable 2FA ==
-
-Cliente -> Router : POST /users/2fa/disable\nAuthorization: Bearer token\nbody: { password }
-Router -> Middleware : verifyToken(req)
-Middleware --> Router : req.user = { id }
-Router -> Controller : disableTwoFactorAuth(req, res)
-Controller -> Service : disableTwoFactorAuth(req)
-
-Service -> Model : getEmployeeById(req.user.id)
-Model -> Postgres : prisma.employee.findUnique
-Postgres --> Model : employee
-Model --> Service : employee
-
-Service -> Service : verifyPassword(password, employee.pwd)
-
-alt Contraseña válida
-    Service -> Postgres : prisma.$transaction\n- totp_secret = null\n- is_active_2fa = false
-    Postgres --> Service : OK
-    Service -> Model : createLog(TWO_FA_DISABLED)
-    Model -> Postgres : insert log
-    Service --> Controller : { status: 200,\nnextStep: "2FA_DISABLED" }
-    Controller --> Cliente : { success: true,\nnextStep: "2FA_DISABLED" }
-else Contraseña inválida
-    Service -> Model : createLog(TWO_FA_DISABLE_WRONG_PASSWORD)
-    Model -> Postgres : insert log
-    Service --> Controller : { status: 401 }
-    Controller --> Cliente : { success: false,\nmessage: "Invalid credentials" }
+alt Usuario no autenticado
+    Service --> Controller : { status: 401,\nbody: { success: false,\nmessage: "Usuario no autenticado" } }
+    Controller --> Cliente : 401 Unauthorized
+else Empleado no encontrado
+    Service --> Controller : { status: 404,\nbody: { success: false,\nmessage: "Empleado no encontrado" } }
+    Controller --> Cliente : 404 Not Found
+else Empleado inactivo
+    Service -> LogModel : createLog(employeeId,\nTWO_FA_VERIFY_INACTIVE,\nipAddress)
+    LogModel -> Postgres : prisma.logs.create(...)
+    Postgres --> LogModel : result
+    LogModel --> Service : result
+    Service --> Controller : { status: 403,\nbody: { success: false,\nmessage: "Acceso no permitido" } }
+    Controller --> Cliente : 403 Forbidden
+else Sin setup pendiente
+    Service --> Controller : { status: 409,\nbody: { success: false,\nmessage: "No hay configuracion pendiente de TwoFactorAuth" } }
+    Controller --> Cliente : 409 Conflict
+else Fecha de setup faltante
+    Service -> Model : clearTempTotpSecret(employee.employeeId)
+    Model -> Postgres : prisma.employee.update({\ndata: {\n temp_totp_secret: null,\n temp_totp_secret_created_at: null\n}\n})
+    Postgres --> Model : OK
+    Model --> Service : OK
+    Service --> Controller : { status: 409,\nbody: { success: false,\nmessage: "TwoFactorAuth pendiente de configurar" } }
+    Controller --> Cliente : 409 Conflict
+else Setup expirado
+    Service -> Model : clearTempTotpSecret(employee.employeeId)
+    Model -> Postgres : prisma.employee.update({\ndata: {\n temp_totp_secret: null,\n temp_totp_secret_created_at: null\n}\n})
+    Postgres --> Model : OK
+    Model --> Service : OK
+    Service --> Controller : { status: 409,\nbody: { success: false,\nmessage: "El tiempo de TwoFactorAuth setup ha expirado. Trate mas adeltante." } }
+    Controller --> Cliente : 409 Conflict
+else Codigo invalido
+    Service -> Providers : speakeasy.totp.verify({\nsecret: tempTotpSecret,\nencoding: "base32",\ntoken,\nwindow: 1\n})
+    Providers --> Service : false
+    Service -> LogModel : createLog(employeeId,\nTWO_FA_SETUP_FAILED,\nipAddress)
+    LogModel -> Postgres : prisma.logs.create(...)
+    Postgres --> LogModel : result
+    LogModel --> Service : result
+    Service --> Controller : { status: 400,\nbody: { success: false,\nmessage: "Codigo invalido de TwoFactorAuth. Fallo el setup.",\nnextStep: "TWO_FACTOR_AUTH_SETUP_FAILED" } }
+    Controller --> Cliente : 400 Bad Request
+else Codigo valido
+    Service -> Providers : speakeasy.totp.verify({\nsecret: tempTotpSecret,\nencoding: "base32",\ntoken,\nwindow: 1\n})
+    Providers --> Service : true
+    Service -> Postgres : prisma.$transaction(async (tx) => ...)
+    Service -> Model : activateTwoFactorFromTempSecret(employee.employeeId, tx)
+    Model -> Postgres : tx.employee.findUnique({ select: { temp_totp_secret } })
+    Postgres --> Model : { temp_totp_secret }
+    Model -> Postgres : tx.employee.update({\ndata: {\n totp_secret,\n temp_totp_secret: null,\n temp_totp_secret_created_at: null,\n is_active_two_factor_auth: true\n}\n})
+    Postgres --> Model : OK
+    Model --> Service : OK
+    Service -> LogModel : createLog(employeeId,\nTWO_FA_SETUP_SUCCESS,\nipAddress,\nnull,\ntx)
+    LogModel -> Postgres : tx.logs.create(...)
+    Postgres --> LogModel : result
+    LogModel --> Service : result
+    Postgres --> Service : COMMIT
+    Service --> Controller : { status: 200,\nbody: { success: true,\nnextStep: "TWO_FACTOR_AUTH_SETUP_COMPLETE",\ndata: { employeeId, twoFactorEnabled: true } } }
+    Controller --> Cliente : 200 OK
 end
 
 @enduml

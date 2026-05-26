@@ -1,4 +1,4 @@
-@startuml HU01 - Administrador registra empleado
+@startuml HU10 - Administrador registra empleado
 
 actor navegador
 boundary employee.routes

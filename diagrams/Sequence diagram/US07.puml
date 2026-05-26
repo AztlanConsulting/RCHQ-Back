@@ -82,8 +82,6 @@ else Token válido
             end
         end
         deactivate Service
-        
-    catch Excepción (err)
         Controller --> Router : res.status(500).json(Error interno del servidor)
         Router --> Usuario : 500 Internal Server Error
     end
