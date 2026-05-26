@@ -27,7 +27,7 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
         totalDays: calculateMexicoDateRangeDays(absence.start, absence.end),
         focus: "ausencias",
         scope: "house",
-        color: "#F97316",
+        color: "#A8201A",
         allDay: true,
     };
 };
