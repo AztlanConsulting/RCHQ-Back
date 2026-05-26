@@ -3,8 +3,6 @@ const DATETIME_WITH_TIMEZONE_REGEX =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
 
 const MEXICO_TIMEZONE_OFFSET = "-06:00";
-const MEXICO_TIME_ZONE = "America/Mexico_City";
-exports.MEXICO_TIME_ZONE = MEXICO_TIME_ZONE;
 
 const normalizeTime = (value) => {
     if (!value) return "00:00:00";
@@ -70,51 +68,4 @@ exports.calculateMexicoDateRangeDays = (startDate, endDate) => {
     }
 
     return Math.round((end - start) / 86400000) + 1;
-};
-
-exports.resolveCalendarTimeZone = (timeZone) => {
-    if (!timeZone) return MEXICO_TIME_ZONE;
-
-    try {
-        Intl.DateTimeFormat("en-US", { timeZone }).format(new Date());
-        return timeZone;
-    } catch {
-        return MEXICO_TIME_ZONE;
-    }
-};
-
-const getTimePartsInZone = (date, timeZone) => {
-    const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone,
-        hourCycle: "h23",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-    }).formatToParts(date);
-
-    return Object.fromEntries(
-        parts
-            .filter((part) => part.type !== "literal")
-            .map((part) => [part.type, Number(part.value)]),
-    );
-};
-
-exports.isAllDayInTimeZone = (start, end, timeZone = MEXICO_TIME_ZONE) => {
-    if (!(start instanceof Date) || !(end instanceof Date)) return false;
-
-    const startParts = getTimePartsInZone(start, timeZone);
-    const endParts = getTimePartsInZone(end, timeZone);
-
-    const startsAtMidnight =
-        startParts.hour === 0 &&
-        startParts.minute === 0 &&
-        startParts.second === 0;
-    const endsAtMidnight =
-        endParts.hour === 0 &&
-        endParts.minute === 0 &&
-        endParts.second === 0;
-    const endsAtLastMinute =
-        endParts.hour === 23 && endParts.minute === 59;
-
-    return startsAtMidnight && (endsAtMidnight || endsAtLastMinute);
 };
