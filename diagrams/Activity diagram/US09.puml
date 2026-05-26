@@ -1,0 +1,21 @@
+@startuml
+|Coordinador|
+:Presiona la ocpión de la acciones de la navbar;
+
+|Sistema|
+:Verifica que tenga el rol de coordinador;
+if(¿tiene el rol?)then(no)
+:Mandar a página con 404;
+stop;
+else (si)
+:Mandar a obtener los datos de la tabla
+de logs, actions, employee donde sean del 
+mismo id de la casa;
+:Renderiza vista de la tabla con las acciones;
+
+|Coordinador|
+:Observa la tabla con las opciones
+y puede navegar por la paginación;
+stop;
+
+@enduml

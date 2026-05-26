@@ -1,0 +1,72 @@
+@startuml
+title Consultar Ausencias de la Casa — Backend (MVC + Service + Prisma)
+actor Cliente as "Frontend"
+boundary "Router\n(absence.routes.js)" as Router
+control "Controller\n(absence.controller.js)" as Controller
+control "Service\n(absence.service.js)" as Service
+entity "Model\n(absence.model.js)" as Model
+entity "Middleware\n(verifyToken)" as Middleware
+entity "Middleware RBAC\n(requireRole)" as CheckRole
+entity "Middleware RBAC\n(requirePrivileges)" as CheckPrivilege
+entity "Middleware\n(resolveRequesterHouse)" as ResolverRequester
+entity "Middleware\n(resolveAbsenceHouse)" as ResolverAbsence
+entity "Middleware ABAC\n(authorize)" as CheckHouse
+database "PostgreSQL\n(via Prisma)" as Postgres
+
+== Consultar ausencias de la casa ==
+
+Cliente -> Router : GET /event/house/:houseId/startDate/endDate\nAuthorization: Bearer token
+
+Router -> Middleware : verifyToken(req)
+Middleware -> Router : req.user = { id, email, role,\nhouseId, privileges }
+
+Router -> CheckRole : requireRole("Coordinador")(req)
+alt Rol no autorizado
+    CheckRole -> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Rol válido
+    CheckRole -> Router : next()
+end
+
+Router -> CheckPrivilege : requirePrivileges("viewAbsences")(req)
+alt Privilegio no encontrado
+    CheckPrivilege -> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Privilegio válido
+    CheckPrivilege -> Router : next()
+end
+
+Router -> ResolverRequester : resolveRequesterHouse(req)
+ResolverRequester -> Postgres : prisma.employee.findUnique({\n  where: { employee_id: req.user.id },\n  select: { house_id: true }\n})\n→ req.resolvedRequester =\n  { houseId: employee.house_id }
+Postgres -->> ResolverRequester: houseId
+alt Coordinador no encontrado
+    ResolverRequester --> Cliente : 404 { message: "Coordinador no encontrado" }
+else OK
+    ResolverRequester --> Router : next()
+end
+
+Router -> CheckHouse : authorize(absencePolicy,\n  (req) => ({ houseId: req.resolvedRequester.houseId }))
+alt Acceso denegado
+    CheckHouse -> Cliente : 403 { success: false,\nmessage: "Acceso denegado" }
+else Autorizado
+    CheckHouse -> Router : next()
+end
+
+Router -> Controller : getEventsByHouse(req, res)
+Controller -> Service : getEventsByHouse(houseId, startDate, endDate)
+
+Service -> Model : getEventsByHouse(houseId, startDate, endDate)
+Model -> Postgres : prisma.absence.findMany({\n  where: {\n    employee: { house_id: houseId, start:startDate, end:endDate }\n  },\n  select: {\n    absence_id: true,\n    start:      true,\n    end:        true,\n    url:        true,\n    employee: {\n      select: {\n        name:    true,\n        curp: true\n      }\n    },\n    absence_type: { select: { name: true } }\n  },\n)\n+\n
+Postgres -->> Model : { absences[] }
+Model -->> Service : { absences[] }
+
+alt Sin resultados
+    Service -->> Controller : { code: 200, data: [] }
+    Controller -->> Router : 200 { success: true,\ndata: [],\nmessage: "Sin ausencias registradas"}
+    Router -->> Cliente : 200 { success: true,\ndata: [],\nmessage: "Sin ausencias registradas"}
+else Ausencias encontradas
+    Service -->> Controller : { code: 200,\ndata: [{\n  nombre, curp,\n  fecha_inicio, fecha_fin,\n  url, tipo_ausencia\n}] }
+    Controller -->> Router : 200 { success: true,\ndata: [absences] }
+    Router -->> Cliente : 200 { success: true,\ndata: [absences] }
+
+end
+
+@enduml

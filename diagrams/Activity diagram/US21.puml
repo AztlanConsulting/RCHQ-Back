@@ -1,0 +1,50 @@
+@startuml
+
+|Coordinador|
+start
+:Seleccionar el calendario;
+
+|Sistema| 
+:Verificar rol del usuario;
+if (rol es igual a Coordinador) then (no)
+	:Mostrar mensaje de “privilegios insuficientes”;
+    stop
+else (si)
+    : Consultar los privilegios;
+    
+    if (Privilegios válidos) then (yes)
+        :Consultar la tabla de ausencias, tipo de ausencia, casa y empleado;
+    else (no)
+        :mostrar mensaje de error de privilegios insuficientes;
+        stop
+    endif
+endif
+
+:Obtener las ausencias futuras y presentes;
+:Recuperar la información de:\n -Nombre \n -CURP \n  -fecha de inicio \n  -fecha de fin  \n  -url \n  -nombre del tipo de ausencia;
+:Calcular los días habiles que tomará el usuario;
+:Manda los datos de: \n -Nombre \n -CURP \n  -fecha de inicio \n  -fecha de fin  \n  -url \n  -nombre del tipo de ausencia;
+:Calcular los días habiles que tomará el usuario \n  -días hábiles	;
+:Renderizar la vista con los datos de:  \n -Nombre \n -CURP \n  -fecha de inicio \n  -fecha de fin  \n  -url \n  -días hábiles  \n  -botón de acción;
+:Mostrar la vista al usuario;
+
+|Coordinador|
+:Ver la vista de ausencias;
+:Dar click en la tarjeta de ausencia;
+
+|Sistema|
+:Mostrar una ventana modal con la información de:
+-descripción 
+-tipo de ausencia de la ausencia en específico
+-CURP
+-nombre
+-días hábiles
+-evidencia
+-fecha de inicio
+-fecha de fin;
+
+|Coordinador|
+:Ver la ventana modal;
+stop
+
+@enduml
