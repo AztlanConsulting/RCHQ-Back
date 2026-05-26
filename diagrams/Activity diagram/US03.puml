@@ -1,0 +1,180 @@
+@startuml
+title US03 - Usuario cambia su contraseña
+
+|Usuario|
+start
+:Acceder al sistema;
+
+|Sistema|
+if (¿Existe token de sesión guardado?) then (Sí)
+:Permitir acceso a rutas protegidas;
+else (No)
+:Redirigir a /iniciar-sesion;
+
+|Usuario|
+:Capturar email y contraseña;
+:Enviar formulario de login;
+
+|Sistema|
+:Validar formulario de login;
+
+if (¿Formulario válido?) then (Sí)
+else (No)
+:Mostrar errores de validación;
+stop
+endif
+
+:Enviar POST /auth/login;
+
+if (¿Credenciales válidas?) then (Sí)
+else (No)
+:Mostrar error de login;
+stop
+endif
+
+if (¿Requiere cambio por primer inicio?) then (Sí)
+:Redirigir a /primer-inicio/cambiar-contrasena;
+:Continuar flujo de cambio obligatorio de primer inicio;
+stop
+else (No)
+endif
+
+if (¿Tiene autenticación en dos pasos activa?) then (Sí)
+:Redirigir a /2FA;
+
+|Usuario|
+:Capturar código 2FA;
+
+|Sistema|
+:Validar código 2FA;
+
+if (¿Código válido?) then (Sí)
+else (No)
+:Mostrar error de validación 2FA;
+stop
+endif
+else (No)
+endif
+
+:Guardar token de sesión y usuario;
+:Redirigir a /app/calendario;
+endif
+
+|Usuario|
+:Entrar a Perfil;
+:Entrar a Otras Opciones;
+:Seleccionar "Cambiar contraseña";
+
+|Sistema|
+:Mostrar modal de cambio de contraseña;
+
+|Usuario|
+:Capturar contraseña actual;
+:Capturar nueva contraseña;
+:Confirmar nueva contraseña;
+:Dar clic en "Cambiar contraseña";
+
+|Sistema|
+:Validar formulario en frontend;
+
+if (¿Formulario válido?) then (Sí)
+else (No)
+:Mostrar primer error de validación;
+stop
+endif
+
+:Obtener token de sesión guardado;
+
+if (¿Token existe?) then (Sí)
+else (No)
+:Mostrar error "No se encontró token de sesión";
+stop
+endif
+
+:Enviar POST /auth/change-password con Bearer token;
+
+:Validar token de sesión en backend;
+
+if (¿Authorization presente y con Bearer?) then (Sí)
+else (No)
+:Mostrar error "Token no proporcionado";
+stop
+endif
+
+if (¿Token válido y no expirado?) then (Sí)
+else (No)
+:Mostrar error "Token inválido o expirado";
+stop
+endif
+
+if (¿Token es de tipo SESSION?) then (Sí)
+else (No)
+:Mostrar error "Token de sesión inválido";
+stop
+endif
+
+:Validar request HTTP con schema;
+
+if (¿Request válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Obtener employeeId del token;
+
+if (¿Usuario autenticado?) then (Sí)
+else (No)
+:Mostrar error "Usuario no autenticado";
+stop
+endif
+
+:Buscar empleado por ID;
+
+if (¿Empleado existe?) then (Sí)
+else (No)
+:Mostrar error "Empleado no encontrado";
+stop
+endif
+
+if (¿Empleado activo?) then (Sí)
+else (No)
+:Guardar log PASSWORD_CHANGE_INACTIVE;
+:Mostrar error "Acceso no permitido";
+stop
+endif
+
+:Verificar contraseña actual;
+
+if (¿Contraseña actual correcta?) then (Sí)
+else (No)
+:Guardar log PASSWORD_CHANGE_WRONG_CURRENT_PASSWORD;
+:Mostrar error "Credenciales inválidas";
+stop
+endif
+
+:Comparar nueva contraseña contra contraseña actual;
+
+if (¿Nueva contraseña es diferente?) then (Sí)
+else (No)
+:Mostrar error "La nueva contraseña debe ser diferente a la actual";
+stop
+endif
+
+:Generar hash de la nueva contraseña;
+:Iniciar transacción;
+:Actualizar contraseña del empleado;
+:Guardar log PASSWORD_CHANGED;
+:Confirmar transacción;
+
+:Responder 200 OK;
+
+|Sistema|
+:Cerrar modal de cambio de contraseña;
+:Mostrar mensaje "La contraseña se actualizó correctamente.";
+
+|Usuario|
+:Continuar usando el sistema;
+stop
+
+@enduml

@@ -55,6 +55,28 @@ const mondayToFridayWorkDays = [
     { workday: { name: "Viernes" } },
 ];
 
+const dateOnly = (date) => date.toISOString().split("T")[0];
+
+const todayUTC = () => {
+    const today = new Date();
+
+    return new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate(),
+    ));
+};
+
+const dateFromTodayUTC = ({ years = 0, months = 0, days = 0 }) => {
+    const today = todayUTC();
+
+    return new Date(Date.UTC(
+        today.getUTCFullYear() + years,
+        today.getUTCMonth() + months,
+        today.getUTCDate() + days,
+    ));
+};
+
 describe("absence.update.service — updateAbsence", () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -90,6 +112,69 @@ describe("absence.update.service — updateAbsence", () => {
                 }),
             ]),
         );
+    });
+
+    it("retorna validation error si la fecha de inicio es menor a un mes antes del día actual", async () => {
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                startDate: dateOnly(dateFromTodayUTC({ months: -1, days: -1 })),
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
+        expect(result.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    campo: "body.startDate",
+                    mensaje: "Fecha de inicio no puede ser menor a un mes antes del día actual",
+                }),
+            ]),
+        );
+        expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+    });
+
+    it("retorna validation error si la fecha de fin queda 100 años atrás", async () => {
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                endDate: dateOnly(dateFromTodayUTC({ years: -100 })),
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
+        expect(result.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    campo: "body.endDate",
+                    mensaje: "Fecha de fin no puede ser menor a un mes antes del día actual",
+                }),
+            ]),
+        );
+        expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+    });
+
+    it("retorna validation error si la fecha de fin es mayor a un año después del día actual", async () => {
+        const result = await updateAbsence({
+            actorEmployeeId: "47bc8d27-cf8c-4da1-a8d9-e777a6d0930f",
+            absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
+            body: {
+                endDate: dateOnly(dateFromTodayUTC({ years: 1, days: 1 })),
+            },
+        });
+
+        expect(result.code).toBe(RESPONSES.ABSENCE.VALIDATION_ERROR);
+        expect(result.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    campo: "body.endDate",
+                    mensaje: "Fecha de fin no puede ser mayor a un año después del día actual",
+                }),
+            ]),
+        );
+        expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
     });
 
     it("permite actualizar solo la evidencia del archivo", async () => {

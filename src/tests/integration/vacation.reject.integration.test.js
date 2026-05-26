@@ -227,6 +227,22 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
         expect(response.body.errors[0].path).toBe("body.feedback");
     });
 
+    it("regresa 400 si feedback contiene caracteres no permitidos", async () => {
+        const token = buildToken(coordinatorTokenPayload);
+
+        const response = await request(app)
+            .patch(`/vacation/request/${vacationRequestId}/reject`)
+            .set("Authorization", `Bearer ${token}`)
+            .send({
+                feedback: "No procede <script>alert(1)</script> 🙂",
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.code).toBe("VALIDATION_ERROR");
+        expect(response.body.errors[0].path).toBe("body.feedback");
+    });
+
     it("regresa 404 si la solicitud no existe", async () => {
         const token = buildToken(coordinatorTokenPayload);
 
@@ -324,7 +340,8 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
 
     it("rechaza exitosamente con feedback", async () => {
         const token = buildToken(coordinatorTokenPayload);
-        const feedback = "Periodo de alta demanda operativa";
+        const feedback =
+            "Motivo \"crítico\": clima 30°; enlace https://rchq.mx/rechazo?turno=dia%201&personas=5; cálculo 5-3=2+0*1 🙂👍🏽.";
 
         mockHappyPath({
             feedback,
