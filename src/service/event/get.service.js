@@ -35,17 +35,6 @@ const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
-const normalizeFreeDayCalendarRange = (event) => {
-    if (event.isFreeDay !== true) return event;
-
-    return {
-        ...event,
-        end:
-            event.end instanceof Date
-                ? new Date(event.end.getTime() - 1)
-                : event.end,
-    };
-};
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -112,8 +101,7 @@ exports.getEventsInRange = async (
             startDate,
             endDate,
         );
-        houseEvents.forEach((rawEvent) => {
-            const event = normalizeFreeDayCalendarRange(rawEvent);
+        houseEvents.forEach((event) => {
             events.push({
                 houseEventId: event.house_event_id,
                 eventTypeId: event.event_type_id,
@@ -144,8 +132,7 @@ exports.getEventsInRange = async (
     });
 
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
-    globalEvents.forEach((rawEvent) => {
-        const event = normalizeFreeDayCalendarRange(rawEvent);
+    globalEvents.forEach((event) => {
         events.push({
             start: event.start,
             end: event.end,

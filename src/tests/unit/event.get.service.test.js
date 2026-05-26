@@ -87,7 +87,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
             {
                 date: new Date("2026-05-15T00:00:00.000Z"),
                 start: new Date("2026-05-15T06:00:00.000Z"),
-                end: new Date("2026-05-16T05:59:00.000Z"),
+                end: new Date("2026-05-16T06:00:00.000Z"),
                 isFreeDay: true,
             },
         ]);
@@ -123,7 +123,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
         });
 
         expect(result.data.events[0].end.toISOString()).toBe(
-            "2026-05-16T05:59:59.999Z",
+            "2026-05-16T06:00:00.000Z",
         );
     });
 });

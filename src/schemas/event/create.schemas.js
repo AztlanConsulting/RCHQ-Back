@@ -18,6 +18,16 @@ const eventDateTimeForValidation = (date, value) => {
     const normalizedTime = value.length === 5 ? `${value}:00` : value;
     return new Date(`${date}T${normalizedTime}-06:00`);
 };
+const eventEndDateTimeForValidation = (date, value) => {
+    if (DATETIME_WITH_TIMEZONE_REGEX.test(value)) return new Date(value);
+    const resolvedDate =
+        String(value).slice(0, 5) === "00:00"
+            ? new Date(new Date(`${date}T00:00:00.000Z`).getTime() + ONE_DAY_MS)
+                  .toISOString()
+                  .slice(0, 10)
+            : date;
+    return eventDateTimeForValidation(resolvedDate, value);
+};
 
 const getTodayStr = () => convertUTCToMexicanTime(new Date()).toISOString().slice(0, 10);
 const getMaxDateStr = () => {
@@ -276,7 +286,7 @@ exports.createPersonalEventSchema = z
             if (
                 data.start &&
                 data.end &&
-                eventDateTimeForValidation(data.date, data.end) <=
+                eventEndDateTimeForValidation(data.date, data.end) <=
                     eventDateTimeForValidation(data.date, data.start)
             ) {
                 ctx.addIssue({
@@ -309,7 +319,7 @@ exports.createPersonalEventSchema = z
         if (
             data.start &&
             data.end &&
-            eventDateTimeForValidation(data.date, data.end) <=
+            eventEndDateTimeForValidation(data.date, data.end) <=
                 eventDateTimeForValidation(data.date, data.start)
         ) {
             ctx.addIssue({

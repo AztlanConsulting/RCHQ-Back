@@ -48,13 +48,15 @@ const toUtcDateOnly = (date) =>
 exports.dateOnlyToMexicoUtcStart = (date) =>
     new Date(`${toUtcDateOnly(date)}T06:00:00.000Z`);
 
-exports.dateOnlyToMexicoUtcEnd = (date) =>
-    new Date(`${toUtcDateOnly(date)}T05:59:59.999Z`);
+exports.dateOnlyToMexicoUtcEnd = (date) => {
+    const end = exports.dateOnlyToMexicoUtcStart(date);
+    end.setUTCDate(end.getUTCDate() + 1);
+    return end;
+};
 
 exports.dateRangeToMexicoCalendarInterval = (startDate, endDate) => {
     const start = exports.dateOnlyToMexicoUtcStart(startDate);
     const end = exports.dateOnlyToMexicoUtcEnd(endDate);
-    end.setUTCDate(end.getUTCDate() + 1);
 
     return { start, end };
 };

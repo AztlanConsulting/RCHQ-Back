@@ -228,7 +228,7 @@ describe("event.get.service", () => {
         expect(absenceEvent.start).toEqual(new Date("2026-05-01T06:00:00.000Z"));
         expect(absenceEvent.startDate).toEqual(makeUTCDate(2026, 5, 1));
         expect(absenceEvent.endDate).toEqual(makeUTCDate(2026, 5, 5));
-        expect(absenceEvent.end).toEqual(new Date("2026-05-06T05:59:59.999Z"));
+        expect(absenceEvent.end).toEqual(new Date("2026-05-06T06:00:00.000Z"));
     });
 
     it("regresa vacaciones como rango UTC basado en horario central de Mexico", async () => {
@@ -250,7 +250,7 @@ describe("event.get.service", () => {
             totalDays: 1,
         });
         expect(vacationEvent.start).toEqual(new Date("2026-05-01T06:00:00.000Z"));
-        expect(vacationEvent.end).toEqual(new Date("2026-05-02T05:59:59.999Z"));
+        expect(vacationEvent.end).toEqual(new Date("2026-05-02T06:00:00.000Z"));
     });
 
     it("descuenta eventos de casa como dias no laborables de la ausencia", async () => {
