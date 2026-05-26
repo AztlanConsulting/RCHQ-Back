@@ -1,0 +1,90 @@
+@startuml
+title US - Dar de Baja Empleado (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "Middlewares\nauth, rbac, resolve" as Middlewares
+participant "validate.js\nmiddleware" as Validator
+participant "abac.js\nauthorize(deactivate)" as ABAC
+participant "deactivate.controller.js" as Controller
+participant "deactivate.service.js" as Service
+participant "deactivate.model.js" as Model
+participant "log.model.js" as LogModel
+database "BD (Prisma)" as BD
+
+Usuario -> Router : PATCH /:employeeId/deactivate\n(reason, addToBlacklist)
+
+Router -> Middlewares : verifyToken, requireRole,\nrequirePrivileges, resolveRequesterHouse
+Middlewares --> Router : next()
+
+Router -> Validator : validate(deactivateEmployeeSchema)
+alt Validación fallida
+    Validator --> Router : 400 / 422 Error
+    Router --> Usuario : 400 / 422 Bad Request
+else Validación exitosa
+    Validator --> Router : next()
+    
+    Router -> ABAC : authorize(deactivateEmployeePolicy)
+    activate ABAC
+    ABAC ->> Model : await getEmployeeToDeactivate(employeeId)
+    Model ->> BD : prisma.employee.findUnique(include: blacklist)
+    BD -->> Model : employeeData
+    Model -->> ABAC : mappedEmployee
+    
+    ABAC -> ABAC : req.resolvedEmployee = mappedEmployee
+    ABAC -> ABAC : Evalúa rol, houseId y privilegio addToBlacklist
+    
+    alt No Autorizado
+        ABAC --> Router : res.status(403).json(...)
+        Router --> Usuario : 403 Forbidden
+    else Autorizado
+        ABAC --> Router : next()
+    end
+    deactivate ABAC
+    
+    Router -> Controller : deactivateEmployeeController(req, res)
+    activate Controller
+    
+    Controller ->> Service : await deactivateEmployee(req)
+    activate Service
+    
+    Service -> Service : Recupera employee de req.resolvedEmployee
+    
+    alt actorId == employeeId
+        Service --> Controller : { code: CANNOT_DEACTIVATE_SELF }
+    else !employee
+        Service --> Controller : { code: NOT_FOUND }
+    else !employee.isActive && !addToBlacklist
+        Service --> Controller : { code: ALREADY_INACTIVE }
+    else addToBlacklist && employee.isBlacklisted
+        Service --> Controller : { code: ALREADY_BLACKLISTED }
+    else falta razón
+        Service --> Controller : { code: VALIDATION_ERROR }
+    else Validaciones de negocio superadas
+        Service ->> Model : await deactivateEmployee(employeeId, reason, curp, wasActive)
+        activate Model
+        Model ->> BD : prisma.$transaction([employee.update, blacklist.upsert])
+        BD -->> Model : success
+        Model -->> Service : void
+        deactivate Model
+        
+        Service ->> LogModel : await createLog(EMPLOYEE_DEACTIVATED)
+        alt addToBlacklist == true
+            Service ->> LogModel : await createLog(BLACKLIST_ADDED)
+        end
+        
+        Service --> Controller : { code: DEACTIVATED, data: { name } }
+    end
+    deactivate Service
+    
+    alt Try sin excepciones
+        Controller --> Router : res.status(code).json(message)
+        Router --> Usuario : 200 / 400 / 404 / 409 / 422
+    catch Excepción (err)
+        Controller --> Router : res.status(500).json(Error interno)
+        Router --> Usuario : 500 Internal Server Error
+    end
+    deactivate Controller
+end
+
+@enduml
