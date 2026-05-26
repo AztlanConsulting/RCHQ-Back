@@ -1,0 +1,28 @@
+@startuml
+title US 28 - Filtrar las vacaciones en pantalla
+
+|Empleado|
+start
+:Ingresa a la vista de "Mi Calendario";
+:Visualiza las vacaciones cargadas en pantalla;
+:Selecciona uno o varios criterios de filtro\n(estado, rango de fechas o tipo);
+
+
+|Sistema|
+:Recibe los criterios de filtrado;
+if (¿Hay criterios seleccionados?) then (Sí)
+  :Evalúa las vacaciones visibles según los filtros;
+  :Genera la lista de vacaciones coincidentes;
+  if (¿Hay coincidencias?) then (Sí)
+    :Muestra únicamente las vacaciones filtradas;
+  else (No)
+    :Muestra un estado vacío;
+  endif
+else (No)
+  :Mantiene visibles todas las vacaciones cargadas;
+endif
+
+|Empleado|
+:Visualiza únicamente las vacaciones específicas\no un estado vacío;
+stop
+@enduml

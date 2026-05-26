@@ -1,112 +1,160 @@
-@startuml
-title US04 End-to-End - user cambia contraseña
+@startuml US03 - Usuario cambia su contraseña
 
-actor Usuario
-boundary "ChangePassword.jsx" as UI
-control "AuthService.jsx" as FrontService
-boundary "auth.route.js" as Route
-control "verifyToken" as Auth
-control "validate" as Validate
-control "auth.controller.js" as Controller
-control "password.service.js" as Service
-entity "auth.model.js" as UserModel
-collections "password utils" as PasswordUtil
-entity "log.model.js" as LogModel
-database "BD" as DB
+actor navegador
+boundary auth.routes
+control auth.middleware
+control validate.middleware
+control auth.controller
+control password.service
+entity auth.model
+entity log.model
+collections jsonwebtoken
+collections password.utils
+database PostgreSQL
 
-Usuario -> UI : Captura actual, nueva y confirmación
-UI -> UI : Validar formato y confirmación
+autonumber
 
-alt Datos inválidos (Front)
-    UI --> Usuario : Mostrar error de validación
-else Datos válidos (Front)
-    UI -> FrontService : changePasswordService(data, sessionToken)
-    FrontService -> Route : POST /change-password
+navegador -> auth.routes : POST /auth/change-password\nAuthorization: Bearer token\ncurrentPassword, newPassword, confirmPassword
+activate auth.routes
 
-    Route -> Auth : Validar JWT
-    alt Token inválido/expirado
-        Auth --> FrontService : 401 Unauthorized
-        FrontService --> UI : 401 Unauthorized
-        UI --> Usuario : Mostrar sesión expirada
-    else Token válido
-        Auth -> Validate : Validar request
-        
-        alt Datos inválidos (Back)
-            Validate --> FrontService : 400 Error de validación
-            FrontService --> UI : 400 Error de validación
-            UI --> Usuario : Mostrar error
-        else Datos válidos (Back)
-            Validate -> Controller : changePassword(req)
-            Controller -> Service : changePassword(req)
-            
-            Service -> UserModel : getEmployeeById(req.user.id)
-            UserModel -> DB : Consultar empleado
-            DB --> UserModel : Empleado / no encontrado
-            UserModel --> Service : Empleado / no encontrado
+auth.routes -> auth.middleware : verifyToken(req, res, next)
+activate auth.middleware
 
-            alt Usuario no existe
-                Service --> Controller : 404 Employee not found
-                Controller --> FrontService : 404 Employee not found
-                FrontService --> UI : 404 Employee not found
-                UI --> Usuario : Mostrar error
-            else Usuario existe
-                alt Cuenta inactiva
-                    Service -> LogModel : Guardar intento con cuenta inactiva
-                    LogModel -> DB : Insertar log
-                    DB --> LogModel : Confirmación
-                    Service --> Controller : 403 Access not allowed
-                    Controller --> FrontService : 403 Access not allowed
-                    FrontService --> UI : 403 Access not allowed
-                    UI --> Usuario : Mostrar error
-                else Cuenta activa
-                    alt Confirmación no coincide o formato inválido
-                        Service --> Controller : 400 Error de validación
-                        Controller --> FrontService : 400 Error de validación
-                        FrontService --> UI : 400 Error de validación
-                        UI --> Usuario : Mostrar error
-                    else Datos válidos
-                        Service -> PasswordUtil : verifyPassword(currentPassword, employee.pwd)
-                        PasswordUtil --> Service : true / false
-
-                        alt Contraseña actual incorrecta
-                            Service -> LogModel : Guardar intento fallido de cambio
-                            LogModel -> DB : Insertar log
-                            DB --> LogModel : Confirmación
-                            Service --> Controller : 401 Invalid credentials
-                            Controller --> FrontService : 401 Invalid credentials
-                            FrontService --> UI : 401 Invalid credentials
-                            UI --> Usuario : Mostrar error
-                        else Contraseña actual correcta
-                            Service -> PasswordUtil : verifyPassword(newPassword, employee.pwd)
-                            PasswordUtil --> Service : true / false
-
-                            alt Nueva igual a la actual
-                                Service --> Controller : 400 New password must be different
-                                Controller --> FrontService : 400 New password must be different
-                                FrontService --> UI : 400 New password must be different
-                                UI --> Usuario : Mostrar error
-                            else Nueva distinta
-                                Service -> PasswordUtil : hashPassword(newPassword)
-                                PasswordUtil --> Service : hashedPassword
-
-                                Service -> DB : Actualizar password
-                                DB --> Service : Confirmación
-
-                                Service -> LogModel : Guardar PASSWORD_CHANGED_SUCCESS
-                                LogModel -> DB : Insertar log
-                                DB --> LogModel : Confirmación
-
-                                Service --> Controller : 200 Password changed successfully
-                                Controller --> FrontService : 200 Password changed successfully
-                                FrontService --> UI : 200 Password changed successfully
-                                UI --> Usuario : Mostrar confirmación
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
+alt Authorization ausente o sin Bearer
+auth.middleware -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Token no proporcionado"\n}
 end
+
+auth.middleware ->> jsonwebtoken : verify(token, JWT_SECRET)
+activate jsonwebtoken
+
+alt token inválido o expirado
+jsonwebtoken -->> auth.middleware : error
+auth.middleware -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Token inválido o expirado"\n}
+end
+
+jsonwebtoken -->> auth.middleware : decoded
+deactivate jsonwebtoken
+
+alt decoded.tokenType != "SESSION"
+auth.middleware -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Token de sesión inválido"\n}
+end
+
+auth.middleware -> auth.middleware : req.user = decoded
+auth.middleware -->> auth.routes : next()
+deactivate auth.middleware
+
+auth.routes -> validate.middleware : validate(changePasswordSchema)
+activate validate.middleware
+validate.middleware -> validate.middleware : changePasswordSchema.safeParse(req.body)
+
+alt datos inválidos
+validate.middleware -> navegador : 400 Bad Request {\n\tsuccess: false,\n\tcode: "VALIDATION_ERROR",\n\tmessage: "Error de validación",\n\terrors\n}
+end
+
+validate.middleware -> validate.middleware : req.body = result.data
+validate.middleware -->> auth.routes : next()
+deactivate validate.middleware
+
+auth.routes -> auth.controller : changePassword(req, res)
+deactivate auth.routes
+activate auth.controller
+
+auth.controller -> auth.controller : employeeId = req.user?.id || req.user?.employeeId\n{ currentPassword, newPassword } = req.body\nipAddress = getClientIp(req)
+auth.controller ->> password.service : changePassword({\n\temployeeId,\n\tcurrentPassword,\n\tnewPassword,\n\tipAddress\n})
+activate password.service
+
+alt !employeeId
+password.service -->> auth.controller : 401 USER_NOT_AUTHENTICATED {\n\tsuccess: false,\n\tcode: "USER_NOT_AUTHENTICATED",\n\tmessage: "Usuario no autenticado"\n}
+auth.controller -> navegador : 401 Unauthorized
+end
+
+password.service ->> auth.model : getEmployeeById(employeeId)
+activate auth.model
+auth.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tinclude: {\n\t\trole: {\n\t\t\tselect: { name: true }\n\t\t}\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> auth.model : employee
+deactivate PostgreSQL
+auth.model -> auth.model : mapEmployee(employee)
+auth.model -->> password.service : employee
+deactivate auth.model
+
+alt employee == null
+password.service -->> auth.controller : 404 EMPLOYEE_NOT_FOUND {\n\tsuccess: false,\n\tcode: "EMPLOYEE_NOT_FOUND",\n\tmessage: "Empleado no encontrado"\n}
+auth.controller -> navegador : 404 Not Found
+end
+
+alt employee.isActive == false
+password.service ->> log.model : createLog(employee.employeeId,\n\tPASSWORD_CHANGE_INACTIVE,\n\tipAddress)
+activate log.model
+log.model ->> PostgreSQL : prisma.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: employee.employeeId,\n\t\tmoment: new Date(),\n\t\taction_id: "auth-021",\n\t\taffected: null,\n\t\tip_address: encryptLogIp(ipAddress)\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> log.model : result
+deactivate PostgreSQL
+log.model -->> password.service : result
+deactivate log.model
+
+password.service -->> auth.controller : 403 ACCESS_NOT_ALLOWED {\n\tsuccess: false,\n\tcode: "ACCESS_NOT_ALLOWED",\n\tmessage: "Acceso no permitido"\n}
+auth.controller -> navegador : 403 Forbidden
+end
+
+password.service ->> password.utils : verifyPassword(currentPassword,\n\temployee.pwd)
+activate password.utils
+password.utils -->> password.service : currentPasswordMatches
+deactivate password.utils
+
+alt currentPasswordMatches == false
+password.service ->> log.model : createLog(employee.employeeId,\n\tPASSWORD_CHANGE_WRONG_CURRENT_PASSWORD,\n\tipAddress)
+activate log.model
+log.model ->> PostgreSQL : prisma.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: employee.employeeId,\n\t\tmoment: new Date(),\n\t\taction_id: "auth-022",\n\t\taffected: null,\n\t\tip_address: encryptLogIp(ipAddress)\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> log.model : result
+deactivate PostgreSQL
+log.model -->> password.service : result
+deactivate log.model
+
+password.service -->> auth.controller : 401 INVALID_CURRENT_PASSWORD {\n\tsuccess: false,\n\tcode: "INVALID_CURRENT_PASSWORD",\n\tmessage: "Credenciales inválidas"\n}
+auth.controller -> navegador : 401 Unauthorized
+end
+
+password.service ->> password.utils : verifyPassword(newPassword,\n\temployee.pwd)
+activate password.utils
+password.utils -->> password.service : isSamePassword
+deactivate password.utils
+
+alt isSamePassword == true
+password.service -->> auth.controller : 400 PASSWORD_REUSE {\n\tsuccess: false,\n\tcode: "PASSWORD_REUSE",\n\tmessage: "La nueva contraseña debe ser diferente a la actual"\n}
+auth.controller -> navegador : 400 Bad Request
+end
+
+password.service ->> password.utils : hashPassword(newPassword)
+activate password.utils
+password.utils -->> password.service : hashedPassword
+deactivate password.utils
+
+password.service ->> PostgreSQL : prisma.$transaction(async (tx) => { ... })
+activate PostgreSQL
+
+password.service ->> auth.model : updatePassword(employee.employeeId,\n\thashedPassword,\n\ttx)
+activate auth.model
+auth.model ->> PostgreSQL : tx.employee.update({\n\twhere: {\n\t\temployee_id: employee.employeeId\n\t},\n\tdata: {\n\t\tpassword: hashedPassword\n\t}\n})
+PostgreSQL -->> auth.model : result
+auth.model -->> password.service : password actualizado
+deactivate auth.model
+
+password.service ->> log.model : createLog(employee.employeeId,\n\tPASSWORD_CHANGED,\n\tipAddress,\n\tnull,\n\ttx)
+activate log.model
+log.model ->> PostgreSQL : tx.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: employee.employeeId,\n\t\tmoment: new Date(),\n\t\taction_id: "auth-020",\n\t\taffected: null,\n\t\tip_address: encryptLogIp(ipAddress)\n\t}\n})
+PostgreSQL -->> log.model : result
+log.model -->> password.service : result
+deactivate log.model
+
+PostgreSQL -->> password.service : COMMIT
+deactivate PostgreSQL
+
+password.service -->> auth.controller : 200 OK {\n\tsuccess: true,\n\tmessage: "Password changed successfully",\n\tdata: {\n\t\temployeeId\n\t}\n}
+deactivate password.service
+
+auth.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tmessage: "Password changed successfully",\n\tdata: {\n\t\temployeeId\n\t}\n}
+deactivate auth.controller
 
 @enduml

@@ -1,6 +1,6 @@
 @startuml
 
-|Usuario|
+|Empleado|
 start
 :Ingresa al calendario;
 :Presiona una vacación;
@@ -15,7 +15,7 @@ else (No)
 :Muestra el botón de editar;
 endif
 
-|Usuario|
+|Empleado|
 :Presiona el botón de editar;
 :Selecciona nuevas fechas;
 :Presiona en guardar;
@@ -29,14 +29,14 @@ stop
 else (No)
 endif
 
-if (¿Usuario es dueño de la vacación?) then (Sí)
+if (¿Empleado es dueño de la vacación?) then (Sí)
     if (¿La vacación está pendiente?) then (Sí)
     else (No)
     :Muestra mensaje de que solo puede modificar\nsolicitudes pendientes;
     stop
     endif
 else (No)
-    if (¿Usuario es coordinador de la casa?) then (Sí)
+    if (¿Empleado es coordinador de la casa?) then (Sí)
     else (No)
     :Muestra mensaje de permisos insuficientes;
     stop

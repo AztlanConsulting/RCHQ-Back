@@ -1,7 +1,7 @@
 @startuml
 title US34 - Aprobar una solicitud de vacaciones
 
-|Usuario|
+|Coordinador|
 start
 :Entrar al módulo de solicitudes de vacaciones;
 :Seleccionar una solicitud pendiente;
@@ -17,7 +17,7 @@ else (No)
 stop
 endif
 
-:Validar rol Administrador o Coordinador;
+:Validar rol Coordinador;
 
 if (¿Rol permitido?) then (Sí)
 else (No)
@@ -147,7 +147,7 @@ endif
 :Guardar log de aprobación;
 :Mostrar mensaje "Solicitud aprobada correctamente";
 
-|Usuario|
+|Coordinador|
 :Continuar revisando solicitudes;
 stop
 

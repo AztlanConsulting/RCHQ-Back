@@ -1,7 +1,7 @@
 @startuml
-title US32 - Coordinador remueve vacaciones de un empleado
+title US37 - Coordinador remueve vacaciones de un empleado
 
-|Usuario|
+|Coordinador|
 start
 :Entrar al módulo de solicitudes de vacaciones;
 :Seleccionar una solicitud pendiente, aprobada futura o rechazada;
@@ -10,7 +10,7 @@ start
 |Sistema|
 :Mostrar confirmación de eliminación;
 
-if (¿Usuario confirma?) then (Sí)
+if (¿Coordinador confirma?) then (Sí)
 else (No)
 :No enviar solicitud al backend;
 :No realizar cambios;
@@ -88,7 +88,7 @@ else (No)
 stop
 endif
 
-if (¿Empleado es Admin?) then (Sí)
+if (¿Empleado es Administrador?) then (Sí)
 :Mostrar error "No puede acceder a este recurso";
 stop
 else (No)
@@ -155,7 +155,7 @@ endif
 :Guardar log de eliminación;
 :Mostrar mensaje "Vacaciones removidas correctamente";
 
-|Usuario|
+|Coordinador|
 :Continuar revisando solicitudes;
 stop
 

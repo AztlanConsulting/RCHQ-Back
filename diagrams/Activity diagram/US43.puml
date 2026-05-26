@@ -1,0 +1,29 @@
+@startuml
+|Coordinador|
+:Presiona la tarjeta de la ausencia;
+
+|Sistema|
+:Muestra modal con los datos de la ausencia;
+
+|Coordinador|
+:Presiona el botón de eliminar;
+
+|Sistema|
+:Renderizar el pop up para confirmar
+que realmente se quiere borrar la ausencia;
+
+|Coordinador|
+:Selecciona una opción;
+
+|Sistema|
+if(¿quiere borrar la ausencia?) then (no)
+:manda al modal con el detalle de la ausencia;
+stop
+else(si)
+:Manda la petición para hacer el softDelete;
+:Oculta la ausencia con el filtro de eliminadas;
+
+|Coordinador|
+:Observa alerta que se borro correctamente;
+stop
+@enduml

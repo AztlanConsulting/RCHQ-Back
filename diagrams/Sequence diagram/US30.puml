@@ -1,0 +1,107 @@
+@startuml
+title US 30 - Consultar mis vacaciones (Sequence Diagram)
+
+actor Usuario
+boundary "Frontend\nTabla de vacaciones" as Frontend
+control "vacation.route.js" as Router
+control "auth/rbac/validate middleware" as Middleware
+control "get.controller.js" as Controller
+control "get.service.js" as Service
+database "vacation/get.model.js" as VacationGetModel
+database "Base de datos" as DB
+
+autonumber
+
+Usuario -> Frontend : Entra al módulo "Mis vacaciones"
+
+Frontend -> Router : GET /vacation/requests/future?page&limit&search&status&startDate&endDate\nAuthorization: Bearer token
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(...allRoles)
+Router -> Middleware : requirePrivileges(viewOwnVacations)
+Router -> Middleware : validate(getOwnVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+    Middleware --> Frontend : 401/403/422
+    Frontend --> Usuario : Muestra error
+else Request HTTP válida
+    Router -> Controller : getFutureVacationRequests(req, res)
+    Controller -> Service : getFutureVacationRequests(employeeId, query)
+
+    alt no existe employeeId
+        Service --> Controller : USER.NOT_ACCESS
+        Controller --> Frontend : 401 Usuario no autenticado
+    else employeeId existe
+        Service -> Service : getOwnVacationRequestsInputSchema.safeParse({ employeeId, query })
+
+        alt datos inválidos
+            Service --> Controller : VACATION.VALIDATION_ERROR
+            Controller --> Frontend : 422 Datos inválidos
+        else datos válidos
+            Service -> Service : parsePagination(page, limit)
+            Service -> Service : statusFilter = mapOwnVacationStatus(query.status || "all")
+            Service -> Service : search = query.search?.trim() || ""
+            Service -> Service : dateFilter = buildVacationDateFilter(startDate, endDate)
+            Service -> Service : where.start.gt = getTodayUtcDate()
+
+            Service -> VacationGetModel : getVacationRequestsByEmployee({ where, skip, take, orderBy })
+            VacationGetModel -> DB : findMany + count de solicitudes futuras
+            DB --> VacationGetModel : requests, total
+            VacationGetModel --> Service : requests, total
+
+            Service -> Service : requests.map(mapVacationRequestForList)
+            Service -> Service : buildPagination({ page, limit, total })
+            Service --> Controller : VACATION.REQUESTS_FOUND
+            Controller --> Frontend : 200 solicitudes futuras + paginación
+            Frontend --> Usuario : Muestra tabla con estado de cada solicitud
+        end
+    end
+end
+
+Usuario -> Frontend : Presiona el botón para ver pasadas
+
+Frontend -> Router : GET /vacation/requests/past?page&limit&search&status&startDate&endDate\nAuthorization: Bearer token
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(...allRoles)
+Router -> Middleware : requirePrivileges(viewOwnVacations)
+Router -> Middleware : validate(getOwnVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+    Middleware --> Frontend : 401/403/422
+    Frontend --> Usuario : Muestra error
+else Request HTTP válida
+    Router -> Controller : getPastVacationRequests(req, res)
+    Controller -> Service : getPastVacationRequests(employeeId, query)
+
+    alt no existe employeeId
+        Service --> Controller : USER.NOT_ACCESS
+        Controller --> Frontend : 401 Usuario no autenticado
+    else employeeId existe
+        Service -> Service : getOwnVacationRequestsInputSchema.safeParse({ employeeId, query })
+
+        alt datos inválidos
+            Service --> Controller : VACATION.VALIDATION_ERROR
+            Controller --> Frontend : 422 Datos inválidos
+        else datos válidos
+            Service -> Service : parsePagination(page, limit)
+            Service -> Service : statusFilter = mapOwnVacationStatus(query.status || "all")
+            Service -> Service : search = query.search?.trim() || ""
+            Service -> Service : dateFilter = buildVacationDateFilter(startDate, endDate)
+            Service -> Service : where.start.lte = getTodayUtcDate()
+
+            Service -> VacationGetModel : getVacationRequestsByEmployee({ where, skip, take, orderBy })
+            VacationGetModel -> DB : findMany + count de solicitudes pasadas
+            DB --> VacationGetModel : requests, total
+            VacationGetModel --> Service : requests, total
+
+            Service -> Service : requests.map(mapVacationRequestForList)
+            Service -> Service : buildPagination({ page, limit, total })
+            Service --> Controller : VACATION.REQUESTS_FOUND
+            Controller --> Frontend : 200 solicitudes pasadas + paginación
+            Frontend --> Usuario : Muestra tabla con estado de cada solicitud
+        end
+    end
+end
+
+@enduml

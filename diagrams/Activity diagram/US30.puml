@@ -1,0 +1,53 @@
+@startuml
+title US 30 - Consultar mis vacaciones
+
+|Usuario|
+start
+:Entra al módulo de "Mis vacaciones";
+
+|Sistema|
+:Aplica rate limit;
+:Valida token de sesión;
+if (¿Token válido?) then (Sí)
+else (No)
+  :Muestra error de autenticación;
+  stop
+endif
+
+:Valida rol permitido;
+:Valida privilegio viewOwnVacations;
+if (¿Tiene permisos?) then (Sí)
+else (No)
+  :Muestra error de permisos insuficientes;
+  stop
+endif
+
+:Valida query params\n(paginación, búsqueda, estado y fechas);
+if (¿Query válida?) then (Sí)
+else (No)
+  :Muestra error de validación;
+  stop
+endif
+
+:Consulta solicitudes de vacaciones futuras del usuario;
+:Ordena las futuras de la más cercana a la más lejana;
+:Mapea los datos de cada solicitud\nincluyendo su estado;
+:Devuelve solicitudes y paginación;
+
+|Usuario|
+:Visualiza la tabla con sus solicitudes futuras\ny el estado de cada una;
+
+if (¿Presiona el botón para cambiar de vista?) then (Sí)
+  |Sistema|
+  :Consulta solicitudes de vacaciones pasadas del usuario;
+  :Ordena las pasadas de la más reciente a la más antigua;
+  :Mapea los datos de cada solicitud\nincluyendo su estado;
+  :Devuelve solicitudes y paginación;
+
+  |Usuario|
+  :Visualiza la tabla con sus solicitudes pasadas\ny el estado de cada una;
+else (No)
+endif
+
+stop
+@enduml

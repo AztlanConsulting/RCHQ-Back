@@ -1,6 +1,6 @@
 @startuml
 
-|Usuario|
+|Empleado|
 start
 :Ingresar al calendario o lista de vacaciones;
 :Presionar en eliminar vacación;
@@ -15,7 +15,7 @@ else (No)
 stop
 endif
 
-:Validar si el usuario puede eliminarla;
+:Validar si el Empleado puede eliminarla;
 
 if (¿Es dueño de la vacación?) then (Sí)
 else (No)

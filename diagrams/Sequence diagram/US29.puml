@@ -1,5 +1,5 @@
 @startuml
-title US80 - Coordinador consulta solicitudes de vacaciones pendientes y revisadas
+title US29 - Coordinador consulta solicitudes de vacaciones pendientes y revisadas
 
 actor "Coordinador" as Usuario
 boundary "Frontend" as Frontend

@@ -1,7 +1,7 @@
 @startuml
 title US35 - Rechazar una solicitud de vacaciones
 
-|Usuario|
+|Coordinador|
 start
 :Entrar al módulo de solicitudes de vacaciones;
 :Seleccionar una solicitud pendiente;
@@ -140,7 +140,7 @@ endif
 :Guardar log de rechazo;
 :Mostrar mensaje "Solicitud rechazada correctamente";
 
-|Usuario|
+|Coordinador|
 :Continuar revisando solicitudes;
 stop
 

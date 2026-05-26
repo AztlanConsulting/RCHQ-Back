@@ -1,9 +1,9 @@
 @startuml
 title US28 - Registrar vacaciones de un empleado
 
-|Usuario|
+|Coordinador|
 start
-:Administrador/Coordinador entra a registrar vacaciones;
+:Coordinador entra a registrar vacaciones;
 :Seleccionar empleado;
 :Seleccionar fecha de inicio;
 :Seleccionar fecha final;
@@ -20,7 +20,7 @@ endif
 :Aplicar rate limit;
 
 :Validar rol del usuario;
-if (¿Rol es Administrador o Coordinador?) then (Sí)
+if (¿Rol es Coordinador?) then (Sí)
 else (No)
 :Mostrar error "Permisos insuficientes";
 stop
@@ -56,7 +56,7 @@ stop
 endif
 
 :Validar rol del actor en servicio;
-if (¿Actor es Administrador o Coordinador?) then (Sí)
+if (¿Actor es Coordinador?) then (Sí)
 else (No)
 :Mostrar error "No tienes permisos para registrar vacaciones de otros empleados";
 stop
@@ -148,7 +148,7 @@ end note
 
 :Mostrar confirmación "Vacaciones registradas correctamente";
 
-|Usuario|
+|Coordinador|
 :Visualizar confirmación en pantalla;
 stop
 

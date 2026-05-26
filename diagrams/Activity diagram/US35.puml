@@ -1,7 +1,7 @@
 @startuml
-title US30 - Coordinador modifica vacaciones pendientes o aprobadas de un empleado
+title US35 - Coordinador modifica vacaciones pendientes o aprobadas de un empleado
 
-|Usuario|
+|Coordinador|
 start
 :Entrar al módulo de solicitudes/vacaciones;
 :Seleccionar una solicitud pendiente o aprobada;
@@ -199,8 +199,8 @@ endif
 :Guardar log de modificación;
 :Mostrar mensaje "Vacaciones modificadas correctamente";
 
-|Usuario|
+|Coordinador|
 :Continuar revisando solicitudes/vacaciones;
 stop
 
-@endumlß
+@enduml

@@ -1,13 +1,13 @@
 @startuml HU - Registro de evento personal
 
-|Coordinador|
+|Coordinador/Empleado|
 start
 :Interactuar con el calendario;
 
 |Sistema|
 :Renderizar modal de creación;
 
-|Coordinador|
+|Coordinador/Empleado|
 :Seleccionar opción "Personal";
 repeat
 :Llenar campos obligatorios:
@@ -27,7 +27,7 @@ else (NO)
 endif
 
 if (¿Ingresar descripción?) then (SI)
-    |Coordinador|
+    |Coordinador/Empleado|
     :Ingresar descripción del evento;
 else (NO)
 endif
@@ -37,7 +37,7 @@ repeat while (¿Los campos obligatorios están completos?) is (NO)
 :Validar disponibilidad de horario;
 
 if (¿Existe empalme con otro evento?) then (SI)
-    |Coordinador|
+    |Coordinador/Empleado|
     if (¿Desea agregar el evento de todos modos?) then (SI)
         |Sistema|
         :Registrar evento con traslape;
