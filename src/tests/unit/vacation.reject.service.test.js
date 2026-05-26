@@ -65,6 +65,19 @@ describe("US35 - rejectVacationRequest service", () => {
         expect(vacationUpdateModel.rejectVacationRequestAtomically).not.toHaveBeenCalled();
     });
 
+    it("regresa VALIDATION_ERROR si el feedback tiene caracteres no permitidos", async () => {
+        const result = await rejectVacationRequest({
+            actorEmployeeId,
+            vacationRequestId,
+            feedback: "No procede <script>alert(1)</script> 🙂",
+            ipAddress,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.VALIDATION_ERROR);
+        expect(employeeGetModel.findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+        expect(vacationUpdateModel.rejectVacationRequestAtomically).not.toHaveBeenCalled();
+    });
+
     it("regresa NOT_ACCESS si el actor no existe", async () => {
         employeeGetModel.findByIdWithRoleAndHouse.mockResolvedValueOnce(null);
 
@@ -245,7 +258,8 @@ describe("US35 - rejectVacationRequest service", () => {
     });
 
     it("rechaza correctamente con feedback válido", async () => {
-        const feedback = "Periodo de alta demanda operativa";
+        const feedback =
+            "Motivo \"crítico\": clima 30°; enlace https://rchq.mx/rechazo?turno=dia%201&personas=5; cálculo 5-3=2+0*1 🙂👍🏽.";
 
         const rejectedVacationRequest = {
             ...pendingVacationRequest,
