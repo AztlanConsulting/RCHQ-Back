@@ -54,6 +54,9 @@ const { readLogIp } = require("../../utils/logIp");
 const RESPONSES = require("../../utils/responses");
 
 describe("logs.get.service", () => {
+    const currentYear = new Date().getUTCFullYear();
+    const minYear = currentYear - 5;
+
     beforeEach(() => {
         jest.clearAllMocks();
     });
@@ -98,6 +101,22 @@ describe("logs.get.service", () => {
         });
     });
 
+    it("retorna INVALID_PAGINATION si la fecha es anterior al límite de 5 años", async () => {
+        const result = await getLogsByHouse(
+            "house-1",
+            "1",
+            "6",
+            "",
+            "",
+            `${minYear - 1}-12-31`,
+            `${minYear - 1}-12-31`,
+        );
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
+    });
+
     it("retorna lista vacía cuando no hay logs", async () => {
         getLogsByHousePage.mockResolvedValue({
             logs: [],
@@ -125,7 +144,7 @@ describe("logs.get.service", () => {
     });
 
     it("retorna logs paginados y mapeados", async () => {
-        const moment = new Date("2026-05-01T12:00:00.000Z");
+        const moment = new Date(`${currentYear}-05-01T12:00:00.000Z`);
 
         getLogsByHousePage.mockResolvedValue({
             logs: [
@@ -446,7 +465,7 @@ describe("logs.get.service", () => {
     });
 
     it("genera el reporte pdf con el nombre de la casa", async () => {
-        const moment = new Date("2026-05-01T12:00:00.000Z");
+        const moment = new Date(`${currentYear}-05-01T12:00:00.000Z`);
         const pdfBuffer = Buffer.from("%PDF-test");
 
         getLogsByHouseModel.mockResolvedValue([
@@ -483,7 +502,7 @@ describe("logs.get.service", () => {
         getEventsByIds.mockResolvedValue([]);
         buildLogsPdfBuffer.mockResolvedValue(pdfBuffer);
 
-        const result = await getLogsPdfByHouse("house-1", 2026, 2026);
+        const result = await getLogsPdfByHouse("house-1", currentYear, currentYear);
 
         expect(result.code).toBe(RESPONSES.LOGS.PDF_CREATED);
         expect(buildLogsPdfBuffer).toHaveBeenCalledWith({
@@ -505,7 +524,23 @@ describe("logs.get.service", () => {
             generatedAt: expect.any(Date),
         });
         expect(result.data.pdfBuffer).toBe(pdfBuffer);
-        expect(result.data.fileName).toBe("reporte-logs-2026-2026.pdf");
+        expect(result.data.fileName).toBe(`reporte-logs-${currentYear}-${currentYear}.pdf`);
+    });
+
+    it("rechaza reportes fuera de los últimos 5 años", async () => {
+        const result = await getLogsPdfByHouse("house-1", minYear - 1, currentYear);
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
+    });
+
+    it("rechaza reportes mayores al año actual", async () => {
+        const result = await getLogsPdfByHouse("house-1", currentYear + 1, currentYear);
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
     });
 
 });

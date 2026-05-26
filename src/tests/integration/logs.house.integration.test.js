@@ -362,6 +362,9 @@ const cleanup = async () => {
 };
 
 describe("GET /logs/house", () => {
+    const currentYear = new Date().getUTCFullYear();
+    const minYear = currentYear - 5;
+
     beforeAll(async () => {
         await seed();
     });
@@ -523,6 +526,15 @@ describe("GET /logs/house", () => {
         });
     });
 
+    it("retorna 422 si el filtro de fecha excede los últimos 5 años", async () => {
+        const res = await request(app)
+            .get(`/logs/house?page=1&limit=10&startDate=${minYear - 1}-12-31&endDate=${minYear - 1}-12-31`)
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(422);
+        expect(res.body.message).toBe("Parámetros inválidos");
+    });
+
     it("filtra por responsable y afectado por separado", async () => {
         const res = await request(app)
             .get("/logs/house?page=1&limit=10&responsible=Carla&affected=Luis")
@@ -553,7 +565,7 @@ describe("GET /logs/house", () => {
 
     it("genera un reporte pdf de los logs de la casa", async () => {
         const res = await request(app)
-            .get("/logs/house/report/pdf?year=2026&currentYear=2026")
+            .get(`/logs/house/report/pdf?year=${currentYear}&currentYear=${currentYear}`)
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(201);
@@ -561,6 +573,15 @@ describe("GET /logs/house", () => {
         expect(res.headers["content-disposition"]).toContain(".pdf");
         expect(Buffer.isBuffer(res.body)).toBe(true);
         expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
+    });
+
+    it("retorna 422 si intentan generar un reporte con más de 5 años de antigüedad", async () => {
+        const res = await request(app)
+            .get(`/logs/house/report/pdf?year=${minYear - 1}&currentYear=${currentYear}`)
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(422);
+        expect(res.body.message).toBe("Parámetros inválidos");
     });
 
 });
