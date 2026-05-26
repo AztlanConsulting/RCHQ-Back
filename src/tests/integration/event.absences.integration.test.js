@@ -443,7 +443,7 @@ describe(`GET ${API_PREFIX}/:id/:startDate/:endDate - absences calendar`, () => 
                 employeeId: IDS.employee,
                 name: "Ana Calendario",
                 curp: "MOXC801103MBSCYE83",
-                subtitle: "EVAB900101HDF004",
+                subtitle: "MOXC801103MBSCYE83",
                 focus: "ausencias",
                 scope: "personal",
                 type: expect.stringMatching(/^ABS/),

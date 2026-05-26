@@ -1022,7 +1022,7 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody());
 
         expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Role not allowed");
+        expect(res.body.message).toBe("Permisos insuficientes");
     });
 
     it("403 si no tiene el permiso addAbsences", async () => {
@@ -1040,7 +1040,7 @@ describe("POST /absence/:employeeId/add", () => {
                 .send(validBody());
 
             expect(res.statusCode).toBe(403);
-            expect(res.body.message).toBe("Insufficient privileges");
+            expect(res.body.message).toBe("Permisos insuficientes");
         } finally {
             await prisma.role_privilege.upsert({
                 where: {

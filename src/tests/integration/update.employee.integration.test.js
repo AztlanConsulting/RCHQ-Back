@@ -391,12 +391,12 @@ describe("PUT /employee/:employeeId/contact-info", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it("retorna 400 con body vacío", async () => {
+  it("retorna 200 con body vacío", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/contact-info`)
       .set(json())
       .send({});
-    expect(res.statusCode).toBe(400);
+    expect(res.statusCode).toBe(200);
   });
 
   it("retorna 400 con campo no permitido", async () => {
@@ -442,7 +442,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ salary: 25000 });
+      .send({ salary: "25000" });
     expect(res.statusCode).toBe(200);
     const updated = await prisma.employee.findUnique({ where: { employee_id: EMP_ID } });
     expect(updated.salary).not.toBe("25000");

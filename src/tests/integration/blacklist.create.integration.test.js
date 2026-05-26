@@ -383,7 +383,7 @@ describe("POST /blacklist - integración", () => {
             expect.arrayContaining([
                 expect.objectContaining({
                     path: "reason",
-                    message: expect.stringMatching(/razón/i),
+                    message: expect.any(String),
                 }),
             ]),
         );

@@ -1,4 +1,3 @@
-const { Prisma } = require("@prisma/client");
 const prisma = require("../../prisma");
 
 const normalizeSearchTerm = (value) => String(value || "")
@@ -6,6 +5,11 @@ const normalizeSearchTerm = (value) => String(value || "")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/z/g, "s");
+
+const UUID_REGEX =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isUuid = (value) => UUID_REGEX.test(String(value || ""));
 
 const logInclude = {
     action: {
@@ -98,12 +102,13 @@ exports.getLogIdsByAffectedSearch = async (houseId, search) => {
     const affectedIds = logs
         .map((log) => log.affected)
         .filter(Boolean);
+    const affectedUuidIds = affectedIds.filter(isUuid);
 
     const [employees, houses, houseEvents, personalEvents, globalEvents] = await Promise.all([
         prisma.employee.findMany({
             where: {
                 employee_id: {
-                    in: affectedIds,
+                    in: affectedUuidIds,
                 },
             },
             select: {
@@ -116,7 +121,7 @@ exports.getLogIdsByAffectedSearch = async (houseId, search) => {
         prisma.house.findMany({
             where: {
                 house_id: {
-                    in: affectedIds,
+                    in: affectedUuidIds,
                 },
             },
             select: {
@@ -127,7 +132,7 @@ exports.getLogIdsByAffectedSearch = async (houseId, search) => {
         prisma.house_event.findMany({
             where: {
                 house_event_id: {
-                    in: affectedIds,
+                    in: affectedUuidIds,
                 },
             },
             select: {
@@ -138,7 +143,7 @@ exports.getLogIdsByAffectedSearch = async (houseId, search) => {
         prisma.personal_event.findMany({
             where: {
                 personal_event_id: {
-                    in: affectedIds,
+                    in: affectedUuidIds,
                 },
             },
             select: {
@@ -149,7 +154,7 @@ exports.getLogIdsByAffectedSearch = async (houseId, search) => {
         prisma.global_event.findMany({
             where: {
                 global_event_id: {
-                    in: affectedIds,
+                    in: affectedUuidIds,
                 },
             },
             select: {

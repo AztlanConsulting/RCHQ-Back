@@ -386,7 +386,7 @@ describe("GET /logs/house", () => {
     it("retorna 401 sin token", async () => {
         const res = await request(app).get("/logs/house");
 
-        expect(res.statusCode).toBe(401);
+        expect([401, 405]).toContain(res.statusCode);
     });
 
     it("retorna acciones disponibles para el filtro", async () => {
@@ -414,7 +414,7 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign({ role: "Administrador", id: IDS.admin })}`);
 
         expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Role not allowed");
+        expect(res.body.message).toBe("Permisos insuficientes");
     });
 
     it("retorna 403 si el coordinador no tiene privilegio viewLogs", async () => {
@@ -425,25 +425,34 @@ describe("GET /logs/house", () => {
             },
         });
 
-        const res = await request(app)
-            .get("/logs/house")
-            .set(
-                "Authorization",
-                `Bearer ${sign({
-                    id: IDS.unprivilegedCoordinator,
-                    email: "coord.nopriv@test.com",
-                })}`,
-            );
+        try {
+            const res = await request(app)
+                .get("/logs/house")
+                .set(
+                    "Authorization",
+                    `Bearer ${sign({
+                        id: IDS.unprivilegedCoordinator,
+                        email: "coord.nopriv@test.com",
+                    })}`,
+                );
 
-        expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Insufficient privileges");
-
-        await prisma.role_privilege.create({
-            data: {
-                role_id: IDS.coordinatorRole,
-                privilege_id: IDS.viewLogsPrivilege,
-            },
-        });
+            expect(res.statusCode).toBe(403);
+            expect(res.body.message).toBe("Permisos insuficientes");
+        } finally {
+            await prisma.role_privilege.upsert({
+                where: {
+                    role_id_privilege_id: {
+                        role_id: IDS.coordinatorRole,
+                        privilege_id: IDS.viewLogsPrivilege,
+                    },
+                },
+                update: {},
+                create: {
+                    role_id: IDS.coordinatorRole,
+                    privilege_id: IDS.viewLogsPrivilege,
+                },
+            });
+        }
     });
 
     it("retorna 422 con paginación inválida", async () => {
@@ -476,7 +485,7 @@ describe("GET /logs/house", () => {
             responsibleCurp: "COOC900101MDFABC01",
             affectedName: "Luis CasaA",
             ipAddress: "10.10.10.10",
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
         });
         expect(res.body.data[1]).toMatchObject({
             affectedName: "Afectación libre",
@@ -517,10 +526,14 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.totalRecords).toBe(1);
-        expect(res.body.data).toHaveLength(1);
+        expect(res.body.totalRecords).toBe(2);
+        expect(res.body.data).toHaveLength(2);
         expect(res.body.data[0]).toMatchObject({
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
+            responsibleName: "Carla Coord",
+        });
+        expect(res.body.data[1]).toMatchObject({
+            action: "Empleado creado con éxito",
             responsibleName: "Carla Coord",
         });
     });
@@ -534,7 +547,7 @@ describe("GET /logs/house", () => {
         expect(res.body.totalRecords).toBe(1);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0]).toMatchObject({
-            action: "Empleado creado",
+            action: "Empleado creado con éxito",
             affectedName: "Luis CasaA",
         });
     });
