@@ -1,0 +1,50 @@
+@startuml
+title US 26 - Consultar las vacaciones en el calendario (Sequence Diagram)
+
+actor Coordinador
+participant "event.route.js\nrouter" as Router
+participant "Middlewares\nAuth, ABAC" as Middlewares
+participant "get.controller.js\ngetHouseCalendarRecords..." as Controller
+participant "get.service.js\ngetHouseCalendarRecords..." as Service
+participant "utils/dates.js" as DatesUtil
+participant "vacation/get.model.js" as VacModel
+participant "event/get.model.js" as EventModel
+participant "utils/mappers\nevent.map.js" as Mappers
+database "BD (Prisma)" as BD
+
+Coordinador -> Router : GET /house/range/:startDate/:endDate
+Router -> Middlewares : verifyToken, resolveRequesterHouse, authorize
+Middlewares --> Router : next()
+
+Router -> Controller : getHouseCalendarRecordsInRange(req, res)
+activate Controller
+
+Controller ->> Service : await getHouseCalendarRecordsInRange(houseId, startDate, endDate)
+activate Service
+
+Service -> DatesUtil : stringToDate(rawStartDate/EndDate)
+
+Service ->> VacModel : await getHouseCalendarVacationsInRange(houseId, startDate, endDate)
+VacModel ->> BD : prisma.vacations_request.findMany(...)
+BD -->> VacModel : vacations[]
+VacModel -->> Service : vacations
+
+Service ->> EventModel : await getHouseEventsInRange()
+Service ->> EventModel : await getGlobalEventsInRange()
+    EventModel ->> BD : Consultas de eventos de casa y globales
+    BD -->> EventModel : houseEvents, globalEvents
+    EventModel -->> Service : eventos para freeDays
+
+Service -> Service : Filtra freeDays (isFreeDay == true)
+
+loop por cada vacación de la casa
+    Service -> DatesUtil : calculateUsedDays(vacation.employee.workdays, start, end, freeDays)
+    Service -> Mappers : mapHouseVacationCalendarEvent(vacation, usedDays)
+end
+
+Service --> Controller : { code: RESPONSES.EVENTS.FOUND, data: { events } }
+deactivate Service
+
+Controller --> Coordinador : res.status(200).json(data)
+deactivate Controller
+@enduml

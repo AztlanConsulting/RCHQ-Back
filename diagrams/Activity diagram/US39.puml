@@ -1,0 +1,34 @@
+@startuml
+title US39 - Consultar las ausencias en el calendario
+
+|Coordinador|
+start
+:Ingresa a la vista del Calendario de la Casa;
+
+|Sistema|
+:Recibe solicitud para consultar eventos del rango actual;
+:Verifica auth, roles (Admin/Coordinador) y resuelve houseId;
+if (¿Autorizado según ABAC y tiene houseId?) then (Sí)
+  :Delega al Controller y Service (getHouseCalendarRecordsInRange);
+  :Valida y convierte formato de fechas;
+  if (¿Fechas válidas?) then (Sí)
+    :Busca ausencias de la casa (excluyendo propias);
+    :Busca eventos de la casa y globales;
+    :Busca eventos personales de otros en la casa;
+    :Busca vacaciones de la casa para completar el calendario;
+    :Filtra días libres de los eventos;
+    :Calcula días usados de cada ausencia\nusando los días laborales de cada empleado;
+    :Mapea las ausencias al arreglo de eventos del calendario;
+    :Retorna status 200 con la lista de eventos de la casa;
+  else (No)
+    :Retorna status 400/406 (Error en fechas);
+  endif
+else (No)
+  :Retorna status 403 (Acceso denegado);
+endif
+
+|Coordinador|
+:Identifica qué empleado faltará y en qué día;
+stop
+
+@enduml

@@ -1,45 +1,91 @@
-@startuml HU01 - Administrador y coordinador registra usuario
+@startuml
+title US - Flujo de Inicio de Sesión (Activity Diagram)
 
-|Administrador|
+|Usuario|
 start
-:Seleccionar registrar empleado;
+:Accede a la pantalla de inicio de sesión;
+:Ingresa correo electrónico y contraseña;
+:Presiona el botón de iniciar sesión;
 
-|Sistema|
-:Solicita datos al administrador;
-
-|Administrador|
-repeat
-:Registra datos obligatorios:
-- Casa en la que se contrató
-- Puesto de trabajo
-- Nombre
-- Apellidos
-- Correo
-- CURP;
-
-|Sistema|
-if (¿Ingresar datos opcionales?) then (SI)
-    |Administrador|
-    :Registra datos opcionales:
-    - RFC
-    - Cuenta bancaria
-    - Cumpleaños
-    - Foto del empleado;
-else (NO)
+|Frontend|
+:Valida que los campos no estén vacíos;
+:Valida formato de correo y longitud máxima;
+if (¿Campos válidos?) then (Sí)
+  :Envía solicitud POST /login al backend;
+else (No)
+  :Muestra error de validación en formulario;
+  stop
 endif
 
-|Sistema|
-repeat while (¿Los campos obligatorios están completos?) is (NO)
-:Revisar si el usuario existe;
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware de validación (loginSchema);
+if (¿Validación es correcta?) then (Sí)
+  :Delega al Controller (loginFunction) y Service (login);
+  :Busca al empleado en BD por correo;
+  if (¿El usuario existe?) then (Sí)
+    if (¿El usuario está activo?) then (Sí)
+      if (¿Está bloqueado temporalmente?) then (No)
+        :Verifica la contraseña (hash);
+        if (¿Contraseña es correcta?) then (Sí)
+          :Limpia historial de intentos fallidos y bloqueos;
+          
+          if (¿Requiere cambio de contraseña en primer login?) then (Sí)
+            :Registra log (FIRST_LOGIN_PENDING_PASSWORD_CHANGE);
+            :Genera token de primer login;
+            :Retorna status 200 (nextStep: CHANGE_PASSWORD_FIRST_LOGIN);
+          elseif (¿Tiene TwoFactorAuth activo?) then (Sí)
+            :Genera pre-TwoFactorAuth JWT;
+            :Retorna status 200 (isActiveTwoFactorAuth: true);
+          else (No)
+            :Registra log (LOGIN_SUCCESS);
+            :Genera token de sesión (JWT final);
+            :Retorna status 200 con token y datos del usuario;
+          endif
 
-if (¿El usuario ya existe?) then (SI)
-    :Notifica al administrador que ya existe;
-    stop
-else (NO)
-    :Registra nuevo empleado;
-    :Registrar acción en logs;
-    :Confirma registro;
-    stop
+        else (No)
+          :Incrementa intentos fallidos de login;
+          :Registra log (LOGIN_FAILED);
+          if (¿Alcanzó el máximo de intentos (3)?) then (Sí)
+            :Establece fecha de bloqueo temporal;
+            :Registra log (ACCOUNT_BLOCKED);
+            :Retorna status 423 (ACCOUNT_TEMPORARILY_BLOCKED);
+          else (No)
+            :Retorna status 401 (INVALID_CREDENTIALS);
+          endif
+        endif
+      else (Sí)
+        :Retorna status 423 (ACCOUNT_TEMPORARILY_BLOCKED);
+      endif
+    else (No)
+      :Registra log (INACTIVE_ACCESS_DENIED);
+      :Retorna status 401 (INVALID_CREDENTIALS);
+    endif
+  else (No)
+    :Retorna status 401 (INVALID_CREDENTIALS);
+  endif
+else (No)
+  :Retorna status 400 (Bad Request);
 endif
+
+|Frontend|
+if (¿Status HTTP de respuesta?) then (200 OK)
+  if (¿nextStep == CHANGE_PASSWORD_FIRST_LOGIN?) then (Sí)
+    :Redirige a la pantalla de Cambio de Contraseña;
+  elseif (¿isActiveTwoFactorAuth == true?) then (Sí)
+    :Redirige a la pantalla de verificación 2FA;
+  else (Flujo normal)
+    :Guarda token y redirige al Dashboard principal;
+  endif
+elseif (¿Status 401 Unauthorized?) then (Sí)
+  :Muestra mensaje de "Credenciales inválidas";
+elseif (¿Status 423 Locked?) then (Sí)
+  :Muestra mensaje de "Cuenta bloqueada temporalmente";
+elseif (¿Status 400 Bad Request?) then (Sí)
+  :Muestra mensaje de datos inválidos;
+else (500 Internal Server Error)
+  :Muestra error genérico del servidor;
+endif
+stop
 
 @enduml

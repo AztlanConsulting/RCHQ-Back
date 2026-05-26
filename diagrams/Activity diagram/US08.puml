@@ -1,0 +1,50 @@
+@startuml
+title US - Consultar Todos los Empleados (Activity Diagram)
+
+|Usuario|
+start
+:Navega a la vista de "Empleados";
+
+|Frontend|
+:Envía solicitud GET /getAll con filtros opcionales (page, limit, active, search);
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware apiLimiter;
+:Ejecuta middleware verifyToken;
+
+if (¿Token es válido?) then (Sí)
+  :Ejecuta middleware requireRole("Administrador", "Coordinador");
+  if (¿Tiene el rol adecuado?) then (Sí)
+    :Ejecuta middleware requirePrivileges("viewEmployees");
+    if (¿Tiene el privilegio?) then (Sí)
+      :Delega al Controller (getAll);
+      if (¿El usuario tiene un houseId en su token?) then (Sí)
+        :Extrae parámetros (active, page, limit, search);
+        :Delega al Service (getEmployees);
+        :Convierte query params a tipos correctos y calcula 'skip';
+        :Delega al Model (getEmployees);
+        :Construye la condición de búsqueda (whereClause);
+        :Ejecuta consultas a la BD concurrentes (findMany, count);
+        :Retorna empleados crudos y total al Service;
+        :El Service mapea los datos (fullName, roleName, status);
+        :Calcula la paginación (totalPages);
+        :Retorna status 200 con { data, pagination };
+      else (No)
+        :Retorna status 403 (Acceso denegado: sin houseId);
+      endif
+    else (No)
+      :Retorna status 403 (Privilegios insuficientes);
+    endif
+  else (No)
+    :Retorna status 403 (Rol insuficiente);
+  endif
+else (No)
+  :Retorna status 401 / 403 (No autenticado);
+endif
+
+|Frontend|
+:Recibe lista paginada y renderiza la tabla de empleados;
+stop
+
+@enduml

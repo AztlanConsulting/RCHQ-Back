@@ -1,0 +1,52 @@
+@startuml
+title US 15 - Modificar documento de empleado (Activity Diagram)
+
+|Usuario|
+start
+:Selecciona "Modificar documento" en el perfil de un empleado;
+:Selecciona el nuevo archivo a subir;
+:Presiona el botón de guardar;
+
+|Frontend|
+:Empaqueta el archivo en FormData;
+:Envía solicitud PUT /:id/documents/:field al backend;
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware apiLimiter y verifyToken;
+if (¿Token válido?) then (Sí)
+  :Verifica rol y privilegio (manageDocuments);
+  if (¿Rol y privilegio permitidos?) then (Sí)
+    :Ejecuta resolveEmployeeHouse;
+    :Ejecuta ABAC authorize(modifyDocuments);
+    if (¿Autorizado para modificar documentos de este empleado?) then (Sí)
+      :Ejecuta middleware uploadDocs.single("file");
+      :Sube el documento de forma temporal al servidor;
+      :Delega al Controller (updateDocument) y al Service;
+      :Busca el tipo de documento (docType) en BD;
+      :Busca al empleado en BD;
+      :Busca el registro del documento actual (employee_documents);
+      
+      if (¿Existen docType, empleado y el documento previo?) then (Sí)
+        :Actualiza la URL del documento en la BD;
+        :Borra físicamente el archivo viejo del servidor (deleteFileIfExists);
+        :Crea Log de auditoría (DOCUMENT_UPDATED);
+        :Retorna status 200 (Documento actualizado);
+      else (No)
+        :Borra físicamente el archivo recién subido;
+        :Retorna status 400 o 404 (No permitido o No encontrado);
+      endif
+    else (No)
+      :Retorna status 403 (No autorizado por política ABAC);
+    endif
+  else (No)
+    :Retorna status 403 (Rol/Privilegio insuficiente);
+  endif
+else (No)
+  :Retorna status 401 (No autenticado);
+endif
+
+|Frontend|
+:Notifica al usuario y actualiza la lista de documentos en pantalla;
+stop
+@enduml

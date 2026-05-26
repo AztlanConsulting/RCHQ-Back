@@ -1,0 +1,78 @@
+@startuml
+title US - Dar de Baja Empleado (Activity Diagram)
+
+|Usuario|
+start
+:Navega a la gestión de empleados;
+:Selecciona dar de baja a un empleado;
+:Ingresa la razón y (opcionalmente) marca "Añadir a lista negra";
+:Presiona el botón de confirmar;
+
+|Frontend|
+:Envía solicitud PATCH /:employeeId/deactivate al backend;
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta apiLimiter, verifyToken;
+if (¿Token válido?) then (Sí)
+  :Verifica roles (Admin/Coord) y privilegios (manageEmployees);
+  if (¿Rol y privilegio permitidos?) then (Sí)
+    :Ejecuta middleware resolveRequesterHouse;
+    :Valida parámetros y body con Zod (deactivateEmployeeSchema);
+    if (¿Schema válido?) then (Sí)
+      :Ejecuta authorize (ABAC - deactivateEmployeePolicy);
+      :Consulta y adjunta al empleado en req.resolvedEmployee;
+      if (¿Está autorizado según la casa y el privilegio de lista negra?) then (Sí)
+        :Delega al Controller (deactivateEmployeeController);
+        :Delega al Service (deactivateEmployee);
+        
+        if (¿El actorId es igual al employeeId?) then (Sí)
+          :Retorna status 400 (No puedes darte de baja a ti mismo);
+        else (No)
+          if (¿El empleado existe?) then (Sí)
+            if (¿Empleado ya inactivo Y NO se añade a lista negra?) then (Sí)
+              :Retorna status 409 (Ya está inactivo);
+            elseif (¿Quiere añadir a lista negra Y ya está en ella?) then (Sí)
+              :Retorna status 409 (Ya en lista negra);
+            elseif (¿Falta la razón obligatoria?) then (Sí)
+              :Retorna status 422 (Error de validación de razón);
+            else (Cumple todas las validaciones)
+              :Delega al Model (deactivateEmployee);
+              :Ejecuta prisma.$transaction;
+              :Actualiza empleado (is_active=false, end_date, razón);
+              :Si aplica, inserta/actualiza en tabla blacklist;
+              :Crea Log de EMPLOYEE_DEACTIVATED;
+              :Si aplica, crea Log de BLACKLIST_ADDED;
+              :Retorna status 200 (Empleado dado de baja con éxito);
+            endif
+          else (No)
+            :Retorna status 404 (Empleado no encontrado);
+          endif
+        endif
+      else (No)
+        :Retorna status 403 (No autorizado por ABAC);
+      endif
+    else (No)
+      :Retorna status 400 / 422 (Error de Schema);
+    endif
+  else (No)
+    :Retorna status 403 (Rol/Privilegio insuficiente);
+  endif
+else (No)
+  :Retorna status 401 (No autenticado);
+endif
+
+|Frontend|
+if (¿Status de respuesta HTTP?) then (200 OK)
+  :Muestra notificación de éxito (Empleado dado de baja);
+  :Actualiza la vista quitando al empleado o cambiando su estado;
+elseif (¿Status 400/409/422?) then (Sí)
+  :Muestra advertencia (Ej. "Ya está inactivo", "No puedes auto-darte de baja");
+elseif (¿Status 404?) then (Sí)
+  :Muestra error de empleado no encontrado;
+else (500)
+  :Muestra error genérico del servidor;
+endif
+stop
+
+@enduml

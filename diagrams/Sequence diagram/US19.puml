@@ -1,22 +1,22 @@
 @startuml
-title US 28 - Filtrar las vacaciones en pantalla (Sequence Diagram)
+title US 19 - Filtrar eventos en pantalla (Sequence Diagram)
 
 actor Empleado
 boundary "CalendarPage.jsx" as Page
 control "useCalendarFilters.js" as Hook
-boundary "vacation.service.js\n(Frontend)" as FEService
+boundary "event.service.js\n(Frontend)" as FEService
 participant "event.route.js\nrouter" as Router
 participant "get.controller.js\ngetEventsInRange()" as Controller
 participant "get.service.js\ngetEventsInRange()" as Service
-participant "vacation/get.model.js" as VacModel
-participant "utils/mappers\nevent.map.js" as Mappers
+participant "event/get.model.js" as EventModel
+participant "vacation & absence\nget.model.js" as VacAbsModel
 database "BD (Prisma)" as BD
 
 Empleado -> Page : Abre la vista de calendario
 Page -> Hook : loadCalendarRange(employeeId, startDate, endDate)
 activate Hook
 
-Hook -> FEService : getCalendarEvents(employeeId, startDate, endDate)
+Hook -> FEService : getEventsInRange(employeeId, startDate, endDate)
 activate FEService
 FEService -> Router : GET /range/:id/:startDate/:endDate
 activate Router
@@ -26,14 +26,15 @@ activate Controller
 Controller ->> Service : await getEventsInRange(employeeId, startDate, endDate)
 activate Service
 
-Service ->> VacModel : await getVacationsInRange(employeeId, startDate, endDate)
-VacModel ->> BD : prisma.vacations_request.findMany(...)
-BD -->> VacModel : vacations[]
-VacModel -->> Service : vacations
+Service ->> EventModel : getHouseEventsInRange(...)
+EventModel ->> BD : Consultas de eventos de casa y globales
+BD -->> EventModel : eventos[]
+EventModel -->> Service : eventos base
 
-loop por cada vacación
-    Service -> Mappers : mapHouseVacationCalendarEvent(vacation, usedDays)
-end
+Service ->> VacAbsModel : getVacationsInRange(...)\ngetAbsencesInRange(...)
+VacAbsModel ->> BD : Consultas de vacaciones y ausencias
+BD -->> VacAbsModel : vacations[], absences[]
+VacAbsModel -->> Service : eventos complementarios
 
 Service --> Controller : { code: FOUND, data: { events } }
 deactivate Service
@@ -41,30 +42,30 @@ Controller --> Router : res.status(200).json(events)
 deactivate Controller
 Router --> FEService : events[]
 deactivate Router
-FEService --> Hook : vacationEvents[]
+FEService --> Hook : events[]
 deactivate FEService
 
-Hook -> Hook : Guarda allVacations y visibleVacations
-Hook --> Page : Renderizar vacaciones en calendario
+Hook -> Hook : Guarda allEvents y visibleEvents
+Hook --> Page : Renderizar calendario con todos los eventos
 deactivate Hook
 
 Empleado -> Page : Selecciona filtros en pantalla
-Page -> Hook : applyVacationFilters(criteria)
+Page -> Hook : applyFilters(criteria)
 activate Hook
 
 alt Hay criterios seleccionados
-    Hook -> Hook : Filtra allVacations por estado,\nrango de fechas o tipo
+    Hook -> Hook : Filtra allEvents por tipo,\norigen, categoría o estado
 
     alt Existen coincidencias
-        Hook --> Page : visibleVacations filtradas
-        Page --> Empleado : Muestra solo las vacaciones coincidentes
+        Hook --> Page : visibleEvents filtrados
+        Page --> Empleado : Muestra solo los eventos coincidentes
     else Sin coincidencias
         Hook --> Page : []
         Page --> Empleado : Muestra estado vacío
     end
 else Sin filtros
-    Hook -> Hook : Restablece visibleVacations = allVacations
-    Hook --> Page : Todas las vacaciones
+    Hook -> Hook : Restablece visibleEvents = allEvents
+    Hook --> Page : Todos los eventos
     Page --> Empleado : Muestra el calendario completo
 end
 

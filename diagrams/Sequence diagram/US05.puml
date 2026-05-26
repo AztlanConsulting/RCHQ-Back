@@ -1,0 +1,80 @@
+@startuml
+title US05 - Desactivar 2FA Backend (MVC + Service + Prisma)
+
+actor Cliente as "Frontend"
+boundary "Router\n(auth.route.js)" as Router
+control "Middleware\n(auth.js)" as AuthMiddleware
+control "Middleware\n(validate)" as ValidateMiddleware
+control "Controller\n(auth.controller.js)" as Controller
+control "Service\n(auth.service.js)" as Service
+entity "Model\n(auth.model.js)" as Model
+entity "Model\n(log.model.js)" as LogModel
+collections "password.utils" as PasswordUtils
+database "PostgreSQL\n(via Prisma)" as Postgres
+
+== Disable 2FA ==
+
+Cliente -> Router : POST /auth/2fa/disable\nAuthorization: Bearer token\nbody: { password }
+Router -> AuthMiddleware : verifyToken(req, res, next)
+AuthMiddleware --> Router : req.user = { id }
+Router -> ValidateMiddleware : validate(disableTwoFactorSchema)
+ValidateMiddleware --> Router : req.body = { password }
+Router -> Controller : disableTwoFactorAuth(req, res)
+Controller -> Service : disableTwoFactorAuth(req)
+
+Service -> Service : password = req.body.password\nemployeeId = req.user?.id\nipAddress = getClientIp(req)
+
+alt Usuario no autenticado
+    Service --> Controller : { status: 401,\nbody: { success: false,\nmessage: "Usuario no autentificado" } }
+    Controller --> Cliente : 401 Unauthorized
+else Password ausente
+    Service --> Controller : { status: 400,\nbody: { success: false,\nmessage: "Password is required to disable TwoFactorAuth" } }
+    Controller --> Cliente : 400 Bad Request
+else Continua flujo
+    Service -> Model : getEmployeeById(employeeId)
+    Model -> Postgres : prisma.employee.findUnique({\nwhere: { employee_id: employeeId },\ninclude: { role }\n})
+    Postgres --> Model : employee
+    Model --> Service : employee
+
+    alt Empleado no encontrado
+        Service --> Controller : { status: 404,\nbody: { success: false,\nmessage: "Empleado no encontrado" } }
+        Controller --> Cliente : 404 Not Found
+    else Empleado inactivo
+        Service -> LogModel : createLog(employeeId,\nTWO_FA_DISABLE_INACTIVE,\nipAddress)
+        LogModel -> Postgres : prisma.logs.create(...)
+        Postgres --> LogModel : result
+        LogModel --> Service : result
+        Service --> Controller : { status: 403,\nbody: { success: false,\nmessage: "Acceso no permitido" } }
+        Controller --> Cliente : 403 Forbidden
+    else 2FA no activo
+        Service --> Controller : { status: 409,\nbody: { success: false,\nmessage: "TwoFactorAuth no esta activo para esta cuenta" } }
+        Controller --> Cliente : 409 Conflict
+    else Verificar password
+        Service -> PasswordUtils : verifyPassword(password, employee.pwd)
+        PasswordUtils --> Service : passwordMatches
+
+        alt Password incorrecto
+            Service -> LogModel : createLog(employeeId,\nTWO_FA_DISABLE_WRONG_PASSWORD,\nipAddress)
+            LogModel -> Postgres : prisma.logs.create(...)
+            Postgres --> LogModel : result
+            LogModel --> Service : result
+            Service --> Controller : { status: 401,\nbody: { success: false,\nmessage: "Credenciales invalidas" } }
+            Controller --> Cliente : 401 Unauthorized
+        else Password valido
+            Service -> Postgres : prisma.$transaction(async (tx) => ...)
+            Service -> Model : disableTwoFactor(employee.employeeId, tx)
+            Model -> Postgres : tx.employee.update({\ndata: {\n totp_secret: null,\n temp_totp_secret: null,\n temp_totp_secret_created_at: null,\n is_active_two_factor_auth: false\n}\n})
+            Postgres --> Model : OK
+            Model --> Service : OK
+            Service -> LogModel : createLog(employeeId,\nTWO_FA_DISABLED,\nipAddress,\nnull,\ntx)
+            LogModel -> Postgres : tx.logs.create(...)
+            Postgres --> LogModel : result
+            LogModel --> Service : result
+            Postgres --> Service : COMMIT
+            Service --> Controller : { status: 200,\nbody: { success: true,\nmessage: "TwoFactorAuth deshabilitado correctamente",\nnextStep: "TWO_FACTOR_AUTH_DISABLED",\ndata: { employeeId, twoFactorEnabled: false } } }
+            Controller --> Cliente : 200 OK
+        end
+    end
+end
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+title US 17 - Ver eventos en calendario (Sequence Diagram)
+
+actor Usuario
+participant "event.route.js\nrouter" as Router
+participant "get.controller.js\ngetEventsInRange()" as Controller
+participant "get.service.js\ngetEventsInRange()" as Service
+participant "utils/dates.js" as DatesUtil
+participant "employee/get.model.js" as EmployeeModel
+participant "event/get.model.js" as EventModel
+participant "vacation & absence\nget.model.js" as VacAbsModel
+participant "utils/mappers\nevent.map.js" as Mappers
+database "BD (Prisma)" as BD
+
+Usuario -> Router : GET /range/:id/:startDate/:endDate
+Router -> Controller : getEventsInRange(req, res)
+activate Controller
+
+Controller ->> Service : await getEventsInRange(employeeId, startDate, endDate)
+activate Service
+
+Service -> DatesUtil : stringToDate(rawStartDate/EndDate)
+
+Service ->> EmployeeModel : await findById(employeeId)
+EmployeeModel -->> Service : employee
+
+alt !employee
+    Service --> Controller : { code: RESPONSES.EMPLOYEE.NOT_FOUND }
+else Empleado existe
+    Service ->> EmployeeModel : await getHome(employeeId)
+    EmployeeModel -->> Service : { house_id }
+    
+    Service ->> EventModel : await getHouseEventsInRange()
+    Service ->> EventModel : await getPersonalEventsInRange()
+    Service ->> EventModel : await getGlobalEventsInRange()
+    EventModel -->> Service : Arreglos de eventos
+    
+    Service -> Mappers : Mapeo inicial de eventos
+    
+    Service ->> EmployeeModel : await getWorkDays(employeeId)
+    EmployeeModel -->> Service : workDays
+    
+    Service ->> VacAbsModel : await getVacationsInRange()
+    VacAbsModel -->> Service : vacations
+    
+    loop por cada vacación
+        Service -> DatesUtil : calculateUsedDays(workDays, start, end, freeDays)
+        Service -> Mappers : mapHouseVacationCalendarEvent(vacation, usedDays)
+    end
+    
+    Service ->> VacAbsModel : await getAbsencesInRange()
+    VacAbsModel -->> Service : absences
+    
+    loop por cada ausencia
+        Service -> DatesUtil : calculateUsedDays(workDays, start, end, freeDays)
+        Service -> Mappers : mapEmployeeAbsenceCalendarEvent(absence, usedDays)
+    end
+    
+    Service --> Controller : { code: RESPONSES.EVENTS.FOUND, data: { events } }
+end
+deactivate Service
+
+Controller --> Usuario : res.status(200).json(data)
+deactivate Controller
+@enduml
