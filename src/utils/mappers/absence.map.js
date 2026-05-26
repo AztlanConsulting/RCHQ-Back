@@ -1,14 +1,26 @@
-exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
-    const calendarEnd = new Date(absence.end);
-    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+const {
+    dateRangeToMexicoCalendarInterval,
+    isAllDayInTimeZone,
+    MEXICO_TIME_ZONE,
+} = require("../event/dateTime");
+
+exports.mapHouseAbsenceCalendarEvent = (
+    absence,
+    usedDays,
+    { timeZone = MEXICO_TIME_ZONE } = {},
+) => {
+    const { start, end } = dateRangeToMexicoCalendarInterval(
+        absence.start,
+        absence.end,
+    );
 
     return {
         absenceId: absence.absence_id,
         employeeId: absence.employee.employee_id,
         name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
         curp: absence.employee.curp,
-        start: absence.start,
-        end: calendarEnd,
+        start,
+        end,
         startDate: absence.start,
         endDate: absence.end,
         type: absence.absence_type.name,
@@ -20,7 +32,7 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
         focus: "ausencias",
         scope: "house",
         color: "#F97316",
-        allDay: true,
+        allDay: isAllDayInTimeZone(start, end, timeZone),
     };
 };
 

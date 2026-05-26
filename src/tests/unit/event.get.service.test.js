@@ -122,7 +122,7 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
         });
 
         expect(result.data.events[0].end.toISOString()).toBe(
-            "2026-05-16T00:00:00.000Z",
+            "2026-05-16T06:00:00.000Z",
         );
     });
 });

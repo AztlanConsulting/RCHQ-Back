@@ -1,3 +1,9 @@
+const {
+    dateRangeToMexicoCalendarInterval,
+    isAllDayInTimeZone,
+    MEXICO_TIME_ZONE,
+} = require("../event/dateTime");
+
 exports.mapHouseEvent = (event) => {
     if (!event) return null;
 
@@ -15,17 +21,23 @@ exports.mapHouseEvent = (event) => {
     };
 };
 
-exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
-    const calendarEnd = new Date(absence.end);
-    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+exports.mapEmployeeAbsenceCalendarEvent = (
+    absence,
+    usedDays,
+    { timeZone = MEXICO_TIME_ZONE } = {},
+) => {
+    const { start, end } = dateRangeToMexicoCalendarInterval(
+        absence.start,
+        absence.end,
+    );
 
     return {
         absenceId: absence.absence_id,
         employeeId: absence.employee_id,
         name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
         curp: absence.employee.curp,
-        start: absence.start,
-        end: calendarEnd,
+        start,
+        end,
         startDate: absence.start,
         endDate: absence.end,
         type: absence.absence_type?.name || "Ausencia",
@@ -37,21 +49,27 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
         focus: "ausencias",
         scope: "personal",
         color: "#F97316",
-        allDay: true,
+        allDay: isAllDayInTimeZone(start, end, timeZone),
     };
 };
 
-exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
-    const calendarEnd = new Date(vacation.end);
-    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+exports.mapHouseVacationCalendarEvent = (
+    vacation,
+    usedDays,
+    { timeZone = MEXICO_TIME_ZONE } = {},
+) => {
+    const { start, end } = dateRangeToMexicoCalendarInterval(
+        vacation.start,
+        vacation.end,
+    );
 
     return {
         vacationId: vacation.vacations_request_id,
         employeeId: vacation.employee.employee_id,
         name: `${vacation.employee.name} ${vacation.employee.surname}`.trim(),
         curp: vacation.employee.curp,
-        start: vacation.start,
-        end: calendarEnd,
+        start,
+        end,
         startDate: vacation.start,
         endDate: vacation.end,
         status: vacation.status,
@@ -60,12 +78,15 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
         focus: "vacaciones",
         scope: "house",
         color: vacation.status == 1 ? "#1439BA" : "#5673DB",
-        allDay: true,
+        allDay: isAllDayInTimeZone(start, end, timeZone),
         usedDays,
     };
 };
 
-exports.mapPersonalCalendarEvent = (event) => {
+exports.mapPersonalCalendarEvent = (
+    event,
+    { timeZone = MEXICO_TIME_ZONE } = {},
+) => {
     const peopleData = [];
     const start = event.start;
     const end = event.end;
@@ -90,7 +111,9 @@ exports.mapPersonalCalendarEvent = (event) => {
         scope: "personal",
         description: event.description ?? "",
         color: "#EFBF22",
-        allDay: event.all_day || false,
+        allDay: event.all_day
+            ? isAllDayInTimeZone(start, end, timeZone)
+            : false,
         peopleInsideEvent: peopleData,
     };
 };

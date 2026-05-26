@@ -35,6 +35,10 @@ const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
+const {
+    isAllDayInTimeZone,
+    resolveCalendarTimeZone,
+} = require("../../utils/event/dateTime");
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -58,7 +62,13 @@ exports.getAllEventTypes = async () => {
     };
 };
 
-exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
+exports.getEventsInRange = async (
+    employeeId,
+    rawStartDate,
+    rawEndDate,
+    rawTimeZone,
+) => {
+    const calendarTimeZone = resolveCalendarTimeZone(rawTimeZone);
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -112,7 +122,13 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
                 description: event.description,
                 color: "#7FD447",
                 link: "",
-                allDay: event.all_day || false,
+                allDay: event.all_day
+                    ? isAllDayInTimeZone(
+                          event.start,
+                          event.end,
+                          calendarTimeZone,
+                      )
+                    : false,
                 isFreeDay: event.isFreeDay || false,
             });
         });
@@ -124,7 +140,9 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
         endDate,
     );
     personalEvents.forEach((event) => {
-        events.push(mapPersonalCalendarEvent(event));
+        events.push(
+            mapPersonalCalendarEvent(event, { timeZone: calendarTimeZone }),
+        );
     });
 
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
@@ -141,7 +159,9 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             description: event.description,
             color: "#C524FF",
             link: "",
-            allDay: event.all_day || false,
+            allDay: event.all_day
+                ? isAllDayInTimeZone(event.start, event.end, calendarTimeZone)
+                : false,
             isFreeDay: event.isFreeDay || false,
         });
     });
@@ -171,7 +191,11 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             freeDays,
         );
 
-        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
+        events.push(
+            mapHouseVacationCalendarEvent(vacation, usedDays, {
+                timeZone: calendarTimeZone,
+            }),
+        );
     });
 
     const absences = await getAbsencesInRange(employeeId, startDate, endDate);
@@ -184,7 +208,11 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             freeDays,
         );
 
-        events.push(mapEmployeeAbsenceCalendarEvent(absence, usedDays));
+        events.push(
+            mapEmployeeAbsenceCalendarEvent(absence, usedDays, {
+                timeZone: calendarTimeZone,
+            }),
+        );
     });
 
     return {
@@ -200,7 +228,9 @@ exports.getHouseCalendarRecordsInRange = async (
     houseId,
     rawStartDate,
     rawEndDate,
+    rawTimeZone,
 ) => {
+    const calendarTimeZone = resolveCalendarTimeZone(rawTimeZone);
     const validation = dateRangeSchema.safeParse({
         startDate: rawStartDate,
         endDate: rawEndDate,
@@ -263,7 +293,11 @@ exports.getHouseCalendarRecordsInRange = async (
             freeDays,
         );
 
-        events.push(mapHouseVacationCalendarEvent(vacation, usedDays));
+        events.push(
+            mapHouseVacationCalendarEvent(vacation, usedDays, {
+                timeZone: calendarTimeZone,
+            }),
+        );
     });
 
     absences.forEach((absence) => {
@@ -274,11 +308,17 @@ exports.getHouseCalendarRecordsInRange = async (
             freeDays,
         );
 
-        events.push(mapHouseAbsenceCalendarEvent(absence, usedDays));
+        events.push(
+            mapHouseAbsenceCalendarEvent(absence, usedDays, {
+                timeZone: calendarTimeZone,
+            }),
+        );
     });
 
     personalEvents.forEach((event) => {
-        events.push(mapPersonalCalendarEvent(event));
+        events.push(
+            mapPersonalCalendarEvent(event, { timeZone: calendarTimeZone }),
+        );
     });
 
     return {

@@ -45,8 +45,14 @@ exports.getEventsInRange = async (req, res) => {
         const employeeId = req.params.id;
         const startDate = req.params.startDate;
         const endDate = req.params.endDate;
+        const timeZone = req.query.timeZone;
 
-        const result = await getEventsInRange(employeeId, startDate, endDate);
+        const result = await getEventsInRange(
+            employeeId,
+            startDate,
+            endDate,
+            timeZone,
+        );
 
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
             return res.status(400).json({
@@ -99,6 +105,7 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
         const requesterHouseId = req.resolvedRequester?.houseId;
         const startDate = req.params.startDate;
         const endDate = req.params.endDate;
+        const timeZone = req.query.timeZone;
 
         if (!requesterHouseId) {
             return res.status(403).json({
@@ -112,6 +119,7 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
             requesterHouseId,
             startDate,
             endDate,
+            timeZone,
         );
 
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
