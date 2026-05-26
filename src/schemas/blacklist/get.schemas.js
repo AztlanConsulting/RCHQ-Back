@@ -14,6 +14,7 @@ const getBlacklistSchema = z.object({
         .transform((val) => parseInt(val, 10))
         .refine((val) => val > 0, { message: "El límite debe ser mayor a 0" }),
     curp: z.string().optional(),
+    search: z.string().optional(),
     isBlacklisted: z
         .string()
         .optional()

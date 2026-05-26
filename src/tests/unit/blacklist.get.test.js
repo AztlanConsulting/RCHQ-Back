@@ -49,6 +49,20 @@ describe("getBlacklist service", () => {
         expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10, isBlacklisted: true, role: "Administrador", houseId: undefined });
     });
 
+    it("pasa search al modelo cuando se busca por nombre o apellido", async () => {
+        getBlacklistedEmployees.mockResolvedValue({ employees: [], pagination: {} });
+
+        await getBlacklist({ search: "María Pérez", role: "Administrador" });
+
+        expect(getBlacklistedEmployees).toHaveBeenCalledWith({
+            page: 1,
+            limit: 10,
+            search: "María Pérez",
+            role: "Administrador",
+            houseId: undefined,
+        });
+    });
+
     it("debe retornar INTERNAL_ERROR si ocurre una excepción inesperada en el modelo", async () => {
         getBlacklistedEmployees.mockRejectedValue(new Error("Error de BD"));
 

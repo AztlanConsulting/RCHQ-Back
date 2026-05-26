@@ -14,6 +14,7 @@ exports.getBlacklist = async ({ role, houseId, ...queryParams }) => {
 
         const filters = {
             ...validationResult.data,
+            search: validationResult.data.search ?? validationResult.data.curp,
             role,
             houseId,
         };

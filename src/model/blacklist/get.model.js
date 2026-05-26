@@ -31,7 +31,15 @@ exports.findEmployeeByCurp = async (curp) => {
     }
 };
 
-exports.getBlacklistedEmployees = async ({ page, limit, curp, isBlacklisted, role, houseId }) => {
+exports.getBlacklistedEmployees = async ({
+    page,
+    limit,
+    curp,
+    search,
+    isBlacklisted,
+    role,
+    houseId,
+}) => {
     try {
         const skip = (page - 1) * limit;
 
@@ -41,9 +49,18 @@ exports.getBlacklistedEmployees = async ({ page, limit, curp, isBlacklisted, rol
             whereClause.house_id = houseId;
         }
 
-        if (curp) {
-            whereClause.curp = { contains: curp, mode: "insensitive" };
+        const resolvedSearch = (search ?? curp ?? "").trim();
+        if (resolvedSearch) {
+            const tokens = resolvedSearch.split(/\s+/).filter(Boolean);
+            whereClause.AND = tokens.map((token) => ({
+                OR: [
+                    { curp: { contains: token, mode: "insensitive" } },
+                    { name: { contains: token, mode: "insensitive" } },
+                    { surname: { contains: token, mode: "insensitive" } },
+                ],
+            }));
         }
+
         if (typeof isBlacklisted === "boolean") {
             whereClause.blacklist = isBlacklisted ? { isNot: null } : null;
         }
