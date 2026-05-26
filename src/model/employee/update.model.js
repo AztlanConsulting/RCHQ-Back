@@ -113,7 +113,7 @@ exports.reactivateEmployee = async (employeeId) => {
       where: { employee_id: employeeId },
       data: {
           is_active: true,
-          end_date: "",
+          end_date: null,
           deactivation_reason: "",
       },
   })
