@@ -46,8 +46,6 @@ else Token válido
         end
         deactivate Model
         deactivate Service
-        
-    catch Excepción (err)
         Controller --> Router : res.status(500).json(Error al obtener el perfil)
         Router --> Usuario : 500 Internal Server Error
     end
