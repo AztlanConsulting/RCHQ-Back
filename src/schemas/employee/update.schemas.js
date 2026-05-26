@@ -6,7 +6,7 @@ const ONLY_NUMBERS_REGEX = /^\d+$/;
 const NAMES_REGEX        = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
 const EMAIL_SAFE_REGEX   = /^[A-Za-z0-9._@-]+$/;
 const CURP_ALLOWED_REGEX = /^[A-Z0-9]*$/;
-const RFC_ALLOWED_REGEX  = /^[A-ZÑ&0-9]*$/;
+const RFC_ALLOWED_REGEX  = /^[A-ZÑ0-9]*$/;
 const ADDRESS_REGEX      = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.\-\s]*$/;
 const DATE_REGEX         = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX         = /^\d{2}:\d{2}$/;
@@ -125,6 +125,9 @@ const employeeContactUpdateSchema = z
 
     street: z.string().trim()
       .max(70, "La calle y número no pueden exceder 70 caracteres")
+      .refine((val) => val === "" || val.length >= 10, {
+        message: "La calle y número deben tener al menos 10 caracteres",
+      })
       .refine((val) => val === "" || ADDRESS_REGEX.test(val), {
         message: "La calle y número contienen caracteres no permitidos",
       })
@@ -133,6 +136,9 @@ const employeeContactUpdateSchema = z
       .optional(),
     municipio: z.string().trim()
       .max(70, "El municipio no puede exceder 70 caracteres")
+      .refine((val) => val === "" || val.length >= 4, {
+        message: "El municipio debe tener al menos 4 caracteres",
+      })
       .refine((val) => val === "" || ADDRESS_REGEX.test(val), {
         message: "El municipio contiene caracteres no permitidos",
       })
@@ -141,6 +147,9 @@ const employeeContactUpdateSchema = z
       .optional(),
     city: z.string().trim()
       .max(70, "La ciudad no puede exceder 70 caracteres")
+      .refine((val) => val === "" || val.length >= 4, {
+        message: "La ciudad debe tener al menos 4 caracteres",
+      })
       .refine((val) => val === "" || ADDRESS_REGEX.test(val), {
         message: "La ciudad contiene caracteres no permitidos",
       })
