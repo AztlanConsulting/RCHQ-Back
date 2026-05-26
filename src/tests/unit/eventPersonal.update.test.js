@@ -8,6 +8,8 @@ jest.mock("../../model/event/update.model");
 jest.mock("../../model/event/get.model");
 jest.mock("../../model/log.model");
 
+const { futureDate } = require("../helpers/dateHelpers");
+
 describe("updatePersonalEvent service", () => {
     const eventId = "11111111-1111-4111-8111-111111111111";
     const employeeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -32,7 +34,7 @@ describe("updatePersonalEvent service", () => {
     const basePayload = {
         name: "Reunion medica",
         eventTypeId,
-        date: "2026-07-10",
+        date: futureDate(30),
         allDay: false,
         start: "09:00",
         end: "10:00",
@@ -47,7 +49,7 @@ describe("updatePersonalEvent service", () => {
     const mockUpdatedEvent = {
         personalEventId: eventId,
         eventTypeId,
-        date: "2026-07-10",
+        date: futureDate(30),
         start: "09:00:00",
         end: "10:00:00",
         name: "Reunion medica",
