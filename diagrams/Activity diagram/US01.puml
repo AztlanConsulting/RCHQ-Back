@@ -1,0 +1,91 @@
+@startuml
+title US - Flujo de Inicio de Sesión (Activity Diagram)
+
+|Usuario|
+start
+:Accede a la pantalla de inicio de sesión;
+:Ingresa correo electrónico y contraseña;
+:Presiona el botón de iniciar sesión;
+
+|Frontend|
+:Valida que los campos no estén vacíos;
+:Valida formato de correo y longitud máxima;
+if (¿Campos válidos?) then (Sí)
+  :Envía solicitud POST /login al backend;
+else (No)
+  :Muestra error de validación en formulario;
+  stop
+endif
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware de validación (loginSchema);
+if (¿Validación es correcta?) then (Sí)
+  :Delega al Controller (loginFunction) y Service (login);
+  :Busca al empleado en BD por correo;
+  if (¿El usuario existe?) then (Sí)
+    if (¿El usuario está activo?) then (Sí)
+      if (¿Está bloqueado temporalmente?) then (No)
+        :Verifica la contraseña (hash);
+        if (¿Contraseña es correcta?) then (Sí)
+          :Limpia historial de intentos fallidos y bloqueos;
+          
+          if (¿Requiere cambio de contraseña en primer login?) then (Sí)
+            :Registra log (FIRST_LOGIN_PENDING_PASSWORD_CHANGE);
+            :Genera token de primer login;
+            :Retorna status 200 (nextStep: CHANGE_PASSWORD_FIRST_LOGIN);
+          elseif (¿Tiene TwoFactorAuth activo?) then (Sí)
+            :Genera pre-TwoFactorAuth JWT;
+            :Retorna status 200 (isActiveTwoFactorAuth: true);
+          else (No)
+            :Registra log (LOGIN_SUCCESS);
+            :Genera token de sesión (JWT final);
+            :Retorna status 200 con token y datos del usuario;
+          endif
+
+        else (No)
+          :Incrementa intentos fallidos de login;
+          :Registra log (LOGIN_FAILED);
+          if (¿Alcanzó el máximo de intentos (3)?) then (Sí)
+            :Establece fecha de bloqueo temporal;
+            :Registra log (ACCOUNT_BLOCKED);
+            :Retorna status 423 (ACCOUNT_TEMPORARILY_BLOCKED);
+          else (No)
+            :Retorna status 401 (INVALID_CREDENTIALS);
+          endif
+        endif
+      else (Sí)
+        :Retorna status 423 (ACCOUNT_TEMPORARILY_BLOCKED);
+      endif
+    else (No)
+      :Registra log (INACTIVE_ACCESS_DENIED);
+      :Retorna status 401 (INVALID_CREDENTIALS);
+    endif
+  else (No)
+    :Retorna status 401 (INVALID_CREDENTIALS);
+  endif
+else (No)
+  :Retorna status 400 (Bad Request);
+endif
+
+|Frontend|
+if (¿Status HTTP de respuesta?) then (200 OK)
+  if (¿nextStep == CHANGE_PASSWORD_FIRST_LOGIN?) then (Sí)
+    :Redirige a la pantalla de Cambio de Contraseña;
+  elseif (¿isActiveTwoFactorAuth == true?) then (Sí)
+    :Redirige a la pantalla de verificación 2FA;
+  else (Flujo normal)
+    :Guarda token y redirige al Dashboard principal;
+  endif
+elseif (¿Status 401 Unauthorized?) then (Sí)
+  :Muestra mensaje de "Credenciales inválidas";
+elseif (¿Status 423 Locked?) then (Sí)
+  :Muestra mensaje de "Cuenta bloqueada temporalmente";
+elseif (¿Status 400 Bad Request?) then (Sí)
+  :Muestra mensaje de datos inválidos;
+else (500 Internal Server Error)
+  :Muestra error genérico del servidor;
+endif
+stop
+
+@enduml
