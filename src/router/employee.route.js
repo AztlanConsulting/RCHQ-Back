@@ -44,7 +44,7 @@ router.get(
   "/update-form",
   apiLimiter,
   verifyToken,
-  requireRole(ROLES.COORDINATOR, ROLES.ADMIN),
+  requireRole(ROLES.COORDINATOR),
   requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
   employeeGetController.getUpdateForm,
 );
