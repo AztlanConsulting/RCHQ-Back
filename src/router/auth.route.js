@@ -18,14 +18,14 @@ const router = express.Router();
 
 router.post(
     "/login",
-    //authLimiter,
+    authLimiter,
     validate(loginSchema),
     authController.loginFunction,
 );
 
 router.post(
     "/first-login/change-password",
-    //apiLimiter,
+    apiLimiter,
     verifyFirstLoginToken,
     validate(firstLoginChangePasswordSchema),
     authController.changePasswordFirstLogin,
@@ -33,7 +33,7 @@ router.post(
 
 router.post(
     "/change-password",
-    //apiLimiter,
+    apiLimiter,
     verifyToken,
     validate(changePasswordSchema),
     authController.changePassword,
@@ -41,14 +41,14 @@ router.post(
 
 router.post(
     "/2fa/setup",
-    //apiLimiter,
+    apiLimiter,
     verifyToken,
     authController.setupTwoFactorAuth,
 );
 
 router.post(
     "/2fa/verify",
-    //apiLimiter,
+    apiLimiter,
     verifyToken,
     validate(twoFactorTokenSchema),
     authController.verifyTwoFactorSetup,
@@ -56,7 +56,7 @@ router.post(
 
 router.post(
     "/2fa/validate",
-    //authLimiter,
+    authLimiter,
     verifyPreTwoFactorAuthToken,
     validate(twoFactorTokenSchema),
     authController.validateTwoFactorAuth,
@@ -64,7 +64,7 @@ router.post(
 
 router.post(
     "/2fa/disable",
-    //apiLimiter,
+    apiLimiter,
     verifyToken,
     validate(disableTwoFactorSchema),
     authController.disableTwoFactorAuth,
@@ -72,7 +72,7 @@ router.post(
 
 router.get(
     "/2fa/status",
-    //apiLimiter,
+    apiLimiter,
     verifyToken,
     authController.getTwoFactorAuthStatus,
 );
