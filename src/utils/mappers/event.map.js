@@ -38,7 +38,7 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
         usedDays,
         focus: "ausencias",
         scope: "personal",
-        color: "#F97316",
+        color: "#BA274A",
         allDay: true,
     };
 };
@@ -61,7 +61,7 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
         link: vacation.url || "",
         focus: "vacaciones",
         scope: "house",
-        color: vacation.status == 1 ? "#1439BA" : "#5673DB",
+        color: vacation.status == 1 ? "#203766" : "#6298C7",
         allDay: true,
         usedDays,
     };
@@ -94,7 +94,7 @@ exports.mapPersonalCalendarEvent = (event) => {
         focus: "eventos",
         scope: "personal",
         description: event.description ?? "",
-        color: "#EFBF22",
+        color: "#D58936",
         allDay: event.all_day || false,
         peopleInsideEvent: peopleData,
     };
