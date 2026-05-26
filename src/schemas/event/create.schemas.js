@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { convertUTCToMexicanTime } = require("../../utils/dates");
 
 const TEXT_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-!¿¡?.,:;()]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -8,6 +9,21 @@ const DATETIME_WITH_TIMEZONE_REGEX =
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
+
+const getTodayStr = () => convertUTCToMexicanTime(new Date()).toISOString().slice(0, 10);
+const getMaxDateStr = () => {
+    const d = convertUTCToMexicanTime(new Date());
+    d.setUTCFullYear(d.getUTCFullYear() + 2);
+    return d.toISOString().slice(0, 10);
+};
+const getHouseMinDateStr = () => {
+    const year = convertUTCToMexicanTime(new Date()).getUTCFullYear();
+    return `${year}-01-01`;
+};
+const getHouseMaxDateStr = () => {
+    const year = convertUTCToMexicanTime(new Date()).getUTCFullYear() + 2;
+    return `${year}-12-31`;
+};
 
 exports.houseEventCreateSchema = z
     .object({
@@ -151,7 +167,21 @@ exports.houseEventCreateSchema = z
     .refine((data) => data.start < data.end, {
         message: "La fecha de inicio debe ser anterior a la fecha de fin.",
         path: ["start"],
-    });
+    })
+    .refine(
+        (data) => data.start.toISOString().slice(0, 10) >= getHouseMinDateStr(),
+        {
+            message: `No se pueden crear eventos antes del 1 de enero de ${new Date().getFullYear()}.`,
+            path: ["start"],
+        },
+    )
+    .refine(
+        (data) => data.start.toISOString().slice(0, 10) <= getHouseMaxDateStr(),
+        {
+            message: `No se pueden crear eventos más allá del año ${new Date().getFullYear() + 2}.`,
+            path: ["start"],
+        },
+    );
 
 exports.createPersonalEventSchema = z
     .object({
@@ -243,6 +273,14 @@ exports.createPersonalEventSchema = z
                 message: "La hora de fin debe ser mayor que la hora de inicio",
             });
         }
+    })
+    .refine((data) => data.date >= getTodayStr(), {
+        message: "No se pueden crear eventos en fechas pasadas.",
+        path: ["date"],
+    })
+    .refine((data) => data.date <= getMaxDateStr(), {
+        message: "No se pueden crear eventos con más de 2 años de anticipación.",
+        path: ["date"],
     });
 
 exports.searchEmployeesSchema = z.object({
