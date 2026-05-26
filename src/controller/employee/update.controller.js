@@ -2,6 +2,7 @@ const {
   updateBasicInfoService,
   updateContactInfoService,
   updateAdminInfoService,
+  reactivateEmployeeService,
 } = require("../../service/employee/update.service");
 const { updateDocument } = require("../../service/employee/update.service");
 const RESPONSES = require("../../utils/responses");
@@ -121,6 +122,7 @@ exports.updateAdminInfo = async (req, res) => {
     return res.status(500).json({ success: false, message: "Error Interno del Servidor" });
   }
 };
+
 exports.updateDocument = async (req, res) => {
     try {
         const { id, field } = req.params;
@@ -159,4 +161,60 @@ exports.updateDocument = async (req, res) => {
             .status(500)
             .json({ success: false, message: "Internal Server Error" });
     }
+};
+
+exports.reactivateEmployeeController = async (req, res) => {
+  try {
+      const { code, data } = await reactivateEmployeeService(req);
+
+      // reactivated
+      if (code === RESPONSES.EMPLOYEE.REACTIVATED) {
+        return res
+              .status(200)
+              .json({ message: `"${data.name}" ha sido reactivado` });
+      }
+
+      // cannet reactivate self
+      else if (code === RESPONSES.EMPLOYEE.CANNOT_REACTIVATE_SELF) {
+        return res
+              .status(400)
+              .json({ message: "No puedes reactivar a ti mismo" });
+      }
+
+      // employee not found
+      else if (code === RESPONSES.EMPLOYEE.NOT_FOUND) {
+        return res
+              .status(404)
+              .json({ message: "Empleado no encontrado" });
+    }
+
+      // already active
+      else if (code === RESPONSES.EMPLOYEE.ALREADY_ACTIVE) {
+        return res
+              .status(409)
+              .json({ message: "El empleado ya está activo" });
+      }
+
+      // is blacklisted
+      else if (code === RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED) {
+        return res
+              .status(409)
+              .json({ message: "El empleado se encuentra en la lista negra" });
+      }
+
+      // reactivation failed
+      else if (code === RESPONSES.EMPLOYEE.REACTIVATION_FAILED) {
+        return res
+              .status(400)
+              .json({ message: `Hubo un error al dar de baja a "${data.name}".` });
+      } else {
+        return res.status(500).json({ message: "Error inesperado" });
+      }
+  } catch (error) {
+      console.error(
+          "Error en el controlador de desactivación de empleado:",
+          error,
+      );
+      return res.status(500).json({ message: "Error interno del servidor" });
+  }
 };

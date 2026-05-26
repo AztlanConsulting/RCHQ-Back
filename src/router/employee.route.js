@@ -16,7 +16,7 @@ const {
 const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
-const employeeUpdateController = require("../controller/employee/update.controller");
+const { employeeUpdateController, reactivateEmployeeController } = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 const {
     deactivateEmployeeController,
@@ -205,5 +205,24 @@ router.patch(
     ),
     deactivateEmployeeController,
 );
+
+router.patch(
+  "/:employeeId/reactivate",
+  verifyToken,
+  requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+  requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+  resolveRequesterHouse,
+  // schema reactivate employee params,
+  // schema reactivate employee body,
+  // authorize(
+  //   reactivateEmployeePolicy,
+  //   async (req) => {
+  //       const employee = await getEmployeeToReactivate(req.params.employeeId);
+  //         if (employee) req.resolvedEmployee = employee;
+  //       return employee ? { ...employee,  }
+  //   }
+  // ),
+  reactivateEmployeeController,
+)
 
 module.exports = router;

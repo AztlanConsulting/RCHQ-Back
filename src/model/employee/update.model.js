@@ -107,3 +107,14 @@ exports.updateEmployeeDocument = async (employeeId, documentId, fileUrl) => {
         data: { url: fileUrl },
     });
 };
+
+exports.reactivateEmployee = async (employeeId) => {
+    return await prisma.employee.update({
+      where: { employee_id: employeeId },
+      data: {
+          is_active: true,
+          end_date: "",
+          deactivation_reason: "",
+      },
+  })
+}

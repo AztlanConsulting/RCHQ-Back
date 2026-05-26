@@ -17,7 +17,9 @@ const {
     findDocumentById,
     findEmployeeDocument,
 } = require("../../model/employee/get.model");
-const { updateEmployeeDocument } = require("../../model/employee/update.model");
+const { updateEmployeeDocument, reactivateEmployee } = require("../../model/employee/update.model");
+const { deactivateEmployee } = require("../../model/employee/deactivate.model");
+const { LOG_ACTIONS } = require("../../utils/logActions");
 
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body, file }) => {
   if (!requesterId || !employeeId)
@@ -207,4 +209,49 @@ exports.updateDocument = async (employeeId, documentId, file) => {
         deleteFileIfExists(fileUrl);
         throw err;
     }
+};
+
+exports.reactivateEmployee = async (req) => {
+  const { employeeId } = req.params;
+  const actorId = req.user.id;
+  const ip = getClientIp(req);
+
+  if (actorId === employeeId) {
+      return { code: RESPONSES.EMPLOYEE.CANNOT_REACTIVATE_SELF };
+  }
+
+  const employee = req.resolvedEmployee || await getEmployeeToDeactivate(employeeId);
+
+  if (!employee) {
+    return { code: RESPONSES.EMPLOYEE.NOT_FOUND };
+  }
+
+  if (employee.isActive) {
+      return { code: RESPONSES.EMPLOYEE.ALREADY_ACTIVE };
+  }
+
+  if (employee.isBlacklisted) {
+      return { code: RESPONSES.EMPLOYEE.ALREADY_BLACKLISTED };
+  }
+
+  try {
+      await reactivateEmployee(employeeId);
+      
+      try {
+          await createLog(actorId, LOG_ACTIONS.EMPLOYEE_REACTIVATED, ip, employeeId);
+      } catch (logError) {
+          console.error("Baja exitosa pero falló el log de auditoría:", logError);
+      }
+
+      return {
+          code: RESPONSES.EMPLOYEE.REACTIVATED,
+          data: { name: employee.name },
+      };
+  } catch (error) {
+      console.error("Error al desactivar al empleado:", error);
+      return {
+          code: RESPONSES.EMPLOYEE.REACTIVATION_FAILED,
+          data: { name: employee.name },
+      };
+  }
 };
