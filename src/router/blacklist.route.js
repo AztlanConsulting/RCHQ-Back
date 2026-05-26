@@ -12,6 +12,9 @@ const { getBlacklist } = require("../controller/blacklist/get.controller");
 const { removeFromBlacklist } = require("../controller/blacklist/delete.controller");
 const validate = require("../middleware/validate");
 const { blacklistCreateSchema, blacklistDeleteSchema } = require("../schemas/blacklist/blacklist.schema");
+const {
+    buildCurpReasonValidationMessage,
+} = require("../utils/validationMessages");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
 
@@ -29,7 +32,9 @@ router.post(
     verifyToken,
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.ADD_TO_BLACKLIST),
-    validate(blacklistCreateSchema),
+    validate(blacklistCreateSchema, "body", {
+        messageBuilder: buildCurpReasonValidationMessage,
+    }),
     authorize(canAddToBlacklist, (req) => req.body),
     insertIntoBlacklist
 );
@@ -40,7 +45,9 @@ router.patch(
     verifyToken,
     requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
     requirePrivileges(PRIVILEGES.REMOVE_FROM_BLACKLIST),
-    validate(blacklistDeleteSchema),
+    validate(blacklistDeleteSchema, "body", {
+        messageBuilder: buildCurpReasonValidationMessage,
+    }),
     authorize(canRemoveFromBlacklist, (req) => req.body),
     removeFromBlacklist
 );

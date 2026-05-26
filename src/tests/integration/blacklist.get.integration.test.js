@@ -248,6 +248,24 @@ describe("GET /blacklist - integración", () => {
         expect(res.body.employees.some(emp => emp.curp === TEST_OTHER_CURP)).toBe(true);
     });
 
+    it("retorna 200 con lista vacía cuando los filtros no encuentran resultados", async () => {
+        const token = generateSessionToken();
+
+        const res = await request(app)
+            .get("/blacklist?page=1&limit=10&curp=ZZZ999")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe("No hay personas en la lista negra con los filtros aplicados");
+        expect(res.body.employees).toEqual([]);
+        expect(res.body.pagination).toEqual({
+            totalItems: 0,
+            totalPages: 0,
+            currentPage: 1,
+        });
+    });
+
     it("retorna 200 y filtra correctamente solo a los que ESTÁN en la lista negra (isBlacklisted=true)", async () => {
         const token = generateSessionToken();
 

@@ -84,12 +84,12 @@ describe("deactivate.controller — deactivateEmployeeController", () => {
         it("responde 422 cuando el service retorna VALIDATION_ERROR", async () => {
             deactivateService.deactivateEmployee.mockResolvedValue({
                 code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
-                data: { message: "El campo 'Razón' es obligatorio para dar de baja." },
+                data: { message: "La razón es obligatoria para dar de baja al empleado." },
             });
             await deactivateEmployeeController(req, res);
             expect(res.status).toHaveBeenCalledWith(422);
             expect(res.json).toHaveBeenCalledWith({
-                message: "El campo 'Razón' es obligatorio para dar de baja.",
+                message: "La razón es obligatoria para dar de baja al empleado.",
             });
         });
     });

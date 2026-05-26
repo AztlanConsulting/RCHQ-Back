@@ -30,6 +30,9 @@ const {
 } = require("../policies/deactivateEmployee.policies");
 const validate = require("../middleware/validate");
 const {
+    buildCurpReasonValidationMessage,
+} = require("../utils/validationMessages");
+const {
     getEmployeeToDeactivate,
 } = require("../model/employee/deactivate.model");
 
@@ -194,7 +197,9 @@ router.patch(
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     resolveRequesterHouse,
     validate(deactivateEmployeeParamsSchema, "params"),
-    validate(deactivateEmployeeSchema, "body"),
+    validate(deactivateEmployeeSchema, "body", {
+        messageBuilder: buildCurpReasonValidationMessage,
+    }),
     authorize(
         deactivateEmployeePolicy,
         async (req) => {

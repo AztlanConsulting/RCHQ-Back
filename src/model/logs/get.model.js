@@ -1,3 +1,4 @@
+const { Prisma } = require("@prisma/client");
 const prisma = require("../../prisma");
 
 const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñç";
@@ -70,43 +71,31 @@ exports.getEmployeeIdsBySearch = async (houseId, search) => {
         return [];
     }
 
-    const queryParams = [houseId];
     const searchConditions = searchTerms.map((term) => {
         const normalizedLike = `%${term}%`;
-        queryParams.push(
-            SEARCHABLE_ACCENTED_CHARS,
-            SEARCHABLE_REPLACEMENT_CHARS,
-            normalizedLike,
-            SEARCHABLE_ACCENTED_CHARS,
-            SEARCHABLE_REPLACEMENT_CHARS,
-            normalizedLike,
-        );
 
-        const firstParamIndex = queryParams.length - 5;
-        const secondParamIndex = queryParams.length - 2;
-
-        return `(
+        return Prisma.sql`(
             translate(
                 lower(coalesce(name, '') || ' ' || coalesce(surname, '')),
-                $${firstParamIndex},
-                $${firstParamIndex + 1}
-            ) LIKE $${firstParamIndex + 2}
+                ${SEARCHABLE_ACCENTED_CHARS},
+                ${SEARCHABLE_REPLACEMENT_CHARS}
+            ) LIKE ${normalizedLike}
             OR translate(
                 lower(coalesce(curp, '')),
-                $${secondParamIndex},
-                $${secondParamIndex + 1}
-            ) LIKE $${secondParamIndex + 2}
+                ${SEARCHABLE_ACCENTED_CHARS},
+                ${SEARCHABLE_REPLACEMENT_CHARS}
+            ) LIKE ${normalizedLike}
         )`;
     });
 
-    const query = `
+    const query = Prisma.sql`
         SELECT employee_id
         FROM employee
-        WHERE house_id::text = $1
-        AND ${searchConditions.join(" AND ")}
+        WHERE house_id::text = ${houseId}
+        AND ${Prisma.join(searchConditions, Prisma.sql` AND `)}
     `;
 
-    const employees = await prisma.$queryRawUnsafe(query, ...queryParams);
+    const employees = await prisma.$queryRaw(query);
 
     return employees.map((employee) => employee.employee_id);
 };
