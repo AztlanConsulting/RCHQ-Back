@@ -1,4 +1,4 @@
-@startuml HU03 - Usuario cambia su contraseña
+@startuml US03 - Usuario cambia su contraseña
 
 actor navegador
 boundary auth.routes
