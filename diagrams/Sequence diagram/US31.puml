@@ -1,5 +1,5 @@
 @startuml
-title US34 - Coordinador/Administrador aprueba solicitud de vacaciones
+title US31 - Coordinador/Administrador aprueba solicitud de vacaciones
 
 actor "Coordinador/Administrador" as Usuario
 boundary "Frontend" as Frontend

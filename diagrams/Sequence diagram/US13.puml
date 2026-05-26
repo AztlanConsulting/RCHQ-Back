@@ -80,7 +80,7 @@ else Validación exitosa
     alt Try sin excepciones
         Controller --> Router : res.status(code).json(message)
         Router --> Usuario : 200 / 400 / 404 / 409 / 422
-    catch Excepción (err)
+    else Excepción inesperada
         Controller --> Router : res.status(500).json(Error interno)
         Router --> Usuario : 500 Internal Server Error
     end

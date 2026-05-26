@@ -1,5 +1,5 @@
 @startuml
-title US35 - Coordinador rechaza solicitud de vacaciones
+title US32 - Coordinador rechaza solicitud de vacaciones
 
 actor "Coordinador" as Usuario
 boundary "Frontend" as Frontend

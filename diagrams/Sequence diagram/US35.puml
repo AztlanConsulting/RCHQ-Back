@@ -1,5 +1,5 @@
 @startuml
-title US30 - Coordinador modifica vacaciones pendientes o aprobadas de un empleado
+title US35 - Coordinador modifica vacaciones pendientes o aprobadas de un empleado
 
 actor "Coordinador" as Usuario
 boundary "Frontend" as Frontend

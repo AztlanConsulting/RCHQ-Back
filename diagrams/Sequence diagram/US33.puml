@@ -1,5 +1,5 @@
 @startuml
-title US28 - Administrador/Coordinador registra vacaciones de un empleado
+title US33 - Administrador/Coordinador registra vacaciones de un empleado
 
 actor "Administrador/Coordinador" as Usuario
 boundary "Frontend" as Frontend

@@ -1,5 +1,5 @@
 @startuml
-title US39 - Coordinador registra ausencias
+title US41 - Coordinador registra ausencias
 
 | Coordinador |
 :Selecciona la opción de crear evento;

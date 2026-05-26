@@ -1,5 +1,5 @@
 @startuml
-title US28 - Registrar vacaciones de un empleado
+title US33 - Registrar vacaciones de un empleado
 
 |Coordinador|
 start

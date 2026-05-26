@@ -56,7 +56,6 @@ deactivate Service
 alt Try sin excepciones
     Controller --> Router : res.status(200).json({ success: true, data })
     Router --> Usuario : 200 OK (Datos completos del empleado)
-catch Excepción (err)
     Controller --> Router : res.status(500).json(Error interno)
     Router --> Usuario : 500 Internal Server Error
 end

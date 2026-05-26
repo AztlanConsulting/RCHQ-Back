@@ -1,5 +1,5 @@
 @startuml
-title US35 - Rechazar una solicitud de vacaciones
+title US32 - Rechazar una solicitud de vacaciones
 
 |Coordinador|
 start
