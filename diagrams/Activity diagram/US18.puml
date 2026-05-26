@@ -1,0 +1,45 @@
+@startuml
+title US 18 - Ver calendario de eventos de mi casa (Activity Diagram)
+
+|Coordinador|
+start
+:Ingresa a la vista del Calendario de la Casa;
+
+|Frontend|
+:Determina las fechas del mes en pantalla;
+:Envía solicitud GET /house/range/:startDate/:endDate al backend;
+
+|API|
+:Recibe solicitud en el router;
+:Verifica auth, roles (Admin/Coordinador) y resuelve houseId;
+if (¿Autorizado según ABAC y tiene houseId?) then (Sí)
+  :Delega al Controller y Service (getHouseCalendarRecordsInRange);
+  :Valida y convierte formato de fechas;
+  if (¿Fechas válidas?) then (Sí)
+    :Ejecuta consultas concurrentes (Promise.all);
+    fork
+      :Busca vacaciones de la casa (excluyendo propias);
+    fork again
+      :Busca ausencias de la casa (excluyendo propias);
+    fork again
+      :Busca eventos de la casa y globales;
+    fork again
+      :Busca eventos personales de otros en la casa;
+    end fork
+    
+    :Filtra días libres de los eventos;
+    :Calcula días usados para cada vacación y ausencia\nusando los días laborales de cada empleado;
+    :Mapea todos los eventos en un solo arreglo (events);
+    :Retorna status 200 con la lista de eventos de la casa;
+  else (No)
+    :Retorna status 400/406 (Error en fechas);
+  endif
+else (No)
+  :Retorna status 403 (Acceso denegado);
+endif
+
+|Frontend|
+:Renderiza todos los eventos del equipo en la vista del calendario;
+stop
+
+@enduml

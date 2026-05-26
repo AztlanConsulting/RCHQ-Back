@@ -1,0 +1,61 @@
+@startuml
+title US 18 - Ver calendario de eventos de mi casa (Sequence Diagram)
+
+actor Coordinador
+participant "event.route.js\nrouter" as Router
+participant "Middlewares\nAuth, ABAC" as Middlewares
+participant "get.controller.js\ngetHouseCalendarRecords..." as Controller
+participant "get.service.js\ngetHouseCalendarRecords..." as Service
+participant "utils/dates.js" as DatesUtil
+participant "vacation/get.model.js" as VacModel
+participant "absence/get.model.js" as AbsModel
+participant "event/get.model.js" as EventModel
+database "BD (Prisma)" as BD
+
+Coordinador -> Router : GET /house/range/:startDate/:endDate
+Router -> Middlewares : verifyToken, resolveRequesterHouse, authorize
+Middlewares --> Router : next()
+
+Router -> Controller : getHouseCalendarRecordsInRange(req, res)
+activate Controller
+
+Controller ->> Service : await getHouseCalendarRecordsInRange(...)
+activate Service
+
+Service -> DatesUtil : stringToDate(rawStartDate)
+
+Service ->> VacModel : await getHouseCalendarVacationsInRange(...)
+VacModel ->> BD : prisma.vacations_request.findMany(donde houseId y NOT requester)
+BD -->> VacModel : vacations
+
+Service ->> AbsModel : await getHouseCalendarAbsenceInRange(...)
+AbsModel ->> BD : prisma.absence.findMany(...)
+BD -->> AbsModel : absences
+
+Service ->> EventModel : Promise.all([getHouseEvents, getGlobalEvents, getHousePersonalEvents])
+EventModel ->> BD : Múltiples consultas a events
+BD -->> EventModel : houseEvents, globalEvents, personalEvents
+
+Service -> Service : Filtra freeDays (eventos globales/casa)
+
+loop por cada vacación en la casa
+    Service -> DatesUtil : calculateUsedDays(vacation.employee.workdays, start, end, freeDays)
+    Service -> Service : events.push(mapHouseVacationCalendarEvent)
+end
+
+loop por cada ausencia en la casa
+    Service -> DatesUtil : calculateUsedDays(absence.employee.workdays, start, end, freeDays)
+    Service -> Service : events.push(mapHouseAbsenceCalendarEvent)
+end
+
+loop por cada evento personal
+    Service -> Service : events.push(mapPersonalCalendarEvent)
+end
+
+Service --> Controller : { code: RESPONSES.EVENTS.FOUND, data: { events } }
+deactivate Service
+
+Controller --> Coordinador : res.status(200).json(data)
+deactivate Controller
+
+@enduml
