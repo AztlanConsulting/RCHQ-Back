@@ -215,15 +215,16 @@ router.patch(
   verifyToken,
   requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
   requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
-  resolveRequesterHouse,  
+  resolveRequesterHouse,
   authorize(
+    deactivateEmployeePolicy,
     async (req) => {
-        const employee = await getEmployeeToDeactivate(req.params.employeeId);
-          if (employee) req.resolvedEmployee = employee;
-        return employee ? { ...employee,  } : null;
-    }
+      const employee = await getEmployeeToDeactivate(req.params.employeeId);
+      if (employee) req.resolvedEmployee = employee;
+      return employee ? { ...employee } : null;
+    },
   ),
   reactivateEmployeeController,
-)
+);
 
 module.exports = router;
