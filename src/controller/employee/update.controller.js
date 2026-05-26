@@ -206,13 +206,13 @@ exports.reactivateEmployeeController = async (req, res) => {
       else if (code === RESPONSES.EMPLOYEE.REACTIVATION_FAILED) {
         return res
               .status(400)
-              .json({ message: `Hubo un error al dar de baja a "${data.name}".` });
+              .json({ message: `Hubo un error al reactivar a "${data.name}".` });
       } else {
         return res.status(500).json({ message: "Error inesperado" });
       }
   } catch (error) {
       console.error(
-          "Error en el controlador de desactivación de empleado:",
+          "Error en el controlador de reactivación de empleado:",
           error,
       );
       return res.status(500).json({ message: "Error interno del servidor" });

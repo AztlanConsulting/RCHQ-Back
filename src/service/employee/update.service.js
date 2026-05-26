@@ -18,8 +18,10 @@ const {
     findEmployeeDocument,
 } = require("../../model/employee/get.model");
 const { updateEmployeeDocument, reactivateEmployee } = require("../../model/employee/update.model");
-const { deactivateEmployee } = require("../../model/employee/deactivate.model");
+const { getEmployeeToDeactivate } = require("../../model/employee/deactivate.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
+const { createLog } = require("../../model/log.model");
+const { getClientIp } = require("../../utils/ip");
 
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body, file }) => {
   if (!requesterId || !employeeId)
@@ -211,7 +213,7 @@ exports.updateDocument = async (employeeId, documentId, file) => {
     }
 };
 
-exports.reactivateEmployee = async (req) => {
+exports.reactivateEmployeeService = async (req) => {
   const { employeeId } = req.params;
   const actorId = req.user.id;
   const ip = getClientIp(req);
@@ -248,7 +250,7 @@ exports.reactivateEmployee = async (req) => {
           data: { name: employee.name },
       };
   } catch (error) {
-      console.error("Error al desactivar al empleado:", error);
+      console.error("Error al reactivar al empleado:", error);
       return {
           code: RESPONSES.EMPLOYEE.REACTIVATION_FAILED,
           data: { name: employee.name },

@@ -16,7 +16,10 @@ const {
 const { uploadDocs } = require("../middleware/uploadDocs");
 const employeeGetController = require("../controller/employee/get.controller");
 const employeeAddController = require("../controller/employee/create.controller");
-const { employeeUpdateController, reactivateEmployeeController } = require("../controller/employee/update.controller");
+const employeeUpdateController = require("../controller/employee/update.controller");
+const { 
+  reactivateEmployeeController
+} = require("../controller/employee/update.controller");
 const employeeDeleteController = require("../controller/employee/delete.controller");
 const {
     deactivateEmployeeController,
@@ -208,6 +211,7 @@ router.patch(
 
 router.patch(
   "/:employeeId/reactivate",
+  apiLimiter,
   verifyToken,
   requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
   requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
