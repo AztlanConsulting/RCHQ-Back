@@ -1,0 +1,44 @@
+@startuml
+title US - Consultar Mi Perfil (Activity Diagram)
+
+|Usuario|
+start
+:Navega a la sección de "Mi Perfil";
+
+|Frontend|
+:Obtiene el token de sesión almacenado;
+:Envía solicitud GET /profile con el token en el Header;
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware apiLimiter;
+:Ejecuta middleware de autenticación (verifyToken);
+
+if (¿Token es válido y proporcionado?) then (Sí)
+  :Extrae employeeId de req.user.id;
+  :Delega al Controller (getUserProfile) y Service;
+  :Busca el perfil del empleado en la BD (findUnique);
+  
+  if (¿El perfil existe?) then (Sí)
+    :Mapea los datos del empleado (mapProfile);
+    :Retorna status 200 con los datos del perfil;
+  else (No)
+    :Retorna status 404 (Perfil no encontrado);
+  endif
+else (No)
+  :Retorna status 401 / 403 (No autorizado);
+endif
+
+|Frontend|
+if (¿Status HTTP de respuesta?) then (200 OK)
+  :Renderiza la información del perfil del usuario (Nombre, CURP, etc.);
+elseif (¿Status 404 Not Found?) then (Sí)
+  :Muestra mensaje de "Perfil no encontrado";
+elseif (¿Status 401 / 403 Unauthorized?) then (Sí)
+  :Cierra la sesión local y redirige a Inicio de Sesión;
+else (500 Internal Server Error)
+  :Muestra mensaje de error del servidor;
+endif
+stop
+
+@enduml

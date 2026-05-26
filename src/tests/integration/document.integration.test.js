@@ -96,13 +96,13 @@ const seed = async () => {
     await prisma.employee.upsert({
         where:  { employee_id: IDS.employee },
         update: {},
-        create: { employee_id: IDS.employee, email: "docmain@test.com", curp: "DOCM000000000001AB", ...empBase },
+        create: { employee_id: IDS.employee, email: "docmain@test.com", curp: "MOXC801103MBSCYE80", ...empBase },
     });
 
     await prisma.employee.upsert({
         where:  { employee_id: IDS.stranger },
         update: {},
-        create: { employee_id: IDS.stranger, email: "docstranger@test.com", curp: "DOCS000000000002AB", ...empBase },
+        create: { employee_id: IDS.stranger, email: "docstranger@test.com", curp: "MOXC801103MBSCYE81", ...empBase },
     });
 
     await prisma.documents.upsert({

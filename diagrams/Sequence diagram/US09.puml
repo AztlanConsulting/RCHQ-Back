@@ -1,0 +1,42 @@
+@startuml
+title US - Filtrar Empleados (Sequence Diagram)
+
+actor Usuario
+participant "Frontend" as FE
+participant "get.controller.js\ngetAll()" as Controller
+participant "get.service.js\ngetEmployees()" as Service
+participant "get.model.js\ngetEmployees()" as Model
+database "BD (Prisma)" as BD
+
+Usuario -> FE : Escribe "Juan" y filtra por "Activos"
+FE -> Controller : GET /getAll?search=Juan&active=true
+
+activate Controller
+Controller -> Controller : Extrae { active: "true", search: "Juan" }
+Controller ->> Service : await getEmployees(houseId, active, page, limit, search)
+activate Service
+
+Service -> Service : Transforma 'active' a booleano
+Service ->> Model : await getEmployees(houseId, true, "Juan", skip, limit)
+activate Model
+
+Model -> Model : Inicializa whereClause = {\n  house_id: houseId,\n  is_active: active\n}
+alt search no está vacío
+    Model -> Model : terms = search.trim().split(/\\s+/)
+    Model -> Model : whereClause.AND = terms.map(term => ({\n  OR: [{ name: { contains: term } },\n       { surname: { contains: term } }]\n}))
+end
+
+Model ->> BD : Promise.all([\n  prisma.employee.findMany({ where: whereClause }),\n  prisma.employee.count({ where: whereClause })\n])
+BD -->> Model : [ filteredEmployees, total ]
+
+Model -->> Service : { employees: filteredEmployees, total }
+deactivate Model
+
+Service -> Service : mappedEmployees = employees.map(...)
+Service -->> Controller : { data: mappedEmployees, pagination }
+deactivate Service
+
+Controller --> FE : 200 OK (data, pagination)
+FE --> Usuario : Muestra tabla con empleados filtrados
+deactivate Controller
+@enduml

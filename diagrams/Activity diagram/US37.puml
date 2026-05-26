@@ -1,0 +1,162 @@
+@startuml
+title US37 - Coordinador remueve vacaciones de un empleado
+
+|Coordinador|
+start
+:Entrar al módulo de solicitudes de vacaciones;
+:Seleccionar una solicitud pendiente, aprobada futura o rechazada;
+:Dar clic en remover vacaciones;
+
+|Sistema|
+:Mostrar confirmación de eliminación;
+
+if (¿Coordinador confirma?) then (Sí)
+else (No)
+:No enviar solicitud al backend;
+:No realizar cambios;
+stop
+endif
+
+:Aplicar rate limit;
+:Validar token de sesión;
+
+if (¿Token válido?) then (Sí)
+else (No)
+:Mostrar error "Token no proporcionado o inválido";
+stop
+endif
+
+:Validar rol Coordinador;
+
+if (¿Rol permitido?) then (Sí)
+else (No)
+:Mostrar error "Rol no permitido";
+stop
+endif
+
+:Validar privilegio para gestionar empleados/vacaciones;
+
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+:Mostrar error "Permisos insuficientes";
+stop
+endif
+
+:Validar request HTTP con schema;
+
+if (¿Request válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Validar contrato de entrada del caso de uso;
+
+if (¿Entrada válida?) then (Sí)
+else (No)
+:Mostrar error "Datos inválidos";
+stop
+endif
+
+:Buscar actor Coordinador por ID con rol y casa;
+
+if (¿Actor existe?) then (Sí)
+else (No)
+:Mostrar error "Usuario no autenticado";
+stop
+endif
+
+if (¿Actor es Coordinador?) then (Sí)
+else (No)
+:Mostrar error "No tienes permisos para remover vacaciones";
+stop
+endif
+
+:Buscar solicitud de vacaciones;
+
+if (¿Solicitud existe?) then (Sí)
+else (No)
+:Mostrar error "Solicitud de vacaciones no encontrada";
+stop
+endif
+
+:Buscar empleado dueño de la solicitud;
+
+if (¿Empleado existe?) then (Sí)
+else (No)
+:Mostrar error "Empleado no encontrado";
+stop
+endif
+
+if (¿Empleado es Administrador?) then (Sí)
+:Mostrar error "No puede acceder a este recurso";
+stop
+else (No)
+endif
+
+:Validar que el Coordinador pertenezca a la misma casa hogar que el empleado;
+
+if (¿Misma casa hogar?) then (Sí)
+else (No)
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+:Iniciar transacción;
+:Bloquear operaciones concurrentes de vacaciones del empleado;
+:Releer solicitud dentro de la transacción;
+
+if (¿Solicitud existe?) then (Sí)
+else (No)
+:Cancelar eliminación;
+:Mostrar error "Solicitud de vacaciones no encontrada";
+stop
+endif
+
+if (¿Solicitud pertenece al empleado esperado?) then (Sí)
+else (No)
+:Cancelar eliminación;
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+:Releer empleado dentro de la transacción;
+
+if (¿Empleado existe y sigue dentro de la casa del Coordinador?) then (Sí)
+else (No)
+:Cancelar eliminación;
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+if (¿Empleado sigue sin ser Admin?) then (Sí)
+else (No)
+:Cancelar eliminación;
+:Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+if (¿Solicitud aprobada ya inició o terminó?) then (Sí)
+:Cancelar eliminación;
+:Mostrar error "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron";
+stop
+else (No)
+endif
+
+:Eliminar solicitud de vacaciones;
+
+if (¿Solicitud era pendiente o aprobada futura?) then (Sí)
+:La solicitud deja de contar para disponibilidad, traslapes y calendario operativo;
+else (No, era rechazada)
+:La eliminación no modifica días disponibles porque la solicitud rechazada no consumía días;
+endif
+
+:Confirmar transacción;
+:Guardar log de eliminación;
+:Mostrar mensaje "Vacaciones removidas correctamente";
+
+|Coordinador|
+:Continuar revisando solicitudes;
+stop
+
+@enduml

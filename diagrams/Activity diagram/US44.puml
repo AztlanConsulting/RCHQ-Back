@@ -1,0 +1,58 @@
+@startuml
+title US44 - Consultar las actividades de mis trabajadores de una casa
+
+|Coordinador|
+start
+:Entra al módulo de actividades de trabajadores;
+
+|Sistema|
+:Aplica rate limit;
+:Valida token de sesión;
+if (¿Token válido?) then (Sí)
+else (No)
+  :Muestra error "Token inválido o expirado";
+  stop
+endif
+
+:Resuelve la casa del coordinador;
+if (¿Casa identificada?) then (Sí)
+else (No)
+  :Muestra error "No se pudo identificar la casa del coordinador";
+  stop
+endif
+
+:Valida rol Coordinador;
+if (¿Rol permitido?) then (Sí)
+else (No)
+  :Muestra error "Privilegios insuficientes";
+  stop
+endif
+
+:Valida privilegio viewLogs;
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+  :Muestra error "Privilegios insuficientes";
+  stop
+endif
+
+:Valida parámetros de consulta\n(página, límite y filtros);
+if (¿Parámetros válidos?) then (Sí)
+else (No)
+  :Muestra error "Parámetros inválidos";
+  stop
+endif
+
+:Construye filtros por acción, búsqueda,\nfechas, responsable y afectado;
+:Consulta logs de la casa con paginación;
+if (¿Hay registros?) then (Sí)
+  :Mapea logs con la información del responsable\ny del recurso afectado;
+  :Devuelve logs, total de páginas\ny total de registros;
+else (No)
+  :Devuelve lista vacía con paginación;
+endif
+
+|Coordinador|
+:Visualiza el historial de acciones de sus trabajadores;
+stop
+
+@enduml

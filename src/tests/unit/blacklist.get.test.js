@@ -25,12 +25,13 @@ describe("getBlacklist service", () => {
         expect(getBlacklistedEmployees).not.toHaveBeenCalled();
     });
 
-    it("debe retornar NOT_FOUND si no se encuentran empleados en la base de datos", async () => {
+    it("debe retornar FETCHED con lista vacía si no se encuentran empleados en la base de datos", async () => {
         getBlacklistedEmployees.mockResolvedValue({ employees: [], pagination: {} });
 
         const result = await getBlacklist({ page: "1", limit: "10", role: "Coordinador", houseId: "house-123" });
 
-        expect(result.code).toBe(RESPONSES.BLACKLIST.NOT_FOUND);
+        expect(result.code).toBe(RESPONSES.BLACKLIST.FETCHED);
+        expect(result.data).toEqual({ employees: [], pagination: {} });
         expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10, role: "Coordinador", houseId: "house-123" });
     });
 
@@ -46,6 +47,20 @@ describe("getBlacklist service", () => {
         expect(result.code).toBe(RESPONSES.BLACKLIST.FETCHED);
         expect(result.data).toEqual(mockData);
         expect(getBlacklistedEmployees).toHaveBeenCalledWith({ page: 1, limit: 10, isBlacklisted: true, role: "Administrador", houseId: undefined });
+    });
+
+    it("pasa search al modelo cuando se busca por nombre o apellido", async () => {
+        getBlacklistedEmployees.mockResolvedValue({ employees: [], pagination: {} });
+
+        await getBlacklist({ search: "María Pérez", role: "Administrador" });
+
+        expect(getBlacklistedEmployees).toHaveBeenCalledWith({
+            page: 1,
+            limit: 10,
+            search: "María Pérez",
+            role: "Administrador",
+            houseId: undefined,
+        });
     });
 
     it("debe retornar INTERNAL_ERROR si ocurre una excepción inesperada en el modelo", async () => {

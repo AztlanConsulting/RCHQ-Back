@@ -1,0 +1,77 @@
+@startuml
+|Usuario|
+start
+:Ingresa a "Otras Opciones" desde su perfil;
+
+|#AntiqueWhite|Sistema|
+:Consulta estado actual del 2FA;
+:Muestra botón "Activar 2FA" o "Desactivar 2FA"\nsegún el estado;
+
+|Usuario|
+:Selecciona opción;
+
+fork
+  :Escoge **Activar 2FA**;
+
+  |Sistema|
+  :Genera código QR y clave secreta;
+  :Guarda temp_totp_secret en BD;
+  :Muestra QR y código manual;
+
+  |Usuario|
+  :Escanea QR con app autenticadora\n(ej. Google Authenticator);
+  :Presiona "Continuar";
+
+  repeat
+    :Ingresa código de 6 dígitos;
+
+    |Sistema|
+    :Valida código TOTP con temp_totp_secret;
+
+  repeat while (¿Código válido?) is (No)
+  -> Sí;
+
+  |Sistema|
+  :Mueve temp_totp_secret a totp_secret;
+  :Activa is_active_2fa = true en BD;
+  :Guarda log TWO_FA_SETUP_SUCCESS;
+  :Cierra modal y notifica éxito;
+
+  |Usuario|
+  :Ve confirmación\n"2FA activado correctamente";
+
+fork again
+  :Escoge **Desactivar 2FA**;
+
+  |Sistema|
+  :Muestra modal de confirmación;
+
+  |Usuario|
+  :Ingresa su contraseña;
+
+  |Sistema|
+  :Verifica contraseña;
+
+  if (¿Contraseña válida?) then (No)
+    |Sistema|
+    :Muestra error "Credenciales inválidas";
+    |Usuario|
+    :Reintenta o cancela;
+  else (Sí)
+    |Sistema|
+    :Limpia totp_secret y temp_totp_secret;
+    :Desactiva is_active_2fa = false en BD;
+    :Guarda log TWO_FA_DISABLED;
+    :Cierra modal y notifica éxito;
+
+    |Usuario|
+    :Ve confirmación\n"2FA desactivado correctamente";
+  endif
+
+end fork
+
+|Sistema|
+:Actualiza botón según nuevo estado del 2FA;
+
+stop
+@enduml

@@ -1,3 +1,4 @@
+const { Prisma } = require("@prisma/client");
 const prisma = require("../../prisma");
 
 const normalizeSearchTerm = (value) => String(value || "")
