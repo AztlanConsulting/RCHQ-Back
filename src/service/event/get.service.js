@@ -101,8 +101,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
             events.push({
                 houseEventId: event.house_event_id,
                 eventTypeId: event.event_type_id,
-                start: convertUTCToMexicanTime(event.start),
-                end: convertUTCToMexicanTime(event.end),
+                start: event.start,
+                end: event.end,
                 date: "",
                 name: event.name,
                 type: event.event_type.name,
@@ -130,8 +130,8 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     const globalEvents = await getGlobalEventsInRange(startDate, endDate);
     globalEvents.forEach((event) => {
         events.push({
-            start: convertUTCToMexicanTime(event.start),
-            end: convertUTCToMexicanTime(event.end),
+            start: event.start,
+            end: event.end,
             date: "",
             name: event.name,
             subtitle: event.subtitle || "",
@@ -147,14 +147,20 @@ exports.getEventsInRange = async (employeeId, rawStartDate, rawEndDate) => {
     });
 
     const workDays = await getWorkDays(employeeId);
-    const freeDays = events.filter((event) => {
-        return (
-            (event.scope === "global" || event.scope === "house") &&
-            event.isFreeDay === true &&
-            event.start instanceof Date &&
-            event.end instanceof Date
-        );
-    });
+    const freeDays = events
+        .filter((event) => {
+            return (
+                (event.scope === "global" || event.scope === "house") &&
+                event.isFreeDay === true &&
+                event.start instanceof Date &&
+                event.end instanceof Date
+            );
+        })
+        .map((event) => ({
+            ...event,
+            start: convertUTCToMexicanTime(event.start),
+            end: convertUTCToMexicanTime(event.end),
+        }));
 
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
     vacations.forEach((vacation) => {

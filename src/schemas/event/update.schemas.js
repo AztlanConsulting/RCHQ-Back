@@ -10,6 +10,15 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
 
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+const isDateOrDateTimeWithTimezone = (value) =>
+    DATE_REGEX.test(value) || DATETIME_WITH_TIMEZONE_REGEX.test(value);
+const isTimeOrDateTimeWithTimezone = (value) =>
+    TIME_REGEX.test(value) || DATETIME_WITH_TIMEZONE_REGEX.test(value);
+const eventDateTimeForValidation = (date, value) => {
+    if (DATETIME_WITH_TIMEZONE_REGEX.test(value)) return new Date(value);
+    const normalizedTime = value.length === 5 ? `${value}:00` : value;
+    return new Date(`${date}T${normalizedTime}-06:00`);
+};
 
 const getTodayStr = () => convertUTCToMexicanTime(new Date()).toISOString().slice(0, 10);
 const getMaxDateStr = () => {
@@ -87,22 +96,22 @@ exports.houseEventUpdateSchema = z
             .default(false),
     })
     .superRefine((data, ctx) => {
-        if (data.allDay) {
-            if (!DATE_REGEX.test(data.start)) {
+        if (data.allDay || data.isFreeDay) {
+            if (!isDateOrDateTimeWithTimezone(data.start)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["start"],
                     message:
-                        "Para eventos de todo el día, start debe tener formato YYYY-MM-DD.",
+                        "Para eventos de todo el día, start debe tener fecha válida.",
                 });
             }
 
-            if (!DATE_REGEX.test(data.end)) {
+            if (!isDateOrDateTimeWithTimezone(data.end)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["end"],
                     message:
-                        "Para eventos de todo el día, end debe tener formato YYYY-MM-DD.",
+                        "Para eventos de todo el día, end debe tener fecha válida.",
                 });
             }
 
@@ -131,12 +140,24 @@ exports.houseEventUpdateSchema = z
         let start;
         let end;
 
-        if (data.allDay) {
-            start = dateOnlyToUtcDate(data.start);
-            end = dateOnlyToUtcDate(data.end);
+        if (data.isFreeDay) {
+            start = dateOnlyToUtcDate(data.start.slice(0, 10));
+            end = dateOnlyToUtcDate(data.end.slice(0, 10));
 
             if (!isNaN(end.getTime())) {
                 end = new Date(end.getTime() + ONE_DAY_MS);
+            }
+        } else if (data.allDay) {
+            if (DATE_REGEX.test(data.start)) {
+                start = dateOnlyToUtcDate(data.start);
+                end = dateOnlyToUtcDate(data.end);
+
+                if (!isNaN(end.getTime())) {
+                    end = new Date(end.getTime() + ONE_DAY_MS);
+                }
+            } else {
+                start = new Date(data.start);
+                end = new Date(data.end);
             }
         } else {
             start = new Date(data.start);
@@ -161,21 +182,27 @@ exports.houseEventUpdateSchema = z
             return z.NEVER;
         }
 
-        return { ...data, start, end };
+        return {
+            ...data,
+            start,
+            end,
+            allDay: data.allDay || data.isFreeDay,
+            localStartDate: data.start.slice(0, 10),
+        };
     })
     .refine((data) => data.start < data.end, {
         message: "La fecha de inicio debe ser anterior a la fecha de fin.",
         path: ["start"],
     })
     .refine(
-        (data) => data.start.toISOString().slice(0, 10) >= getHouseMinDateStr(),
+        (data) => data.localStartDate >= getHouseMinDateStr(),
         {
             message: `No se pueden mover eventos antes del 1 de enero de ${new Date().getFullYear()}.`,
             path: ["start"],
         },
     )
     .refine(
-        (data) => data.start.toISOString().slice(0, 10) <= getHouseMaxDateStr(),
+        (data) => data.localStartDate <= getHouseMaxDateStr(),
         {
             message: `No se pueden mover eventos más allá del año ${new Date().getFullYear() + 2}.`,
             path: ["start"],
@@ -219,17 +246,17 @@ exports.updatePersonalEventSchema = z
 
         start: z
             .string()
-            .regex(
-                TIME_REGEX,
-                "La hora de inicio debe tener formato HH:mm o HH:mm:ss",
+            .refine(
+                isTimeOrDateTimeWithTimezone,
+                "La hora de inicio debe tener formato HH:mm, HH:mm:ss o fecha/hora con zona horaria",
             )
             .optional(),
 
         end: z
             .string()
-            .regex(
-                TIME_REGEX,
-                "La hora de fin debe tener formato HH:mm o HH:mm:ss",
+            .refine(
+                isTimeOrDateTimeWithTimezone,
+                "La hora de fin debe tener formato HH:mm, HH:mm:ss o fecha/hora con zona horaria",
             )
             .optional(),
 
@@ -243,6 +270,19 @@ exports.updatePersonalEventSchema = z
     })
     .superRefine((data, ctx) => {
         if (data.allDay === true) {
+            if (
+                data.start &&
+                data.end &&
+                eventDateTimeForValidation(data.date, data.end) <=
+                    eventDateTimeForValidation(data.date, data.start)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["end"],
+                    message:
+                        "La fecha/hora de fin debe ser mayor que la de inicio",
+                });
+            }
             return;
         }
 
@@ -263,7 +303,12 @@ exports.updatePersonalEventSchema = z
             });
         }
 
-        if (data.start && data.end && data.end <= data.start) {
+        if (
+            data.start &&
+            data.end &&
+            eventDateTimeForValidation(data.date, data.end) <=
+                eventDateTimeForValidation(data.date, data.start)
+        ) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["end"],

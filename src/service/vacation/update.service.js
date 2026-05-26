@@ -31,6 +31,7 @@ const {
     updateVacationRequestDatesInputSchema,
 } = require("../../schemas/vacation/update.schemas");
 const { getVacationYearInfoForApproval } = require("./get.service");
+const { endOfUtcDay } = require("../../utils/event/dateTime");
 
 const isAdminRole = (roleName) =>
     roleName?.toLowerCase() === ROLES.ADMIN.toLowerCase();
@@ -140,8 +141,7 @@ exports.approveVacationRequest = async ({
 
     const startDate = vacationRequest.start;
     const endDate = vacationRequest.end;
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     const globalEvents = await getGlobalEventsInRange(startDate, searchEndDate);
     const houseEvents = await getHouseEventsInRange(requesterHouseId, startDate, searchEndDate);
@@ -332,8 +332,7 @@ exports.updateVacationRequestDates = async ({
 
     const startDate = stringToDate(validation.data.rawStartDate);
     const endDate = stringToDate(validation.data.rawEndDate);
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     if (endDate < startDate) {
         return {

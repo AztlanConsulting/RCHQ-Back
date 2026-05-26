@@ -1,8 +1,6 @@
 const prisma = require("../../prisma");
 const { mapHouseEvent, mapPersonalEvent } = require("../../utils/mappers/event.map");
-
-const personalEventTimeToUtc = (date, time) =>
-    new Date(`${date}T${time}-06:00`);
+const { eventDateTimeToUtc } = require("../../utils/event/dateTime");
 
 exports.updatePersonalEvent = async (eventId, data) => {
     return prisma.$transaction(async (transaction) => {
@@ -12,8 +10,8 @@ exports.updatePersonalEvent = async (eventId, data) => {
                 event_type_id: data.eventTypeId,
                 name: data.name,
                 date: new Date(data.date),
-                start: personalEventTimeToUtc(data.date, data.start),
-                end: personalEventTimeToUtc(data.endDate ?? data.date, data.end),
+                start: eventDateTimeToUtc(data.date, data.start),
+                end: eventDateTimeToUtc(data.endDate ?? data.date, data.end),
                 all_day: data.allDay,
                 description: data.description ?? null,
             },

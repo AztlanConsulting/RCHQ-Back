@@ -315,10 +315,9 @@ describe("event.get.service", () => {
 
         expect(personalEvent).toMatchObject({
             allDay: true,
-            allDay: true,
         });
-        expect(personalEvent.start).toEqual(makeUTCDate(2026, 5, 5));
-        expect(personalEvent.end).toEqual(makeUTCDate(2026, 5, 6));
+        expect(personalEvent.start).toEqual(new Date("2026-05-05T06:00:00.000Z"));
+        expect(personalEvent.end).toEqual(new Date("2026-05-06T06:00:00.000Z"));
     });
 
     it("normaliza is_free_day undefined o null como false sin descontar dias", async () => {

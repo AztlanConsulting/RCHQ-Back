@@ -1,5 +1,3 @@
-const { convertUTCToMexicanTime, combineDateAndTime } = require("../dates");
-
 exports.mapHouseEvent = (event) => {
     if (!event) return null;
 
@@ -8,8 +6,8 @@ exports.mapHouseEvent = (event) => {
         houseId: event.house_id,
         eventTypeId: event.event_type_id,
         name: event.name,
-        start: convertUTCToMexicanTime(event.start),
-        end: convertUTCToMexicanTime(event.end),
+        start: event.start,
+        end: event.end,
         allDay: event.all_day,
         isFreeDay: event.is_free_day,
         isDeleted: event.is_deleted,
@@ -69,11 +67,8 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
 
 exports.mapPersonalCalendarEvent = (event) => {
     const peopleData = [];
-    const start = combineDateAndTime(event.date, event.start);
-    const endCalendarDate = event.all_day
-        ? convertUTCToMexicanTime(event.end)
-        : event.date;
-    const end = combineDateAndTime(endCalendarDate, event.end);
+    const start = event.start;
+    const end = event.end;
 
     event.employee_personal_event.forEach((employeeEvent) => {
         peopleData.push({
@@ -117,11 +112,6 @@ exports.mapPersonalEvent = (event, options = {}) => {
     };
 };
 
-const formatTime = (time) => {
-    if (!time) return null;
-    return convertUTCToMexicanTime(time).toISOString().slice(11, 19);
-};
-
 exports.mapPersonalEventOverlap = (row) => {
     if (!row) return null;
 
@@ -136,8 +126,8 @@ exports.mapPersonalEventOverlap = (row) => {
             personalEventId: row.personal_event?.personal_event_id,
             name: row.personal_event?.name,
             date: row.personal_event?.date,
-            start: formatTime(row.personal_event?.start),
-            end: formatTime(row.personal_event?.end),
+            start: row.personal_event?.start,
+            end: row.personal_event?.end,
         },
     };
 };

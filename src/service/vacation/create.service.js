@@ -20,6 +20,7 @@ const {
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { dateRangeSchema } = require("../../schemas/dates.schemas");
 const { createLog } = require("../../model/log.model");
+const { endOfUtcDay } = require("../../utils/event/dateTime");
 const {
     requestVacation,
     registerVacation,
@@ -39,8 +40,7 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
 
     const startDate = stringToDate(rawStartDate);
     const endDate = stringToDate(rawEndDate);
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     if (endDate < startDate) {
         return {
@@ -166,8 +166,7 @@ exports.registerEmployeeVacation = async ({
 
     const startDate = stringToDate(rawStartDate);
     const endDate = stringToDate(rawEndDate);
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     if (endDate < startDate) {
         return {

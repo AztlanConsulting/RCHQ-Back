@@ -25,6 +25,9 @@ exports.resolveEmployeeIds = (user, employeeIdsInput, forceOverlap) => {
 
 exports.resolveSchedule = (allDay, startInput, endInput) => {
     if (allDay === true) {
+        if (startInput && endInput) {
+            return { start: startInput, end: endInput };
+        }
         return { start: ALL_DAY_START, end: ALL_DAY_END };
     }
     const normalizedStart =
