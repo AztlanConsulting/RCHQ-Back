@@ -77,4 +77,16 @@ router.get(
     authController.getTwoFactorAuthStatus,
 );
 
+router.post(
+    "/refresh",
+    apiLimiter,
+    authController.refreshToken
+);
+
+router.post(
+    "/logout",
+    apiLimiter,
+    authController.logout
+);
+
 module.exports = router;

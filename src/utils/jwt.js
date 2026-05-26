@@ -3,6 +3,7 @@ const jwtSecret = process.env.JWT_SECRET;
 const sessionExpiresIn = "1h";
 const firstLoginExpiresIn = "15m";
 const preTwoFactorAuthExpiresIn = "10m";
+const refreshExpiresIn = "7d";
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -45,6 +46,17 @@ const generatePreTwoFactorAuthToken = (user) => {
     );
 };
 
+const generateRefreshToken = (user) => {
+    return jwt.sign(
+        {
+            id: user.id || user.employeeId,
+            tokenType: "REFRESH",
+        },
+        jwtSecret,
+        { expiresIn: refreshExpiresIn },
+    );
+};
+
 const decodeToken = (token) => {
     if (!token) {
         return null;
@@ -61,4 +73,5 @@ module.exports = {
     decodeToken,
     generateFirstLoginToken,
     generatePreTwoFactorAuthToken,
+    generateRefreshToken,
 };

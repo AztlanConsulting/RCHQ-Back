@@ -16,6 +16,7 @@ const {
     clearExpiredTwoFactorAuthBlock,
 } = require("../../utils/auth/authGuards");
 const prisma = require("../../prisma");
+const { generateRefreshToken, decodeToken } = require("../../utils/jwt");
 
 const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
@@ -160,6 +161,9 @@ async function login(req) {
   }
 
   const token = await buildSessionToken(employee);
+  const refreshToken = generateRefreshToken(employee);
+
+  await User.saveRefreshToken(employee.employeeId, refreshToken);
 
   await createLog(employee.employeeId, LOG_ACTIONS.LOGIN_SUCCESS, ipAddress);
 
@@ -167,9 +171,11 @@ async function login(req) {
     status: 200,
     body: {
       success: true,
+      code: "LOGIN_SUCCESS",
       message: "Inicio de sesión exitoso",
       isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
       data: {
+        refreshToken,
         token,
         user: {
           employeeId: employee.employeeId,
@@ -485,6 +491,9 @@ async function validateTwoFactorAuth(req) {
   await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
   const tokenJwt = await buildSessionToken(employee);
+  const refreshToken = generateRefreshToken(employee);
+
+  await User.saveRefreshToken(employee.employeeId, refreshToken);
 
   await createLog(
     employee.employeeId,
@@ -499,6 +508,7 @@ async function validateTwoFactorAuth(req) {
       message: "TwoFactorAuth validacion correcta",
       nextStep: "LOGIN_COMPLETE",
       token: tokenJwt,
+      refreshToken,
       data: {
         employeeId: employee.employeeId,
         email: employee.email,
@@ -646,6 +656,56 @@ async function disableTwoFactorAuth(req) {
     };
 }
 
+async function refreshSession(refreshToken, ipAddress) {
+    if (!refreshToken) {
+        return { status: 401, body: { success: false, message: "Token no proporcionado", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const decoded = decodeToken(refreshToken);
+    if (!decoded || decoded.tokenType !== "REFRESH") {
+        return { status: 401, body: { success: false, message: "Token inválido o expirado", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const employeeId = decoded.id || decoded.employeeId;
+    const employee = await User.getEmployeeById(employeeId);
+
+    if (!employee || !employee.isActive) {
+        return { status: 403, body: { success: false, message: "Acceso denegado", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    if (employee.refreshToken !== refreshToken) {
+        await User.clearRefreshToken(employeeId);
+        return { status: 401, body: { success: false, message: "Sesión inválida", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const newToken = await buildSessionToken(employee);
+    const newRefreshToken = generateRefreshToken(employee);
+    await User.saveRefreshToken(employee.employeeId, newRefreshToken);
+
+    return {
+        status: 200,
+        body: {
+            success: true,
+            code: "REFRESH_SUCCESS",
+            message: "Sesión actualizada",
+            data: {
+                token: newToken,
+                refreshToken: newRefreshToken,
+            },
+        },
+    };
+}
+
+async function logout(refreshToken) {
+    if (refreshToken) {
+        const decoded = decodeToken(refreshToken);
+        if (decoded && (decoded.id || decoded.employeeId)) {
+            await User.clearRefreshToken(decoded.id || decoded.employeeId);
+        }
+    }
+    return { status: 200, body: { success: true, message: "Sesión cerrada", code: "LOGOUT_SUCCESS" } };
+}
+
 module.exports = {
     login,
     setupTwoFactorAuth,
@@ -653,4 +713,6 @@ module.exports = {
     validateTwoFactorAuth,
     getTwoFactorAuthStatus,
     disableTwoFactorAuth,
+    refreshSession,
+    logout,
 };
