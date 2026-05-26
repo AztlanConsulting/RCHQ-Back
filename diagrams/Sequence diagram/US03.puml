@@ -1,0 +1,112 @@
+@startuml
+title US04 End-to-End - user cambia contraseña
+
+actor Usuario
+boundary "ChangePassword.jsx" as UI
+control "AuthService.jsx" as FrontService
+boundary "auth.route.js" as Route
+control "verifyToken" as Auth
+control "validate" as Validate
+control "auth.controller.js" as Controller
+control "password.service.js" as Service
+entity "auth.model.js" as UserModel
+collections "password utils" as PasswordUtil
+entity "log.model.js" as LogModel
+database "BD" as DB
+
+Usuario -> UI : Captura actual, nueva y confirmación
+UI -> UI : Validar formato y confirmación
+
+alt Datos inválidos (Front)
+    UI --> Usuario : Mostrar error de validación
+else Datos válidos (Front)
+    UI -> FrontService : changePasswordService(data, sessionToken)
+    FrontService -> Route : POST /change-password
+
+    Route -> Auth : Validar JWT
+    alt Token inválido/expirado
+        Auth --> FrontService : 401 Unauthorized
+        FrontService --> UI : 401 Unauthorized
+        UI --> Usuario : Mostrar sesión expirada
+    else Token válido
+        Auth -> Validate : Validar request
+        
+        alt Datos inválidos (Back)
+            Validate --> FrontService : 400 Error de validación
+            FrontService --> UI : 400 Error de validación
+            UI --> Usuario : Mostrar error
+        else Datos válidos (Back)
+            Validate -> Controller : changePassword(req)
+            Controller -> Service : changePassword(req)
+            
+            Service -> UserModel : getEmployeeById(req.user.id)
+            UserModel -> DB : Consultar empleado
+            DB --> UserModel : Empleado / no encontrado
+            UserModel --> Service : Empleado / no encontrado
+
+            alt Usuario no existe
+                Service --> Controller : 404 Employee not found
+                Controller --> FrontService : 404 Employee not found
+                FrontService --> UI : 404 Employee not found
+                UI --> Usuario : Mostrar error
+            else Usuario existe
+                alt Cuenta inactiva
+                    Service -> LogModel : Guardar intento con cuenta inactiva
+                    LogModel -> DB : Insertar log
+                    DB --> LogModel : Confirmación
+                    Service --> Controller : 403 Access not allowed
+                    Controller --> FrontService : 403 Access not allowed
+                    FrontService --> UI : 403 Access not allowed
+                    UI --> Usuario : Mostrar error
+                else Cuenta activa
+                    alt Confirmación no coincide o formato inválido
+                        Service --> Controller : 400 Error de validación
+                        Controller --> FrontService : 400 Error de validación
+                        FrontService --> UI : 400 Error de validación
+                        UI --> Usuario : Mostrar error
+                    else Datos válidos
+                        Service -> PasswordUtil : verifyPassword(currentPassword, employee.pwd)
+                        PasswordUtil --> Service : true / false
+
+                        alt Contraseña actual incorrecta
+                            Service -> LogModel : Guardar intento fallido de cambio
+                            LogModel -> DB : Insertar log
+                            DB --> LogModel : Confirmación
+                            Service --> Controller : 401 Invalid credentials
+                            Controller --> FrontService : 401 Invalid credentials
+                            FrontService --> UI : 401 Invalid credentials
+                            UI --> Usuario : Mostrar error
+                        else Contraseña actual correcta
+                            Service -> PasswordUtil : verifyPassword(newPassword, employee.pwd)
+                            PasswordUtil --> Service : true / false
+
+                            alt Nueva igual a la actual
+                                Service --> Controller : 400 New password must be different
+                                Controller --> FrontService : 400 New password must be different
+                                FrontService --> UI : 400 New password must be different
+                                UI --> Usuario : Mostrar error
+                            else Nueva distinta
+                                Service -> PasswordUtil : hashPassword(newPassword)
+                                PasswordUtil --> Service : hashedPassword
+
+                                Service -> DB : Actualizar password
+                                DB --> Service : Confirmación
+
+                                Service -> LogModel : Guardar PASSWORD_CHANGED_SUCCESS
+                                LogModel -> DB : Insertar log
+                                DB --> LogModel : Confirmación
+
+                                Service --> Controller : 200 Password changed successfully
+                                Controller --> FrontService : 200 Password changed successfully
+                                FrontService --> UI : 200 Password changed successfully
+                                UI --> Usuario : Mostrar confirmación
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+@enduml

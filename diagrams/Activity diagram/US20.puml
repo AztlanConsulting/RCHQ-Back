@@ -1,46 +1,57 @@
-@startuml
+@startuml HU - Registro de evento de casa
 
-|Usuario|
+|Coordinador|
 start
-:Seleccionar la opción en la \nnavbar de ausencias;
-
-|Sistema| 
-:Verificar rol del usuario;
-if (rol es diferente a \nAdministrador o Coordinador) then (no)
-    :Continuar en US 78 y 79...;
-    stop
-else (yes)
-    :Verificar privilegios del usuario;
-
-    if (Privilegios válidos) then (yes)
-        :Consultar el id del usuario;
-    else (no)
-        :mostrar mensaje de error de privilegios insuficientes;
-        stop
-    endif
-endif
-
-:Consultar la tabla de ausencias;
-:Recuperar la información de:\n  -fecha de inicio \n  -fecha de fin \n  -url \n  -id del tipo de ausencia;
-:Consultar la tabla de tipo de ausencia;
-:Recuperar la información de: \n  -tipo de ausencia;
-:Mandar los datos de: \n  -fecha de inicio \n  -fecha de fin \n  -url \n  -tipo de ausencia;
-:Renderizar la vista con los datos de: \n  -fecha de inicio \n  -fecha de fin \n  -url \n  -tipo de ausencia \n  -botón de acción;
-:Mostrar la vista al usuario;
-
-|Usuario|
-:Ver la vista de ausencias;
-:Dar click en el botón de acción;
+:Interactuar con el calendario;
 
 |Sistema|
-:Consultar el id del usuario;
-:Consultar la tabla de ausencias;
-:Recuperar la información de: \n  -fecha de inicio \n  -fecha de fin \n  -descripción;
-:Calcular los días habiles ausente;
-:Mandar los datos de: \n  -descripción \n  -días hábiles ausentes;
-:Mostrar una ventana modal con la información de: \n  -descripción \n  -días hábiles ausente\nDe la ausencia en específico;
+:Renderizar modal de creación;
 
-|Usuario|
-:Ver la ventana modal;
+|Coordinador|
+:Seleccionar opción "Casa";
+repeat
+:Llenar campos obligatorios:
+- Título
+- Tipo de evento
+- Fecha y hora de inicio
+- Fecha y hora de fin;
+
+|Sistema|
+if (¿Activar "Todo el día"?) then (SI)
+    :Eliminar selectores de hora;
+    :Registrar solo fechas;
+else (NO)
+    :Mantener selectores de hora;
+endif
+
+if (¿Ingresar descripción?) then (SI)
+    |Coordinador|
+    :Ingresar descripción del evento;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos?) is (NO)
+:Validar disponibilidad de horario;
+
+if (¿Existe empalme con otro evento?) then (SI)
+    |Coordinador|
+    if (¿Desea agregar el evento de todos modos?) then (SI)
+        |Sistema|
+        :Registrar evento con traslape;
+    else (NO)
+        |Sistema|
+        :Cancelar operación;
+        stop
+    endif
+else (NO)
+    |Sistema|
+    :Registrar evento normalmente;
+endif
+
+|Sistema|
+:Notificar éxito al usuario;
+:Actualizar calendario;
 stop
+
 @enduml
