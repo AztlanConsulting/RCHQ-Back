@@ -30,6 +30,12 @@ const RESPONSES = {
         NOT_FOUND: "Usuario no encontrado",
         NOT_ACCESS: "Acceso bloqueado",
     },
+    AUTH: {
+        LOGIN_SUCCESS: "LOGIN_SUCCESS",
+        REFRESH_SUCCESS: "REFRESH_SUCCESS",
+        INVALID_REFRESH_TOKEN: "INVALID_REFRESH_TOKEN",
+        LOGOUT_SUCCESS: "LOGOUT_SUCCESS",
+    },
     VACATION: {
         PAST_REQUEST_NOT_ALLOWED:
             "No se pueden pedir vacaciones en el pasado ni para el mismo día",
