@@ -259,7 +259,7 @@ describe("US35 - rejectVacationRequest service", () => {
 
     it("rechaza correctamente con feedback válido", async () => {
         const feedback =
-            "Periodo crítico 24/12: alta demanda operativa; favor reprogramar 🙂👍🏽.";
+            "Motivo \"crítico\": clima 30°; enlace https://rchq.mx/rechazo?turno=dia%201&personas=5; cálculo 5-3=2+0*1 🙂👍🏽.";
 
         const rejectedVacationRequest = {
             ...pendingVacationRequest,

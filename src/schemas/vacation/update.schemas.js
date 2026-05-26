@@ -5,7 +5,7 @@ const UUID_SCHEMA = z.string().uuid("ID inválido");
 const EMOJI_SEQUENCE_REGEX =
     "(?:\\p{Regional_Indicator}{2}|\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\p{Emoji_Modifier})?)*)";
 const FEEDBACK_ALLOWED_CHARS_REGEX = new RegExp(
-    `^(?:[\\p{L}\\p{M}\\p{N} \\r\\n.,:;()¿?¡!/-]|${EMOJI_SEQUENCE_REGEX})*$`,
+    `^(?:[\\p{L}\\p{M}\\p{N} \\r\\n.,:;()¿?¡!°&%"=+*/_#~/-]|${EMOJI_SEQUENCE_REGEX})*$`,
     "u",
 );
 
@@ -17,7 +17,7 @@ const FEEDBACK_SCHEMA = z
     .max(500, "El feedback no puede superar 500 caracteres")
     .regex(
         FEEDBACK_ALLOWED_CHARS_REGEX,
-        "El feedback solo puede contener letras, números, espacios y signos básicos",
+        "El feedback solo puede contener letras, números, emojis, espacios y signos permitidos",
     )
     .optional();
 

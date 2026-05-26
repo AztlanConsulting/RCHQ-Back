@@ -341,7 +341,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
     it("rechaza exitosamente con feedback", async () => {
         const token = buildToken(coordinatorTokenPayload);
         const feedback =
-            "Periodo crítico 24/12: alta demanda operativa; favor reprogramar 🙂👍🏽.";
+            "Motivo \"crítico\": clima 30°; enlace https://rchq.mx/rechazo?turno=dia%201&personas=5; cálculo 5-3=2+0*1 🙂👍🏽.";
 
         mockHappyPath({
             feedback,
