@@ -288,7 +288,7 @@ exports.updateVacationRequestDates = async (req, res) => {
         if (result.code === RESPONSES.VACATION.REQUEST_ALREADY_STARTED) {
             return res.status(406).json({
                 success: false,
-                message: "No se pueden modificar vacaciones que ya comenzaron",
+                message: "No se pueden modificar vacaciones que ya comenzaron o asignar una fecha de inicio anterior al día de hoy",
             });
         }
 

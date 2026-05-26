@@ -15,6 +15,16 @@ exports.getMexicoTodayDateKey = () => {
     return this.getUTCDateKey(todayInMexico);
 };
 
+exports.getMexicoTodayDate = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return new Date(Date.UTC(
+        todayInMexico.getUTCFullYear(),
+        todayInMexico.getUTCMonth(),
+        todayInMexico.getUTCDate(),
+    ));
+};
+
 exports.hasDateStartedInMexico = (date) =>
     this.getUTCDateKey(date) <= this.getMexicoTodayDateKey();
 

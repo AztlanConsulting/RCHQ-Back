@@ -1,0 +1,78 @@
+@startuml
+actor Usuario
+boundary "blacklist.route.js\nPATCH /delete" as Route
+control "auth.js\nverifyToken()" as Auth
+control "rbac.js\nrequireRole()\nrequirePrivileges()" as RBAC
+control "validate.js\nvalidate(blacklistDeleteSchema)" as Validate
+control "abac.js\ncanRemoveFromBlacklist()" as ABAC
+control "delete.controller.js\nremoveFromBlacklist()" as Controller
+control "delete.service.js\nremoveFromBlacklist()" as Service
+entity "get.model.js\nfindEmployeeByCurp()" as GetModel
+entity "delete.model.js\ndeleteFromBlacklist()" as DeleteModel
+entity "log.model.js\ncreateLog()" as LogModel
+database "PostgreSQL\nPrisma" as BD
+
+Usuario -> Route : PATCH /blacklist/delete\n{ curp, reason }
+Route -> Auth : verifyToken(req, res, next)
+alt Token inválido / ausente
+    Auth --> Usuario : 401 Unauthorized
+else Token válido
+    Auth -> RBAC : req.user validation
+    alt Roles/Privilegios insuficientes
+        RBAC --> Usuario : 403 Forbidden
+    else Validado (Admin/Coordinador)
+        RBAC -> Validate : valida Zod Schema
+        alt Formato inválido
+            Validate --> Usuario : 400 Bad Request
+        else Zod válido
+            Validate -> ABAC : canRemoveFromBlacklist()
+            ABAC ->> GetModel : findByCurpWithRoleAndHouse(curp)
+            GetModel ->> BD : SELECT employee
+            BD -->> GetModel : targetEmployee
+            GetModel -->> ABAC : targetEmployee
+            
+            alt Empleado no encontrado
+                ABAC --> Usuario : 404 Not Found
+            else Diferente casa hogar
+                ABAC --> Usuario : 403 Forbidden
+            else ABAC completado
+                ABAC -> Controller : removeFromBlacklist(req, res)
+                Controller ->> Service : removeFromBlacklist(curp, reason, executorId, ipAddress)
+                
+                Service ->> GetModel : findEmployeeByCurp(curp)
+                GetModel ->> BD : SELECT employee
+                BD -->> GetModel : employee
+                GetModel -->> Service : employee
+                
+                alt employee == null
+                    Service -->> Controller : { code: RESPONSES.EMPLOYEE.NOT_FOUND }
+                    Controller --> Usuario : 404 Empleado no encontrado
+                else employee.isBlacklisted == false
+                    Service -->> Controller : { code: RESPONSES.BLACKLIST.NOT_IN_BLACKLIST }
+                    Controller --> Usuario : 409 El empleado no se encuentra en la lista negra
+                else Procesar eliminación
+                    Service ->> DeleteModel : deleteFromBlacklist(curp, reason)
+                    DeleteModel ->> BD : prisma.$transaction()
+                    BD -> BD : DELETE FROM blacklist WHERE curp
+                    BD -> BD : UPDATE employee SET out_of_blacklist_reason
+                    alt Catch interno (Error de DB)
+                        BD -->> DeleteModel : Throw Error
+                        DeleteModel -->> Service : null
+                        Service -->> Controller : { code: RESPONSES.BLACKLIST.INTERNAL_ERROR }
+                        Controller --> Usuario : 500 Error interno del servidor
+                    else Éxito DB
+                        BD -->> DeleteModel : result
+                        DeleteModel -->> Service : result
+                        Service ->> LogModel : createLog(executorId, BLACKLIST_REMOVED, ip, affectedText)
+                        LogModel ->> BD : INSERT log
+                        BD -->> LogModel : success / throw
+                        LogModel -->> Service : resolve / catch (warning)
+                        Service -->> Controller : { code: RESPONSES.BLACKLIST.REMOVED, data: { ... } }
+                        Controller --> Usuario : 200 Empleado eliminado de la lista negra
+                    end
+                end
+            end
+        end
+    end
+end
+@enduml
