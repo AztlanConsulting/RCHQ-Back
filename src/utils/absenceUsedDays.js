@@ -22,7 +22,7 @@ exports.getAbsenceCalculationContext = async ({
     const [globalEvents, houseEvents, overlappingVacations] = await Promise.all([
         getGlobalEventsInRange(startDate, searchEndDate),
         getHouseEventsInRange(houseId, startDate, searchEndDate),
-        getActiveVacationsInRange(employeeId, startDate, searchEndDate),
+        getActiveVacationsInRange(employeeId, startDate, endDate),
     ]);
 
     const freeDays = [...houseEvents, ...globalEvents]

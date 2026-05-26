@@ -1,0 +1,304 @@
+@startuml HU31 - Usuario modifica vacaciones
+
+actor navegador
+boundary vacation.routes
+control vacation.update.controller
+control vacation.update.service
+control vacation.get.service
+entity employee.get.model
+entity vacation.get.model
+entity vacation.update.model
+entity event.get.model
+entity log.model
+database PostgreSQL
+
+autonumber
+
+navegador -> vacation.routes : PATCH /vacation/request/:vacationRequestId/dates
+activate vacation.routes
+vacation.routes -> vacation.update.controller : updateVacationRequestDates(req, res)
+deactivate vacation.routes
+activate vacation.update.controller
+vacation.update.controller -> vacation.update.controller : ipAddress = getClientIp(req)
+vacation.update.controller ->> vacation.update.service : updateVacationRequestDates({\n\tactorEmployeeId,\n\tvacationRequestId,\n\trawStartDate,\n\trawEndDate,\n\tipAddress,\n\trequesterHouseId\n})
+activate vacation.update.service
+
+vacation.update.service -> vacation.update.service : updateVacationRequestDatesInputSchema.safeParse({\n\tactorEmployeeId,\n\tvacationRequestId,\n\trawStartDate,\n\trawEndDate,\n\tipAddress\n})
+alt datos inválidos
+vacation.update.service -->> vacation.update.controller : VACATION.VALIDATION_ERROR
+vacation.update.controller -> navegador : 400 Bad Request {\n\tsuccess: false,\n\tmessage: "Datos inválidos"\n}
+end
+
+vacation.update.service ->> employee.get.model : findByIdWithRoleAndHouse(actorEmployeeId)
+activate employee.get.model
+employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: actorEmployeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.get.model : result
+deactivate PostgreSQL
+employee.get.model -->> vacation.update.service : actorEmployee
+deactivate employee.get.model
+
+alt actor no existe
+vacation.update.service -->> vacation.update.controller : USER.NOT_ACCESS
+vacation.update.controller -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Usuario no autenticado"\n}
+end
+
+vacation.update.service -> vacation.update.service : startDate = stringToDate(rawStartDate)
+vacation.update.service -> vacation.update.service : endDate = stringToDate(rawEndDate)
+
+alt endDate < startDate
+vacation.update.service -->> vacation.update.controller : DATES.BAD_DATES
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se puede tener una fecha de inicio posterior a la de finalización"\n}
+end
+
+vacation.update.service ->> vacation.get.model : getVacationRequestById(vacationRequestId)
+activate vacation.get.model
+vacation.get.model ->> PostgreSQL : prisma.vacations_request.findUnique({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.get.model : result
+deactivate PostgreSQL
+vacation.get.model -->> vacation.update.service : vacationRequest
+deactivate vacation.get.model
+
+alt solicitud no existe
+vacation.update.service -->> vacation.update.controller : VACATION.REQUEST_NOT_FOUND
+vacation.update.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Solicitud de vacaciones no encontrada"\n}
+end
+
+alt vacación original ya empezó o nueva fecha ya empezó
+vacation.update.service -->> vacation.update.controller : VACATION.REQUEST_ALREADY_STARTED
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden modificar vacaciones que ya comenzaron"\n}
+end
+
+rnote over vacation.update.service
+Se identifica si la modificación la hace
+la misma persona o un Coordinador.
+
+La persona dueña solamente puede modificar
+solicitudes pendientes.
+
+El Coordinador puede modificar pendientes
+y aprobadas, pero no rechazadas.
+endrnote
+
+alt dueño intenta modificar una solicitud no pendiente
+vacation.update.service -->> vacation.update.controller : VACATION.SELF_REQUEST_NOT_MODIFIABLE
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Solo puedes modificar solicitudes de vacaciones pendientes"\n}
+end
+
+alt solicitud rechazada o no modificable
+vacation.update.service -->> vacation.update.controller : VACATION.REQUEST_NOT_MODIFIABLE
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden modificar vacaciones rechazadas"\n}
+end
+
+vacation.update.service ->> employee.get.model : findByIdWithRoleAndHouse(targetEmployeeId)
+activate employee.get.model
+employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.get.model : result
+deactivate PostgreSQL
+employee.get.model -->> vacation.update.service : targetEmployee
+deactivate employee.get.model
+
+alt empleado no existe
+vacation.update.service -->> vacation.update.controller : EMPLOYEE.NOT_FOUND
+vacation.update.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Empleado no encontrado"\n}
+end
+
+alt empleado fuera del alcance del actor
+vacation.update.service -->> vacation.update.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+end
+
+alt actor no es dueño ni Coordinador
+vacation.update.service -->> vacation.update.controller : VACATION.INSUFFICIENT_PERMISSIONS
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No tienes permisos para modificar vacaciones"\n}
+end
+
+vacation.update.service ->> vacation.get.service : getVacationYearInfoForApproval(targetEmployeeId)
+activate vacation.get.service
+vacation.get.service ->> employee.get.model : getStartDate(targetEmployeeId)
+activate employee.get.model
+employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tselect: {\n\t\tstart_date: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.get.model : result
+deactivate PostgreSQL
+employee.get.model -->> vacation.get.service : startDate
+deactivate employee.get.model
+
+rnote over vacation.get.service
+Calcula el periodo actual del empleado
+según su aniversario laboral.
+endrnote
+
+vacation.get.service -->> vacation.update.service : anniversaryStartDate, anniversaryEndDate, maxDays
+deactivate vacation.get.service
+
+alt empleado no tiene fecha de inicio
+vacation.update.service -->> vacation.update.controller : VACATION.WITHOUT_START_DATE
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "El empleado no tiene una fecha de inicio asociada"\n}
+end
+
+alt fechas fuera del periodo actual de trabajo
+vacation.update.service -->> vacation.update.controller : VACATION.OUT_OF_RANGE
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden modificar vacaciones fuera del periodo actual de trabajo"\n}
+end
+
+vacation.update.service ->> employee.get.model : getWorkDays(targetEmployeeId)
+activate employee.get.model
+employee.get.model ->> PostgreSQL : prisma.employee_workday.findMany({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tinclude: {\n\t\tworkday: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.get.model : result
+deactivate PostgreSQL
+employee.get.model -->> vacation.update.service : workDays
+deactivate employee.get.model
+
+alt workDays.length == 0
+vacation.update.service -->> vacation.update.controller : VACATION.WITHOUT_DATES
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Se necesitan tener registrados los días de trabajo"\n}
+end
+
+vacation.update.service ->> event.get.model : getGlobalEventsInRange(startDate, searchEndDate)
+activate event.get.model
+event.get.model ->> PostgreSQL : prisma.global_event.findMany({\n\twhere: {\n\t\tstart: {\n\t\t\tlte: searchEndDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t},\n\tinclude: {\n\t\tevent_type: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.get.model : result
+deactivate PostgreSQL
+event.get.model -->> vacation.update.service : globalEvents
+deactivate event.get.model
+
+vacation.update.service ->> event.get.model : getHouseEventsInRange(requesterHouseId, startDate, searchEndDate)
+activate event.get.model
+event.get.model ->> PostgreSQL : prisma.house_event.findMany({\n\twhere: {\n\t\thouse_id: requesterHouseId,\n\t\tstart: {\n\t\t\tlte: searchEndDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t},\n\tinclude: {\n\t\tevent_type: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.get.model : result
+deactivate PostgreSQL
+event.get.model -->> vacation.update.service : houseEvents
+deactivate event.get.model
+
+rnote over vacation.update.service
+Se juntan eventos globales y de casa
+que estén marcados como día libre.
+
+Después se calculan los días hábiles
+que realmente se usarán con las nuevas fechas.
+endrnote
+vacation.update.service -> vacation.update.service : usedDays = calculateUsedDays(workDays, startDate, endDate, freeDays, true)
+
+alt usedDays == 0
+vacation.update.service -->> vacation.update.controller : VACATION.NULL_DATES
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Dentro del rango seleccionado no hay ningún día hábil de vacaciones"\n}
+end
+
+vacation.update.service ->> vacation.update.model : updateVacationRequestDatesAtomically({\n\tvacationRequestId,\n\temployeeId: targetEmployeeId,\n\tactorHouseId,\n\tstartDate,\n\tendDate,\n\tusedDays,\n\tanniversaryStartDate,\n\tanniversaryEndDate,\n\tmaxDays\n})
+activate vacation.update.model
+vacation.update.model ->> PostgreSQL : prisma.$transaction(async (transaction) => {\n\t...\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : transaction
+deactivate PostgreSQL
+
+vacation.update.model ->> PostgreSQL : transaction.$queryRaw({\n\tSELECT employee_id\n\tFROM employee\n\tWHERE employee_id = employeeId\n\tFOR UPDATE\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : result
+deactivate PostgreSQL
+
+vacation.update.model ->> PostgreSQL : transaction.vacations_request.findUnique({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : vacationRequest
+deactivate PostgreSQL
+
+alt solicitud no existe dentro de la transacción
+vacation.update.model -->> vacation.update.service : REQUEST_NOT_FOUND
+vacation.update.service -->> vacation.update.controller : VACATION.REQUEST_NOT_FOUND
+vacation.update.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Solicitud de vacaciones no encontrada"\n}
+end
+
+alt solicitud no pertenece al empleado
+vacation.update.model -->> vacation.update.service : EMPLOYEE_OUT_OF_SCOPE
+vacation.update.service -->> vacation.update.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+end
+
+vacation.update.model ->> PostgreSQL : transaction.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : targetEmployee
+deactivate PostgreSQL
+
+alt empleado no existe dentro de la transacción
+vacation.update.model -->> vacation.update.service : EMPLOYEE.NOT_FOUND
+vacation.update.service -->> vacation.update.controller : EMPLOYEE.NOT_FOUND
+vacation.update.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Empleado no encontrado"\n}
+end
+
+alt empleado fuera del alcance dentro de la transacción
+vacation.update.model -->> vacation.update.service : EMPLOYEE_OUT_OF_SCOPE
+vacation.update.service -->> vacation.update.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+end
+
+alt solicitud no modificable dentro de la transacción
+vacation.update.model -->> vacation.update.service : REQUEST_NOT_MODIFIABLE
+vacation.update.service -->> vacation.update.controller : VACATION.REQUEST_NOT_MODIFIABLE
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden modificar vacaciones rechazadas"\n}
+end
+
+alt fechas fuera del periodo dentro de la transacción
+vacation.update.model -->> vacation.update.service : OUT_OF_RANGE
+vacation.update.service -->> vacation.update.controller : VACATION.OUT_OF_RANGE
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden modificar vacaciones fuera del periodo actual de trabajo"\n}
+end
+
+vacation.update.model ->> PostgreSQL : transaction.vacations_request.findFirst({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tvacations_request_id: {\n\t\t\tnot: vacationRequestId\n\t\t},\n\t\tstatus: {\n\t\t\tin: ACTIVE_VACATION_STATUSES\n\t\t},\n\t\tstart: {\n\t\t\tlte: endDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : overlappingActiveVacation
+deactivate PostgreSQL
+
+alt existe traslape con otra solicitud activa
+vacation.update.model -->> vacation.update.service : ALREADY_REQUEST
+vacation.update.service -->> vacation.update.controller : VACATION.ALREADY_REQUEST
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Ya hay una solicitud de vacaciones cubriendo los días solicitados"\n}
+end
+
+vacation.update.model ->> PostgreSQL : transaction.vacations_request.findMany({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tvacations_request_id: {\n\t\t\tnot: vacationRequestId\n\t\t},\n\t\tstatus: {\n\t\t\tin: ACTIVE_VACATION_STATUSES\n\t\t},\n\t\tstart: {\n\t\t\tlte: anniversaryEndDate\n\t\t},\n\t\tend: {\n\t\t\tgte: anniversaryStartDate\n\t\t}\n\t},\n\tselect: {\n\t\tused_days: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : activeVacationsInCurrentYear
+deactivate PostgreSQL
+
+rnote over vacation.update.model
+Se suman los días usados por vacaciones
+activas del periodo, excluyendo la solicitud
+que se está modificando.
+
+Si al sumar las nuevas fechas se pasan
+del máximo disponible, se rechaza.
+endrnote
+vacation.update.model -> vacation.update.model : activeUsedDays + usedDays
+
+alt días insuficientes
+vacation.update.model -->> vacation.update.service : INSUFFICIENT_DATES
+vacation.update.service -->> vacation.update.controller : VACATION.INSUFFICIENT_DATES
+vacation.update.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "El empleado no tiene días de vacaciones suficientes"\n}
+end
+
+vacation.update.model ->> PostgreSQL : transaction.vacations_request.update({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t},\n\tdata: {\n\t\tstart: startDate,\n\t\tend: endDate,\n\t\tused_days: usedDays\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.update.model : updatedVacationRequest
+deactivate PostgreSQL
+vacation.update.model -->> vacation.update.service : success, vacationRequest
+deactivate vacation.update.model
+
+vacation.update.service ->> log.model : createLog(actorEmployeeId, VACATION_UPDATED_SUCCESS, ipAddress, targetEmployeeId)
+activate log.model
+log.model ->> PostgreSQL : prisma.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: actorEmployeeId,\n\t\tmoment: new Date(),\n\t\taction_id: actionId,\n\t\taffected: targetEmployeeId,\n\t\tip_address: hashIp(ipAddress)\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> log.model : result
+deactivate PostgreSQL
+log.model -->> vacation.update.service : result
+deactivate log.model
+
+vacation.update.service -->> vacation.update.controller : VACATION.UPDATED
+deactivate vacation.update.service
+vacation.update.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tmessage: "Vacaciones modificadas correctamente",\n\tdata: {\n\t\tvacationRequest: {}\n\t}\n}
+deactivate vacation.update.controller
+
+@enduml

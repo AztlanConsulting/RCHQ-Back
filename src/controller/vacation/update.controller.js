@@ -125,8 +125,7 @@ exports.approveVacationRequest = async (req, res) => {
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
         });
-    } catch(error) {
-        console.log(error);
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",
