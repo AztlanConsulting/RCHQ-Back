@@ -13,14 +13,11 @@ exports.getBlacklist = async (req, res) => {
             case RESPONSES.BLACKLIST.FETCHED:
                 return res.status(200).json({
                     success: true,
-                    message: "Lista negra obtenida correctamente",
+                    message:
+                        result.data?.employees?.length > 0
+                            ? "Lista negra obtenida correctamente"
+                            : "No hay personas en la lista negra con los filtros aplicados",
                     ...result.data,
-                });
-
-            case RESPONSES.BLACKLIST.NOT_FOUND:
-                return res.status(404).json({
-                    success: false,
-                    message: "No se encontraron empleados en la lista negra con los filtros aplicados",
                 });
 
             case RESPONSES.BLACKLIST.INVALID_PAGINATION:

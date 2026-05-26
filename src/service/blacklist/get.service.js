@@ -20,8 +20,8 @@ exports.getBlacklist = async ({ role, houseId, ...queryParams }) => {
 
         const result = await getBlacklistedEmployees(filters);
 
-        if (!result || result.employees.length === 0) {
-            return { code: RESPONSES.BLACKLIST.NOT_FOUND };
+        if (!result) {
+            return { code: RESPONSES.BLACKLIST.INTERNAL_ERROR };
         }
 
         return { code: RESPONSES.BLACKLIST.FETCHED, data: result };
