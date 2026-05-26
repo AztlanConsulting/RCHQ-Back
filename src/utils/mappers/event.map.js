@@ -94,7 +94,7 @@ exports.mapPersonalCalendarEvent = (event) => {
         focus: "eventos",
         scope: "personal",
         description: event.description ?? "",
-        color: "#E69941",
+        color: "#D58936",
         allDay: event.all_day || false,
         peopleInsideEvent: peopleData,
     };
