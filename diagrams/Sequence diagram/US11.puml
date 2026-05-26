@@ -1,0 +1,65 @@
+@startuml
+title US 11 - Ver información de un trabajador específico (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "Middlewares\nAuth, Roles, ABAC" as Middlewares
+participant "get.controller.js\ngetEmployeeDetail()" as Controller
+participant "get.service.js\ngetEmployeeDetail()" as Service
+participant "utils/password.js\ndecryptValue()" as Crypto
+participant "get.model.js" as Model
+database "BD (Prisma)" as BD
+
+Usuario -> Router : GET /employee-detail/:employeeId
+Router -> Middlewares : verifyToken, requireRole, requirePrivileges, authorize
+Middlewares --> Router : next()
+
+Router -> Controller : getEmployeeDetail(req, res)
+activate Controller
+
+Controller ->> Service : await getEmployeeDetail(userID, employeeId)
+activate Service
+
+Service ->> Model : await getEmployeeById(employeeId)
+Model ->> BD : prisma.employee.findUnique(...)
+BD -->> Model : employeeBasicInfo
+Model -->> Service : employeeBasicInfo
+
+alt employeeBasicInfo == null
+    Service --> Controller : { code: RESPONSES.EMPLOYEE.NOT_FOUND }
+    Controller --> Router : res.status(404).json(Empleado no encontrado)
+    Router --> Usuario : 404 Not Found
+else Empleado encontrado
+    Service -> Crypto : decryptValue(employeeBasicInfo.salary)
+    Crypto --> Service : decryptedSalary
+    Service -> Service : Asigna salary desencriptado
+    
+    Service ->> Model : await getEmployeeAddress(employeeId)
+    Model -->> Service : employeeAddress
+    
+    Service ->> Model : await getHouseById(houseId)
+    Model -->> Service : employeeHouse
+    
+    Service ->> Model : await getEmployeeWorkdays(employeeId)
+    Model -->> Service : employeeWorkdays
+    
+    Service ->> Model : await getEmployeeVacationRequests(employeeId)
+    Model -->> Service : employeeVacationRequests
+    
+    Service ->> Service : await calculateMonthlyJustifiedAbsenceUsedDays(employeeId, houseId)
+    
+    Service -> Service : Construye objeto { basicInfo, adminInfo }
+    Service --> Controller : { code: RESPONSES.EMPLOYEE.FOUND, data: result }
+end
+deactivate Service
+
+alt Try sin excepciones
+    Controller --> Router : res.status(200).json({ success: true, data })
+    Router --> Usuario : 200 OK (Datos completos del empleado)
+catch Excepción (err)
+    Controller --> Router : res.status(500).json(Error interno)
+    Router --> Usuario : 500 Internal Server Error
+end
+deactivate Controller
+
+@enduml
