@@ -215,17 +215,14 @@ router.patch(
   verifyToken,
   requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
   requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
-  resolveRequesterHouse,
-  // schema reactivate employee params,
-  // schema reactivate employee body,
-  // authorize(
-  //   reactivateEmployeePolicy,
-  //   async (req) => {
-  //       const employee = await getEmployeeToReactivate(req.params.employeeId);
-  //         if (employee) req.resolvedEmployee = employee;
-  //       return employee ? { ...employee,  }
-  //   }
-  // ),
+  resolveRequesterHouse,  
+  authorize(
+    async (req) => {
+        const employee = await getEmployeeToDeactivate(req.params.employeeId);
+          if (employee) req.resolvedEmployee = employee;
+        return employee ? { ...employee,  } : null;
+    }
+  ),
   reactivateEmployeeController,
 )
 
