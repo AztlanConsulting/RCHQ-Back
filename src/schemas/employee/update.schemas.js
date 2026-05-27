@@ -6,7 +6,7 @@ const ONLY_NUMBERS_REGEX = /^\d+$/;
 const NAMES_REGEX        = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
 const EMAIL_SAFE_REGEX   = /^[A-Za-z0-9._@-]+$/;
 const CURP_ALLOWED_REGEX = /^[A-Z0-9]*$/;
-const RFC_ALLOWED_REGEX  = /^[A-ZÑ&0-9]*$/;
+const RFC_ALLOWED_REGEX  = /^[A-ZÑ0-9]*$/;
 const ADDRESS_REGEX      = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9.\-\s]*$/;
 const DATE_REGEX         = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_REGEX         = /^\d{2}:\d{2}$/;
@@ -14,6 +14,8 @@ const SIMPLE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SALARY_REGEX       = /^\d+(\.\d{1,2})?$/;
 
 const emptyToNull = (val) => (val === "" ? null : val);
+const numberToString = (val) =>
+  typeof val === "number" && Number.isFinite(val) ? String(val) : val;
 
 const CONTRACT_TYPE_BY_NORMALIZED = {
   nomina: "Nomina",
@@ -33,6 +35,7 @@ const normalizeEmployeeContractType = (val) => {
 const employeeBasicUpdateSchema = z
   .object({
     name: z.string().trim()
+      .min(1, "El nombre es obligatorio")
       .max(50, "El nombre es demasiado largo")
       .refine((val) => val === "" || val.length >= 2, {
         message: "El nombre debe tener al menos 2 caracteres",
@@ -43,6 +46,7 @@ const employeeBasicUpdateSchema = z
       .optional(),
 
     surname: z.string().trim()
+      .min(1, "El apellido es obligatorio")
       .max(50, "El apellido es demasiado largo")
       .refine((val) => val === "" || val.length >= 2, {
         message: "El apellido debe tener al menos 2 caracteres",
@@ -54,6 +58,7 @@ const employeeBasicUpdateSchema = z
 
     curp: z.string().trim()
       .toUpperCase()
+      .min(1, "El CURP es obligatorio")
       .refine((val) => val === "" || val.length === 18, {
         message: "El CURP debe tener exactamente 18 caracteres",
       })
@@ -124,6 +129,9 @@ const employeeContactUpdateSchema = z
 
     street: z.string().trim()
       .max(70, "La calle y número no pueden exceder 70 caracteres")
+      .refine((val) => val === "" || val.length >= 10, {
+        message: "La calle y número deben tener al menos 10 caracteres",
+      })
       .refine((val) => val === "" || ADDRESS_REGEX.test(val), {
         message: "La calle y número contienen caracteres no permitidos",
       })
@@ -132,6 +140,9 @@ const employeeContactUpdateSchema = z
       .optional(),
     municipio: z.string().trim()
       .max(70, "El municipio no puede exceder 70 caracteres")
+      .refine((val) => val === "" || val.length >= 4, {
+        message: "El municipio debe tener al menos 4 caracteres",
+      })
       .refine((val) => val === "" || ADDRESS_REGEX.test(val), {
         message: "El municipio contiene caracteres no permitidos",
       })
@@ -140,6 +151,9 @@ const employeeContactUpdateSchema = z
       .optional(),
     city: z.string().trim()
       .max(70, "La ciudad no puede exceder 70 caracteres")
+      .refine((val) => val === "" || val.length >= 4, {
+        message: "La ciudad debe tener al menos 4 caracteres",
+      })
       .refine((val) => val === "" || ADDRESS_REGEX.test(val), {
         message: "La ciudad contiene caracteres no permitidos",
       })
@@ -154,7 +168,7 @@ const employeeContactUpdateSchema = z
   })
   .strict()
   .refine(
-    (data) => Object.keys(data).length > 0,
+    (data) => Object.values(data).some((v) => v !== undefined),
     { message: "Debe enviarse al menos un campo para actualizar" }
   );
 
@@ -186,7 +200,7 @@ const employeeAdminUpdateSchema = z
     frequencyOfPaymentId: z.string().uuid().nullable().optional(),
 
     salary: z.preprocess(
-      (val) => (val === null || val === undefined ? val : String(val)),
+      numberToString,
       z.string()
         .regex(SALARY_REGEX, "El salario debe ser un número válido con hasta 2 decimales")
         .refine((val) => Number(val) >= 0, { message: "El salario no puede ser negativo" })

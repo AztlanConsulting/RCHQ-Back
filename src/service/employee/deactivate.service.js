@@ -7,6 +7,11 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
 const { getClientIp } = require("../../utils/ip");
 
+const buildValidationError = (message) => ({
+    code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+    data: { message },
+});
+
 exports.deactivateEmployee = async (req) => {
     const { employeeId } = req.params;
     const { reason, addToBlacklist } = req.body;
@@ -32,17 +37,15 @@ exports.deactivateEmployee = async (req) => {
     }
 
     if (addToBlacklist && (!reason || reason.trim() === "")) {
-        return {
-            code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
-            data: { message: "El campo 'Razón' es obligatorio para añadir a la lista negra." },
-        };
+        return buildValidationError(
+            "La razón es obligatoria para agregar al empleado a la lista negra durante la baja.",
+        );
     }
 
     if (employee.isActive && (!reason || reason.trim() === "")) {
-        return {
-            code: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
-            data: { message: "El campo 'Razón' es obligatorio para dar de baja." },
-        };
+        return buildValidationError(
+            "La razón es obligatoria para dar de baja al empleado.",
+        );
     }
 
     try {

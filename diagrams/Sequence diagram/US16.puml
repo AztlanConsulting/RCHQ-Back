@@ -1,0 +1,52 @@
+@startuml
+title US 16 - Eliminar un documento de empleado (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "Middlewares\nAuth, ABAC, Resolver" as Middlewares
+participant "delete.controller.js\ndeleteDocument()" as Controller
+participant "delete.service.js\ndeleteDocument()" as Service
+participant "delete.model.js\n& get.model.js" as Model
+participant "utils/deleteFile.js" as Utils
+participant "log.model.js" as Log
+database "BD (Prisma)" as BD
+
+Usuario -> Router : DELETE /:id/documents/:field
+Router -> Middlewares : verifyToken, requireRole, resolveHouse, authorize
+Middlewares --> Router : next()
+
+Router -> Controller : deleteDocument(req, res)
+activate Controller
+
+Controller ->> Service : await deleteDocument(id, field)
+activate Service
+
+Service ->> Model : await findEmployeeDocument(employeeId, documentId)
+Model -->> Service : existing
+
+alt !existing
+    Service --> Controller : { type: RESPONSES.DOCUMENTS.NOT_FOUND, ... }
+    Controller --> Router : res.status(404).json(message)
+    Router --> Usuario : 404 Not Found
+else Documento existe
+    Service ->> Model : await deleteEmployeeDocument(employeeId, documentId)
+    activate Model
+    Model ->> BD : prisma.employee_documents.delete(...)
+    BD -->> Model : deletedRecord
+    Model -->> Service : void
+    deactivate Model
+    
+    opt existing.url
+        Service -> Utils : deleteFileIfExists(existing.url)
+    end
+    
+    Service --> Controller : { type: RESPONSES.DOCUMENTS.DELETED, body: { success: true } }
+    deactivate Service
+    
+    Controller ->> Log : await createLog(requesterId, DOCUMENT_DELETED, ip, id)
+    
+    Controller --> Router : res.status(200).json(result.body)
+    Router --> Usuario : 200 OK (Documento eliminado)
+end
+deactivate Controller
+@enduml

@@ -1,0 +1,90 @@
+@startuml
+title US45 - Coordinador añade empleado a lista negra
+
+actor Usuario
+boundary "blacklist.route.js\nPOST /" as Route
+control "auth.js\nverifyToken()" as Auth
+control "rbac.js\nrequireRole()\nrequirePrivileges()" as RBAC
+control "validate.js\nvalidate(blacklistCreateSchema)" as Validate
+control "abac.js\nauthorize(canAddToBlacklist)" as ABAC
+control "create.controller.js\ninsertIntoBlacklist()" as Controller
+control "create.service.js\ninsertIntoBlacklist()" as Service
+entity "employee/get.model.js\nfindByCurpWithRoleAndHouse()" as EmployeeModel
+entity "blacklist/get.model.js\nfindEmployeeByCurp()" as GetModel
+entity "blacklist/update.model.js\ntransactionalBlacklistInsert()" as UpdateModel
+entity "log.model.js\ncreateLog()" as LogModel
+database "PostgreSQL\nPrisma" as BD
+
+Usuario -> Route : POST /blacklist\n{ curp, reason }
+Route -> Auth : verifyToken(req, res, next)
+alt Token inválido / ausente
+    Auth --> Usuario : 401 Unauthorized
+else Token válido
+    Auth -> RBAC : req.user validation
+    alt Roles/Privilegios insuficientes
+        RBAC --> Usuario : 403 Forbidden
+    else Validado (Admin/Coordinador)
+        RBAC -> Validate : valida Zod Schema
+        alt Formato inválido
+            Validate --> Usuario : 400 Bad Request
+        else Zod válido
+            Validate -> ABAC : authorize(canAddToBlacklist)
+            ABAC ->> EmployeeModel : findByIdWithRoleAndHouse(user.id)
+            EmployeeModel ->> BD : SELECT currentUser
+            BD -->> EmployeeModel : currentUser
+            EmployeeModel -->> ABAC : currentUser
+
+            ABAC ->> EmployeeModel : findByCurpWithRoleAndHouse(curp)
+            EmployeeModel ->> BD : SELECT targetEmployee
+            BD -->> EmployeeModel : targetEmployee
+            EmployeeModel -->> ABAC : targetEmployee
+
+            alt CURP no proporcionada
+                ABAC --> Usuario : 400 Bad Request
+            else Empleado no encontrado
+                ABAC --> Usuario : 404 Not Found
+            else Auto-bloqueo
+                ABAC --> Usuario : 403 Forbidden
+            else Diferente casa hogar
+                ABAC --> Usuario : 403 Forbidden
+            else ABAC completado
+                ABAC -> Controller : insertIntoBlacklist(req, res)
+                Controller ->> Service : insertIntoBlacklist(curp, reason, executorId, ipAddress)
+
+                Service ->> GetModel : findEmployeeByCurp(curp)
+                GetModel ->> BD : SELECT employee + blacklist
+                BD -->> GetModel : employee
+                GetModel -->> Service : employee
+
+                alt employee == null
+                    Service -->> Controller : { code: RESPONSES.EMPLOYEE.NOT_FOUND }
+                    Controller --> Usuario : 404 Empleado no encontrado
+                else employee.isBlacklisted == true
+                    Service -->> Controller : { code: RESPONSES.BLACKLIST.ALREADY_EXISTS }
+                    Controller --> Usuario : 409 Este empleado ya se encuentra en la lista negra
+                else Procesar inserción
+                    Service ->> UpdateModel : transactionalBlacklistInsert(curp, reason)
+                    UpdateModel ->> BD : prisma.$transaction()
+                    BD -> BD : UPDATE employee SET is_active = false
+                    BD -> BD : INSERT INTO blacklist(curp, reason)
+                    alt Catch interno (Error de DB)
+                        BD -->> UpdateModel : Throw Error
+                        UpdateModel -->> Service : null
+                        Service -->> Controller : { code: RESPONSES.BLACKLIST.INSERT_FAILED }
+                        Controller --> Usuario : 500 Fallo al insertar al empleado a la lista negra
+                    else Éxito DB
+                        BD -->> UpdateModel : result
+                        UpdateModel -->> Service : blacklistEntry
+                        Service ->> LogModel : createLog(executorId, BLACKLIST_ADDED, ip, affectedText)
+                        LogModel ->> BD : INSERT log
+                        BD -->> LogModel : success / throw
+                        LogModel -->> Service : resolve / catch (warning)
+                        Service -->> Controller : { code: RESPONSES.BLACKLIST.ADDED, data: { ... } }
+                        Controller --> Usuario : 201 Empleado agregado a la lista negra
+                    end
+                end
+            end
+        end
+    end
+end
+@enduml

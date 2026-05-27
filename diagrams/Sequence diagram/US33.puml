@@ -1,178 +1,148 @@
-@startuml HU33 - Usuario remueve vacaciones
+@startuml
+title US33 - Coordinador registra vacaciones de un empleado
 
-actor navegador
-boundary vacation.routes
-control vacation.delete.controller
-control vacation.delete.service
-entity employee.get.model
-entity vacation.get.model
-entity vacation.delete.model
-entity log.model
-database PostgreSQL
+actor "Coordinador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "create.controller.js" as Controller
+control "create.service.js" as Service
+database "employee/get.model.js" as EmployeeGetModel
+database "vacation/get.model.js" as VacationGetModel
+database "event/get.model.js" as EventGetModel
+database "vacation/create.model.js" as VacationCreateModel
+database "log.model.js" as LogModel
+database "PostgreSQL" as DB
 
 autonumber
 
-navegador -> vacation.routes : DELETE /vacation/request/:vacationRequestId
-activate navegador
-activate vacation.routes
-vacation.routes -> vacation.delete.controller : deleteVacationRequest(req, res)
-deactivate vacation.routes
-activate vacation.delete.controller
-vacation.delete.controller -> vacation.delete.controller : ipAddress = getClientIp(req)
-vacation.delete.controller ->> vacation.delete.service : deleteVacationRequest(actorEmployeeId, vacationRequestId, ipAddress)
-activate vacation.delete.service
+Usuario -> Frontend : Captura empleado, fecha inicio y fecha fin
+Frontend -> Router : POST /vacation/employees/:employeeId/register\nAuthorization: Bearer token\n{ startDate, endDate }
 
-vacation.delete.service -> vacation.delete.service : deleteVacationRequestInputSchema.safeParse({\n\tactorEmployeeId,\n\tvacationRequestId,\n\tipAddress\n})
-alt datos inválidos
-vacation.delete.service -->> vacation.delete.controller : VACATION.VALIDATION_ERROR
-vacation.delete.controller -> navegador : 422 Unprocessable Entity {\n\tsuccess: false,\n\tmessage: "Datos inválidos"\n}
+Router -> Router : apiLimiter
+Router -> Router : verifyToken
+Router -> Router : requireRole("Coordinador")
+Router -> Controller : registerEmployeeVacation(req, res)
+
+Controller -> Controller : Obtener targetEmployeeId de params
+Controller -> Controller : Obtener actorEmployeeId de req.user.id
+Controller -> Controller : Obtener clientIp con getClientIp(req)
+
+Controller -> Service : registerEmployeeVacation({\n actorEmployeeId,\n targetEmployeeId,\n rawStartDate,\n rawEndDate,\n ipAddress\n})
+
+Service -> Service : dateRangeSchema.safeParse({ startDate, endDate })
+
+alt Fechas con formato inválido
+Service --> Controller : RESPONSES.DATES.WRONG_FORMAT
+Controller --> Frontend : 400 Bad Request\n"Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD"
+else Fechas válidas
+Service -> Service : stringToDate(startDate), stringToDate(endDate)
 end
 
-vacation.delete.service ->> employee.get.model : findByIdWithRoleAndHouse(actorEmployeeId)
-activate employee.get.model
-employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: actorEmployeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> employee.get.model : result
-deactivate PostgreSQL
-employee.get.model -->> vacation.delete.service : actorEmployee
-deactivate employee.get.model
-
-alt actorEmployee no existe
-vacation.delete.service -->> vacation.delete.controller : USER.NOT_ACCESS
-vacation.delete.controller -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Usuario no autenticado"\n}
+alt endDate < startDate
+Service --> Controller : RESPONSES.DATES.BAD_DATES
+Controller --> Frontend : 406 Not Acceptable\n"No se puede tener una fecha de inicio posterior a la de finalización"
 end
 
-vacation.delete.service ->> vacation.get.model : getVacationRequestById(vacationRequestId)
-activate vacation.get.model
-vacation.get.model ->> PostgreSQL : prisma.vacations_request.findUnique({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t},\n\tinclude: {\n\t\temployee: true\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> vacation.get.model : result
-deactivate PostgreSQL
-vacation.get.model -->> vacation.delete.service : vacationRequest
-deactivate vacation.get.model
-
-alt vacationRequest no existe
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Solicitud de vacaciones no encontrada"\n}
+alt startDate < todayUTC
+Service --> Controller : RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED
+Controller --> Frontend : 406 Not Acceptable\n"No se pueden registrar vacaciones en fechas pasadas"
 end
 
-vacation.delete.service -> vacation.delete.service : targetEmployeeId = vacationRequest.employee_id
-vacation.delete.service -> vacation.delete.service : isSelfDeletion = actorEmployeeId == targetEmployeeId
-vacation.delete.service -> vacation.delete.service : isCoordinatorDeletion = actorRole == Coordinador && !isSelfDeletion
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : prisma.employee.findUnique({\n where: { employee_id: actorEmployeeId },\n include: { role: true, house: true }\n})
+DB --> EmployeeGetModel : actorEmployee
+EmployeeGetModel --> Service : actorEmployee
 
-vacation.delete.service ->> employee.get.model : findByIdWithRoleAndHouse(targetEmployeeId)
-activate employee.get.model
-employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> employee.get.model : result
-deactivate PostgreSQL
-employee.get.model -->> vacation.delete.service : targetEmployee
-deactivate employee.get.model
-
-alt targetEmployee no existe
-vacation.delete.service -->> vacation.delete.controller : EMPLOYEE.NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Empleado no encontrado"\n}
+alt Actor no existe
+Service --> Controller : RESPONSES.USER.NOT_ACCESS
+Controller --> Frontend : 401 Unauthorized\n"Usuario no autenticado"
 end
 
-alt no es dueño ni Coordinador
-vacation.delete.service -->> vacation.delete.controller : VACATION.INSUFFICIENT_PERMISSIONS
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No tienes permisos para remover vacaciones"\n}
+alt Actor no es Coordinador
+Service --> Controller : RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Forbidden\n"No tienes permisos para registrar vacaciones de otros empleados"
 end
 
-alt Coordinador intenta remover a empleado fuera de su casa o Admin
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
+EmployeeGetModel -> DB : prisma.employee.findUnique({\n where: { employee_id: targetEmployeeId },\n include: { role: true, house: true }\n})
+DB --> EmployeeGetModel : targetEmployee
+EmployeeGetModel --> Service : targetEmployee
+
+alt Empleado no existe
+Service --> Controller : RESPONSES.EMPLOYEE.NOT_FOUND
+Controller --> Frontend : 404 Not Found\n"Empleado no encontrado"
 end
 
-rnote over vacation.delete.service
-Se valida si la vacación todavía se puede remover.
-
-Si la vacación ya inició, cuenta como pasada.
-Las vacaciones aprobadas no se pueden remover
-cuando ya iniciaron o terminaron.
-endrnote
-vacation.delete.service -> vacation.delete.service : currentDate = getTodayMexicoDate()
-vacation.delete.service -> vacation.delete.service : canRemoveVacationRequest(vacationRequest, currentDate)
-
-alt la solicitud no se puede remover
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_MODIFIABLE
-vacation.delete.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron"\n}
+alt Actor es Coordinador y targetEmployee.house_id != actorEmployee.house_id
+Service --> Controller : RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 403 Forbidden\n"No puedes registrar vacaciones para empleados fuera de tu casa hogar"
 end
 
-vacation.delete.service ->> vacation.delete.model : deleteVacationRequestAtomically({\n\tvacationRequestId,\n\ttargetEmployeeId,\n\tactorHouseId,\n\tcurrentDate,\n\tisSelfDeletion\n})
-activate vacation.delete.model
+Service -> EmployeeGetModel : getWorkDays(targetEmployeeId)
+EmployeeGetModel -> DB : prisma.employee_workday.findMany({\n where: { employee_id: targetEmployeeId },\n include: { workday: true }\n})
+DB --> EmployeeGetModel : workDays
+EmployeeGetModel --> Service : workDays
 
-rnote over vacation.delete.model
-La eliminación se hace dentro de una transacción.
-Primero se bloquea al empleado para evitar que
-dos solicitudes eliminen la misma vacación al mismo tiempo.
-endrnote
-
-vacation.delete.model ->> PostgreSQL : transaction.$queryRaw(SELECT employee_id\nFROM employee\nWHERE employee_id = employeeId\nFOR UPDATE)
-activate PostgreSQL
-PostgreSQL -->> vacation.delete.model : result
-deactivate PostgreSQL
-
-vacation.delete.model ->> PostgreSQL : transaction.vacations_request.findUnique({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> vacation.delete.model : vacationRequest
-deactivate PostgreSQL
-
-alt vacationRequest no existe dentro de la transacción
-vacation.delete.model -->> vacation.delete.service : VACATION.REQUEST_NOT_FOUND
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Solicitud de vacaciones no encontrada"\n}
+alt workDays.length == 0
+Service --> Controller : RESPONSES.VACATION.WITHOUT_DATES
+Controller --> Frontend : 406 Not Acceptable\n"Se necesitan tener registrados los días de trabajo"
 end
 
-alt vacationRequest.employee_id != targetEmployeeId
-vacation.delete.model -->> vacation.delete.service : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+Service -> Service : getRemainingVacations(targetEmployeeId)
+Service -> EmployeeGetModel : getStartDate(targetEmployeeId)
+EmployeeGetModel -> DB : prisma.employee.findUnique({\n where: { employee_id: targetEmployeeId },\n select: { start_date: true }\n})
+DB --> EmployeeGetModel : start_date
+EmployeeGetModel --> Service : employeeStartDate
+
+Service -> Service : Calcular periodo laboral vigente\nanniversaryStartDate / anniversaryEndDate
+
+alt Rango fuera del periodo laboral vigente
+Service --> Controller : RESPONSES.VACATION.OUT_OF_RANGE
+Controller --> Frontend : 406 Not Acceptable\n"No se pueden registrar vacaciones fuera del periodo actual de trabajo"
 end
 
-vacation.delete.model ->> PostgreSQL : transaction.employee.findUnique({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> vacation.delete.model : targetEmployee
-deactivate PostgreSQL
+Service -> EventGetModel : getGlobalEventsInRange(startDate, endDate)
+EventGetModel -> DB : prisma.global_event.findMany({\n where: { date: { gte: startDate, lte: endDate } }\n})
+DB --> EventGetModel : globalEvents
+EventGetModel --> Service : globalEvents
 
-alt targetEmployee no existe dentro de la transacción
-vacation.delete.model -->> vacation.delete.service : EMPLOYEE.NOT_FOUND
-vacation.delete.service -->> vacation.delete.controller : EMPLOYEE.NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Empleado no encontrado"\n}
+Service -> Service : calculateUsedDays(workDays, startDate, endDate, globalEvents)
+
+alt usedDays == 0
+Service --> Controller : RESPONSES.VACATION.NULL_DATES
+Controller --> Frontend : 406 Not Acceptable\n"Dentro del rango seleccionado no hay ningún día hábil de vacaciones"
 end
 
-alt se detecta alcance inválido dentro de la transacción
-vacation.delete.model -->> vacation.delete.service : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+Service -> VacationGetModel : getVacationsInRange(targetEmployeeId, startDate, endDate)
+VacationGetModel -> DB : prisma.vacations_request.findMany({\n where: {\n  employee_id: targetEmployeeId,\n  status: { not: 2 },\n  start: { lte: endDate },\n  end: { gte: startDate }\n }\n})
+DB --> VacationGetModel : overlappingVacations
+VacationGetModel --> Service : overlappingVacations
+
+alt overlappingVacations.length > 0
+Service --> Controller : RESPONSES.VACATION.ALREADY_REQUEST
+Controller --> Frontend : 406 Not Acceptable\n"Ya hay una solicitud de vacaciones cubriendo los días solicitados"
 end
 
-alt la solicitud dejó de poder removerse dentro de la transacción
-vacation.delete.model -->> vacation.delete.service : VACATION.REQUEST_NOT_MODIFIABLE
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_MODIFIABLE
-vacation.delete.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron"\n}
+Service -> Service : Calcular remainingVacations
+
+alt usedDays > remainingVacations
+Service --> Controller : RESPONSES.VACATION.INSUFFICIENT_DATES
+Controller --> Frontend : 406 Not Acceptable\n"No se tienen suficientes días disponibles para solicitar las vacaciones"
 end
 
-vacation.delete.model ->> PostgreSQL : transaction.vacations_request.delete({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> vacation.delete.model : deletedVacationRequest
-deactivate PostgreSQL
-vacation.delete.model -->> vacation.delete.service : vacationRequest
-deactivate vacation.delete.model
+Service -> VacationCreateModel : registerEmployeeVacation(vacationId,\n targetEmployeeId,\n startDate,\n endDate,\n usedDays)
+VacationCreateModel -> DB : prisma.vacations_request.create({\n status: 1,\n used_days: usedDays,\n created_at: new Date()\n})
+DB --> VacationCreateModel : vacationRequest
+VacationCreateModel --> Service : vacationRequest
 
-vacation.delete.service ->> log.model : createLog(actorEmployeeId, VACATION_DELETED_SUCCESS, ipAddress, targetEmployeeId)
-activate log.model
-log.model ->> PostgreSQL : prisma.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: actorEmployeeId,\n\t\tmoment: new Date(),\n\t\taction_id: actionId,\n\t\taffected: targetEmployeeId,\n\t\tip_address: hashIp(ipAddress)\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> log.model : result
-deactivate PostgreSQL
-log.model -->> vacation.delete.service : result
-deactivate log.model
+Service -> LogModel : createLog(actorEmployeeId,\n LOG_ACTIONS.VACATION_REGISTERED_SUCCESS,\n ipAddress,\n targetEmployeeId)
+LogModel -> DB : prisma.logs.create({ data })
+DB --> LogModel : log
+LogModel --> Service : log
 
-vacation.delete.service -->> vacation.delete.controller : VACATION.DELETED
-deactivate vacation.delete.service
-vacation.delete.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tmessage: "Vacaciones removidas correctamente",\n\tdata: {\n\t\tvacationRequest: {}\n\t}\n}
-deactivate vacation.delete.controller
-deactivate navegador
+Service --> Controller : RESPONSES.VACATION.REGISTERED
+Controller --> Frontend : 201 Created\n"Vacaciones registradas correctamente"
+
+Frontend --> Usuario : Mostrar confirmación
 
 @enduml

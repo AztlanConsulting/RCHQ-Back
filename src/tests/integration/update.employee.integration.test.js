@@ -442,7 +442,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ salary: 25000 });
+      .send({ salary: "25000" });
     expect(res.statusCode).toBe(200);
     const updated = await prisma.employee.findUnique({ where: { employee_id: EMP_ID } });
     expect(updated.salary).not.toBe("25000");

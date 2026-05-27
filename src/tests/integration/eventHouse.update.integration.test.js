@@ -20,7 +20,7 @@ const TEST_PRIVILEGE_EDIT_ID = randomUUID();
 const TEST_PRIVILEGE_VIEW_ID = randomUUID();
 const TEST_HOUSE_EVENT_ID = randomUUID();
 const TEST_CREATE_ACTION_ID = "even-001";
-const TEST_UPDATE_ACTION_ID = "even-005";
+const TEST_UPDATE_ACTION_ID = "even-006";
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_BASE = "/event/house";

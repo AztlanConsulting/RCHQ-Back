@@ -360,6 +360,14 @@ describe("POST /blacklist - integración", () => {
             .send({ curp: "no-soy-una-curp", reason: "Falta" });
 
         expect(res.statusCode).toBe(400);
+        expect(res.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    path: "curp",
+                    message: "La CURP tiene un formato inválido.",
+                }),
+            ]),
+        );
     });
 
     it("retorna 400 si el parámetro reason está ausente o vacío (Zod Schema)", async () => {
@@ -371,5 +379,13 @@ describe("POST /blacklist - integración", () => {
             .send({ curp: TEST_TARGET_CURP });
 
         expect(res.statusCode).toBe(400);
+        expect(res.body.errors).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    path: "reason",
+                    message: expect.any(String),
+                }),
+            ]),
+        );
     });
 });

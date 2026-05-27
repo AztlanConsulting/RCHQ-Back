@@ -1,0 +1,28 @@
+@startuml
+title US 19 - Filtrar eventos en pantalla (Activity Diagram)
+
+|Empleado|
+start
+:Ingresa a la vista de "Mi Calendario";
+:Visualiza los eventos cargados en pantalla;
+:Selecciona uno o varios criterios de filtro\n(tipo o categoría);
+:Presiona "Aplicar" o cambia el filtro;
+
+|Sistema|
+:Recibe criterios de filtrado;
+if (¿Hay criterios seleccionados?) then (Sí)
+  :Evalúa los eventos según los filtros seleccionados;
+  if (¿Hay coincidencias?) then (Sí)
+    :Devuelve únicamente los eventos coincidentes;
+  else (No)
+    :Indica que no existen eventos con ese filtro;
+  endif
+else (No)
+  :Mantiene visibles todos los eventos;
+endif
+
+|Empleado|
+:Visualiza únicamente los eventos relevantes\no un estado vacío;
+stop
+
+@enduml

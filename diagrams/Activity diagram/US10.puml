@@ -1,0 +1,45 @@
+@startuml HU01 - Administrador y coordinador registra usuario
+
+|Administrador|
+start
+:Seleccionar registrar empleado;
+
+|Sistema|
+:Solicita datos al administrador;
+
+|Administrador|
+repeat
+:Registra datos obligatorios:
+- Casa en la que se contrató
+- Puesto de trabajo
+- Nombre
+- Apellidos
+- Correo
+- CURP;
+
+|Sistema|
+if (¿Ingresar datos opcionales?) then (SI)
+    |Administrador|
+    :Registra datos opcionales:
+    - RFC
+    - Cuenta bancaria
+    - Cumpleaños
+    - Foto del empleado;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos?) is (NO)
+:Revisar si el usuario existe;
+
+if (¿El usuario ya existe?) then (SI)
+    :Notifica al administrador que ya existe;
+    stop
+else (NO)
+    :Registra nuevo empleado;
+    :Registrar acción en logs;
+    :Confirma registro;
+    stop
+endif
+
+@enduml

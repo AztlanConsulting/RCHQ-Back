@@ -77,8 +77,8 @@ const seedDependencies = async () => {
                 employee_id: randomUUID(),
                 house_id: TEST_HOUSE_ID,
                 role_id: TEST_ROLE_ID,
-                name: `Juan${i}`,
-                surname: "Perez",
+                name: i === 1 ? "Luis" : i === 2 ? "María" : `Juan${i}`,
+                surname: i === 1 ? "Martínez" : i === 2 ? "González" : "Perez",
                 email: `juan${i}@test.com`,
                 password: "123456",
                 curp: `TEST900101HDFRR${String(i).padStart(2, "0")}`,
@@ -105,7 +105,6 @@ const cleanDb = async () => {
 
 // ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
-    await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS unaccent;`);
     await cleanDb();
     await seedDependencies();
 });
@@ -143,6 +142,22 @@ describe(`GET ${API_ROUTE} - Integration & Security`, () => {
                 .set("Authorization", `Bearer ${token}`);
             expect(res.statusCode).toBe(200);
             expect(res.body.data.length).toBeGreaterThan(0);
+        });
+
+        it("busca empleados sin acentos en nombre y apellido", async () => {
+            const token = generateToken();
+            const res = await request(app)
+                .get(`${API_ROUTE}?search=luis martinez`)
+                .set("Authorization", `Bearer ${token}`);
+
+            expect(res.statusCode).toBe(200);
+            expect(res.body.data).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        fullName: "Luis Martínez",
+                    }),
+                ]),
+            );
         });
     });
 

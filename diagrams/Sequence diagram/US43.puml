@@ -1,0 +1,66 @@
+@startuml
+title Eliminar Ausencia — Coordinador (MVC + Service + Prisma)
+
+actor Cliente as "Frontend"
+boundary "Router\n(absence.routes.js)" as Router
+entity "Middleware\n(verifyToken)" as Middleware
+entity "Middleware RBAC\n(requireRole)" as CheckRole
+entity "Middleware RBAC\n(requirePrivileges)" as CheckPrivilege
+control "Controller\n(absence.controller.js)" as Controller
+control "Service\n(absence.service.js)" as Service
+entity "Model\n(absence.model.js)" as Model
+database "PostgreSQL\n(via Prisma)" as Postgres
+
+Cliente -> Router : DELETE /absence/:absenceId\nAuthorization: Bearer token
+
+== Autenticación y autorización ==
+
+Router -> Middleware : verifyToken(req)
+alt Token inválido o expirado
+    Middleware --> Cliente : 401 { success: false,\nmessage: "Token inválido o expirado" }
+else Token válido
+    Middleware -> Router : req.user = { id, email, role, houseId, privileges }
+end
+
+Router -> CheckRole : requireRole("Coordinador")(req)
+alt Rol no autorizado
+    CheckRole --> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Rol válido
+    CheckRole -> Router : next()
+end
+
+Router -> CheckPrivilege : requirePrivileges("deleteAbsences")(req)
+alt Privilegio no encontrado
+    CheckPrivilege --> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Privilegio válido
+    CheckPrivilege -> Router : next()
+end
+
+== Lógica de negocio ==
+
+Router -> Controller : deleteAbsence(req, res)
+Controller -> Service : deleteAbsence(absenceId)
+Service -> Model : getAbsenceById(absenceId)
+Model -> Postgres : prisma.absence.findUnique({\n  where: { absence_id: absenceId }\n})
+Postgres -->> Model : absence | null
+
+alt Ausencia no encontrada
+    Model -->> Service : null
+    Service -->> Controller : { code: 404 }
+    Controller -->> Cliente : 404 { success: false,\nmessage: "Ausencia no encontrada" }
+else Ausencia encontrada
+    Model -->> Service : { absence }
+    Service -> Model : deleteAbsence(absenceId)
+    Model -> Postgres : prisma.absence.update({\n  where: { absence_id: absenceId },\n  data: { is_deleted: true }\n})
+    Postgres -->> Model : { deletedAbsence }
+    Model -->> Service : { deletedAbsence }
+    Service -->> Controller : { code: 200, data: deletedAbsence }
+end
+
+== Respuesta al frontend ==
+
+Controller -->> Router : 200 { success: true,\ndata: deletedAbsence }
+Router -->> Cliente : 200 { success: true,\ndata: deletedAbsence }
+Cliente -> Cliente : Oculta card del calendario\ny muestra notificación\n"Ausencia eliminada correctamente"
+
+@enduml
