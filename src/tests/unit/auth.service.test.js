@@ -748,6 +748,7 @@ describe("refreshSession", () => {
             ...mockEmployee,
             refreshToken: "different-token",
         });
+        auth.rotateRefreshToken.mockResolvedValue(false);
         const result = await refreshSession("old-token", "127.0.0.1");
         expect(result.status).toBe(401);
         expect(auth.clearRefreshToken).toHaveBeenCalledWith("abc-123");
@@ -763,7 +764,7 @@ describe("refreshSession", () => {
         expect(result.status).toBe(200);
         expect(result.body.data).toHaveProperty("token", "fake-session-token");
         expect(result.body.data).toHaveProperty("refreshToken", "fake-refresh-token");
-        expect(auth.saveRefreshToken).toHaveBeenCalledWith("abc-123", "fake-refresh-token");
+        expect(auth.rotateRefreshToken).toHaveBeenCalledWith("abc-123", "valid-token", "fake-refresh-token");
     });
 });
 
