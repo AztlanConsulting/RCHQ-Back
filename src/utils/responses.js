@@ -34,7 +34,7 @@ const RESPONSES = {
         PAST_REQUEST_NOT_ALLOWED:
             "No se pueden pedir vacaciones en el pasado ni para el mismo día",
         PAST_REGISTER_NOT_ALLOWED:
-            "No se pueden registrar vacaciones en fechas pasadas",
+            "No se pueden registrar vacaciones en fechas pasadas ni para el mismo día",
         REMAINING_VACATIONS_FOUND:
             "Las vacaciones restantes fueron encontradas",
         NULL_DATES:

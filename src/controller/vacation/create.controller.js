@@ -138,7 +138,7 @@ exports.registerEmployeeVacation = async (req, res) => {
         if (result.code === RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED) {
             return res.status(406).json({
                 success: false,
-                message: "No se pueden registrar vacaciones en fechas pasadas",
+                message: "No se pueden registrar vacaciones en fechas pasadas ni para el mismo día",
             });
         }
 
