@@ -576,8 +576,11 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Error al pedir vacaciones para el mismo día", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
-
-            const startDate = dateOnly(TODAY);
+            const mxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+            const year = mxDate.getFullYear();
+            const month = String(mxDate.getMonth() + 1).padStart(2, "0");
+            const day = String(mxDate.getDate()).padStart(2, "0");
+            const startDate = `${year}-${month}-${day}`;
 
             const res = await request(app)
                 .post("/vacation/request")

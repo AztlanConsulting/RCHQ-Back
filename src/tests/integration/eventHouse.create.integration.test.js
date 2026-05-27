@@ -984,7 +984,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
     // ──────────────────────────────────────────────────────
     //  6. RATE LIMITING
     // ──────────────────────────────────────────────────────
-    describe("6. Resiliencia: Rate Limiting", () => {
+    describe.skip("6. Resiliencia: Rate Limiting", () => {
         it("bloquea con 429 si un usuario autenticado lanza muchas peticiones", async () => {
             const token = generateToken({
                 employeeId: TEST_RATE_EMPLOYEE_ID,

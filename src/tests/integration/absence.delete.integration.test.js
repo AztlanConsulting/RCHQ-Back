@@ -449,7 +449,7 @@ describe("DELETE /absence/:absenceId", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Insufficient privileges");
+        expect(res.body.message).toBe("Permisos insuficientes");
 
         await prisma.role_privilege.create({
             data: {

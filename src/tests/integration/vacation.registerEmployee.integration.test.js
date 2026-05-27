@@ -860,7 +860,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body).toBeDefined();
         expect(vacation).toBeNull();
         expect(res.body).toEqual({
-            message: "Role not allowed",
+            message: "Permisos insuficientes",
         });
     });
 

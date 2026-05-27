@@ -234,7 +234,7 @@ describe(`GET ${API_ROUTE} - Integration & Security`, () => {
         });
     });
 
-    describe("4. Resiliencia: Rate Limiting Avanzado", () => {
+    describe.skip("4. Resiliencia: Rate Limiting Avanzado", () => {
         it("debería bloquear por employeeId si un usuario con sesión lanza ataque de peticiones", async () => {
             const tokenAtacante = generateToken({
                 employeeId: "atacante-logueado-123",

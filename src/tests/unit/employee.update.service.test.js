@@ -438,13 +438,13 @@ describe("updateContactInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("retorna UPDATED con body vacío porque el schema actual lo permite", async () => {
+    it("retorna VALIDATION_ERROR con body vacío", async () => {
       const result = await updateContactInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body:        {},
       });
-      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
     it("retorna VALIDATION_ERROR con campo no permitido", async () => {

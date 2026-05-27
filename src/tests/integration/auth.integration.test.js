@@ -96,6 +96,15 @@ const generateSessionToken = () => {
     );
 };
 
+const generateTestRefreshToken = () => {
+    const jwt = require("jsonwebtoken");
+    return jwt.sign(
+        { id: TEST_EMPLOYEE_ID, tokenType: "REFRESH" },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" },
+    );
+};
+
 const cleanDb = async () => {
     await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
     await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
@@ -131,6 +140,8 @@ describe("POST /auth/login - integration", () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.data).toHaveProperty("token");
         expect(res.body.data.user.email).toBe(TEST_EMAIL);
+        expect(res.headers["set-cookie"]).toBeDefined();
+        expect(res.headers["set-cookie"][0]).toMatch(/refreshToken=/);
     });
 
     it("retorna 401 con contraseña incorrecta", async () => {
@@ -297,6 +308,60 @@ describe("POST /auth/2fa/setup - integration", () => {
 
         // Assert
         expect(res.statusCode).toBe(401);
+    });
+});
+
+// ─── REFRESH SESSION ──────────────────────────────────────
+describe("POST /auth/refresh - integration", () => {
+    it("retorna 200, nuevos tokens y actualiza la cookie", async () => {
+        await createTestEmployee();
+        const refreshToken = generateTestRefreshToken();
+        
+        await prisma.employee.update({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+            data: { refresh_token: refreshToken }
+        });
+
+        const res = await request(app)
+            .post("/auth/refresh")
+            .set("Cookie", [`refreshToken=${refreshToken}`]);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.data).toHaveProperty("token");
+        expect(res.headers["set-cookie"]).toBeDefined();
+        expect(res.headers["set-cookie"][0]).toMatch(/refreshToken=/);
+    });
+
+    it("retorna 401 si no se envía la cookie", async () => {
+        const res = await request(app).post("/auth/refresh");
+        
+        expect(res.statusCode).toBe(401);
+        expect(res.body.code).toBe("INVALID_REFRESH_TOKEN");
+    });
+});
+
+// ─── LOGOUT ───────────────────────────────────────────────
+describe("POST /auth/logout - integration", () => {
+    it("retorna 200, limpia la cookie y remueve el token de la BD", async () => {
+        await createTestEmployee();
+        const refreshToken = generateTestRefreshToken();
+        
+        await prisma.employee.update({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+            data: { refresh_token: refreshToken }
+        });
+
+        const res = await request(app)
+            .post("/auth/logout")
+            .set("Cookie", [`refreshToken=${refreshToken}`]);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.headers["set-cookie"][0]).toMatch(/refreshToken=;/); // Indica que la cookie expiró
+
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+        expect(emp.refresh_token).toBeNull();
     });
 });
 

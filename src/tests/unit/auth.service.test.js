@@ -11,6 +11,8 @@ jest.mock("../../model/auth/auth.model", () => ({
     clearTwoFactorAuthSecurityState: jest.fn(),
     activateTwoFactorFromTempSecret: jest.fn(),
     disableTwoFactor: jest.fn(),
+    saveRefreshToken: jest.fn(),
+    clearRefreshToken: jest.fn(),
 }));
 
 jest.mock("../../utils/password", () => ({
@@ -50,6 +52,11 @@ jest.mock("speakeasy", () => ({
     },
 }));
 
+jest.mock("../../utils/jwt", () => ({
+    generateRefreshToken: jest.fn(),
+    decodeToken: jest.fn(),
+}));
+
 jest.mock("qrcode", () => ({
     toDataURL: jest.fn(),
 }));
@@ -68,6 +75,7 @@ const {
     clearExpiredTwoFactorAuthBlock,
 } = require("../../utils/auth/authGuards");
 const prisma = require("../../prisma");
+const { generateRefreshToken, decodeToken } = require("../../utils/jwt");
 
 const {
     login,
@@ -76,6 +84,8 @@ const {
     validateTwoFactorAuth,
     getTwoFactorAuthStatus,
     disableTwoFactorAuth,
+    refreshSession,
+    logout,
 } = require("../../service/auth/auth.service");
 
 // ─── Mocks ────────────────────────────────────────────────
@@ -114,6 +124,7 @@ const mockEmployee = {
     totpSecret: null,
     tempTotpSecret: null,
     tempTotpSecretCreatedAt: null,
+    refreshToken: null,
 };
 
 const makeReq = (body = {}, user = null) => ({
@@ -134,6 +145,10 @@ beforeEach(() => {
     buildSessionToken.mockReturnValue("fake-session-token");
     buildFirstLoginJwt.mockReturnValue("fake-first-login-token");
     buildPreTwoFactorAuthJwt.mockReturnValue("fake-preTwoFactorAuth-token");
+    generateRefreshToken.mockReturnValue("fake-refresh-token");
+    decodeToken.mockReturnValue({ id: "abc-123", tokenType: "REFRESH" });
+    auth.saveRefreshToken.mockResolvedValue();
+    auth.clearRefreshToken.mockResolvedValue();
 });
 
 describe("login", () => {
@@ -248,6 +263,8 @@ describe("login", () => {
         expect(result.status).toBe(200);
         expect(result.body.success).toBe(true);
         expect(result.body.data).toHaveProperty("token", "fake-session-token");
+        expect(result.body.data).toHaveProperty("refreshToken", "fake-refresh-token");
+        expect(auth.saveRefreshToken).toHaveBeenCalledWith(mockEmployee.employeeId, "fake-refresh-token");
         expect(result.body.isActiveTwoFactorAuth).toBe(false);
         expect(createLog).toHaveBeenCalled();
     });
@@ -550,7 +567,9 @@ describe("validateTwoFactorAuth", () => {
 
         expect(result.status).toBe(200);
         expect(result.body).toHaveProperty("token", "fake-session-token");
+        expect(result.body).toHaveProperty("refreshToken", "fake-refresh-token");
         expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
+        expect(auth.saveRefreshToken).toHaveBeenCalledWith(mockEmployee.employeeId, "fake-refresh-token");
         expect(auth.clearTwoFactorAuthSecurityState).toHaveBeenCalled();
     });
 });
@@ -703,5 +722,63 @@ describe("disableTwoFactorAuth", () => {
         expect(result.status).toBe(200);
         expect(result.body.nextStep).toBe("TWO_FACTOR_AUTH_DISABLED");
         expect(result.body.data.twoFactorEnabled).toBe(false);
+    });
+});
+
+describe("refreshSession", () => {
+    it("retorna 401 si no se proporciona token", async () => {
+        const result = await refreshSession(null, "127.0.0.1");
+        expect(result.status).toBe(401);
+        expect(result.body.code).toBe("INVALID_REFRESH_TOKEN");
+    });
+
+    it("retorna 401 si el token no es válido o expira", async () => {
+        decodeToken.mockReturnValue(null);
+        const result = await refreshSession("bad-token", "127.0.0.1");
+        expect(result.status).toBe(401);
+    });
+
+    it("retorna 403 si el empleado no existe o está inactivo", async () => {
+        auth.getEmployeeById.mockResolvedValue(null);
+        const result = await refreshSession("valid-token", "127.0.0.1");
+        expect(result.status).toBe(403);
+    });
+
+    it("retorna 401 y limpia token si el token no coincide con BD (prevención de reuso)", async () => {
+        auth.getEmployeeById.mockResolvedValue({
+            ...mockEmployee,
+            refreshToken: "different-token-in-db",
+        });
+        const result = await refreshSession("old-token", "127.0.0.1");
+        expect(result.status).toBe(401);
+        expect(auth.clearRefreshToken).toHaveBeenCalledWith("abc-123");
+    });
+
+    it("retorna 200 y nuevos tokens si la sesión es válida", async () => {
+        auth.getEmployeeById.mockResolvedValue({
+            ...mockEmployee,
+            refreshToken: "valid-token",
+        });
+        const result = await refreshSession("valid-token", "127.0.0.1");
+        
+        expect(result.status).toBe(200);
+        expect(result.body.data).toHaveProperty("token", "fake-session-token");
+        expect(result.body.data).toHaveProperty("refreshToken", "fake-refresh-token");
+        expect(auth.saveRefreshToken).toHaveBeenCalledWith("abc-123", "fake-refresh-token");
+    });
+});
+
+describe("logout", () => {
+    it("retorna 200 y no falla si no se envía token", async () => {
+        const result = await logout(null);
+        expect(result.status).toBe(200);
+        expect(auth.clearRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it("retorna 200 y limpia el token en BD si es válido", async () => {
+        decodeToken.mockReturnValue({ id: "abc-123" });
+        const result = await logout("valid-token");
+        expect(result.status).toBe(200);
+        expect(auth.clearRefreshToken).toHaveBeenCalledWith("abc-123");
     });
 });

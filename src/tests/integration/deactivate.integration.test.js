@@ -273,6 +273,14 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
 
     describe("Validación de privilegios (Lista Negra)", () => {
         it("403 — falla si intenta enviar addToBlacklist sin privilegios", async () => {
+            const coordRole = await prisma.role.findUnique({ where: { name: ROLES.COORDINATOR } });
+            const priv = await prisma.privileges.findUnique({ where: { name: PRIVILEGES.ADD_TO_BLACKLIST } });
+            if (coordRole && priv) {
+                await prisma.role_privilege.deleteMany({
+                    where: { role_id: coordRole.role_id, privilege_id: priv.privilege_id }
+                });
+            }
+
             const resNoPriv = await request(app)
                 .post("/auth/login")
                 .send({ email: TEST_NO_PRIV_EMAIL, password: TEST_PASSWORD });
@@ -282,6 +290,13 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
                 .patch(`/employee/${TEST_TARGET_ID}/deactivate`)
                 .set("Authorization", `Bearer ${noPrivToken}`)
                 .send({ reason: "Falta grave", addToBlacklist: true });
+                
+            if (coordRole && priv) {
+                await prisma.role_privilege.create({
+                    data: { role_id: coordRole.role_id, privilege_id: priv.privilege_id }
+                });
+            }
+
             expect(res.status).toBe(403);
         });
     });

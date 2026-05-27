@@ -149,7 +149,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
             .send({});
 
         expect(response.status).toBe(403);
-        expect(response.body.message).toBe("Role not allowed");
+        expect(response.body.message).toBe("Permisos insuficientes");
     });
 
     it("regresa 403 si el usuario es Administrador", async () => {
@@ -161,7 +161,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
             .send({});
 
         expect(response.status).toBe(403);
-        expect(response.body.message).toBe("Role not allowed");
+        expect(response.body.message).toBe("Permisos insuficientes");
     });
 
     it("regresa 400 si vacationRequestId no es UUID", async () => {
