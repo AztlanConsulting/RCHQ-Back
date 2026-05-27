@@ -261,3 +261,56 @@ Calendarios y eventos. (s. f.). Google For Developers. https://developers.googl
 **Reglas:**
 - NUNCA revertir la transformación de `+1 día` en el backend al devolver eventos.
 - SIEMPRE incluir `all_day` en las respuestas para que el cliente sepa cómo interpretar el `end`.
+
+---
+
+## Autenticación y Manejo de Sesión (Refresh Token)
+
+El backend utiliza un sistema de doble token para mantener la seguridad y la persistencia de la sesión:
+1. **Access Token (`SESSION`)**: De corta duración (1h). Se devuelve en el cuerpo JSON de la respuesta y debe ser enviado en el header `Authorization: Bearer <token>` para rutas protegidas.
+2. **Refresh Token (`REFRESH`)**: De larga duración (7 días). **No es accesible vía JavaScript**. El servidor lo envía e invalida exclusivamente a través de la cabecera HTTP `Set-Cookie` (`HttpOnly`, `Secure`, `SameSite=Strict`).
+
+### Endpoints que emiten Refresh Tokens
+Los siguientes endpoints devolverán en sus cabeceras un `Set-Cookie: refreshToken=...`:
+- `POST /auth/login` (Si no requiere 2FA ni cambio de contraseña)
+- `POST /auth/first-login/change-password`
+- `POST /auth/2fa/validate`
+
+### `POST /auth/refresh`
+**Descripción:** Renueva el `accessToken` y rota el `refreshToken` cuando la sesión está por expirar.
+**Requisitos:** La petición HTTP debe incluir credenciales para que el navegador adjunte automáticamente la cookie `refreshToken`.
+
+**Respuestas:**
+- **200 OK**: Sesión renovada con éxito.
+  - **Headers:** Emite un nuevo `Set-Cookie: refreshToken=...`
+  - **Body:**
+    ```json
+    {
+      "success": true,
+      "code": "REFRESH_SUCCESS",
+      "message": "Sesión actualizada",
+      "data": {
+        "token": "eyJhbGciOiJIUzI1NiIs..."
+      }
+    }
+    ```
+- **401 Unauthorized / 403 Forbidden**: Token expirado, inválido, no proporcionado o detectado como reutilizado (robo de sesión).
+  - **Headers:** Emite un `Set-Cookie: refreshToken=; Max-Age=0` (Destruye la cookie).
+  - **Body:** `{ "success": false, "code": "INVALID_REFRESH_TOKEN", ... }`
+
+### `POST /auth/logout`
+**Descripción:** Cierra la sesión activa, invalidando el token en la base de datos y limpiando la cookie del navegador.
+**Requisitos:** Debe enviar las credenciales (cookies).
+
+**Respuestas:**
+- **200 OK**: Sesión cerrada.
+  - **Headers:** Emite un `Set-Cookie: refreshToken=; Max-Age=0` (Destruye la cookie).
+  - **Body:**
+    ```json
+    {
+      "success": true,
+      "code": "LOGOUT_SUCCESS",
+      "message": "Sesión cerrada"
+    }
+    ```
+*(Nota: Este endpoint siempre retorna 200, incluso si no se envió cookie, para asegurar la limpieza del estado en el cliente).*
