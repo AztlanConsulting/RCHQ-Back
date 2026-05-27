@@ -242,7 +242,7 @@ exports.reactivateEmployeeService = async (req) => {
       try {
           await createLog(actorId, LOG_ACTIONS.EMPLOYEE_REACTIVATED, ip, employeeId);
       } catch (logError) {
-          console.error("Baja exitosa pero falló el log de auditoría:", logError);
+          console.error("Reactivación exitosa pero falló el log de auditoría:", logError);
       }
 
       return {
