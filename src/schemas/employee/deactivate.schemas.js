@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const deactivateEmployeeSchema = z.object({
+exports.deactivateEmployeeSchema = z.object({
     reason: z
         .string()
         .max(250, { message: 'El campo "Razón" es de máximo 250 caracteres' })
@@ -14,15 +14,8 @@ const deactivateEmployeeSchema = z.object({
     return true;
 }, { message: "El campo 'Razón' es obligatorio para añadir a la lista negra.", path: ["reason"] });
 
-const deactivateEmployeeParamsSchema = z.object({
+exports.deactivateEmployeeParamsSchema = z.object({
     employeeId: z.uuidv4({ message: "El ID del empleado no es válido" }),
 });
 
-/** Same path params as PATCH .../deactivate (no body on reactivate). */
-const reactivateEmployeeParamsSchema = deactivateEmployeeParamsSchema;
-
-module.exports = {
-    deactivateEmployeeSchema,
-    deactivateEmployeeParamsSchema,
-    reactivateEmployeeParamsSchema,
-};
+exports.reactivateEmployeeParamsSchema = exports.deactivateEmployeeParamsSchema;

@@ -24,11 +24,9 @@ const employeeDeleteController = require("../controller/employee/delete.controll
 const {
     deactivateEmployeeController,
 } = require("../controller/employee/deactivate.controller");
-const {
-    deactivateEmployeeSchema,
-    deactivateEmployeeParamsSchema,
-    reactivateEmployeeParamsSchema,
-} = require("../schemas/employee/deactivate.schemas");
+const deactivateEmployeeSchema = require("../schemas/employee/deactivate.schemas");
+const deactivateEmployeeParamsSchema = require("../schemas/employee/deactivate.schemas");
+const reactivateEmployeeParamsSchema = require("../schemas/employee/deactivate.schemas");
 const {
     deactivateEmployeePolicy,
 } = require("../policies/deactivateEmployee.policies");
