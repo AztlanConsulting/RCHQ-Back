@@ -7,6 +7,7 @@ const {
     buildSessionToken,
     buildPreTwoFactorAuthJwt,
 } = require("../../utils/auth/authTokens");
+const { generateRefreshToken } = require("../../utils/jwt");
 
 exports.changePassword = async ({
     employeeId,
@@ -241,6 +242,9 @@ exports.changePasswordFirstLogin = async ({
     hasFirstLogin: false,
   });
 
+  const refreshToken = generateRefreshToken(employee);
+  await auth.saveRefreshToken(employee.employeeId, refreshToken);
+
   return {
     status: 200,
     body: {
@@ -248,6 +252,7 @@ exports.changePasswordFirstLogin = async ({
       message: "Contraseña cambiada exitosamente",
       nextStep: "LOGIN_COMPLETE",
       data: {
+        refreshToken,
         token,
         user: {
           employeeId: employee.employeeId,

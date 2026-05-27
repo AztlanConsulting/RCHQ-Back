@@ -96,7 +96,7 @@ const generateTestRefreshToken = () => {
     return jwt.sign(
         { id: TEST_EMPLOYEE_ID, tokenType: "REFRESH" },
         process.env.JWT_SECRET,
-        { expiresIn: "7d" },
+        { expiresIn: "1d" },
     );
 };
 
@@ -196,7 +196,7 @@ describe("POST /auth/login - integration", () => {
         expect(emp.blocked_until).not.toBeNull();
     });
 
-    it("retorna preTwoFactorAuthToken cuando el usuario tiene TwoFactorAuth activo", async () => {
+    it("retorna preTwoFactorAuthToken cuando el usuario tiene factor de dos pasos activo", async () => {
         await createTestEmployee({
             is_active_two_factor_auth: true,
             totp_secret: "FAKESECRET",
@@ -245,7 +245,7 @@ describe("POST /auth/2fa/setup - integration", () => {
         expect(emp.temp_totp_secret).not.toBeNull();
     });
 
-    it("retorna 409 si TwoFactorAuth ya está configurado en BD", async () => {
+    it("retorna 409 si el factor de dos pasos ya está configurado en BD", async () => {
         await createTestEmployee({
             totp_secret: "EXISTINGSECRET",
             is_active_two_factor_auth: true,
@@ -322,7 +322,7 @@ describe("POST /auth/logout - integration", () => {
 });
 
 describe("POST /auth/2fa/verify - integration", () => {
-    it("retorna 409 si no hay setup pendiente en BD", async () => {
+    it("retorna 409 si no hay configuración pendiente en BD", async () => {
         await createTestEmployee({ temp_totp_secret: null });
         const token = generateSessionToken();
 
@@ -334,7 +334,7 @@ describe("POST /auth/2fa/verify - integration", () => {
         expect(res.statusCode).toBe(409);
     });
 
-    it("retorna 409 y limpia el secret en BD si el setup expiró", async () => {
+    it("retorna 409 y limpia el secret en BD si la configuración expiró", async () => {
         await createTestEmployee({
             temp_totp_secret: "SECRETBASE32",
             temp_totp_secret_created_at: new Date(Date.now() - 20 * 60 * 1000),
@@ -355,7 +355,7 @@ describe("POST /auth/2fa/verify - integration", () => {
 });
 
 describe("POST /auth/2fa/disable - integration", () => {
-    it("desactiva TwoFactorAuth y limpia secrets en BD con contraseña correcta", async () => {
+    it("desactiva el factor de dos pasos y limpia secrets en BD con contraseña correcta", async () => {
         await createTestEmployee({
             is_active_two_factor_auth: true,
             totp_secret: "FAKESECRET",
@@ -395,7 +395,7 @@ describe("POST /auth/2fa/disable - integration", () => {
         expect(emp.is_active_two_factor_auth).toBe(true);
     });
 
-    it("retorna 409 si TwoFactorAuth no está activo en BD", async () => {
+    it("retorna 409 si el factor de dos pasos no está activo en BD", async () => {
         await createTestEmployee({
             is_active_two_factor_auth: false,
             totp_secret: null,
@@ -411,7 +411,7 @@ describe("POST /auth/2fa/disable - integration", () => {
 });
 
 describe("GET /auth/2fa/status - integration", () => {
-    it("retorna false si TwoFactorAuth no está activo en BD", async () => {
+    it("retorna false si el factor de dos pasos no está activo en BD", async () => {
         await createTestEmployee({ is_active_two_factor_auth: false });
         const token = generateSessionToken();
 
@@ -423,7 +423,7 @@ describe("GET /auth/2fa/status - integration", () => {
         expect(res.body.StatusTwoFactorAuth).toBe(false);
     });
 
-    it("retorna true si TwoFactorAuth está activo en BD", async () => {
+    it("retorna true si el factor de dos pasos está activo en BD", async () => {
         await createTestEmployee({
             is_active_two_factor_auth: true,
             totp_secret: "FAKESECRET",

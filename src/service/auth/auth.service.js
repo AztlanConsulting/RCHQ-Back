@@ -214,7 +214,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
 
         return {
             status: 403,
-            body: { success: false, message: "Accesso no permitido" },
+            body: { success: false, message: "Acceso no permitido" },
         };
     }
 
@@ -223,7 +223,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth ya esta activo en esta cuenta",
+                message: "El factor de dos pasos ya está activo en esta cuenta",
             },
         };
     }
@@ -242,7 +242,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth setup iniciado",
+            message: "Configuración del factor de dos pasos iniciada",
             nextStep: "VERIFY_TWO_FACTOR_AUTH_SETUP",
             data: {
                 employeeId: employee.employeeId,
@@ -292,7 +292,7 @@ async function verifyTwoFactorSetup(req) {
             status: 409,
             body: {
                 success: false,
-                message: "No hay configuracion pendiente de TwoFactorAuth",
+                message: "No hay configuración pendiente del factor de dos pasos",
             },
         };
     }
@@ -303,7 +303,7 @@ async function verifyTwoFactorSetup(req) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth pendiente de configurar",
+                message: "Factor de dos pasos pendiente de configurar",
             },
         };
     }
@@ -321,8 +321,7 @@ async function verifyTwoFactorSetup(req) {
             status: 409,
             body: {
                 success: false,
-                message:
-                    "El tiempo de TwoFactorAuth setup ha expirado. Trate más adeltante.",
+                message: "El tiempo de configuración del factor de dos pasos ha expirado. Intente más adelante.",
             },
         };
     }
@@ -345,7 +344,7 @@ async function verifyTwoFactorSetup(req) {
             status: 400,
             body: {
                 success: false,
-                message: "Código inválido de TwoFactorAuth. Falló el setup.",
+                message: "Código de factor de dos pasos inválido. Falló la configuración.",
                 nextStep: "TWO_FACTOR_AUTH_SETUP_FAILED",
                 data: {
                     employeeId: employee.employeeId,
@@ -371,7 +370,7 @@ async function verifyTwoFactorSetup(req) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth activado exitosamente",
+            message: "Factor de dos pasos activado exitosamente",
             nextStep: "TWO_FACTOR_AUTH_SETUP_COMPLETE",
             data: {
                 employeeId: employee.employeeId,
@@ -420,7 +419,7 @@ async function validateTwoFactorAuth(req) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth no esta habilitado para esta cuenta",
+                message: "El factor de dos pasos no está habilitado para esta cuenta",
             },
         };
     }
@@ -430,7 +429,7 @@ async function validateTwoFactorAuth(req) {
             status: 423,
             body: {
                 success: false,
-                message: "TwoFactorAuth bloqueado temporalmente",
+                message: "Factor de dos pasos bloqueado temporalmente",
                 nextStep: "WAIT_TWO_FACTOR_AUTH_BLOCK",
                 blockedUntil: employee.twoFaBlockedUntil,
             },
@@ -475,7 +474,7 @@ async function validateTwoFactorAuth(req) {
                 status: 423,
                 body: {
                     success: false,
-                    message: "TwoFactorAuth bloqueado temporalmente",
+                    message: "Factor de dos pasos bloqueado temporalmente",
                     nextStep: "WAIT_TWO_FACTOR_AUTH_BLOCK",
                     blockedUntil,
                 },
@@ -484,7 +483,7 @@ async function validateTwoFactorAuth(req) {
 
         return {
             status: 401,
-            body: { success: false, message: "Token de TwoFactorAuth inválido" },
+            body: { success: false, message: "Token de Factor de dos pasos inválido" },
         };
     }
 
@@ -505,11 +504,11 @@ async function validateTwoFactorAuth(req) {
     status: 200,
     body: {
       success: true,
-      message: "TwoFactorAuth validacion correcta",
+      message: "Factor de dos pasos validado correctamente",
       nextStep: "LOGIN_COMPLETE",
-      token: tokenJwt,
-      refreshToken,
       data: {
+        token: tokenJwt,
+        refreshToken,
         employeeId: employee.employeeId,
         email: employee.email,
         name: employee.name,
@@ -568,7 +567,7 @@ async function disableTwoFactorAuth(req) {
     if (!employeeId) {
         return {
             status: 401,
-            body: { success: false, message: "Usuario no autentificado" },
+            body: { success: false, message: "Usuario no autenticado" },
         };
     }
 
@@ -577,7 +576,7 @@ async function disableTwoFactorAuth(req) {
             status: 400,
             body: {
                 success: false,
-                message: "Se requiere la contraseña para deshabilitar TwoFactorAuth",
+                message: "Se requiere la contraseña para deshabilitar el factor de dos pasos",
             },
         };
     }
@@ -609,7 +608,7 @@ async function disableTwoFactorAuth(req) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth no esta activo para esta cuenta",
+                message: "El factor de dos pasos no está activo para esta cuenta",
             },
         };
     }
@@ -645,7 +644,7 @@ async function disableTwoFactorAuth(req) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth deshabilitado correctamente",
+            message: "Factor de dos pasos deshabilitado correctamente",
             nextStep: "TWO_FACTOR_AUTH_DISABLED",
             data: {
                 employeeId: employee.employeeId,

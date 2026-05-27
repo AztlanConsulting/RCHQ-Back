@@ -253,6 +253,14 @@ async function saveRefreshToken(employeeId, token) {
     });
 }
 
+async function rotateRefreshToken(employeeId, oldToken, newToken) {
+    const result = await prisma.employee.updateMany({
+        where: { employee_id: employeeId, refresh_token: oldToken },
+        data: { refresh_token: newToken },
+    });
+    return result.count > 0;
+}
+
 async function clearRefreshToken(employeeId) {
     await prisma.employee.update({
         where: { employee_id: employeeId },
@@ -280,4 +288,5 @@ module.exports = {
     clearTwoFactorAuthSecurityState,
     saveRefreshToken,
     clearRefreshToken,
+    rotateRefreshToken,
 };
