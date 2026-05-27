@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 exports.apiLimiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: 100,
+    skip: (req) => process.env.NODE_ENV === "test",
     message: {
         success: false,
         message:
@@ -26,15 +27,11 @@ exports.apiLimiter = rateLimit({
                 if (
                     decoded &&
                     decoded.tokenType === "SESSION" &&
-                    decoded.employeeId
+                    (decoded.id || decoded.employeeId)
                 ) {
-                    return decoded.employeeId;
+                    return decoded.id || decoded.employeeId;
                 }
             } catch (error) {}
-        }
-        // Solo para es para las pruebas
-        if (process.env.NODE_ENV === "test") {
-            return req.ip;
         }
         return req.ip;
 
@@ -45,6 +42,7 @@ exports.apiLimiter = rateLimit({
 exports.authLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
     max: 5,
+    skip: (req) => process.env.NODE_ENV === "test",
     message: {
         success: false,
         message:
@@ -65,14 +63,10 @@ exports.authLimiter = rateLimit({
             const token = authHeader.split(" ")[1];
             try {
                 const decoded = jwt.decode(token);
-                if (decoded && decoded.employeeId) {
-                    return decoded.employeeId;
+                if (decoded && (decoded.id || decoded.employeeId)) {
+                    return decoded.id || decoded.employeeId;
                 }
             } catch (error) {}
-        }
-
-        if (process.env.NODE_ENV === "test") {
-            return req.ip;
         }
 
         return req.ip;

@@ -1,7 +1,3 @@
-// const { generateToken, generateFirstLoginToken, generatePre2faToken } = require("../utils/jwt");
-// const { canAccess } = require("../middleware/abac");
-// const { adminPolicy } = require("../policies/user.policies");
-// const {verifyPassword, hashPassword} = require("../utils/password");
 const authService = require("../../service/auth/auth.service");
 const passwordService = require("../../service/auth/password.service");
 const { getClientIp } = require("../../utils/ip");
@@ -14,7 +10,7 @@ exports.loginFunction = async (req, res) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+                maxAge: 7 * 24 * 60 * 60 * 1000,
             });
             delete result.body.data.refreshToken;
         }
