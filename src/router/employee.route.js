@@ -27,6 +27,7 @@ const {
 const {
     deactivateEmployeeSchema,
     deactivateEmployeeParamsSchema,
+    reactivateEmployeeParamsSchema,
 } = require("../schemas/employee/deactivate.schemas");
 const {
     deactivateEmployeePolicy,
@@ -216,6 +217,7 @@ router.patch(
   requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
   requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
   resolveRequesterHouse,
+  validate(reactivateEmployeeParamsSchema, "params"),
   authorize(
     deactivateEmployeePolicy,
     async (req) => {

@@ -18,4 +18,11 @@ const deactivateEmployeeParamsSchema = z.object({
     employeeId: z.uuidv4({ message: "El ID del empleado no es válido" }),
 });
 
-module.exports = { deactivateEmployeeSchema, deactivateEmployeeParamsSchema };
+/** Same path params as PATCH .../deactivate (no body on reactivate). */
+const reactivateEmployeeParamsSchema = deactivateEmployeeParamsSchema;
+
+module.exports = {
+    deactivateEmployeeSchema,
+    deactivateEmployeeParamsSchema,
+    reactivateEmployeeParamsSchema,
+};
