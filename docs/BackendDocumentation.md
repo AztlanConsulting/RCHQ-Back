@@ -268,7 +268,7 @@ Calendarios y eventos. (s. f.). Google For Developers. https://developers.googl
 
 El backend utiliza un sistema de doble token para mantener la seguridad y la persistencia de la sesión:
 1. **Access Token (`SESSION`)**: De corta duración (1h). Se devuelve en el cuerpo JSON de la respuesta y debe ser enviado en el header `Authorization: Bearer <token>` para rutas protegidas.
-2. **Refresh Token (`REFRESH`)**: De larga duración (7 días). **No es accesible vía JavaScript**. El servidor lo envía e invalida exclusivamente a través de la cabecera HTTP `Set-Cookie` (`HttpOnly`, `Secure`, `SameSite=Strict`).
+2. **Refresh Token (`REFRESH`)**: De larga duración (1 día). **No es accesible vía JavaScript**. El servidor lo envía e invalida exclusivamente a través de la cabecera HTTP `Set-Cookie` (`HttpOnly`, `Secure`, `SameSite=Strict`).
 
 ### Endpoints que emiten Refresh Tokens
 Los siguientes endpoints devolverán en sus cabeceras un `Set-Cookie: refreshToken=...`:

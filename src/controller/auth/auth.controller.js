@@ -10,7 +10,7 @@ exports.loginFunction = async (req, res) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60 * 1000,
+                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
             delete result.body.data.refreshToken;
         }
@@ -110,7 +110,7 @@ exports.validateTwoFactorAuth = async (req, res) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60 * 1000,
+                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
             delete result.body.refreshToken;
         }
@@ -160,7 +160,7 @@ exports.refreshToken = async (req, res) => {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "strict",
-                maxAge: 7 * 24 * 60 * 60 * 1000,
+                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
             delete result.body.data.refreshToken;
         } else if (result.status === 401 || result.status === 403) {

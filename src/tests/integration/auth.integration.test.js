@@ -96,7 +96,7 @@ const generateTestRefreshToken = () => {
     return jwt.sign(
         { id: TEST_EMPLOYEE_ID, tokenType: "REFRESH" },
         process.env.JWT_SECRET,
-        { expiresIn: "7d" },
+        { expiresIn: "1d" },
     );
 };
 
