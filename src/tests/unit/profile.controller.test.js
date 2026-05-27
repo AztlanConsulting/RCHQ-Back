@@ -1,4 +1,3 @@
-// tests/backend/profile.controller.test.js
 const {
     getUserProfile: controllerFn,
 } = require("../../controller/user/profile.controller");
@@ -7,7 +6,6 @@ jest.mock("../../service/user/profile.service");
 const profileService = require("../../service/user/profile.service");
 const RESPONSES = require("../../utils/responses");
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 const buildRes = () => {
     const res = {};
     res.status = jest.fn().mockReturnValue(res);
@@ -29,7 +27,6 @@ const MOCK_EMPLOYEE_DATA = {
     picture: null,
 };
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
 describe("profile.controller — getUserProfile", () => {
     let req, res;
 

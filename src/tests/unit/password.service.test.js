@@ -6,6 +6,7 @@ jest.mock("../../model/auth/auth.model", () => ({
     getEmployeeById: jest.fn(),
     updatePassword: jest.fn(),
     updatePasswordAndClearFirstLogin: jest.fn(),
+    saveRefreshToken: jest.fn(),
 }));
 
 jest.mock("../../model/log.model", () => ({
@@ -22,6 +23,10 @@ jest.mock("../../utils/auth/authTokens", () => ({
     buildPreTwoFactorAuthJwt: jest.fn(),
 }));
 
+jest.mock("../../utils/jwt", () => ({
+    generateRefreshToken: jest.fn(),
+}));
+
 const prisma = require("../../prisma");
 const auth = require("../../model/auth/auth.model");
 const { createLog } = require("../../model/log.model");
@@ -30,6 +35,7 @@ const {
     buildSessionToken,
     buildPreTwoFactorAuthJwt,
 } = require("../../utils/auth/authTokens");
+const { generateRefreshToken } = require("../../utils/jwt");
 
 const {
     changePassword,
@@ -54,6 +60,8 @@ describe("password.service", () => {
         hashPassword.mockResolvedValue("new-hashed-password");
         buildSessionToken.mockReturnValue("fake-session-token");
         buildPreTwoFactorAuthJwt.mockReturnValue("fake-pre2fa-token");
+        generateRefreshToken.mockReturnValue("fake-refresh-token");
+        auth.saveRefreshToken.mockResolvedValue();
     });
 
     describe("changePassword", () => {
@@ -286,9 +294,11 @@ describe("password.service", () => {
             expect(result.status).toBe(200);
             expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
             expect(result.body.data.token).toBe("fake-session-token");
+            expect(result.body.data.refreshToken).toBe("fake-refresh-token");
+            expect(auth.saveRefreshToken).toHaveBeenCalledWith("emp-123", "fake-refresh-token");
         });
 
-        it("retorna pre2FAToken si el usuario tiene 2FA activo", async () => {
+        it("retorna preTwoFactorAuthToken si el usuario tiene factor de dos pasos activo", async () => {
             auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 isActiveTwoFactorAuth: true,
