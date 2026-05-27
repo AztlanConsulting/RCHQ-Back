@@ -33,7 +33,7 @@ router.post(
 
 router.post(
     "/change-password",
-    apiLimiter,
+    authLimiter,
     verifyToken,
     validate(changePasswordSchema),
     authController.changePassword,
@@ -64,7 +64,7 @@ router.post(
 
 router.post(
     "/2fa/disable",
-    apiLimiter,
+    authLimiter,
     verifyToken,
     validate(disableTwoFactorSchema),
     authController.disableTwoFactorAuth,
