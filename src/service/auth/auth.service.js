@@ -371,7 +371,7 @@ async function verifyTwoFactorSetup(req) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth activated successfully",
+            message: "TwoFactorAuth activado exitosamente",
             nextStep: "TWO_FACTOR_AUTH_SETUP_COMPLETE",
             data: {
                 employeeId: employee.employeeId,
@@ -484,7 +484,7 @@ async function validateTwoFactorAuth(req) {
 
         return {
             status: 401,
-            body: { success: false, message: "Invalido TwoFactorAuth token" },
+            body: { success: false, message: "Token de TwoFactorAuth inválido" },
         };
     }
 
@@ -577,7 +577,7 @@ async function disableTwoFactorAuth(req) {
             status: 400,
             body: {
                 success: false,
-                message: "Password is required to disable TwoFactorAuth",
+                message: "Se requiere la contraseña para deshabilitar TwoFactorAuth",
             },
         };
     }

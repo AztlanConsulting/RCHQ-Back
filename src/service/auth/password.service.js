@@ -108,7 +108,7 @@ exports.changePassword = async ({
         status: 200,
         body: {
             success: true,
-            message: "Password changed successfully",
+            message: "Contraseña cambiada exitosamente",
             data: {
                 employeeId: employee.employeeId,
             },
