@@ -314,3 +314,40 @@ Los siguientes endpoints devolverán en sus cabeceras un `Set-Cookie: refreshTok
     }
     ```
 *(Nota: Este endpoint siempre retorna 200, incluso si no se envió cookie, para asegurar la limpieza del estado en el cliente).*
+
+---
+
+## Rate Limiting (Control de Peticiones)
+
+Para proteger el sistema contra ataques de denegación de servicio (DoS) y fuerza bruta, la API implementa limitadores de peticiones.
+
+Existen dos tipos de limitadores configurados:
+
+### 1. `apiLimiter` (Rutas Generales)
+- **Límite:** 100 peticiones por minuto.
+- **Identificador (Tracking):** Rastrea por el ID del usuario (`decoded.id` o `decoded.employeeId` del JWT). Si la petición es anónima (sin token), rastrea por la dirección IP.
+- **Uso:** En la gran mayoría de las rutas protegidas y endpoints generales de datos.
+
+### 2. `authLimiter` (Rutas Críticas de Autenticación)
+- **Límite:** 5 peticiones cada 10 minutos.
+- **Identificador (Tracking):** Rastrea primero por el email (`req.body.email`), si no lo hay por el ID del token, y en último caso por IP.
+- **Uso:** En endpoints donde se envían credenciales sensibles (ej. `/auth/login`, `/auth/change-password`, `/auth/2fa/validate`).
+
+### Respuesta HTTP (Manejo en el Cliente)
+Cuando un usuario o IP excede cualquiera de los dos límites, la API bloquea automáticamente la petición y devuelve la siguiente estructura:
+
+- **Status HTTP:** `429 Too Many Requests`
+- **Body (JSON):**
+  ```json
+  {
+    "success": false,
+    "message": "Estás haciendo demasiadas consultas muy rápido. Inténtalo más tarde."
+  }
+  ```
+- **Headers de Respuesta:** El servidor devuelve cabeceras estándar de Rate Limit útiles para el frontend:
+  - `RateLimit-Limit`: El límite total de peticiones permitidas en la ventana actual.
+  - `RateLimit-Remaining`: Peticiones restantes antes de ser bloqueado.
+  - `RateLimit-Reset`: Tiempo (en segundos) que falta para que el límite se reinicie.
+
+**Nota para Frontends:**
+Cualquier cliente o sistema que consuma la API debe estar preparado para interceptar el código HTTP `429`. Se recomienda leer el campo `message` y mostrar un Toast o Alerta para notificar al usuario que debe esperar.
