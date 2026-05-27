@@ -44,7 +44,7 @@ if (¿La respuesta es 200 OK?) then (Sí)
     :Actualiza accessToken en memoria;
     :Reintenta la petición original fallida;
 else (No)
-    :Redirige a la pantalla de Login\n(Sesión expirada permanentemente);
+    :Redirige a la pantalla de Login\n(Sesión expirada);
 endif
 
 |Usuario|
