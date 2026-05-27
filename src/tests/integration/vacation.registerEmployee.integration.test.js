@@ -28,6 +28,7 @@ const HOUSE_FREE_EVENT_TYPE_ID = randomUUID();
 
 const { ACTIVE_VACATION_STATUSES } = require("../../utils/vacationStatus");
 const { LOG_ACTIONS } = require("../../utils/logActions");
+const { getMexicoTodayDate } = require("../../utils/dates");
 
 const WORKDAY_IDS = {
     monday: randomUUID(),
@@ -942,6 +943,33 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
 
         expect(res.statusCode).toBe(400);
         expect(res.body.success).toBe(false);
+    });
+
+    test("retorna 406 si la fecha de inicio es el día de hoy", async () => {
+        const today = formatDate(getMexicoTodayDate());
+
+        const res = await request(app)
+            .post(`/vacation/employees/${TARGET_EMPLOYEE_ID}/register`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({
+                startDate: today,
+                endDate: today,
+            });
+
+        const vacation = await prisma.vacations_request.findFirst({
+            where: {
+                employee_id: TARGET_EMPLOYEE_ID,
+                start: toDbDate(today),
+                end: toDbDate(today),
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body).toMatchObject({
+            success: false,
+            message: "No se pueden registrar vacaciones en fechas pasadas ni para el mismo día",
+        });
+        expect(vacation).toBeNull();
     });
 
     test("retorna 406 si la fecha final es anterior a la inicial", async () => {
