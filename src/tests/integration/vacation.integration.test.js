@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 const app = require("../../app");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { getMexicoTodayDate } = require("../../utils/dates");
 
 const prisma = new PrismaClient();
 
@@ -576,11 +577,8 @@ describe("Flujo integración /vacation/request", () => {
 
         it("Error al pedir vacaciones para el mismo día", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
-            const mxDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
-            const year = mxDate.getFullYear();
-            const month = String(mxDate.getMonth() + 1).padStart(2, "0");
-            const day = String(mxDate.getDate()).padStart(2, "0");
-            const startDate = `${year}-${month}-${day}`;
+
+            const startDate = dateOnly(getMexicoTodayDate());
 
             const res = await request(app)
                 .post("/vacation/request")
