@@ -672,14 +672,15 @@ async function refreshSession(refreshToken, ipAddress) {
         return { status: 403, body: { success: false, message: "Acceso denegado", code: "INVALID_REFRESH_TOKEN" } };
     }
 
-    if (employee.refreshToken !== refreshToken) {
+    const newToken = await buildSessionToken(employee);
+    const newRefreshToken = generateRefreshToken(employee);
+
+    const rotated = await User.rotateRefreshToken(employeeId, refreshToken, newRefreshToken);
+
+    if (!rotated) {
         await User.clearRefreshToken(employeeId);
         return { status: 401, body: { success: false, message: "Sesión inválida", code: "INVALID_REFRESH_TOKEN" } };
     }
-
-    const newToken = await buildSessionToken(employee);
-    const newRefreshToken = generateRefreshToken(employee);
-    await User.saveRefreshToken(employee.employeeId, newRefreshToken);
 
     return {
         status: 200,
