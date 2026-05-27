@@ -2,14 +2,19 @@ const authService = require("../../service/auth/auth.service");
 const passwordService = require("../../service/auth/password.service");
 const { getClientIp } = require("../../utils/ip");
 
+const COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+};
+
 exports.loginFunction = async (req, res) => {
     try {
         const result = await authService.login(req);
         if (result.status === 200 && result.body.data?.refreshToken) {
             res.cookie("refreshToken", result.body.data.refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
+                ...COOKIE_OPTIONS,
                 maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
             delete result.body.data.refreshToken;
@@ -38,9 +43,7 @@ exports.changePasswordFirstLogin = async (req, res) => {
 
         if (result.status === 200 && result.body.data?.refreshToken) {
             res.cookie("refreshToken", result.body.data.refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
+                ...COOKIE_OPTIONS,
                 maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
             delete result.body.data.refreshToken;
@@ -90,7 +93,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
 
         return res.status(result.status).json(result.body);
     } catch (error) {
-        console.error("Error en el setUp de TwoFactorAuth:", error);
+        console.error("Error en la configuración del factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -103,7 +106,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
         const result = await authService.verifyTwoFactorSetup(req);
         return res.status(result.status).json(result.body);
     } catch (error) {
-        console.error("Error para verificar el TwoFactorAuth:", error);
+        console.error("Error al verificar el factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -114,18 +117,16 @@ exports.verifyTwoFactorSetup = async (req, res) => {
 exports.validateTwoFactorAuth = async (req, res) => {
     try {
         const result = await authService.validateTwoFactorAuth(req);
-        if (result.status === 200 && result.body.refreshToken) {
-            res.cookie("refreshToken", result.body.refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
+        if (result.status === 200 && result.body.data?.refreshToken) {
+            res.cookie("refreshToken", result.body.data.refreshToken, {
+                ...COOKIE_OPTIONS,
                 maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
-            delete result.body.refreshToken;
+            delete result.body.data.refreshToken;
         }
         return res.status(result.status).json(result.body);
     } catch (error) {
-        console.error("Error para validar el TwoFactorAuth:", error);
+        console.error("Error al validar el factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -138,7 +139,7 @@ exports.getTwoFactorAuthStatus = async (req, res) => {
         const result = await authService.getTwoFactorAuthStatus(req);
         return res.status(result.status).json(result.body);
     } catch (error) {
-        console.error("Error al obtener estado del TwoFactorAuth:", error);
+        console.error("Error al obtener el estado del factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
             message: "Internal Server Error",
@@ -151,7 +152,7 @@ exports.disableTwoFactorAuth = async (req, res) => {
         const result = await authService.disableTwoFactorAuth(req);
         return res.status(result.status).json(result.body);
     } catch (error) {
-        console.error("Error para quitar el TwoFactorAuth:", error);
+        console.error("Error al deshabilitar el factor de dos pasos:", error);
         return res
             .status(500)
             .json({ success: false, message: "Internal Server Error" });
@@ -166,14 +167,12 @@ exports.refreshToken = async (req, res) => {
 
         if (result.status === 200 && result.body.data?.refreshToken) {
             res.cookie("refreshToken", result.body.data.refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
+                ...COOKIE_OPTIONS,
                 maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
             });
             delete result.body.data.refreshToken;
         } else if (result.status === 401 || result.status === 403) {
-            res.clearCookie("refreshToken");
+            res.clearCookie("refreshToken", COOKIE_OPTIONS);
         }
         return res.status(result.status).json(result.body);
     } catch (err) {
@@ -186,7 +185,7 @@ exports.logout = async (req, res) => {
     try {
         const token = req.cookies?.refreshToken;
         const result = await authService.logout(token);
-        res.clearCookie("refreshToken");
+        res.clearCookie("refreshToken", COOKIE_OPTIONS);
         return res.status(result.status).json(result.body);
     } catch (err) {
         console.error("Logout error:", err);

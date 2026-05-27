@@ -298,7 +298,7 @@ describe("password.service", () => {
             expect(auth.saveRefreshToken).toHaveBeenCalledWith("emp-123", "fake-refresh-token");
         });
 
-        it("retorna pre2FAToken si el usuario tiene 2FA activo", async () => {
+        it("retorna preTwoFactorAuthToken si el usuario tiene factor de dos pasos activo", async () => {
             auth.getEmployeeById.mockResolvedValue({
                 ...mockEmployee,
                 isActiveTwoFactorAuth: true,
