@@ -1,6 +1,5 @@
 @startuml
-title US - Renovación de Sesión (Refresh Token)
-
+title US 06 - Mantener incio de sesión seguro
 |Usuario|
 start
 :Navega en la aplicación;
