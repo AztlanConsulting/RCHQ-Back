@@ -226,6 +226,45 @@ describe("updateBasicInfoService", () => {
       expect(result.errors).toBeDefined();
     });
 
+    it("retorna VALIDATION_ERROR con nombre vacio", async () => {
+      const result = await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { name: "   " },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ campo: "name", mensaje: "El nombre es obligatorio" }),
+      ]));
+    });
+
+    it("retorna VALIDATION_ERROR con apellido vacio", async () => {
+      const result = await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { surname: "   " },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ campo: "surname", mensaje: "El apellido es obligatorio" }),
+      ]));
+    });
+
+    it("retorna VALIDATION_ERROR con CURP vacio", async () => {
+      const result = await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { curp: "   " },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ campo: "curp", mensaje: "El CURP es obligatorio" }),
+      ]));
+    });
+
     it("retorna VALIDATION_ERROR con nombre inválido (números)", async () => {
       const result = await updateBasicInfoService({
         requesterId: REQUESTER_ID,
@@ -438,13 +477,13 @@ describe("updateContactInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("retorna UPDATED con body vacío porque el schema actual lo permite", async () => {
+    it("retorna VALIDATION_ERROR con body vacio", async () => {
       const result = await updateContactInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body:        {},
       });
-      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
     it("retorna VALIDATION_ERROR con campo no permitido", async () => {
