@@ -277,6 +277,9 @@ describe("POST /auth/first-login/change-password - integration", () => {
         expect(res.body.data).toHaveProperty("token");
         expect(emp.has_first_login).toBe(false);
         expect(matchesNewPassword).toBe(true);
+        expect(res.headers["set-cookie"]).toBeDefined();
+        expect(res.headers["set-cookie"][0]).toMatch(/refreshToken=/);
+        expect(emp.refresh_token).not.toBeNull();
     });
 
     it("retorna 401 si no se envía token", async () => {

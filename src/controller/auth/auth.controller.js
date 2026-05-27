@@ -36,6 +36,15 @@ exports.changePasswordFirstLogin = async (req, res) => {
             ipAddress,
         });
 
+        if (result.status === 200 && result.body.data?.refreshToken) {
+            res.cookie("refreshToken", result.body.data.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
+                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
+            });
+            delete result.body.data.refreshToken;
+        }
         return res.status(result.status).json(result.body);
     } catch (err) {
         console.error("First login password change error:", err);
