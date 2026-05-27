@@ -3,6 +3,7 @@ const {
     getLogsByHouseBaseWhere,
     getLogsByHouse: getLogsByHouseModel,
     getEmployeeIdsBySearch,
+    getLogIdsByAffectedSearch,
     getLogActions,
     getAffectedEmployeesByIds,
 } = require("../../model/logs/get.model");
@@ -22,6 +23,7 @@ const { buildLogsPdfBuffer } = require("../../utils/logsPdf");
 const { convertUTCToMexicanTime } = require("../../utils/dates");
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const REPORT_YEAR_RANGE = 5;
 
 const normalizeDate = (value) => String(value || "").trim();
 
@@ -32,6 +34,16 @@ const isValidDate = (value) => (
         && !Number.isNaN(new Date(`${value}T00:00:00.000Z`).getTime())
     )
 );
+
+const getLogsDateBounds = () => {
+    const currentYear = new Date().getUTCFullYear();
+
+    return {
+        currentYear,
+        minDate: `${currentYear - REPORT_YEAR_RANGE}-01-01`,
+        maxDate: `${currentYear}-12-31`,
+    };
+};
 
 const buildLogsWhereClause = async (
     houseId,
@@ -64,7 +76,10 @@ const buildLogsWhereClause = async (
     }
 
     if (search) {
-        const matchedEmployeeIds = await getEmployeeIdsBySearch(houseId, search);
+        const [matchedEmployeeIds, matchedAffectedLogIds] = await Promise.all([
+            getEmployeeIdsBySearch(houseId, search),
+            getLogIdsByAffectedSearch(houseId, search),
+        ]);
 
         andConditions.push({
             OR: [
@@ -74,14 +89,8 @@ const buildLogsWhereClause = async (
                     },
                 },
                 {
-                    affected: {
-                        in: matchedEmployeeIds.length > 0 ? matchedEmployeeIds : ["00000000-0000-0000-0000-000000000000"],
-                    },
-                },
-                {
-                    affected: {
-                        contains: search,
-                        mode: "insensitive",
+                    log_id: {
+                        in: matchedAffectedLogIds.length > 0 ? matchedAffectedLogIds : ["00000000-0000-0000-0000-000000000000"],
                     },
                 },
             ],
@@ -104,27 +113,17 @@ const buildLogsWhereClause = async (
     }
 
     if (affected) {
-        const matchedAffectedIds = await getEmployeeIdsBySearch(
+        const matchedAffectedLogIds = await getLogIdsByAffectedSearch(
             houseId,
             affected,
         );
 
         andConditions.push({
-            OR: [
-                {
-                    affected: {
-                        in: matchedAffectedIds.length > 0
-                            ? matchedAffectedIds
-                            : ["00000000-0000-0000-0000-000000000000"],
-                    },
-                },
-                {
-                    affected: {
-                        contains: affected,
-                        mode: "insensitive",
-                    },
-                },
-            ],
+            log_id: {
+                in: matchedAffectedLogIds.length > 0
+                    ? matchedAffectedLogIds
+                    : ["00000000-0000-0000-0000-000000000000"],
+            },
         });
     }
 
@@ -193,11 +192,14 @@ exports.getLogsByHouse = async (
     const affected = normalizeSearch(rawAffected);
     const startDate = normalizeDate(rawStartDate);
     const endDate = normalizeDate(rawEndDate);
+    const { minDate, maxDate } = getLogsDateBounds();
 
     if (
         !isValidDate(startDate)
         || !isValidDate(endDate)
         || (startDate && endDate && startDate > endDate)
+        || (startDate && (startDate < minDate || startDate > maxDate))
+        || (endDate && (endDate < minDate || endDate > maxDate))
     ) {
         return {
             code: RESPONSES.LOGS.INVALID_PAGINATION,
@@ -256,7 +258,7 @@ exports.getLogsActions = async () => {
     };
 };
 
-exports.getLogsPdfByHouse = async (houseId, selectedYear, currentYear) => {
+exports.getLogsPdfByHouse = async (houseId, selectedYear) => {
     if (!houseId) {
         return {
             code: RESPONSES.LOGS.NOT_PROVIDED,
@@ -264,21 +266,21 @@ exports.getLogsPdfByHouse = async (houseId, selectedYear, currentYear) => {
     }
 
     const parsedSelectedYear = Number(selectedYear);
-    const parsedCurrentYear = Number(currentYear);
+    const { currentYear } = getLogsDateBounds();
+    const minYear = currentYear - REPORT_YEAR_RANGE;
 
     if (
         !Number.isInteger(parsedSelectedYear)
-        || !Number.isInteger(parsedCurrentYear)
-        || parsedSelectedYear < 1900
-        || parsedCurrentYear < 1900
+        || parsedSelectedYear < minYear
+        || parsedSelectedYear > currentYear
     ) {
         return {
             code: RESPONSES.LOGS.INVALID_PAGINATION,
         };
     }
 
-    const startYear = Math.min(parsedSelectedYear, parsedCurrentYear);
-    const endYear = Math.max(parsedSelectedYear, parsedCurrentYear);
+    const startYear = parsedSelectedYear;
+    const endYear = currentYear;
     const whereClause = getLogsByHouseBaseWhere(houseId);
     whereClause.moment = {
         gte: new Date(`${startYear}-01-01T00:00:00.000Z`),

@@ -1,13 +1,15 @@
-const { Prisma } = require("@prisma/client");
 const prisma = require("../../prisma");
-
-const SEARCHABLE_ACCENTED_CHARS = "áéíóúäëïöüàèìòùâêîôûñç";
-const SEARCHABLE_REPLACEMENT_CHARS = "aeiouaeiouaeiouaeiounc";
 
 const normalizeSearchTerm = (value) => String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/z/g, "s");
+
+const UUID_REGEX =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isUuid = (value) => UUID_REGEX.test(String(value || ""));
 
 const logInclude = {
     action: {
@@ -56,48 +58,183 @@ exports.getLogsByHouseBaseWhere = (houseId) => ({
     },
 });
 
-exports.getEmployeeIdsBySearch = async (houseId, search) => {
+const getSearchTerms = (search) => String(search)
+    .trim()
+    .split(/\s+/)
+    .map(normalizeSearchTerm)
+    .filter(Boolean);
+
+const matchesNormalizedTerms = (values, searchTerms) => {
+    if (searchTerms.length === 0) {
+        return true;
+    }
+
+    const normalizedValues = values.map((value) => normalizeSearchTerm(value));
+
+    return searchTerms.every((term) =>
+        normalizedValues.some((value) => value.includes(term)),
+    );
+};
+
+exports.getLogIdsByAffectedSearch = async (houseId, search) => {
     if (!search) {
         return [];
     }
 
-    const searchTerms = String(search)
-        .trim()
-        .split(/\s+/)
-        .map(normalizeSearchTerm)
-        .filter(Boolean);
+    const searchTerms = getSearchTerms(search);
 
     if (searchTerms.length === 0) {
         return [];
     }
 
-    const searchConditions = searchTerms.map((term) => {
-        const normalizedLike = `%${term}%`;
-
-        return Prisma.sql`(
-            translate(
-                lower(coalesce(name, '') || ' ' || coalesce(surname, '')),
-                ${SEARCHABLE_ACCENTED_CHARS},
-                ${SEARCHABLE_REPLACEMENT_CHARS}
-            ) LIKE ${normalizedLike}
-            OR translate(
-                lower(coalesce(curp, '')),
-                ${SEARCHABLE_ACCENTED_CHARS},
-                ${SEARCHABLE_REPLACEMENT_CHARS}
-            ) LIKE ${normalizedLike}
-        )`;
+    const logs = await prisma.logs.findMany({
+        where: {
+            employee: {
+                house_id: houseId,
+            },
+        },
+        select: {
+            log_id: true,
+            affected: true,
+        },
     });
 
-    const query = Prisma.sql`
-        SELECT employee_id
-        FROM employee
-        WHERE house_id::text = ${houseId}
-        AND ${Prisma.join(searchConditions, Prisma.sql` AND `)}
-    `;
+    const affectedIds = logs
+        .map((log) => log.affected)
+        .filter(Boolean);
+    const affectedUuidIds = affectedIds.filter(isUuid);
 
-    const employees = await prisma.$queryRaw(query);
+    const [employees, houses, houseEvents, personalEvents, globalEvents] = await Promise.all([
+        prisma.employee.findMany({
+            where: {
+                employee_id: {
+                    in: affectedUuidIds,
+                },
+            },
+            select: {
+                employee_id: true,
+                name: true,
+                surname: true,
+                curp: true,
+            },
+        }),
+        prisma.house.findMany({
+            where: {
+                house_id: {
+                    in: affectedUuidIds,
+                },
+            },
+            select: {
+                house_id: true,
+                name: true,
+            },
+        }),
+        prisma.house_event.findMany({
+            where: {
+                house_event_id: {
+                    in: affectedUuidIds,
+                },
+            },
+            select: {
+                house_event_id: true,
+                name: true,
+            },
+        }),
+        prisma.personal_event.findMany({
+            where: {
+                personal_event_id: {
+                    in: affectedUuidIds,
+                },
+            },
+            select: {
+                personal_event_id: true,
+                name: true,
+            },
+        }),
+        prisma.global_event.findMany({
+            where: {
+                global_event_id: {
+                    in: affectedUuidIds,
+                },
+            },
+            select: {
+                global_event_id: true,
+                name: true,
+            },
+        }),
+    ]);
 
-    return employees.map((employee) => employee.employee_id);
+    const affectedMap = new Map();
+
+    employees.forEach((employee) => {
+        affectedMap.set(employee.employee_id, [
+            `${employee.name || ""} ${employee.surname || ""}`,
+            employee.curp || "",
+        ]);
+    });
+
+    houses.forEach((house) => {
+        affectedMap.set(house.house_id, [house.name || ""]);
+    });
+
+    houseEvents.forEach((event) => {
+        affectedMap.set(event.house_event_id, [event.name || ""]);
+    });
+
+    personalEvents.forEach((event) => {
+        affectedMap.set(event.personal_event_id, [event.name || ""]);
+    });
+
+    globalEvents.forEach((event) => {
+        affectedMap.set(event.global_event_id, [event.name || ""]);
+    });
+
+    return logs
+        .filter((log) => {
+            const values = [
+                ...(affectedMap.get(log.affected) || []),
+                log.affected || "",
+            ];
+
+            return matchesNormalizedTerms(values, searchTerms);
+        })
+        .map((log) => log.log_id);
+};
+
+exports.getEmployeeIdsBySearch = async (houseId, search) => {
+    if (!search) {
+        return [];
+    }
+
+    const searchTerms = getSearchTerms(search);
+
+    if (searchTerms.length === 0) {
+        return [];
+    }
+
+    const employees = await prisma.employee.findMany({
+        where: {
+            house_id: houseId,
+        },
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            curp: true,
+        },
+    });
+
+    return employees
+        .filter((employee) =>
+            matchesNormalizedTerms(
+                [
+                    `${employee.name || ""} ${employee.surname || ""}`,
+                    employee.curp || "",
+                ],
+                searchTerms,
+            ),
+        )
+        .map((employee) => employee.employee_id);
 };
 
 exports.getLogActions = async () => {

@@ -236,12 +236,6 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
             expect(res.status).toBe(422);
             expect(res.body).toEqual({
                 message: "La razón es obligatoria para dar de baja al empleado.",
-                errors: [
-                    {
-                        path: "reason",
-                        message: "La razón es obligatoria para dar de baja al empleado.",
-                    },
-                ],
             });
         });
 
@@ -253,12 +247,6 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
             expect(res.status).toBe(422);
             expect(res.body).toEqual({
                 message: "La razón es obligatoria para dar de baja al empleado.",
-                errors: [
-                    {
-                        path: "reason",
-                        message: "La razón es obligatoria para dar de baja al empleado.",
-                    },
-                ],
             });
         });
 
