@@ -1,0 +1,52 @@
+@startuml
+title US - Renovación de Sesión (Refresh Token)
+
+|Usuario|
+start
+:Navega en la aplicación;
+
+|Sistema|
+:Detecta que el accessToken expiró\no una petición regresó 401;
+:Ejecuta POST /auth/refresh\n(El navegador envía la Cookie HttpOnly automáticamente);
+:Aplica apiLimiter (rate limit);
+:auth.controller.js \n Extrae req.cookies.refreshToken;
+
+if (¿Existe el token en la petición?) then (Sí)
+    :jwt.js \n Decodifica y verifica firma (decodeToken);
+    if (¿Token es válido y su tokenType es "REFRESH"?) then (Sí)
+        :auth.model.js \n Busca al empleado por ID (getEmployeeById);
+        if (¿Empleado existe y está activo?) then (Sí)
+            if (¿El token coincide con el guardado en BD?) then (Sí)
+                :Genera un nuevo accessToken (SESSION);
+                :Genera un nuevo refreshToken (REFRESH);
+                :auth.model.js \n Guarda el nuevo refreshToken en BD (saveRefreshToken);
+                :auth.controller.js \n Configura res.cookie con el nuevo token;
+                :Retorna 200 REFRESH_SUCCESS y el nuevo accessToken;
+            else (No - Prevención de robo/reuso)
+                :auth.model.js \n Borra refreshToken de la BD (clearRefreshToken);
+                :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
+                :Retorna 401 INVALID_REFRESH_TOKEN (Sesión inválida);
+            endif
+        else (No)
+            :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
+            :Retorna 403 INVALID_REFRESH_TOKEN (Acceso denegado);
+        endif
+    else (No)
+        :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
+        :Retorna 401 INVALID_REFRESH_TOKEN (Token expirado/inválido);
+    endif
+else (No)
+    :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
+    :Retorna 401 INVALID_REFRESH_TOKEN (No proporcionado);
+endif
+
+if (¿La respuesta es 200 OK?) then (Sí)
+    :Actualiza accessToken en memoria;
+    :Reintenta la petición original fallida;
+else (No)
+    :Redirige a la pantalla de Login\n(Sesión expirada permanentemente);
+endif
+
+|Usuario|
+stop
+@enduml

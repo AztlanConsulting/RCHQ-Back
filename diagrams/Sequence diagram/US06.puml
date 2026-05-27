@@ -1,0 +1,74 @@
+@startuml
+title Diagrama de Secuencia - POST /auth/refresh
+
+actor Usuario
+boundary "auth.route.js\nPOST /refresh" as Route
+control "auth.controller.js\nrefreshToken()" as Controller
+control "auth.service.js\nrefreshSession()" as Service
+control "jwt.js\ndecodeToken()\ngenerateRefreshToken()" as JWT
+entity "auth.model.js\ngetEmployeeById()\nsaveRefreshToken()" as Model
+database "PostgreSQL\nPrisma" as BD
+
+Usuario -> Route : POST /auth/refresh\n(Incluye Cookie HttpOnly)
+Route -> Controller : refreshToken(req, res)
+
+Controller -> Controller : token = req.cookies?.refreshToken\nipAddress = getClientIp()
+
+Controller ->> Service : refreshSession(token, ipAddress)
+
+alt token == undefined (No proporcionado)
+    Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+    Controller -> Controller : res.clearCookie("refreshToken")
+    Controller --> Usuario : 401 Token no proporcionado
+else token válido
+    Service -> JWT : decodeToken(token)
+    JWT --> Service : decodedPayload
+    
+    alt decoded == null o tokenType != "REFRESH"
+        Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+        Controller -> Controller : res.clearCookie("refreshToken")
+        Controller --> Usuario : 401 Token inválido o expirado
+    else Token verificado
+        Service ->> Model : getEmployeeById(decoded.id)
+        Model ->> BD : prisma.employee.findUnique(employee_id)
+        BD -->> Model : DB_ROW
+        Model -> Model : mapEmployee(DB_ROW)
+        Model -->> Service : employee
+        
+        alt employee == null o employee.isActive == false
+            Service -->> Controller : { status: 403, code: "INVALID_REFRESH_TOKEN" }
+            Controller -> Controller : res.clearCookie("refreshToken")
+            Controller --> Usuario : 403 Acceso denegado
+        else employee.refreshToken != token (Prevención de Reuso)
+            Service ->> Model : clearRefreshToken(employee.employeeId)
+            Model ->> BD : prisma.employee.update({ refresh_token: null })
+            BD -->> Model : success
+            Model -->> Service : void
+            Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+            Controller -> Controller : res.clearCookie("refreshToken")
+            Controller --> Usuario : 401 Sesión inválida
+        else Validación exitosa
+            Service -> JWT : buildSessionToken(employee)
+            JWT --> Service : newToken (SESSION)
+            Service -> JWT : generateRefreshToken(employee)
+            JWT --> Service : newRefreshToken (REFRESH)
+            
+            Service ->> Model : saveRefreshToken(employee.employeeId, newRefreshToken)
+            Model ->> BD : prisma.employee.update({ refresh_token: newRefreshToken })
+            BD -->> Model : success
+            Model -->> Service : void
+            
+            Service -->> Controller : { status: 200, code: "REFRESH_SUCCESS", data: { token, refreshToken } }
+            
+            Controller -> Controller : res.cookie("refreshToken", newRefreshToken, { httpOnly, secure, maxAge... })
+            Controller -> Controller : delete result.body.data.refreshToken
+            Controller --> Usuario : 200 { success: true, data: { token } }
+        end
+    end
+end
+
+alt catch (error)
+    Controller --> Usuario : 500 Internal Server Error
+end
+
+@enduml
