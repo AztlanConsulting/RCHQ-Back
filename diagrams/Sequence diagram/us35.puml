@@ -74,7 +74,7 @@ Service --> Controller : EMPLOYEE_NOT_FOUND
 Controller --> Frontend : 404 Empleado no encontrado
 else Empleado fuera de alcance
 Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 403 No puede acceder a este recurso
+Controller --> Frontend : 403 Permisos insuficientes
 else Actor autorizado
 Service -> VacationUpdateModel : rejectVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\nfeedback\n})
 

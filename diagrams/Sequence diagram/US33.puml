@@ -81,7 +81,7 @@ end
 
 alt Coordinador intenta remover a empleado fuera de su casa o Admin
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 rnote over vacation.delete.service
@@ -127,7 +127,7 @@ end
 alt vacationRequest.employee_id != targetEmployeeId
 vacation.delete.model -->> vacation.delete.service : VACATION.EMPLOYEE_OUT_OF_SCOPE
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 vacation.delete.model ->> PostgreSQL : transaction.employee.findUnique({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
@@ -144,7 +144,7 @@ end
 alt se detecta alcance inválido dentro de la transacción
 vacation.delete.model -->> vacation.delete.service : VACATION.EMPLOYEE_OUT_OF_SCOPE
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 alt la solicitud dejó de poder removerse dentro de la transacción

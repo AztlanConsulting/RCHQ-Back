@@ -37,7 +37,7 @@ exports.approveVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
@@ -164,7 +164,7 @@ exports.rejectVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
@@ -252,7 +252,7 @@ exports.updateVacationRequestDates = async (req, res) => {
         if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 

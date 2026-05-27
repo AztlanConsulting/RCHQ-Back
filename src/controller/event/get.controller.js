@@ -107,7 +107,7 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
         if (!requesterHouseId) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 

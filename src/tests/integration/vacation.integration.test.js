@@ -3,6 +3,8 @@ const { PrismaClient } = require("@prisma/client");
 const app = require("../../app");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { LOG_ACTIONS } = require("../../utils/logActions");
+const { getMexicoTodayDate } = require("../../utils/dates");
 
 const prisma = new PrismaClient();
 
@@ -127,6 +129,19 @@ const createEventType = async (eventTypeId, name) => {
 };
 
 const seed = async () => {
+    await prisma.action.upsert({
+        where: { action_id: LOG_ACTIONS.VACATION_REQUESTED_SUCCESS },
+        update: {
+            description: "Creación de solicitud de vacaciones exitosa",
+            important: false,
+        },
+        create: {
+            action_id: LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
+            description: "Creación de solicitud de vacaciones exitosa",
+            important: false,
+        },
+    });
+
     await prisma.workday.upsert({
         where: { name: "Lunes" },
         update: {},
@@ -577,7 +592,7 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones para el mismo día", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = dateOnly(TODAY);
+            const startDate = dateOnly(getMexicoTodayDate());
 
             const res = await request(app)
                 .post("/vacation/request")
@@ -596,7 +611,7 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones en el pasado", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = dateOnly(addDays(TODAY, -5));
+            const startDate = dateOnly(addDays(getMexicoTodayDate(), -5));
 
             const res = await request(app)
                 .post("/vacation/request")

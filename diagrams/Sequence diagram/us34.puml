@@ -62,7 +62,7 @@ Service --> Controller : EMPLOYEE_NOT_FOUND
 Controller --> Frontend : 404 Empleado no encontrado
 else Coordinador fuera de alcance
 Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 403 No puede acceder a este recurso
+Controller --> Frontend : 403 Permisos insuficientes
 else Actor autorizado
 Service -> EmployeeGetModel : getWorkDays(targetEmployeeId)
 EmployeeGetModel -> DB : SELECT employee_workday

@@ -89,7 +89,7 @@ stop
 endif
 
 if (¿Empleado es Admin?) then (Sí)
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 else (No)
 endif
@@ -98,7 +98,7 @@ endif
 
 if (¿Misma casa hogar?) then (Sí)
 else (No)
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 
@@ -116,7 +116,7 @@ endif
 if (¿Solicitud pertenece al empleado esperado?) then (Sí)
 else (No)
 :Cancelar eliminación;
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 
@@ -125,14 +125,14 @@ endif
 if (¿Empleado existe y sigue dentro de la casa del Coordinador?) then (Sí)
 else (No)
 :Cancelar eliminación;
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 
 if (¿Empleado sigue sin ser Admin?) then (Sí)
 else (No)
 :Cancelar eliminación;
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 

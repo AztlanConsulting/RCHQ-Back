@@ -121,12 +121,16 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
         usedDays
     );
 
-    await createLog(
-        employeeId,
-        LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
-        ipAddress,
-        employeeId
-    );
+    try {
+        await createLog(
+            employeeId,
+            LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
+            ipAddress,
+            employeeId
+        );
+    } catch (error) {
+        console.error("Error creando log de solicitud de vacaciones:", error);
+    }
 
     return {
         code: RESPONSES.VACATION.REQUESTED

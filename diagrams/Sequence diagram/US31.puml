@@ -107,7 +107,7 @@ end
 
 alt empleado fuera del alcance del actor
 vacation.update.service -->> vacation.update.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 alt actor no es dueño ni Coordinador
@@ -216,7 +216,7 @@ end
 alt solicitud no pertenece al empleado
 vacation.update.model -->> vacation.update.service : EMPLOYEE_OUT_OF_SCOPE
 vacation.update.service -->> vacation.update.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 vacation.update.model ->> PostgreSQL : transaction.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
@@ -233,7 +233,7 @@ end
 alt empleado fuera del alcance dentro de la transacción
 vacation.update.model -->> vacation.update.service : EMPLOYEE_OUT_OF_SCOPE
 vacation.update.service -->> vacation.update.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.update.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 alt solicitud no modificable dentro de la transacción

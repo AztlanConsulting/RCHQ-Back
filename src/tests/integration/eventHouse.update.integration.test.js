@@ -20,7 +20,7 @@ const TEST_PRIVILEGE_EDIT_ID = randomUUID();
 const TEST_PRIVILEGE_VIEW_ID = randomUUID();
 const TEST_HOUSE_EVENT_ID = randomUUID();
 const TEST_CREATE_ACTION_ID = "even-001";
-const TEST_UPDATE_ACTION_ID = "even-005";
+const TEST_UPDATE_ACTION_ID = "even-006";
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_BASE = "/event/house";
@@ -1048,7 +1048,7 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
             expect(inDb.event_type_id).toBe(TEST_OTHER_EVENT_TYPE_ID);
             expect(inDb.house_id).toBe(TEST_HOUSE_ID);
             expect(inDb.is_free_day).toBe(true);
-            expect(inDb.all_day).toBe(false);
+            expect(inDb.all_day).toBe(true);
         });
     });
 

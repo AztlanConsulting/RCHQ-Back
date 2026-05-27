@@ -81,12 +81,12 @@ end
 vacation.delete.service -> vacation.delete.service : targetRoleName = targetEmployee.role?.name
 alt targetRoleName == ROLES.ADMIN
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 alt actorEmployee.house_id != targetEmployee.house_id
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 vacation.delete.service -> vacation.delete.service : currentDate = getTodayUTC()
@@ -121,7 +121,7 @@ end
 alt vacationRequest.employee_id != employeeId
 vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: VACATION.EMPLOYEE_OUT_OF_SCOPE }
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 vacation.delete.model ->> PostgreSQL : transaction.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
@@ -136,7 +136,7 @@ end
 alt targetEmployee.role?.name == ROLES.ADMIN o targetEmployee.house_id != actorHouseId
 vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: VACATION.EMPLOYEE_OUT_OF_SCOPE }
 vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No puede acceder a este recurso"\n}
+vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
 
 vacation.delete.model -> vacation.delete.model : canRemoveVacationRequest(vacationRequest, currentDate)

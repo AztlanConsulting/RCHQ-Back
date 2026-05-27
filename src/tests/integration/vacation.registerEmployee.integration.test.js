@@ -814,7 +814,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(vacation).toBeNull();
         expect(res.body).toEqual({
             success: false,
-            message: "No puede acceder a este recurso",
+            message: "Permisos insuficientes",
         });
     });
 
@@ -836,7 +836,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.statusCode).toBe(403);
         expect(res.body).toEqual({
             success: false,
-            message: "No puede acceder a este recurso",
+            message: "Permisos insuficientes",
         });
         expect(vacation).toBeNull();
     });
@@ -860,7 +860,7 @@ describe("US28 - POST /vacation/employees/:employeeId/register", () => {
         expect(res.body).toBeDefined();
         expect(vacation).toBeNull();
         expect(res.body).toEqual({
-            message: "Role not allowed",
+            message: "Permisos insuficientes",
         });
     });
 

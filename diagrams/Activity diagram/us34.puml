@@ -79,7 +79,7 @@ else (No)
 if (¿Misma casa hogar?) then (Sí)
 :Permitir revisión de la solicitud;
 else (No)
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 endif
