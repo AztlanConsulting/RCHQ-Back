@@ -319,6 +319,7 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-005', 'Información de empleado actualizada', false),
 ('vaca-005', 'Modificación de vacaciones exitosa', false),
 ('empl-006', 'Empleado dado de baja', true),
+('empl-007', 'Empleado reactivado', true),
 ('empl-008', 'Fallo al dar de baja al empleado', true),
 ('vaca-006', 'Eliminación de vacaciones exitosa', false),
 ('blck-001', 'Empleado agregado a la lista negra', true),

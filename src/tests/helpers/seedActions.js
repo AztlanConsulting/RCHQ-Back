@@ -197,6 +197,11 @@ const ACTIONS = [
         important: true,
     },
     {
+        action_id: "empl-007",
+        description: "Empleado reactivado",
+        important: true,
+    },
+    {
         action_id: "empl-008",
         description: "Fallo al dar de baja al empleado",
         important: true,
