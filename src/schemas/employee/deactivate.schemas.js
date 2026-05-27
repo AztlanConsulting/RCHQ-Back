@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-exports.deactivateEmployeeSchema = z.object({
+const deactivateEmployeeSchema = z.object({
     reason: z
         .string()
         .max(250, { message: 'El campo "Razón" es de máximo 250 caracteres' })
@@ -14,8 +14,14 @@ exports.deactivateEmployeeSchema = z.object({
     return true;
 }, { message: "El campo 'Razón' es obligatorio para añadir a la lista negra.", path: ["reason"] });
 
-exports.deactivateEmployeeParamsSchema = z.object({
+const deactivateEmployeeParamsSchema = z.object({
     employeeId: z.uuidv4({ message: "El ID del empleado no es válido" }),
 });
 
-exports.reactivateEmployeeParamsSchema = exports.deactivateEmployeeParamsSchema;
+const reactivateEmployeeParamsSchema = deactivateEmployeeParamsSchema;
+
+module.exports = {
+    deactivateEmployeeSchema,
+    deactivateEmployeeParamsSchema,
+    reactivateEmployeeParamsSchema,
+};
