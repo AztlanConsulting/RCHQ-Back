@@ -3,7 +3,7 @@ const jwtSecret = process.env.JWT_SECRET;
 const sessionExpiresIn = "1h";
 const firstLoginExpiresIn = "15m";
 const preTwoFactorAuthExpiresIn = "10m";
-const refreshExpiresIn = "7d";
+const refreshExpiresIn = "1d";
 
 const generateToken = (user) => {
     return jwt.sign(
