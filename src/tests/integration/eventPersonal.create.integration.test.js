@@ -4,7 +4,6 @@ const { randomUUID } = require("crypto");
 const app = require("../../app");
 const { prisma, disconnectDb } = require("../helpers/dbSetup");
 
-// ─── Constantes de prueba ─────────────────────────────────
 const TEST_HOUSE_ID = randomUUID();
 const TEST_OTHER_HOUSE_ID = randomUUID();
 const TEST_COORDINATOR_ID = randomUUID();
@@ -28,7 +27,6 @@ const ALL_TEST_EMPLOYEE_IDS = [
     TEST_LEGIT_EMPLOYEE_ID,
 ];
 
-// ─── Helpers ──────────────────────────────────────────────
 const generateToken = (
     payloadOverrides = {},
     signOptions = { expiresIn: "1h" },
@@ -81,7 +79,6 @@ const getOrCreatePrivilegeId = async (name, fallbackPrivilegeId) => {
 };
 
 const seedDependencies = async () => {
-    // ─── Roles ──────────────────────────────────
     const coordinatorRoleId = await getOrCreateRoleId(
         "Coordinador",
         TEST_ROLE_ID,
@@ -91,7 +88,6 @@ const seedDependencies = async () => {
         TEST_EMPLOYEE_ROLE_ID,
     );
 
-    // ─── Event Type ─────────────────────────────
     await prisma.event_type.create({
         data: {
             event_type_id: TEST_EVENT_TYPE_ID,
@@ -99,13 +95,11 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Privilegios ────────────────────────────
     const createPrivilegeId = await getOrCreatePrivilegeId(
         "createEvent",
         TEST_PRIVILEGE_CREATE_ID,
     );
 
-    // ─── Relación Role - Privilege ──────────────
     await prisma.role_privilege.upsert({
         where: {
             role_id_privilege_id: {
@@ -134,7 +128,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Actions (para logs) ────────────────────
     await prisma.action.upsert({
         where: { action_id: "even-002" },
         update: {
@@ -161,7 +154,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Casas ──────────────────────────────────
     await prisma.house.create({
         data: {
             house_id: TEST_HOUSE_ID,
@@ -184,7 +176,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Empleados ──────────────────────────────
     await prisma.employee.create({
         data: {
             employee_id: TEST_COORDINATOR_ID,
@@ -322,7 +313,6 @@ const cleanDb = async () => {
     });
 };
 
-// ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
     await cleanDb();
     await seedDependencies();
@@ -337,7 +327,6 @@ beforeEach(async () => {
     await cleanEvents();
 });
 
-// ─── SUITE DE PRUEBAS ─────────────────────────────────────
 describe(`POST ${API_ROUTE} - Integration & Security`, () => {
     describe("1. Comportamiento esperado", () => {
         it("coordinador crea evento para un empleado y persiste todos los campos en BD (201)", async () => {

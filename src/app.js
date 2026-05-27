@@ -16,7 +16,6 @@ const { startLogRetentionJob } = require("./utils/logRetentionJob");
 const errorHandler = require("./middleware/ErrorHandler");
 const path = require("path");
 
-// Loads the variables in the enviorment file
 require("dotenv").config();
 
 const port = Number(process.env.RUNNING_PORT || 3000);

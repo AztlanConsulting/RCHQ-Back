@@ -3,7 +3,6 @@ const { allRoles } = require("../utils/roles");
 const requirePrivileges = (...requiredPrivileges) => {
     return (req, res, next) => {
         try {
-            // User should be attached by auth.middleware
             if (!req.user) {
                 return res
                     .status(401)
@@ -12,7 +11,6 @@ const requirePrivileges = (...requiredPrivileges) => {
 
             const userPrivileges = req.user.privileges || [];
 
-            // Check if user has all required privileges
             const hasAllPrivileges = requiredPrivileges.every((privilege) =>
                 userPrivileges.includes(privilege),
             );
@@ -25,7 +23,6 @@ const requirePrivileges = (...requiredPrivileges) => {
 
             next();
         } catch (error) {
-            // Pass error to the next middleware
             next(error);
         }
     };
@@ -42,7 +39,6 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
 
             const userPrivileges = req.user.privileges || [];
 
-            // Check if user has at least one required privilege
             const hasAnyPrivilege = requiredPrivileges.some((privilege) =>
                 userPrivileges.includes(privilege),
             );
@@ -55,7 +51,6 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
 
             next();
         } catch (error) {
-            // Pass error to the next middleware
             next(error);
         }
     };

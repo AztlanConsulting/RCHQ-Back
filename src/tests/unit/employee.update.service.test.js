@@ -1,5 +1,3 @@
-// src/tests/unit/update.service.test.js
-
 jest.mock("../../model/employee/update.model", () => ({
   updateBasicInfo:   jest.fn(),
   updateContactInfo: jest.fn(),
@@ -50,7 +48,6 @@ const { getUpdateFormData } = require("../../service/employee/get.service");
 
 const RESPONSES = require("../../utils/responses");
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const REQUESTER_ID  = "r0000001-0000-4000-8000-000000000001";
 const EMPLOYEE_ID   = "e0000001-0000-4000-8000-000000000001";
@@ -77,7 +74,6 @@ const validAdminBody = {
   ],
 };
 
-// ─── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -98,10 +94,6 @@ beforeEach(() => {
   getAllWorkdays.mockResolvedValue([{ workdayId: "wd1", name: "Lunes" }]);
   getFrecuencyPaymentOptions.mockResolvedValue([{ id: "f1", name: "Quincenal" }]);
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// getUpdateFormData
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("getUpdateFormData", () => {
   it("retorna roles editables, casas, workdays y houseId del usuario", async () => {
@@ -124,10 +116,6 @@ describe("getUpdateFormData", () => {
     await expect(getUpdateFormData({ houseId: "h1" })).rejects.toThrow("DB error");
   });
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// updateBasicInfoService
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("updateBasicInfoService", () => {
 
@@ -394,10 +382,6 @@ describe("updateBasicInfoService", () => {
   });
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// updateContactInfoService
-// ══════════════════════════════════════════════════════════════════════════════
-
 describe("updateContactInfoService", () => {
 
   describe("Flujo exitoso", () => {
@@ -505,10 +489,6 @@ describe("updateContactInfoService", () => {
     });
   });
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// updateAdminInfoService
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("updateAdminInfoService", () => {
 

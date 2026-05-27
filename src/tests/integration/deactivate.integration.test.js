@@ -376,11 +376,9 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
             });
             expect(blacklistEntry).not.toBeNull();
             
-            // Verificamos que la MISMA razón se haya guardado en ambas tablas
             expect(employee.deactivation_reason).toBe("Fraude comprobado");
             expect(blacklistEntry.reason).toBe("Fraude comprobado");
 
-            // Verificar que se haya creado el log de la lista negra
             const logBlacklist = await prisma.logs.findFirst({
                 where: { action_id: "blck-001", affected: TEST_NEW_INACT_CURP }
             });

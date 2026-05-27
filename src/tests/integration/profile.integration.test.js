@@ -1,20 +1,3 @@
-// tests/integration/profile.flow.integration.test.js
-/**
- * Prueba de integración — Flujo completo: Login → GET /user/profile
- *
- * Cubre:
- *  1. POST /auth/login   → obtiene SESSION token real
- *  2. GET  /user/profile → consume el token del paso 1
- *
- * La DB de test debe tener un empleado activo con contraseña conocida.
- * El seed usa bcrypt para hashear la contraseña igual que produciría
- * el sistema real.
- *
- * Requisitos:
- *   npm install --save-dev supertest dotenv bcrypt
- *   Correr con: npx jest tests/integration --runInBand
- */
-
 require("dotenv").config({ path: ".env.test" });
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
@@ -23,17 +6,14 @@ const bcrypt = require("bcryptjs");
 const app = require("../../index");
 const { seedDb, cleanDb, disconnectDb, IDS } = require("../helpers/dbSetup");
 
-// ─── Credenciales de prueba (deben coincidir con el seed) ────────────────────
 const VALID_EMAIL = "andre@gmail.com";
 const VALID_PASSWORD = "Andatti67";
 
-// ─── Helper: hace login y retorna el SESSION token ───────────────────────────
 const loginAndGetToken = async () => {
     const res = await request(app)
         .post("/auth/login")
         .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
-    // Falla rápido si el login no fue exitoso — el problema está en el seed
     if (res.status !== 200 || !res.body?.data?.token) {
         throw new Error(
             `loginAndGetToken falló inesperadamente: ${JSON.stringify(res.body)}`,
@@ -43,10 +23,8 @@ const loginAndGetToken = async () => {
     return res.body.data.token;
 };
 
-// ─── Suite ───────────────────────────────────────────────────────────────────
 describe("Flujo integración: Login → GET /user/profile", () => {
     beforeAll(async () => {
-        // Hash de la contraseña conocida para el seed
         const hashedPassword = await bcrypt.hash(VALID_PASSWORD, 10);
         await seedDb({ passwordOverride: hashedPassword });
     });
@@ -56,7 +34,6 @@ describe("Flujo integración: Login → GET /user/profile", () => {
         await disconnectDb();
     });
 
-    // ── PASO 1: Login ──────────────────────────────────────────────────────────
     describe("PASO 1 — POST /auth/login", () => {
         it("retorna 200 con token SESSION cuando las credenciales son válidas", async () => {
             const res = await request(app)
@@ -70,8 +47,6 @@ describe("Flujo integración: Login → GET /user/profile", () => {
 
         it("el token retornado tiene tokenType SESSION (verificable en /profile)", async () => {
             const token = await loginAndGetToken();
-            // Si el token no fuera SESSION, el siguiente paso devolvería 403
-            // Validamos indirectamente usándolo contra /user/profile
             const res = await request(app)
                 .get("/user/profile")
                 .set("Authorization", `Bearer ${token}`);
@@ -112,7 +87,6 @@ describe("Flujo integración: Login → GET /user/profile", () => {
         });
     });
 
-    // ── PASO 2: GET /auth/profile con token real del login ───────────────────
     describe("PASO 2 — GET /user/profile (con token del login)", () => {
         let sessionToken;
 
@@ -152,10 +126,8 @@ describe("Flujo integración: Login → GET /user/profile", () => {
         });
     });
 
-    // ── Flujo completo encadenado en un solo test ─────────────────────────────
     describe("Flujo encadenado end-to-end", () => {
         it("Login exitoso → perfil retorna los datos del mismo usuario", async () => {
-            // Paso 1: Login
             const loginRes = await request(app)
                 .post("/auth/login")
                 .send({ email: VALID_EMAIL, password: VALID_PASSWORD });
@@ -163,20 +135,17 @@ describe("Flujo integración: Login → GET /user/profile", () => {
             expect(loginRes.status).toBe(200);
             const { token, user: loginUser } = loginRes.body.data;
 
-            // Paso 2: Perfil
             const profileRes = await request(app)
                 .get("/user/profile")
                 .set("Authorization", `Bearer ${token}`);
 
             expect(profileRes.status).toBe(200);
 
-            // El empleado del login coincide con el del perfil
             expect(profileRes.body.data.email).toBe(loginUser.email);
             expect(profileRes.body.data.name).toBe(loginUser.name);
         });
     });
 
-    // ── Flujos alternativos en /user/profile ─────────────────────────────────
     describe("Flujos alternativos — GET /user/profile", () => {
         it("401 — intenta acceder al perfil sin haber hecho login (sin token)", async () => {
             const res = await request(app).get("/user/profile");

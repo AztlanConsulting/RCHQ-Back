@@ -4,7 +4,6 @@ const { randomUUID } = require("crypto");
 const app = require("../../app");
 const { prisma, disconnectDb } = require("../helpers/dbSetup");
 
-// ─── Constantes de prueba ─────────────────────────────────
 const TEST_HOUSE_ID = randomUUID();
 const TEST_OTHER_HOUSE_ID = randomUUID();
 const TEST_COORDINATOR_ID = randomUUID();
@@ -34,7 +33,6 @@ const ALL_TEST_EMPLOYEE_IDS = [
     TEST_LEGIT_EMPLOYEE_ID,
 ];
 
-// ─── Helpers ──────────────────────────────────────────────
 const generateToken = (
     payloadOverrides = {},
     signOptions = { expiresIn: "1h" },
@@ -123,7 +121,6 @@ const getOrCreatePrivilegeId = async (name, fallbackPrivilegeId) => {
 };
 
 const seedDependencies = async () => {
-    // ─── Roles ──────────────────────────────────
     const coordinatorRoleId = await getOrCreateRoleId(
         "Coordinador",
         TEST_ROLE_ID,
@@ -133,7 +130,6 @@ const seedDependencies = async () => {
         TEST_EMPLOYEE_ROLE_ID,
     );
 
-    // ─── Event Types ────────────────────────────
     await prisma.event_type.create({
         data: {
             event_type_id: TEST_EVENT_TYPE_ID,
@@ -148,13 +144,11 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Privilegios ────────────────────────────
     const editPrivilegeId = await getOrCreatePrivilegeId(
         "editEvent",
         TEST_PRIVILEGE_EDIT_ID,
     );
 
-    // ─── Relación Role - Privilege ──────────────
     await prisma.role_privilege.upsert({
         where: {
             role_id_privilege_id: {
@@ -183,7 +177,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Actions (para logs) ────────────────────
     await prisma.action.upsert({
         where: { action_id: TEST_UPDATE_ACTION_ID },
         update: {
@@ -212,7 +205,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Casas ──────────────────────────────────
     await prisma.house.create({
         data: {
             house_id: TEST_HOUSE_ID,
@@ -235,7 +227,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Coordinador ────────────────────────────
     await prisma.employee.create({
         data: {
             employee_id: TEST_COORDINATOR_ID,
@@ -256,7 +247,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Empleados ──────────────────────────────
     await prisma.employee.createMany({
         data: [
             {
@@ -398,7 +388,6 @@ const cleanDb = async () => {
     });
 };
 
-// ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
     await cleanDb();
     await seedDependencies();
@@ -413,11 +402,7 @@ beforeEach(async () => {
     await cleanEvents();
 });
 
-// ─── SUITE DE PRUEBAS ─────────────────────────────────────
 describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
-    // ──────────────────────────────────────────────────────
-    //  1. COMPORTAMIENTO ESPERADO
-    // ──────────────────────────────────────────────────────
     describe("1. Comportamiento esperado", () => {
         it("coordinador actualiza evento personal y persiste en BD (200)", async () => {
             await seedPersonalEvent();
@@ -598,9 +583,6 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────
-    //  2. FUZZING Y MANIPULACIÓN DE PARÁMETROS
-    // ──────────────────────────────────────────────────────
     describe("2. Fuzzing y Manipulación de Parámetros (Inputs destructivos)", () => {
         it("retorna 422 si el body está vacío", async () => {
             await seedPersonalEvent();
@@ -826,9 +808,6 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────
-    //  3. LÓGICA DE NEGOCIO: EMPALMES
-    // ──────────────────────────────────────────────────────
     describe("3. Lógica de negocio: Empalmes", () => {
         it("retorna 409 si el empleado ya tiene otro evento en ese horario", async () => {
             await seedPersonalEvent([TEST_EMPLOYEE_ID]);
@@ -1078,9 +1057,6 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────
-    //  4. SEGURIDAD: AUTENTICACIÓN Y AUTORIZACIÓN
-    // ──────────────────────────────────────────────────────
     describe("4. Seguridad: Autenticación y Autorización", () => {
         it("retorna 401 si no se envía token", async () => {
             await seedPersonalEvent();
@@ -1268,9 +1244,6 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────
-    //  5. INTEGRIDAD DE DATOS
-    // ──────────────────────────────────────────────────────
     describe("5. Integridad de datos", () => {
         it("no modifica el evento en BD si la validación falla", async () => {
             await seedPersonalEvent();
@@ -1393,9 +1366,6 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────
-    //  6. RATE LIMITING
-    // ──────────────────────────────────────────────────────
     describe.skip("6. Resiliencia: Rate Limiting", () => {
         it("bloquea con 429 si un usuario autenticado lanza muchas peticiones", async () => {
             await seedPersonalEvent();

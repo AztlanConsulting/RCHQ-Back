@@ -1,4 +1,3 @@
-// tests/integration/password.integration.test.js
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
@@ -9,7 +8,6 @@ const { seedActions } = require("../helpers/seedActions");
 
 const prisma = new PrismaClient();
 
-// ─── Constantes de prueba ─────────────────────────────────
 const TEST_HOUSE_ID = randomUUID();
 const TEST_ROLE_ID = randomUUID();
 
@@ -25,10 +23,6 @@ const TEST_FIRST_LOGIN_CURP = "FLOG900101HDFABC02";
 const TEST_TEMP_PASSWORD = "Temporal123A";
 const TEST_FIRST_LOGIN_NEW_PASSWORD = "Definitiva123A";
 
-/** Placeholder ciphertext (VarChar 72); must be String, never numeric 0 */
-//const TEST_SALARY_ENC_STUB = "enc-stub-password-it-salary-placeholder";
-
-// ─── Helpers ──────────────────────────────────────────────
 const seedDependencies = async () => {
     await prisma.house.upsert({
         where: { house_id: TEST_HOUSE_ID },
@@ -150,7 +144,6 @@ const cleanDb = async () => {
     });
 };
 
-// ─── Hooks ────────────────────────────────────────────────
 beforeAll(async () => {
     await cleanDb();
     await seedDependencies();
@@ -167,7 +160,6 @@ afterAll(async () => {
     await prisma.$disconnect();
 });
 
-// ─── CHANGE PASSWORD ──────────────────────────────────────
 describe("POST /auth/change-password - integration", () => {
     it("retorna 200 y actualiza la contraseña en BD", async () => {
         await createTestEmployee();
@@ -258,7 +250,6 @@ describe("POST /auth/change-password - integration", () => {
     });
 });
 
-// ─── FIRST LOGIN CHANGE PASSWORD ──────────────────────────
 describe("POST /auth/first-login/change-password - integration", () => {
     it("retorna 200, actualiza password y pone has_first_login en false", async () => {
         await createFirstLoginEmployee();

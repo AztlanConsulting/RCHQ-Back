@@ -88,7 +88,6 @@ const {
     logout,
 } = require("../../service/auth/auth.service");
 
-// ─── Mocks ────────────────────────────────────────────────
 
 jest.mock("../../model/auth/auth.model");
 jest.mock("../../utils/password");
@@ -107,8 +106,6 @@ jest.mock("qrcode");
 const auth = require("../../model/auth/auth.model");
 const speakeasy = require("speakeasy");
 const QRCode = require("qrcode");
-
-// ─── Fixtures ─────────────────────────────────────────────
 
 const mockEmployee = {
     employeeId: "abc-123",
@@ -412,7 +409,7 @@ describe("verifyTwoFactorSetup", () => {
     });
 
     it("retorna 409 si el setup de TwoFactorAuth expiró", async () => {
-        const createdAt = new Date(Date.now() - 20 * 60 * 1000); // 20 minutos atrás
+        const createdAt = new Date(Date.now() - 20 * 60 * 1000);
         auth.getEmployeeById.mockResolvedValue({
             ...mockEmployee,
             tempTotpSecret: "SECRETBASE32",
