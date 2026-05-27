@@ -991,34 +991,38 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
                 id: TEST_RATE_EMPLOYEE_ID,
             });
 
-            const responses = [];
-            for (let i = 0; i < 150; i++) {
-                responses.push(
-                    request(app)
-                        .post(API_ROUTE)
-                        .set("Authorization", `Bearer ${token}`)
-                        .send(buildValidEventBody()),
-                );
+            const statuses = [];
+            for (let i = 0; i < 120; i++) {
+                const res = await request(app)
+                    .post(API_ROUTE)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(buildValidEventBody());
+                statuses.push(res.statusCode);
+
+                if (res.statusCode === 429) {
+                    break;
+                }
             }
 
-            const results = await Promise.all(responses);
-
-            const hasRateLimit = results.some((res) => res.statusCode === 429);
+            const hasRateLimit = statuses.includes(429);
 
             expect(hasRateLimit).toBe(true);
         });
 
         it("bloquea con 429 por IP cuando hay peticiones anónimas masivas", async () => {
-            const responses = [];
-            for (let i = 0; i < 150; i++) {
-                responses.push(
-                    request(app).post(API_ROUTE).send(buildValidEventBody()),
-                );
+            const statuses = [];
+            for (let i = 0; i < 120; i++) {
+                const res = await request(app)
+                    .post(API_ROUTE)
+                    .send(buildValidEventBody());
+                statuses.push(res.statusCode);
+
+                if (res.statusCode === 429) {
+                    break;
+                }
             }
 
-            const results = await Promise.all(responses);
-
-            const hasRateLimit = results.some((res) => res.statusCode === 429);
+            const hasRateLimit = statuses.includes(429);
 
             expect(hasRateLimit).toBe(true);
         });

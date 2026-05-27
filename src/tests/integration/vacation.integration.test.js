@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 const app = require("../../app");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
+const { getMexicoTodayDate } = require("../../utils/dates");
 
 const prisma = new PrismaClient();
 
@@ -52,7 +53,7 @@ const empAdminBase = {
     has_first_login: true,
     type: "nomina",
     email: "adminVacation@test.com",
-    curp: "VACM000000000001AB",
+    curp: "MOXC801103MBSCYH80",
 };
 
 const empCoordBase = {
@@ -66,7 +67,7 @@ const empCoordBase = {
     has_first_login: true,
     type: "nomina",
     email: "coordVacation@test.com",
-    curp: "VACM000000000002AB",
+    curp: "MOXC801103MBSCYH81",
 };
 
 const empCookBase = {
@@ -80,7 +81,7 @@ const empCookBase = {
     has_first_login: true,
     type: "nomina",
     email: "cookVacation@test.com",
-    curp: "VACM000000000003AB",
+    curp: "MOXC801103MBSCYH82",
 };
 
 const sign = (employeeId, roleName) => {
@@ -577,7 +578,7 @@ describe("Flujo integración /vacation/request", () => {
         it("Error al pedir vacaciones para el mismo día", async () => {
             const token = sign(IDS.employeeCook, "Cocinero");
 
-            const startDate = dateOnly(TODAY);
+            const startDate = dateOnly(getMexicoTodayDate());
 
             const res = await request(app)
                 .post("/vacation/request")

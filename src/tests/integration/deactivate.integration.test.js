@@ -234,6 +234,9 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send({ reason: "" });
             expect(res.status).toBe(422);
+            expect(res.body).toEqual({
+                message: "La razón es obligatoria para dar de baja al empleado.",
+            });
         });
 
         it("422 — razón ausente", async () => {
@@ -242,6 +245,9 @@ describe("Flujo integración: Login → PATCH /:employeeId/deactivate", () => {
                 .set("Authorization", `Bearer ${token}`)
                 .send({});
             expect(res.status).toBe(422);
+            expect(res.body).toEqual({
+                message: "La razón es obligatoria para dar de baja al empleado.",
+            });
         });
 
         it("400 — razón supera 250 caracteres", async () => {

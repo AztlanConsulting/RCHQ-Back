@@ -7,6 +7,7 @@ jest.mock("../../model/logs/get.model", () => ({
     })),
     getLogsByHouse: jest.fn(),
     getEmployeeIdsBySearch: jest.fn(),
+    getLogIdsByAffectedSearch: jest.fn(),
     getLogActions: jest.fn(),
     getAffectedEmployeesByIds: jest.fn(),
 }));
@@ -40,6 +41,7 @@ const {
 const {
     getLogsByHousePage,
     getEmployeeIdsBySearch,
+    getLogIdsByAffectedSearch,
     getLogActions,
     getLogsByHouse: getLogsByHouseModel,
     getAffectedEmployeesByIds,
@@ -54,6 +56,9 @@ const { readLogIp } = require("../../utils/logIp");
 const RESPONSES = require("../../utils/responses");
 
 describe("logs.get.service", () => {
+    const currentYear = new Date().getUTCFullYear();
+    const minYear = currentYear - 5;
+
     beforeEach(() => {
         jest.clearAllMocks();
     });
@@ -98,6 +103,22 @@ describe("logs.get.service", () => {
         });
     });
 
+    it("retorna INVALID_PAGINATION si la fecha es anterior al límite de 5 años", async () => {
+        const result = await getLogsByHouse(
+            "house-1",
+            "1",
+            "6",
+            "",
+            "",
+            `${minYear - 1}-12-31`,
+            `${minYear - 1}-12-31`,
+        );
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
+    });
+
     it("retorna lista vacía cuando no hay logs", async () => {
         getLogsByHousePage.mockResolvedValue({
             logs: [],
@@ -125,7 +146,7 @@ describe("logs.get.service", () => {
     });
 
     it("retorna logs paginados y mapeados", async () => {
-        const moment = new Date("2026-05-01T12:00:00.000Z");
+        const moment = new Date(`${currentYear}-05-01T12:00:00.000Z`);
 
         getLogsByHousePage.mockResolvedValue({
             logs: [
@@ -282,6 +303,7 @@ describe("logs.get.service", () => {
 
     it("filtra logs por acciones y nombre", async () => {
         getEmployeeIdsBySearch.mockResolvedValue(["emp-1"]);
+        getLogIdsByAffectedSearch.mockResolvedValue(["log-affected-1"]);
         getLogsByHousePage.mockResolvedValue({
             logs: [],
             totalRecords: 0,
@@ -291,6 +313,7 @@ describe("logs.get.service", () => {
         await getLogsByHouse("house-1", "1", "6", "empl-001,ausn-001", "Car");
 
         expect(getEmployeeIdsBySearch).toHaveBeenCalledWith("house-1", "Car");
+        expect(getLogIdsByAffectedSearch).toHaveBeenCalledWith("house-1", "Car");
         expect(getLogsByHousePage).toHaveBeenCalledWith(
             {
                 employee: {
@@ -308,14 +331,8 @@ describe("logs.get.service", () => {
                                 },
                             },
                             {
-                                affected: {
-                                    in: ["emp-1"],
-                                },
-                            },
-                            {
-                                affected: {
-                                    contains: "Car",
-                                    mode: "insensitive",
+                                log_id: {
+                                    in: ["log-affected-1"],
                                 },
                             },
                         ],
@@ -328,9 +345,8 @@ describe("logs.get.service", () => {
     });
 
     it("filtra logs por responsable y afectado de forma separada", async () => {
-        getEmployeeIdsBySearch
-            .mockResolvedValueOnce(["emp-responsible"])
-            .mockResolvedValueOnce(["emp-affected"]);
+        getEmployeeIdsBySearch.mockResolvedValueOnce(["emp-responsible"]);
+        getLogIdsByAffectedSearch.mockResolvedValueOnce(["log-affected-1"]);
         getLogsByHousePage.mockResolvedValue({
             logs: [],
             totalRecords: 0,
@@ -350,7 +366,7 @@ describe("logs.get.service", () => {
         );
 
         expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(1, "house-1", "Carla");
-        expect(getEmployeeIdsBySearch).toHaveBeenNthCalledWith(2, "house-1", "Luis");
+        expect(getLogIdsByAffectedSearch).toHaveBeenNthCalledWith(1, "house-1", "Luis");
         expect(getLogsByHousePage).toHaveBeenCalledWith(
             {
                 employee: {
@@ -363,19 +379,9 @@ describe("logs.get.service", () => {
                         },
                     },
                     {
-                        OR: [
-                            {
-                                affected: {
-                                    in: ["emp-affected"],
-                                },
-                            },
-                            {
-                                affected: {
-                                    contains: "Luis",
-                                    mode: "insensitive",
-                                },
-                            },
-                        ],
+                        log_id: {
+                            in: ["log-affected-1"],
+                        },
                     },
                 ],
             },
@@ -446,7 +452,7 @@ describe("logs.get.service", () => {
     });
 
     it("genera el reporte pdf con el nombre de la casa", async () => {
-        const moment = new Date("2026-05-01T12:00:00.000Z");
+        const moment = new Date(`${currentYear}-05-01T12:00:00.000Z`);
         const pdfBuffer = Buffer.from("%PDF-test");
 
         getLogsByHouseModel.mockResolvedValue([
@@ -483,7 +489,7 @@ describe("logs.get.service", () => {
         getEventsByIds.mockResolvedValue([]);
         buildLogsPdfBuffer.mockResolvedValue(pdfBuffer);
 
-        const result = await getLogsPdfByHouse("house-1", 2026, 2026);
+        const result = await getLogsPdfByHouse("house-1", currentYear, currentYear);
 
         expect(result.code).toBe(RESPONSES.LOGS.PDF_CREATED);
         expect(buildLogsPdfBuffer).toHaveBeenCalledWith({
@@ -505,7 +511,23 @@ describe("logs.get.service", () => {
             generatedAt: expect.any(Date),
         });
         expect(result.data.pdfBuffer).toBe(pdfBuffer);
-        expect(result.data.fileName).toBe("reporte-logs-2026-2026.pdf");
+        expect(result.data.fileName).toBe(`reporte-logs-${currentYear}-${currentYear}.pdf`);
+    });
+
+    it("rechaza reportes fuera de los últimos 5 años", async () => {
+        const result = await getLogsPdfByHouse("house-1", minYear - 1, currentYear);
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
+    });
+
+    it("rechaza reportes mayores al año actual", async () => {
+        const result = await getLogsPdfByHouse("house-1", currentYear + 1, currentYear);
+
+        expect(result).toEqual({
+            code: RESPONSES.LOGS.INVALID_PAGINATION,
+        });
     });
 
 });

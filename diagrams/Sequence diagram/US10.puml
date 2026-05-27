@@ -1,0 +1,120 @@
+@startuml HU10 - Administrador registra empleado
+
+actor navegador
+boundary employee.routes
+boundary "React (employeeForm.jsx)" as ReactView
+control employee.controller
+control employee.service
+control logs.service
+entity employee.model
+entity logs.model
+database PostgreSQL
+
+autonumber
+
+navegador -> employee.routes : GET /employee/add
+activate employee.routes
+
+employee.routes -> employee.controller: getAdd(request, response)
+deactivate employee.routes
+activate employee.controller
+
+employee.controller -> ReactView: response.send(App React)
+deactivate employee.controller
+activate ReactView
+
+ReactView -> navegador : Mostrar formulario para agregar empleado
+
+navegador -> ReactView : Ingresa datos obligatorios\n(house_id, role_id, name, surname, email, curp)
+
+alt Ingresar datos opcionales
+    navegador -> ReactView : Ingresa datos opcionales\n(rfc, nss, bank_account, birth_date, picture)
+else No
+    ReactView -> ReactView : Continúa sin opcionales
+end
+
+ReactView -> ReactView : Validar campos obligatorios
+
+alt Campos incompletos
+    ReactView -> navegador : Mostrar error "Campos obligatorios faltantes"
+    deactivate ReactView
+else Campos completos
+
+    navegador -> employee.routes : POST /employee
+    deactivate navegador
+    activate employee.routes
+
+    employee.routes -> employee.controller : postAdd(request, response)
+    deactivate employee.routes
+    activate employee.controller
+
+    employee.controller -> employee.service : findByCurp(curp)
+    activate employee.service
+
+    employee.service -> employee.model : findByCurp(curp)
+    activate employee.model
+
+    employee.model -> PostgreSQL : prisma.employee.findUnique()
+    activate PostgreSQL
+    PostgreSQL -->> employee.model : result
+    deactivate PostgreSQL
+
+    employee.model -->> employee.service : employee | null
+    deactivate employee.model
+
+    employee.service -->> employee.controller : exists / not exists
+    deactivate employee.service
+
+    alt Usuario ya existe
+        employee.controller -> ReactView : alert("Usuario ya existente")
+        activate ReactView
+
+        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
+        deactivate ReactView
+        
+    else Usuario no existe
+        employee.controller -> employee.service : createEmployee(data)
+        activate employee.service
+
+        employee.service -> employee.model : create(data)
+        activate employee.model
+
+        employee.model -> PostgreSQL : prisma.employee.create()
+        activate PostgreSQL
+        PostgreSQL -->> employee.model : employeeCreated
+        deactivate PostgreSQL
+
+        employee.model -->> employee.service : employeeCreated
+        deactivate employee.model
+
+        employee.service -->> employee.controller : employeeCreated
+        deactivate employee.service
+        
+        employee.controller -> logs.service : createLog(log)
+        activate logs.service
+
+        logs.service -> logs.model : create(log)
+        activate logs.model
+
+        logs.model -> PostgreSQL : prisma.logs.create()
+        activate PostgreSQL
+        PostgreSQL -->> logs.model : logSaved
+        deactivate PostgreSQL
+
+        logs.model -->> logs.service : logSaved
+        deactivate logs.model
+
+        logs.service -->> employee.controller : logSaved
+        deactivate logs.service
+
+        employee.controller -> ReactView : alert("Usuario creado con éxito")
+        deactivate employee.controller
+        activate ReactView
+        
+        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
+        deactivate ReactView
+
+    end
+end
+
+@enduml

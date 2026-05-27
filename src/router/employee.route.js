@@ -34,6 +34,9 @@ const {
 } = require("../policies/deactivateEmployee.policies");
 const validate = require("../middleware/validate");
 const {
+    buildCurpReasonValidationMessage,
+} = require("../utils/validationMessages");
+const {
     getEmployeeToDeactivate,
 } = require("../model/employee/deactivate.model");
 
@@ -45,8 +48,8 @@ router.get(
   "/update-form",
   apiLimiter,
   verifyToken,
-  requireRole("Administrador", "Coordinador"),
-  requirePrivileges("manageEmployees"),
+  requireRole(ROLES.COORDINATOR),
+  requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
   employeeGetController.getUpdateForm,
 );
 
@@ -161,8 +164,8 @@ router.put(
   apiLimiter,
   verifyToken,
   upload.single("picture"),
-  requireRole("Administrador", "Coordinador"),
-  requirePrivileges("manageEmployees"),
+  requireRole(ROLES.COORDINATOR),
+  requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
   resolveEmployeeHouse,
   authorize(modifyEmployee, (req) => ({ houseId: req.resolvedEmployee.houseId })),
   employeeUpdateController.updateBasicInfo,
@@ -172,8 +175,8 @@ router.put(
   "/:employeeId/contact-info",
   apiLimiter,
   verifyToken,
-  requireRole("Administrador", "Coordinador"),
-  requirePrivileges("manageEmployees"),
+  requireRole(ROLES.COORDINATOR),
+  requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
   resolveEmployeeHouse,
   authorize(modifyEmployee, (req) => ({ houseId: req.resolvedEmployee.houseId })),
   employeeUpdateController.updateContactInfo,
@@ -183,8 +186,8 @@ router.put(
   "/:employeeId/admin-info",
   apiLimiter,
   verifyToken,
-  requireRole("Administrador", "Coordinador"),
-  requirePrivileges("manageEmployees"),
+  requireRole(ROLES.COORDINATOR),
+  requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
   resolveEmployeeHouse,
   authorize(modifyEmployee, (req) => ({ houseId: req.resolvedEmployee.houseId })),
   employeeUpdateController.updateAdminInfo,
@@ -198,7 +201,9 @@ router.patch(
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     resolveRequesterHouse,
     validate(deactivateEmployeeParamsSchema, "params"),
-    validate(deactivateEmployeeSchema, "body"),
+    validate(deactivateEmployeeSchema, "body", {
+        messageBuilder: buildCurpReasonValidationMessage,
+    }),
     authorize(
         deactivateEmployeePolicy,
         async (req) => {

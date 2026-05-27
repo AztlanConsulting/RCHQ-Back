@@ -1,0 +1,90 @@
+@startuml
+title US - Consultar Documentos de Empleado (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "auth.js\nverifyToken()" as Auth
+participant "rbac.js\nrequirePrivileges()" as RBAC
+participant "resolvers.js\nresolveEmployeeHouse()" as Resolver
+participant "abac.js & policies\nauthorize(viewDocuments)" as ABAC
+participant "get.controller.js\ngetDocumentsByEmployee()" as Controller
+participant "get.service.js\ngetDocumentsByEmployee()" as Service
+participant "get.model.js" as Model
+database "BD (Prisma)" as BD
+
+Usuario -> Router : GET /:id/documents
+Router -> Auth : verifyToken(req, res, next)
+
+alt Token inválido
+    Auth --> Router : 401 / 403 Unauthorized
+    Router --> Usuario : 401 / 403 Error
+else Token válido
+    Auth --> Router : next()
+    Router -> RBAC : requirePrivileges("viewDocuments")
+    RBAC --> Router : next() (si tiene privilegio base)
+    
+    Router -> Resolver : resolveEmployeeHouse(req, res, next)
+    activate Resolver
+    Resolver ->> BD : prisma.employee.findUnique({ where: { employee_id: id }, select: { house_id } })
+    BD -->> Resolver : employeeData
+    
+    alt !employeeData
+        Resolver --> Router : res.status(404).json(Empleado no encontrado)
+        Router --> Usuario : 404 Not Found
+    else Empleado existe
+        Resolver -> Resolver : req.resolvedEmployee = { houseId }
+        Resolver --> Router : next()
+    end
+    deactivate Resolver
+    
+    Router -> ABAC : authorize(viewDocuments)
+    activate ABAC
+    ABAC -> ABAC : viewDocuments(req.user, { employeeId, houseId })
+    alt Evaluación de Política Falsa (No es admin, ni sí mismo, ni misma casa)
+        ABAC --> Router : res.status(403).json(Forbidden)
+        Router --> Usuario : 403 Forbidden
+    else Evaluación Verdadera
+        ABAC --> Router : next()
+    end
+    deactivate ABAC
+    
+    Router -> Controller : getDocumentsByEmployee(req, res)
+    activate Controller
+    
+    alt Try sin excepciones
+        Controller ->> Service : await getDocumentsByEmployee(id)
+        activate Service
+        
+        Service ->> Model : await findById(employeeId)
+        Model ->> BD : prisma.employee.findUnique(...)
+        BD -->> Model : employee
+        Model -->> Service : employee
+        
+        alt !employee
+            Service --> Controller : { type: RESPONSES.USER.NOT_FOUND, body: null }
+            Controller --> Router : res.status(404).json(Empleado no encontrado)
+            Router --> Usuario : 404 Not Found
+        else Empleado existe
+            Service ->> Model : await getDocumentsByEmployee(employeeId)
+            Model ->> BD : prisma.employee_documents.findMany({ include: { documents: true } })
+            BD -->> Model : documents array
+            Model -->> Service : documents array
+            
+            alt !documents || documents.length === 0
+                Service --> Controller : { type: RESPONSES.DOCUMENTS.NOT_FOUND, body: [] }
+                Controller --> Router : res.status(200).json({ success: true, data: [] })
+                Router --> Usuario : 200 OK (Data: [])
+            else Hay documentos
+                Service -> Service : mapped = documents.map(...)
+                Service --> Controller : { type: RESPONSES.DOCUMENTS.OK, body: mapped }
+                Controller --> Router : res.status(200).json({ success: true, data: result.body })
+                Router --> Usuario : 200 OK (Data: [documentos mapeados])
+            end
+        end
+        deactivate Service
+        Controller --> Router : res.status(500).json(Error interno del servidor)
+        Router --> Usuario : 500 Internal Server Error
+    end
+    deactivate Controller
+end
+@enduml

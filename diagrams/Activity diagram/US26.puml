@@ -1,0 +1,45 @@
+@startuml
+title US 26 - Consultar las vacaciones en el calendario
+
+|Coordinador|
+start
+:Ingresa a la vista del Calendario de la Casa;
+
+|Sistema|
+:Recibe solicitud para consultar eventos del rango actual;
+:Ejecuta middleware apiLimiter, verifyToken;
+if (¿Token válido?) then (Sí)
+  :Verifica roles y privilegios (viewEvents);
+  if (¿Rol y privilegio permitidos?) then (Sí)
+    :Resuelve la casa del coordinador;
+    :Delega al Controller y Service (getHouseCalendarRecordsInRange);
+    :Valida el formato de las fechas;
+    if (¿Fechas válidas?) then (Sí)
+      :Busca la casa hogar del coordinador;
+      if (¿Coordinador tiene casa asignada?) then (Sí)
+        :Busca solicitudes de vacaciones de los empleados\nde la casa dentro del rango;
+        :Busca eventos globales y de casa para identificar días libres;
+        :Calcula los días usados de cada vacación;
+        :Mapea las vacaciones de los empleados\ncomo eventos de calendario;
+        :Retorna status 200 con las vacaciones del rango;
+      else (No)
+        :Retorna status 404 o 403 (Casa no encontrada o sin acceso);
+      endif
+    else (No)
+      :Retorna status 400 o 406 (Fechas incorrectas);
+    endif
+  else (No)
+    :Retorna status 403 (No autorizado);
+  endif
+else (No)
+  :Retorna status 401 (No autenticado);
+endif
+
+|Coordinador|
+:Visualiza las vacaciones de sus empleados en el calendario;
+if (¿Selecciona una vacación?) then (Sí)
+  :Consulta el detalle de la vacación;
+else (No)
+endif
+stop
+@enduml
