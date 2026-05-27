@@ -8,6 +8,7 @@ jest.mock("../../model/absence/get.model");
 const eventModel = require("../../model/event/get.model");
 const absenceModel = require("../../model/absence/get.model");
 const vacationModel = require("../../model/vacation/get.model");
+const employeeModel = require("../../model/employee/get.model");
 const RESPONSES = require("../../utils/responses");
 
 describe("event.service — getAllEventTypes", () => {
@@ -30,6 +31,73 @@ describe("event.service — getAllEventTypes", () => {
                 name: "Festivo",
             },
         ]);
+    });
+});
+
+describe("event.service — getEmployeeDateRules", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it("regresa días laborales, fines no laborales y feriados sin duplicar el día de fin exclusivo", async () => {
+        employeeModel.findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "employee-1",
+            house_id: "house-1",
+            is_active: true,
+        });
+        employeeModel.getWorkDays.mockResolvedValue([
+            {
+                start: new Date("1970-01-01T09:00:00.000Z"),
+                end: new Date("1970-01-01T17:00:00.000Z"),
+                workday: {
+                    workday_id: "workday-monday",
+                    name: "Lunes",
+                },
+            },
+        ]);
+        eventModel.getGlobalEventsInRange.mockResolvedValue([
+            {
+                start: new Date("2026-06-10T06:00:00.000Z"),
+                end: new Date("2026-06-11T06:00:00.000Z"),
+                isFreeDay: true,
+            },
+        ]);
+        eventModel.getHouseEventsInRange.mockResolvedValue([]);
+
+        const result = await eventGetService.getEmployeeDateRules({
+            employeeId: "employee-1",
+            mode: "absence",
+        });
+
+        expect(result.code).toBe(RESPONSES.EVENTS.FOUND);
+        expect(result.data.workDays).toEqual([
+            expect.objectContaining({
+                name: "Lunes",
+                weekday: 1,
+            }),
+        ]);
+        expect(result.data.nonWorkingWeekdays).toEqual([0, 2, 3, 4, 5, 6]);
+        expect(result.data.freeDays).toContain("2026-06-10");
+        expect(result.data.freeDays).not.toContain("2026-06-11");
+        expect(eventModel.getGlobalEventsInRange).toHaveBeenCalledWith(
+            expect.any(Date),
+            expect.any(Date),
+        );
+    });
+
+    it("retorna WITHOUT_DATES cuando el empleado no tiene workdays", async () => {
+        employeeModel.findByIdWithRoleAndHouse.mockResolvedValue({
+            employee_id: "employee-1",
+            house_id: "house-1",
+            is_active: true,
+        });
+        employeeModel.getWorkDays.mockResolvedValue([]);
+
+        const result = await eventGetService.getEmployeeDateRules({
+            employeeId: "employee-1",
+            mode: "vacation",
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.WITHOUT_DATES);
+        expect(eventModel.getGlobalEventsInRange).not.toHaveBeenCalled();
     });
 });
 
