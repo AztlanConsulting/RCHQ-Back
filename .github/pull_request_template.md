@@ -33,7 +33,6 @@
 - [ ] Seguí la convención de commits del equipo
 - [ ] He realizado una revisión de mi propio código
 - [ ] Código, diagramas y documentación son consistentes entre sí.
-- [ ] He comentado código complejo cuando es necesario
 - [ ] He actualizado la documentación correspondiente
 - [ ] Mis cambios no generan nuevos warnings
 - [ ] He añadido tests que prueban mi funcionalidad
