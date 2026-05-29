@@ -182,15 +182,36 @@ describe("login", () => {
             ...mockEmployee,
             blockedUntil,
         });
+        verifyPassword.mockResolvedValue(true);
         isBlockedUntil.mockReturnValue(true);
 
         const result = await login(
-            makeReq({ email: "test@gmail.com", password: "pass" }),
+            makeReq({ email: "test@gmail.com", password: "correct" }),
         );
 
         expect(result.status).toBe(423);
         expect(result.body.code).toBe("ACCOUNT_TEMPORARILY_BLOCKED");
         expect(result.body).toHaveProperty("blockedUntil");
+    });
+
+    it("retorna 401 genérico si la cuenta está bloqueada y la contraseña es incorrecta", async () => {
+        const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
+        auth.findEmployeeByEmail.mockResolvedValue({
+            ...mockEmployee,
+            blockedUntil,
+        });
+        verifyPassword.mockResolvedValue(false);
+        isBlockedUntil.mockReturnValue(true);
+
+        const result = await login(
+            makeReq({ email: "test@gmail.com", password: "wrong" }),
+        );
+
+        expect(result.status).toBe(401);
+        expect(result.body.code).toBe("INVALID_CREDENTIALS");
+        expect(result.body).not.toHaveProperty("blockedUntil");
+        expect(auth.incrementFailedAttempts).not.toHaveBeenCalled();
+        expect(auth.setBlockedUntil).not.toHaveBeenCalled();
     });
 
     it("retorna 401 con contraseña incorrecta sin bloqueo", async () => {
@@ -213,7 +234,7 @@ describe("login", () => {
     it("bloquea la cuenta y retorna 423 al llegar a 3 intentos fallidos", async () => {
         auth.findEmployeeByEmail.mockResolvedValue(mockEmployee);
         verifyPassword.mockResolvedValue(false);
-        auth.incrementFailedAttempts.mockResolvedValue(3);
+        auth.incrementFailedAttempts.mockResolvedValue(5);
         auth.setBlockedUntil.mockResolvedValue();
 
         const result = await login(
