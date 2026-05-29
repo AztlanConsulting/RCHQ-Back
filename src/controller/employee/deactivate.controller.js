@@ -28,7 +28,9 @@ exports.deactivateEmployeeController = async (req, res) => {
         } else if (code === RESPONSES.EMPLOYEE.VALIDATION_ERROR) {
             return res
                 .status(422)
-                .json({ message: data?.message || "Campos inválidos" });
+                .json({
+                    message: data?.message || "Campos inválidos",
+                });
         } else if (code === RESPONSES.EMPLOYEE.DEACTIVATION_FAILED) {
             return res
                 .status(400)

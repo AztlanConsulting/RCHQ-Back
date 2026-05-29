@@ -1,120 +1,108 @@
-@startuml HU01 - Administrador registra empleado
+@startuml
+title US - Flujo de Inicio de Sesión (Sequence Diagram)
 
-actor navegador
-boundary employee.routes
-boundary "React (employeeForm.jsx)" as ReactView
-control employee.controller
-control employee.service
-control logs.service
-entity employee.model
-entity logs.model
-database PostgreSQL
+actor Usuario
+participant "auth.route.js\nrouter" as Router
+participant "rateLimit.js\nauthLimiter" as AuthLimiter
+participant "validate.js\nmiddleware" as Validator
+participant "auth.controller.js\nloginFunction()" as Controller
+participant "auth.service.js\nlogin()" as Service
+participant "utils/password.js\nverifyPassword()" as PasswordUtil
+participant "auth.model.js\nUser" as Model
+participant "log.model.js" as LogModel
+database "BD (Prisma)" as BD
 
-autonumber
-
-navegador -> employee.routes : GET /employee/add
-activate employee.routes
-
-employee.routes -> employee.controller: getAdd(request, response)
-deactivate employee.routes
-activate employee.controller
-
-employee.controller -> ReactView: response.send(App React)
-deactivate employee.controller
-activate ReactView
-
-ReactView -> navegador : Mostrar formulario para agregar empleado
-
-navegador -> ReactView : Ingresa datos obligatorios\n(house_id, role_id, name, surname, email, curp)
-
-alt Ingresar datos opcionales
-    navegador -> ReactView : Ingresa datos opcionales\n(rfc, nss, bank_account, birth_date, picture)
-else No
-    ReactView -> ReactView : Continúa sin opcionales
-end
-
-ReactView -> ReactView : Validar campos obligatorios
-
-alt Campos incompletos
-    ReactView -> navegador : Mostrar error "Campos obligatorios faltantes"
-    deactivate ReactView
-else Campos completos
-
-    navegador -> employee.routes : POST /employee
-    deactivate navegador
-    activate employee.routes
-
-    employee.routes -> employee.controller : postAdd(request, response)
-    deactivate employee.routes
-    activate employee.controller
-
-    employee.controller -> employee.service : findByCurp(curp)
-    activate employee.service
-
-    employee.service -> employee.model : findByCurp(curp)
-    activate employee.model
-
-    employee.model -> PostgreSQL : prisma.employee.findUnique()
-    activate PostgreSQL
-    PostgreSQL -->> employee.model : result
-    deactivate PostgreSQL
-
-    employee.model -->> employee.service : employee | null
-    deactivate employee.model
-
-    employee.service -->> employee.controller : exists / not exists
-    deactivate employee.service
-
-    alt Usuario ya existe
-        employee.controller -> ReactView : alert("Usuario ya existente")
-        activate ReactView
-
-        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
-        deactivate ReactView
+Usuario -> Router : POST /login (email, password)
+Router -> AuthLimiter : authLimiter(req, res, next)
+alt Límite por IP excedido
+    AuthLimiter --> Router : 429 Too Many Requests
+    Router --> Usuario : 429 (demasiados intentos)
+else IP dentro del límite
+    AuthLimiter --> Router : next()
+    Router -> Validator : validate(loginSchema)
+alt Fallo en validación
+    Validator --> Router : 400 Bad Request
+    Router --> Usuario : 400 (Validation Error)
+else Validación exitosa
+    Validator --> Router : next()
+    Router -> Controller : loginFunction(req, res)
+    
+    activate Controller
+    Controller ->> Service : await login(req)
+    activate Service
+    
+    Service ->> Model : await findEmployeeByEmail(normalizedEmail)
+    activate Model
+    Model ->> BD : prisma.employee.findFirst({ email })
+    BD -->> Model : employee / null
+    Model -->> Service : mapEmployee(employee)
+    deactivate Model
+    
+    alt !employee
+        Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
+    else !employee.isActive
+        Service ->> LogModel : await createLog(employeeId, INACTIVE_ACCESS_DENIED, ip)
+        LogModel ->> BD : prisma.logs.create(...)
+        BD -->> LogModel : success
+        Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
+    else Usuario existente y activo
+        Service ->> Model : await clearExpiredLoginBlock(employee)
+        Service ->> PasswordUtil : await verifyPassword(password, employee.pwd)
+        activate PasswordUtil
+        PasswordUtil -->> Service : passwordMatches
+        deactivate PasswordUtil
+        Service ->> Service : isBlockedUntil(employee.blockedUntil)
         
-    else Usuario no existe
-        employee.controller -> employee.service : createEmployee(data)
-        activate employee.service
+        alt !passwordMatches
+            alt Cuenta ya bloqueada
+                Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
+            else Cuenta no bloqueada
+                Service ->> Model : await incrementFailedAttempts(employeeId)
+                Model ->> BD : prisma.employee.update(...)
+                BD -->> Model : attempts
+                Service ->> LogModel : await createLog(employeeId, LOGIN_FAILED, ip)
 
-        employee.service -> employee.model : create(data)
-        activate employee.model
+                alt attempts >= MAX_LOGIN_ATTEMPTS (5)
+                    Service ->> Model : await setBlockedUntil(employeeId, blockedUntil)
+                    Model ->> BD : prisma.employee.update(...)
+                    BD -->> Model : success
+                    Service ->> LogModel : await createLog(employeeId, ACCOUNT_BLOCKED, ip)
+                    Service --> Controller : { status: 423, body: ACCOUNT_TEMPORARILY_BLOCKED }
+                else attempts < MAX_LOGIN_ATTEMPTS
+                    Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
+                end
+            end
+            
+        else passwordMatches == true
+            alt Cuenta bloqueada
+                Service --> Controller : { status: 423, body: ACCOUNT_TEMPORARILY_BLOCKED }
+            else Cuenta no bloqueada
+                Service ->> Model : await clearLoginSecurityState(employeeId)
+                Model ->> BD : prisma.employee.update(...)
+                BD -->> Model : success
 
-        employee.model -> PostgreSQL : prisma.employee.create()
-        activate PostgreSQL
-        PostgreSQL -->> employee.model : employeeCreated
-        deactivate PostgreSQL
-
-        employee.model -->> employee.service : employeeCreated
-        deactivate employee.model
-
-        employee.service -->> employee.controller : employeeCreated
-        deactivate employee.service
-        
-        employee.controller -> logs.service : createLog(log)
-        activate logs.service
-
-        logs.service -> logs.model : create(log)
-        activate logs.model
-
-        logs.model -> PostgreSQL : prisma.logs.create()
-        activate PostgreSQL
-        PostgreSQL -->> logs.model : logSaved
-        deactivate PostgreSQL
-
-        logs.model -->> logs.service : logSaved
-        deactivate logs.model
-
-        logs.service -->> employee.controller : logSaved
-        deactivate logs.service
-
-        employee.controller -> ReactView : alert("Usuario creado con éxito")
-        deactivate employee.controller
-        activate ReactView
-        
-        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
-        deactivate ReactView
-
+                alt employee.hasFirstLogin
+                    Service ->> LogModel : await createLog(..., FIRST_LOGIN_PENDING_PASSWORD_CHANGE, ...)
+                    Service --> Controller : { status: 200, nextStep: CHANGE_PASSWORD_FIRST_LOGIN, ... }
+                else employee.isActiveTwoFactorAuth
+                    Service --> Controller : { status: 200, isActiveTwoFactorAuth: true, preTwoFactorAuthToken }
+                else Flujo Normal
+                    Service ->> LogModel : await createLog(..., LOGIN_SUCCESS, ...)
+                    Service --> Controller : { status: 200, data: { token, user } }
+                end
+            end
+        end
     end
+    deactivate Service
+    
+    alt Try sin excepciones
+        Controller --> Router : res.status(result.status).json(result.body)
+        Router --> Usuario : 200 OK / 401 / 423
+    else Excepción en el login
+        Controller --> Router : res.status(500).json(Internal Server Error)
+        Router --> Usuario : 500 (Internal Server Error)
+    end
+    deactivate Controller
 end
-
+end
 @enduml

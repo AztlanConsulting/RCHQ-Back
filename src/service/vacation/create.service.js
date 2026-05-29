@@ -6,6 +6,7 @@ const {
     calculateUsedDays,
     stringToDate,
     convertUTCToMexicanTime,
+    getMexicoTodayDate,
 } = require("../../utils/dates");
 const { 
     getVacationsInRange, 
@@ -19,6 +20,7 @@ const {
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { dateRangeSchema } = require("../../schemas/dates.schemas");
 const { createLog } = require("../../model/log.model");
+const { endOfUtcDay } = require("../../utils/event/dateTime");
 const {
     requestVacation,
     registerVacation,
@@ -26,15 +28,6 @@ const {
 const { getRemainingVacations } = require("./get.service");
 const RESPONSES = require("../../utils/responses");
 const { randomUUID } = require("crypto");
-
-function getTodayUTC() {
-    const now = new Date();
-    return new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate()
-    ));
-}
 
 exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress, requesterHouseId) => {
     const validation = dateRangeSchema.safeParse({startDate: rawStartDate, endDate: rawEndDate});
@@ -47,8 +40,7 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
 
     const startDate = stringToDate(rawStartDate);
     const endDate = stringToDate(rawEndDate);
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     if (endDate < startDate) {
         return {
@@ -66,12 +58,7 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
     const remainingVacationResult = await getRemainingVacations(employeeId);
     const remainingVacations = remainingVacationResult.data.remainingDays;
     
-    const now = new Date();
-    const todayUTC = new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate()
-    ));
+    const today = getMexicoTodayDate();
     const anniversaryStartDate = remainingVacationResult.data.startDate;
     const anniversaryEndDate = remainingVacationResult.data.endDate;
     
@@ -81,7 +68,7 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
         }
     }
 
-    if (startDate <= todayUTC) {
+    if (startDate <= today) {
         return {
             code: RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED
         }
@@ -134,12 +121,16 @@ exports.requestVacation = async (employeeId, rawStartDate, rawEndDate, ipAddress
         usedDays
     );
 
-    await createLog(
-        employeeId,
-        LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
-        ipAddress,
-        employeeId
-    );
+    try {
+        await createLog(
+            employeeId,
+            LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,
+            ipAddress,
+            employeeId
+        );
+    } catch (error) {
+        console.error("Error creando log de solicitud de vacaciones:", error);
+    }
 
     return {
         code: RESPONSES.VACATION.REQUESTED
@@ -179,8 +170,7 @@ exports.registerEmployeeVacation = async ({
 
     const startDate = stringToDate(rawStartDate);
     const endDate = stringToDate(rawEndDate);
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     if (endDate < startDate) {
         return {
@@ -188,9 +178,9 @@ exports.registerEmployeeVacation = async ({
         };
     }
 
-    const today = getTodayUTC();
+    const today = getMexicoTodayDate();
 
-    if (startDate < today) {
+    if (startDate <= today) {
         return {
             code: RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED,
         };

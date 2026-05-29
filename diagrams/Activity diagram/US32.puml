@@ -1,22 +1,14 @@
 @startuml
-title US32 - Coordinador remueve vacaciones de un empleado
+title US32 - Rechazar una solicitud de vacaciones
 
-|Usuario|
+|Coordinador|
 start
 :Entrar al módulo de solicitudes de vacaciones;
-:Seleccionar una solicitud pendiente, aprobada o rechazada;
-:Dar clic en remover vacaciones;
+:Seleccionar una solicitud pendiente;
+:Dar clic en rechazar solicitud;
+:Opcionalmente escribir feedback de rechazo;
 
 |Sistema|
-:Mostrar confirmación de eliminación;
-
-if (¿Usuario confirma?) then (Sí)
-else (No)
-:No enviar solicitud al backend;
-:No realizar cambios;
-stop
-endif
-
 :Aplicar rate limit;
 :Validar token de sesión;
 
@@ -54,11 +46,11 @@ endif
 
 if (¿Entrada válida?) then (Sí)
 else (No)
-:Mostrar error "Datos inválidos";
+:Mostrar error de validación;
 stop
 endif
 
-:Buscar actor Coordinador por ID con rol y casa;
+:Buscar actor coordinador por ID con rol y casa;
 
 if (¿Actor existe?) then (Sí)
 else (No)
@@ -68,7 +60,7 @@ endif
 
 if (¿Actor es Coordinador?) then (Sí)
 else (No)
-:Mostrar error "No tienes permisos para remover vacaciones";
+:Mostrar error "No tienes permisos para rechazar solicitudes de vacaciones";
 stop
 endif
 
@@ -80,6 +72,12 @@ else (No)
 stop
 endif
 
+if (¿Solicitud sigue pendiente?) then (Sí)
+else (No)
+:Mostrar error "La solicitud ya fue revisada";
+stop
+endif
+
 :Buscar empleado dueño de la solicitud;
 
 if (¿Empleado existe?) then (Sí)
@@ -88,7 +86,7 @@ else (No)
 stop
 endif
 
-if (¿Empleado es Admin?) then (Sí)
+if (¿Empleado es Administrador?) then (Sí)
 :Mostrar error "No puede acceder a este recurso";
 stop
 else (No)
@@ -98,7 +96,7 @@ endif
 
 if (¿Misma casa hogar?) then (Sí)
 else (No)
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 
@@ -108,15 +106,22 @@ endif
 
 if (¿Solicitud existe?) then (Sí)
 else (No)
-:Cancelar eliminación;
+:Cancelar rechazo;
 :Mostrar error "Solicitud de vacaciones no encontrada";
 stop
 endif
 
 if (¿Solicitud pertenece al empleado esperado?) then (Sí)
 else (No)
-:Cancelar eliminación;
+:Cancelar rechazo;
 :Mostrar error "No puede acceder a este recurso";
+stop
+endif
+
+if (¿Solicitud sigue pendiente?) then (Sí)
+else (No)
+:Cancelar rechazo;
+:Mostrar error "La solicitud ya fue revisada";
 stop
 endif
 
@@ -124,31 +129,18 @@ endif
 
 if (¿Empleado existe y sigue dentro de la casa del Coordinador?) then (Sí)
 else (No)
-:Cancelar eliminación;
+:Cancelar rechazo;
 :Mostrar error "No puede acceder a este recurso";
 stop
 endif
 
-if (¿Empleado sigue sin ser Admin?) then (Sí)
-else (No)
-:Cancelar eliminación;
-:Mostrar error "No puede acceder a este recurso";
-stop
-endif
-
-:Eliminar solicitud de vacaciones;
-
-if (¿Solicitud era pendiente o aprobada?) then (Sí)
-:La solicitud deja de contar para disponibilidad, traslapes y calendario operativo;
-else (No, era rechazada)
-:La eliminación no modifica días disponibles porque la solicitud rechazada no consumía días;
-endif
-
+:Actualizar solicitud con status = REJECTED;
+:Guardar feedback si fue proporcionado;
 :Confirmar transacción;
-:Guardar log de eliminación;
-:Mostrar mensaje "Vacaciones removidas correctamente";
+:Guardar log de rechazo;
+:Mostrar mensaje "Solicitud rechazada correctamente";
 
-|Usuario|
+|Coordinador|
 :Continuar revisando solicitudes;
 stop
 

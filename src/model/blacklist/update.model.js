@@ -1,6 +1,6 @@
 const prisma = require("../../prisma");
 
-exports.transactionalBlacklistInsert = async (curp) => {
+exports.transactionalBlacklistInsert = async (curp, reason) => {
     try {
         const result = await prisma.$transaction(async (tx) => {
             await tx.employee.update({
@@ -11,6 +11,7 @@ exports.transactionalBlacklistInsert = async (curp) => {
             const entry = await tx.blacklist.create({
                 data: {
                     curp: curp,
+                    reason: reason,
                 },
             });
 
@@ -20,6 +21,7 @@ exports.transactionalBlacklistInsert = async (curp) => {
         return {
             blacklistId: result.blacklist_id,
             curp: result.curp,
+            reason: result.reason,
             createdAt: result.created_at,
         };
     } catch (error) {

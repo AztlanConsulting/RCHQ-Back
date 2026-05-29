@@ -46,6 +46,17 @@ const generatePreTwoFactorAuthToken = (user) => {
     );
 };
 
+const generateRefreshToken = (user) => {
+    return jwt.sign(
+        {
+            id: user.id || user.employeeId,
+            tokenType: "REFRESH",
+        },
+        jwtSecret,
+        { expiresIn: refreshExpiresIn },
+    );
+};
+
 const decodeToken = (token) => {
     if (!token) {
         return null;
@@ -62,4 +73,5 @@ module.exports = {
     decodeToken,
     generateFirstLoginToken,
     generatePreTwoFactorAuthToken,
+    generateRefreshToken,
 };

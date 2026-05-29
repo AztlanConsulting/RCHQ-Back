@@ -1,0 +1,29 @@
+@startuml
+|Coordinador|
+:Presiona la card de ausencia;
+
+|Sistema|
+:Renderizar la card con los datos específicos de la ausencia;
+
+|Coordinador|
+:Presiona el botón de editar;
+
+|Sistema|
+:Habilita los campos de descripción, 
+fecha de incio, fecha de fin y tipo de ausencia;
+
+|Coordinador|
+:Ingresa nuevos valores;
+
+|Sistema|
+if(no ingresa nuevo valor)then(no)
+:No mandar la peticion y deja los mismos datos;
+stop;
+else(si)
+:Mandar al back los nuevos datos para actualizar
+la ausencia, tipo de ausencia;
+
+|Coordinador|
+:Ve notificación que los datos se actualizaron;
+stop;
+@enduml

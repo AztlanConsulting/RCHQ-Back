@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const vacationRouter = require("./router/vacation.route");
@@ -21,16 +22,24 @@ const path = require("path");
 const port = Number(process.env.RUNNING_PORT || 3000);
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-        httpOnly: true,
-    }),
-);
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(origin => origin);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origen no permitido por CORS'));
+  },
+  credentials: true
+}));
 
 app.use("/auth", authRouter);
 app.use("/employee", employeeRouter);

@@ -16,10 +16,11 @@ const {
     clearExpiredTwoFactorAuthBlock,
 } = require("../../utils/auth/authGuards");
 const prisma = require("../../prisma");
+const { generateRefreshToken, decodeToken } = require("../../utils/jwt");
 
 const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
-const MAX_LOGIN_ATTEMPTS = 3;
+const MAX_LOGIN_ATTEMPTS = 5;
 
 async function login(req) {
     const { email, password } = req.body;
@@ -56,24 +57,23 @@ async function login(req) {
         };
     }
 
-    if (isBlockedUntil(employee.blockedUntil)) {
-        return {
-            status: 423,
-            body: {
-                success: false,
-                code: "ACCOUNT_TEMPORARILY_BLOCKED",
-                message:
-                    "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
-                blockedUntil: employee.blockedUntil,
-            },
-        };
-    }
-
     await clearExpiredLoginBlock(employee);
 
     const passwordMatches = await verifyPassword(password, employee.pwd);
+    const isLoginBlocked = isBlockedUntil(employee.blockedUntil);
 
     if (!passwordMatches) {
+        if (isLoginBlocked) {
+            return {
+                status: 401,
+                body: {
+                    success: false,
+                    code: "INVALID_CREDENTIALS",
+                    message: "Credenciales inválidas",
+                },
+            };
+        }
+
         const attempts = await User.incrementFailedAttempts(
             employee.employeeId,
         );
@@ -119,6 +119,19 @@ async function login(req) {
         };
     }
 
+    if (isLoginBlocked) {
+        return {
+            status: 423,
+            body: {
+                success: false,
+                code: "ACCOUNT_TEMPORARILY_BLOCKED",
+                message:
+                    "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
+                blockedUntil: employee.blockedUntil,
+            },
+        };
+    }
+
     await User.clearLoginSecurityState(employee.employeeId);
 
     if (employee.hasFirstLogin) {
@@ -160,6 +173,9 @@ async function login(req) {
   }
 
   const token = await buildSessionToken(employee);
+  const refreshToken = generateRefreshToken(employee);
+
+  await User.saveRefreshToken(employee.employeeId, refreshToken);
 
   await createLog(employee.employeeId, LOG_ACTIONS.LOGIN_SUCCESS, ipAddress);
 
@@ -167,9 +183,11 @@ async function login(req) {
     status: 200,
     body: {
       success: true,
+      code: "LOGIN_SUCCESS",
       message: "Inicio de sesión exitoso",
       isActiveTwoFactorAuth: employee.isActiveTwoFactorAuth,
       data: {
+        refreshToken,
         token,
         user: {
           employeeId: employee.employeeId,
@@ -208,7 +226,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
 
         return {
             status: 403,
-            body: { success: false, message: "Accesso no permitido" },
+            body: { success: false, message: "Acceso no permitido" },
         };
     }
 
@@ -217,7 +235,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth ya esta activo en esta cuenta",
+                message: "El factor de dos pasos ya está activo en esta cuenta",
             },
         };
     }
@@ -236,7 +254,7 @@ async function setupTwoFactorAuth({ employeeId, ipAddress }) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth setup iniciado",
+            message: "Configuración del factor de dos pasos iniciada",
             nextStep: "VERIFY_TWO_FACTOR_AUTH_SETUP",
             data: {
                 employeeId: employee.employeeId,
@@ -286,7 +304,7 @@ async function verifyTwoFactorSetup(req) {
             status: 409,
             body: {
                 success: false,
-                message: "No hay configuracion pendiente de TwoFactorAuth",
+                message: "No hay configuración pendiente del factor de dos pasos",
             },
         };
     }
@@ -297,7 +315,7 @@ async function verifyTwoFactorSetup(req) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth pendiente de configurar",
+                message: "Factor de dos pasos pendiente de configurar",
             },
         };
     }
@@ -315,8 +333,7 @@ async function verifyTwoFactorSetup(req) {
             status: 409,
             body: {
                 success: false,
-                message:
-                    "El tiempo de TwoFactorAuth setup ha expirado. Trate más adeltante.",
+                message: "El tiempo de configuración del factor de dos pasos ha expirado. Intente más adelante.",
             },
         };
     }
@@ -339,7 +356,7 @@ async function verifyTwoFactorSetup(req) {
             status: 400,
             body: {
                 success: false,
-                message: "Código inválido de TwoFactorAuth. Falló el setup.",
+                message: "Código de factor de dos pasos inválido. Falló la configuración.",
                 nextStep: "TWO_FACTOR_AUTH_SETUP_FAILED",
                 data: {
                     employeeId: employee.employeeId,
@@ -365,7 +382,7 @@ async function verifyTwoFactorSetup(req) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth activated successfully",
+            message: "Factor de dos pasos activado exitosamente",
             nextStep: "TWO_FACTOR_AUTH_SETUP_COMPLETE",
             data: {
                 employeeId: employee.employeeId,
@@ -414,7 +431,7 @@ async function validateTwoFactorAuth(req) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth no esta habilitado para esta cuenta",
+                message: "El factor de dos pasos no está habilitado para esta cuenta",
             },
         };
     }
@@ -424,7 +441,7 @@ async function validateTwoFactorAuth(req) {
             status: 423,
             body: {
                 success: false,
-                message: "TwoFactorAuth bloqueado temporalmente",
+                message: "Factor de dos pasos bloqueado temporalmente",
                 nextStep: "WAIT_TWO_FACTOR_AUTH_BLOCK",
                 blockedUntil: employee.twoFaBlockedUntil,
             },
@@ -469,7 +486,7 @@ async function validateTwoFactorAuth(req) {
                 status: 423,
                 body: {
                     success: false,
-                    message: "TwoFactorAuth bloqueado temporalmente",
+                    message: "Factor de dos pasos bloqueado temporalmente",
                     nextStep: "WAIT_TWO_FACTOR_AUTH_BLOCK",
                     blockedUntil,
                 },
@@ -478,13 +495,16 @@ async function validateTwoFactorAuth(req) {
 
         return {
             status: 401,
-            body: { success: false, message: "Invalido TwoFactorAuth token" },
+            body: { success: false, message: "Token de Factor de dos pasos inválido" },
         };
     }
 
   await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
   const tokenJwt = await buildSessionToken(employee);
+  const refreshToken = generateRefreshToken(employee);
+
+  await User.saveRefreshToken(employee.employeeId, refreshToken);
 
   await createLog(
     employee.employeeId,
@@ -496,10 +516,11 @@ async function validateTwoFactorAuth(req) {
     status: 200,
     body: {
       success: true,
-      message: "TwoFactorAuth validacion correcta",
+      message: "Factor de dos pasos validado correctamente",
       nextStep: "LOGIN_COMPLETE",
-      token: tokenJwt,
       data: {
+        token: tokenJwt,
+        refreshToken,
         employeeId: employee.employeeId,
         email: employee.email,
         name: employee.name,
@@ -558,7 +579,7 @@ async function disableTwoFactorAuth(req) {
     if (!employeeId) {
         return {
             status: 401,
-            body: { success: false, message: "Usuario no autentificado" },
+            body: { success: false, message: "Usuario no autenticado" },
         };
     }
 
@@ -567,7 +588,7 @@ async function disableTwoFactorAuth(req) {
             status: 400,
             body: {
                 success: false,
-                message: "Password is required to disable TwoFactorAuth",
+                message: "Se requiere la contraseña para deshabilitar el factor de dos pasos",
             },
         };
     }
@@ -599,7 +620,7 @@ async function disableTwoFactorAuth(req) {
             status: 409,
             body: {
                 success: false,
-                message: "TwoFactorAuth no esta activo para esta cuenta",
+                message: "El factor de dos pasos no está activo para esta cuenta",
             },
         };
     }
@@ -635,7 +656,7 @@ async function disableTwoFactorAuth(req) {
         status: 200,
         body: {
             success: true,
-            message: "TwoFactorAuth deshabilitado correctamente",
+            message: "Factor de dos pasos deshabilitado correctamente",
             nextStep: "TWO_FACTOR_AUTH_DISABLED",
             data: {
                 employeeId: employee.employeeId,
@@ -646,6 +667,57 @@ async function disableTwoFactorAuth(req) {
     };
 }
 
+async function refreshSession(refreshToken, ipAddress) {
+    if (!refreshToken) {
+        return { status: 401, body: { success: false, message: "Token no proporcionado", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const decoded = decodeToken(refreshToken);
+    if (!decoded || decoded.tokenType !== "REFRESH") {
+        return { status: 401, body: { success: false, message: "Token inválido o expirado", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const employeeId = decoded.id || decoded.employeeId;
+    const employee = await User.getEmployeeById(employeeId);
+
+    if (!employee || !employee.isActive) {
+        return { status: 403, body: { success: false, message: "Acceso denegado", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const newToken = await buildSessionToken(employee);
+    const newRefreshToken = generateRefreshToken(employee);
+
+    const rotated = await User.rotateRefreshToken(employeeId, refreshToken, newRefreshToken);
+
+    if (!rotated) {
+        await User.clearRefreshToken(employeeId);
+        return { status: 401, body: { success: false, message: "Sesión inválida", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    return {
+        status: 200,
+        body: {
+            success: true,
+            code: "REFRESH_SUCCESS",
+            message: "Sesión actualizada",
+            data: {
+                token: newToken,
+                refreshToken: newRefreshToken,
+            },
+        },
+    };
+}
+
+async function logout(refreshToken) {
+    if (refreshToken) {
+        const decoded = decodeToken(refreshToken);
+        if (decoded && (decoded.id || decoded.employeeId)) {
+            await User.clearRefreshToken(decoded.id || decoded.employeeId);
+        }
+    }
+    return { status: 200, body: { success: true, message: "Sesión cerrada", code: "LOGOUT_SUCCESS" } };
+}
+
 module.exports = {
     login,
     setupTwoFactorAuth,
@@ -653,4 +725,6 @@ module.exports = {
     validateTwoFactorAuth,
     getTwoFactorAuthStatus,
     disableTwoFactorAuth,
+    refreshSession,
+    logout,
 };

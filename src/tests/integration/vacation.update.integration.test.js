@@ -37,6 +37,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
     let maintenanceRoleId = "92000000-0000-4000-8000-000000000003";
 
     let manageEmployeesPrivilegeId = "93000000-0000-4000-8000-000000000001";
+    let editVacationsPrivilegeId = "93000000-0000-4000-8000-000000000002";
 
     const coordinatorId = "94000000-0000-4000-8000-000000000001";
     const maintenanceId = "94000000-0000-4000-8000-000000000002";
@@ -49,6 +50,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
     const approvedVacationId = "95000000-0000-4000-8000-000000000004";
     const otherHouseVacationId = "95000000-0000-4000-8000-000000000005";
     const adminVacationId = "95000000-0000-4000-8000-000000000006";
+    const startedVacationId = "95000000-0000-4000-8000-000000000007";
 
     const testEmployeeIds = [
         coordinatorId,
@@ -64,10 +66,12 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         approvedVacationId,
         otherHouseVacationId,
         adminVacationId,
+        startedVacationId,
     ];
 
     let coordinatorToken;
     let employeeToken;
+    let otherHouseEmployeeToken;
 
     async function getOrCreateRoleId(name, fallbackId) {
         const existingRole = await prisma.role.findUnique({
@@ -206,6 +210,10 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             "manageEmployees",
             manageEmployeesPrivilegeId
         );
+        editVacationsPrivilegeId = await getOrCreatePrivilegeId(
+            "editVacations",
+            editVacationsPrivilegeId
+        );
 
         await prisma.role_privilege.upsert({
             where: {
@@ -220,6 +228,26 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                 privilege_id: manageEmployeesPrivilegeId,
             },
         });
+
+        for (const roleId of [
+            coordinatorRoleId,
+            adminRoleId,
+            maintenanceRoleId,
+        ]) {
+            await prisma.role_privilege.upsert({
+                where: {
+                    role_id_privilege_id: {
+                        role_id: roleId,
+                        privilege_id: editVacationsPrivilegeId,
+                    },
+                },
+                update: {},
+                create: {
+                    role_id: roleId,
+                    privilege_id: editVacationsPrivilegeId,
+                },
+            });
+        }
 
         await prisma.house.createMany({
             data: [
@@ -257,7 +285,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                     is_active_two_factor_auth: false,
                     failed_login_attempts: 0,
                     failed_two_factor_auth_attempts: 0,
-                    curp: "US30COORDINADOR001",
+                    curp: "MOXC801103MBSCYE80",
                     birth_date: new Date("1990-01-01T00:00:00.000Z"),
                     start_date: new Date("2025-04-09T00:00:00.000Z"),
                     picture: "boop",
@@ -276,7 +304,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                     is_active_two_factor_auth: false,
                     failed_login_attempts: 0,
                     failed_two_factor_auth_attempts: 0,
-                    curp: "US30EMPLEADO00001",
+                    curp: "MOXC801103MBSCYE81",
                     birth_date: new Date("1990-01-01T00:00:00.000Z"),
                     start_date: new Date("2025-04-09T00:00:00.000Z"),
                     picture: "boop",
@@ -295,7 +323,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                     is_active_two_factor_auth: false,
                     failed_login_attempts: 0,
                     failed_two_factor_auth_attempts: 0,
-                    curp: "US30OTRACASA0001",
+                    curp: "MOXC801103MBSCYE82",
                     birth_date: new Date("1990-01-01T00:00:00.000Z"),
                     start_date: new Date("2025-04-09T00:00:00.000Z"),
                     picture: "boop",
@@ -314,7 +342,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                     is_active_two_factor_auth: false,
                     failed_login_attempts: 0,
                     failed_two_factor_auth_attempts: 0,
-                    curp: "US30ADMIN0000001",
+                    curp: "MOXC801103MBSCYE83",
                     birth_date: new Date("1990-01-01T00:00:00.000Z"),
                     start_date: new Date("2025-04-09T00:00:00.000Z"),
                     picture: "boop",
@@ -437,6 +465,16 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
                     created_at: new Date(),
                     used_days: 1,
                 },
+                {
+                    vacations_request_id: startedVacationId,
+                    employee_id: maintenanceId,
+                    start: new Date("2026-02-20T00:00:00.000Z"),
+                    end: new Date("2026-02-22T00:00:00.000Z"),
+                    status: VACATION_STATUS.PENDING,
+                    feedback: null,
+                    created_at: new Date(),
+                    used_days: 3,
+                },
             ],
         });
 
@@ -446,7 +484,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             name: "Coordinador",
             role: "Coordinador",
             houseId,
-            privileges: ["manageEmployees"],
+            privileges: ["manageEmployees", "editVacations"],
         });
 
         employeeToken = generateSessionToken({
@@ -455,7 +493,16 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             name: "Empleado",
             role: "Mantenimiento",
             houseId,
-            privileges: [],
+            privileges: ["editVacations"],
+        });
+
+        otherHouseEmployeeToken = generateSessionToken({
+            employeeId: otherHouseEmployeeId,
+            email: "otra-casa.us30@test.com",
+            name: "Empleado Otra Casa",
+            role: "Mantenimiento",
+            houseId: otherHouseId,
+            privileges: ["editVacations"],
         });
     });
 
@@ -510,6 +557,45 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(updated.start.toISOString().slice(0, 10)).toBe("2026-09-14");
         expect(updated.end.toISOString().slice(0, 10)).toBe("2026-09-15");
         expect(updated.status).toBe(VACATION_STATUS.APPROVED);
+    });
+
+    it("200 permite que el dueño modifique su propia solicitud pendiente", async () => {
+        const response = await request(app)
+            .patch(`/vacation/request/${pendingVacationId}/dates`)
+            .set("Authorization", `Bearer ${employeeToken}`)
+            .send({
+                startDate: "2026-06-22",
+                endDate: "2026-06-23",
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+
+        const updated = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: pendingVacationId,
+            },
+        });
+
+        expect(updated.start.toISOString().slice(0, 10)).toBe("2026-06-22");
+        expect(updated.end.toISOString().slice(0, 10)).toBe("2026-06-23");
+        expect(updated.status).toBe(VACATION_STATUS.PENDING);
+    });
+
+    it("406 no permite que el dueño modifique su propia solicitud aprobada", async () => {
+        const response = await request(app)
+            .patch(`/vacation/request/${approvedVacationId}/dates`)
+            .set("Authorization", `Bearer ${employeeToken}`)
+            .send({
+                startDate: "2026-09-21",
+                endDate: "2026-09-22",
+            });
+
+        expect(response.status).toBe(406);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toBe(
+            "Solo puedes modificar solicitudes de vacaciones pendientes"
+        );
     });
 
     it("400 rechaza formato de fecha inválido", async () => {
@@ -567,6 +653,38 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.body.success).toBe(false);
         expect(response.body.message).toBe(
             "No se pueden modificar vacaciones rechazadas"
+        );
+    });
+
+    it("406 no permite modificar una vacación que ya comenzó", async () => {
+        const response = await request(app)
+            .patch(`/vacation/request/${startedVacationId}/dates`)
+            .set("Authorization", `Bearer ${coordinatorToken}`)
+            .send({
+                startDate: "2026-05-25",
+                endDate: "2026-05-26",
+            });
+
+        expect(response.status).toBe(406);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toBe(
+            "No se pueden modificar vacaciones que ya comenzaron o asignar una fecha de inicio anterior al día de hoy"
+        );
+    });
+
+    it("406 no permite modificar una vacación hacia una fecha pasada", async () => {
+        const response = await request(app)
+            .patch(`/vacation/request/${pendingVacationId}/dates`)
+            .set("Authorization", `Bearer ${coordinatorToken}`)
+            .send({
+                startDate: "2026-02-22",
+                endDate: "2026-02-23",
+            });
+
+        expect(response.status).toBe(406);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toBe(
+            "No se pueden modificar vacaciones que ya comenzaron o asignar una fecha de inicio anterior al día de hoy"
         );
     });
 
@@ -628,17 +746,17 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         expect(response.body.success).toBe(false);
     });
 
-    it("403 no permite modificar si el usuario no es Coordinador", async () => {
+    it("403 no permite modificar si el usuario no es dueño ni Coordinador", async () => {
         const response = await request(app)
             .patch(`/vacation/request/${pendingVacationId}/dates`)
-            .set("Authorization", `Bearer ${employeeToken}`)
+            .set("Authorization", `Bearer ${otherHouseEmployeeToken}`)
             .send({
-                startDate: "2026-06-22",
-                endDate: "2026-06-23",
+                startDate: "2026-06-24",
+                endDate: "2026-06-25",
             });
 
         expect(response.status).toBe(403);
-        expect(response.body.message).toBe("Role not allowed");
+        expect(response.body.message).toBe("Acceso denegado");
     });
 
     it("401 no permite modificar sin token", async () => {

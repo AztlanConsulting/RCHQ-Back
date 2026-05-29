@@ -56,14 +56,14 @@ exports.addAbsence = async (req, res) => {
         if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
             return res.status(404).json({
                 success: false,
-                message: "usuario no encontrado",
+                message: "Usuario no encontrado",
             });
         }
 
         if (result.code === RESPONSES.ABSENCE.INVALID_TYPE) {
             return res.status(404).json({
                 success: false,
-                message: "tipo de ausencia no encontrado",
+                message: "Tipo de ausencia no encontrado",
             });
         }
 

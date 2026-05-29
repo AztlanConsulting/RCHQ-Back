@@ -1,4 +1,3 @@
-// src/controller/profile.controller.js
 const profileService = require("../../service/user/profile.service");
 const RESPONSES = require("../../utils/responses");
 

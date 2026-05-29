@@ -90,6 +90,9 @@ describe("updateVacationRequestDates service", () => {
     };
 
     beforeEach(() => {
+        jest.useFakeTimers().setSystemTime(
+            new Date("2026-06-01T18:00:00.000Z"),
+        );
         jest.clearAllMocks();
 
         findByIdWithRoleAndHouse.mockImplementation(async (employeeId) => {
@@ -133,6 +136,10 @@ describe("updateVacationRequestDates service", () => {
         });
 
         createLog.mockResolvedValue({});
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     it("actualiza fechas de vacaciones correctamente", async () => {
@@ -212,7 +219,7 @@ describe("updateVacationRequestDates service", () => {
         expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
         expect(getGlobalEventsInRange).toHaveBeenCalledWith(
             new Date("2026-06-16T00:00:00.000Z"),
-            new Date("2026-06-20T00:00:00.000Z"),
+            new Date("2026-06-19T23:59:59.999Z"),
         );
         expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -243,7 +250,7 @@ describe("updateVacationRequestDates service", () => {
         expect(getHouseEventsInRange).toHaveBeenCalledWith(
             houseId,
             new Date("2026-06-16T00:00:00.000Z"),
-            new Date("2026-06-20T00:00:00.000Z"),
+            new Date("2026-06-19T23:59:59.999Z"),
         );
         expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -301,12 +308,16 @@ describe("updateVacationRequestDates service", () => {
         expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
     });
 
-    it("regresa INSUFFICIENT_PERMISSIONS si el actor no es Coordinador", async () => {
+    it("regresa INSUFFICIENT_PERMISSIONS si el actor no es Coordinador ni dueño de la solicitud", async () => {
         findByIdWithRoleAndHouse.mockResolvedValueOnce({
             ...actorEmployee,
             role: {
                 name: "Mantenimiento",
             },
+        });
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: targetEmployeeId,
         });
 
         const result = await updateVacationRequestDates({
@@ -318,6 +329,105 @@ describe("updateVacationRequestDates service", () => {
         });
 
         expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
+    });
+
+    it("permite que un empleado modifique su propia solicitud pendiente", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            status: VACATION_STATUS.PENDING,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
+        expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
+            expect.objectContaining({
+                employeeId: actorEmployeeId,
+                actorHouseId: houseId,
+                usedDays: 4,
+            }),
+        );
+        expect(createLog).toHaveBeenCalledWith(
+            actorEmployeeId,
+            LOG_ACTIONS.VACATION_UPDATED_SUCCESS,
+            "127.0.0.1",
+            actorEmployeeId,
+        );
+    });
+
+    it("no permite que un empleado modifique su propia solicitud aprobada", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            status: VACATION_STATUS.APPROVED,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
+    });
+
+    it("no permite que un empleado modifique su propia solicitud rechazada", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            status: VACATION_STATUS.REJECTED,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
     });
 
     it("regresa BAD_DATES si startDate es posterior a endDate", async () => {
@@ -345,6 +455,69 @@ describe("updateVacationRequestDates service", () => {
         });
 
         expect(result.code).toBe(RESPONSES.VACATION.REQUEST_NOT_FOUND);
+    });
+
+    it("no permite que un coordinador modifique una vacación que ya comenzó", async () => {
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            start: new Date("2026-06-01T00:00:00.000Z"),
+            end: new Date("2026-06-05T00:00:00.000Z"),
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.REQUEST_ALREADY_STARTED);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
+    });
+
+    it("no permite que un empleado modifique su propia vacación que ya comenzó", async () => {
+        const workerEmployee = {
+            ...targetEmployee,
+            employee_id: actorEmployeeId,
+            role: {
+                name: "Mantenimiento",
+            },
+        };
+
+        findByIdWithRoleAndHouse.mockResolvedValue(workerEmployee);
+        getVacationRequestById.mockResolvedValueOnce({
+            ...vacationRequest,
+            employee_id: actorEmployeeId,
+            start: new Date("2026-05-29T00:00:00.000Z"),
+            end: new Date("2026-06-03T00:00:00.000Z"),
+            status: VACATION_STATUS.PENDING,
+        });
+
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-16",
+            rawEndDate: "2026-06-19",
+            ipAddress: "127.0.0.1",
+            requesterHouseId: houseId,
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.REQUEST_ALREADY_STARTED);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
+    });
+
+    it("no permite modificar una vacación hacia una fecha que ya comenzó", async () => {
+        const result = await updateVacationRequestDates({
+            actorEmployeeId,
+            vacationRequestId,
+            rawStartDate: "2026-06-01",
+            rawEndDate: "2026-06-03",
+            ipAddress: "127.0.0.1",
+        });
+
+        expect(result.code).toBe(RESPONSES.VACATION.REQUEST_ALREADY_STARTED);
+        expect(updateVacationRequestDatesAtomically).not.toHaveBeenCalled();
     });
 
     it("regresa REQUEST_NOT_MODIFIABLE si la solicitud está rechazada", async () => {

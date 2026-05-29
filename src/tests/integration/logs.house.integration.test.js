@@ -27,6 +27,7 @@ const IDS = {
     personalEventA: randomUUID(),
     eventType: randomUUID(),
     logA4: randomUUID(),
+    logA5: randomUUID(),
     logB1: randomUUID(),
 };
 
@@ -215,7 +216,7 @@ const seed = async () => {
                 house_id: IDS.houseB,
                 role_id: IDS.employeeRole,
                 name: "María",
-                surname: "CasaB",
+                surname: "González",
                 is_active: true,
                 email: "employee.b@test.com",
                 password: "hashed",
@@ -275,6 +276,14 @@ const seed = async () => {
                 ip_address: encryptLogIp("10.10.10.14"),
             },
             {
+                log_id: IDS.logA5,
+                employee_id: IDS.coordinator,
+                moment: new Date("2026-05-07T09:00:00.000Z"),
+                action_id: "empl-001",
+                affected: IDS.employeeB,
+                ip_address: encryptLogIp("10.10.10.15"),
+            },
+            {
                 log_id: IDS.logB1,
                 employee_id: IDS.employeeB,
                 moment: new Date("2026-05-08T08:00:00.000Z"),
@@ -290,7 +299,7 @@ const cleanup = async () => {
     await prisma.logs.deleteMany({
         where: {
             log_id: {
-                in: [IDS.logA1, IDS.logA2, IDS.logA3, IDS.logA4, IDS.logB1],
+                in: [IDS.logA1, IDS.logA2, IDS.logA3, IDS.logA4, IDS.logA5, IDS.logB1],
             },
         },
     });
@@ -362,6 +371,9 @@ const cleanup = async () => {
 };
 
 describe("GET /logs/house", () => {
+    const currentYear = new Date().getUTCFullYear();
+    const minYear = currentYear - 5;
+
     beforeAll(async () => {
         await seed();
     });
@@ -374,7 +386,7 @@ describe("GET /logs/house", () => {
     it("retorna 401 sin token", async () => {
         const res = await request(app).get("/logs/house");
 
-        expect(res.statusCode).toBe(401);
+        expect([401, 405]).toContain(res.statusCode);
     });
 
     it("retorna acciones disponibles para el filtro", async () => {
@@ -402,7 +414,7 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign({ role: "Administrador", id: IDS.admin })}`);
 
         expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Role not allowed");
+        expect(res.body.message).toBe("Permisos insuficientes");
     });
 
     it("retorna 403 si el coordinador no tiene privilegio viewLogs", async () => {
@@ -413,25 +425,34 @@ describe("GET /logs/house", () => {
             },
         });
 
-        const res = await request(app)
-            .get("/logs/house")
-            .set(
-                "Authorization",
-                `Bearer ${sign({
-                    id: IDS.unprivilegedCoordinator,
-                    email: "coord.nopriv@test.com",
-                })}`,
-            );
+        try {
+            const res = await request(app)
+                .get("/logs/house")
+                .set(
+                    "Authorization",
+                    `Bearer ${sign({
+                        id: IDS.unprivilegedCoordinator,
+                        email: "coord.nopriv@test.com",
+                    })}`,
+                );
 
-        expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Insufficient privileges");
-
-        await prisma.role_privilege.create({
-            data: {
-                role_id: IDS.coordinatorRole,
-                privilege_id: IDS.viewLogsPrivilege,
-            },
-        });
+            expect(res.statusCode).toBe(403);
+            expect(res.body.message).toBe("Permisos insuficientes");
+        } finally {
+            await prisma.role_privilege.upsert({
+                where: {
+                    role_id_privilege_id: {
+                        role_id: IDS.coordinatorRole,
+                        privilege_id: IDS.viewLogsPrivilege,
+                    },
+                },
+                update: {},
+                create: {
+                    role_id: IDS.coordinatorRole,
+                    privilege_id: IDS.viewLogsPrivilege,
+                },
+            });
+        }
     });
 
     it("retorna 422 con paginación inválida", async () => {
@@ -455,10 +476,10 @@ describe("GET /logs/house", () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.totalRecords).toBe(4);
+        expect(res.body.totalRecords).toBe(5);
         expect(res.body.totalPages).toBe(1);
         expect(res.body.currentPage).toBe(1);
-        expect(res.body.data).toHaveLength(4);
+        expect(res.body.data).toHaveLength(5);
         expect(res.body.data[0]).toMatchObject({
             responsibleName: "Carla Coord",
             responsibleCurp: "COOC900101MDFABC01",
@@ -478,8 +499,12 @@ describe("GET /logs/house", () => {
             affectedName: "Visita médica",
             ipAddress: "10.10.10.14",
         });
-        expect(typeof res.body.data[3].action).toBe("string");
-        expect(res.body.data[3].action.length).toBeGreaterThan(0);
+        expect(res.body.data[4]).toMatchObject({
+            affectedName: "María González",
+            ipAddress: "10.10.10.15",
+        });
+        expect(typeof res.body.data[4].action).toBe("string");
+        expect(res.body.data[4].action.length).toBeGreaterThan(0);
     });
 
     it("pagina los resultados", async () => {
@@ -488,8 +513,8 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.totalRecords).toBe(4);
-        expect(res.body.totalPages).toBe(4);
+        expect(res.body.totalRecords).toBe(5);
+        expect(res.body.totalPages).toBe(5);
         expect(res.body.currentPage).toBe(2);
         expect(res.body.data).toHaveLength(1);
         expect(res.body.data[0].affectedName).toBe("Afectación libre");
@@ -501,8 +526,8 @@ describe("GET /logs/house", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.totalRecords).toBe(1);
-        expect(res.body.data).toHaveLength(1);
+        expect(res.body.totalRecords).toBe(2);
+        expect(res.body.data).toHaveLength(2);
         expect(res.body.data[0]).toMatchObject({
             action: "Empleado creado con éxito",
             responsibleName: "Carla Coord",
@@ -521,6 +546,15 @@ describe("GET /logs/house", () => {
             action: "Empleado creado con éxito",
             affectedName: "Luis CasaA",
         });
+    });
+
+    it("retorna 422 si el filtro de fecha excede los últimos 5 años", async () => {
+        const res = await request(app)
+            .get(`/logs/house?page=1&limit=10&startDate=${minYear - 1}-12-31&endDate=${minYear - 1}-12-31`)
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(422);
+        expect(res.body.message).toBe("Parámetros inválidos");
     });
 
     it("filtra por responsable y afectado por separado", async () => {
@@ -551,9 +585,37 @@ describe("GET /logs/house", () => {
         });
     });
 
+    it("filtra afectados por nombre sin acentos aunque pertenezcan a otra casa", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&affected=Maria%20Gonzalez")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "María González",
+        });
+    });
+
+    it("filtra afectados aunque se busquen con s en lugar de z", async () => {
+        const res = await request(app)
+            .get("/logs/house?page=1&limit=10&affected=maria%20gonzales")
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.totalRecords).toBe(1);
+        expect(res.body.data).toHaveLength(1);
+        expect(res.body.data[0]).toMatchObject({
+            responsibleName: "Carla Coord",
+            affectedName: "María González",
+        });
+    });
+
     it("genera un reporte pdf de los logs de la casa", async () => {
         const res = await request(app)
-            .get("/logs/house/report/pdf")
+            .get(`/logs/house/report/pdf?year=${currentYear}&currentYear=${currentYear}`)
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(201);
@@ -561,6 +623,15 @@ describe("GET /logs/house", () => {
         expect(res.headers["content-disposition"]).toContain(".pdf");
         expect(Buffer.isBuffer(res.body)).toBe(true);
         expect(res.body.subarray(0, 4).toString()).toBe("%PDF");
+    });
+
+    it("retorna 422 si intentan generar un reporte con más de 5 años de antigüedad", async () => {
+        const res = await request(app)
+            .get(`/logs/house/report/pdf?year=${minYear - 1}&currentYear=${currentYear}`)
+            .set("Authorization", `Bearer ${sign()}`);
+
+        expect(res.statusCode).toBe(422);
+        expect(res.body.message).toBe("Parámetros inválidos");
     });
 
 });

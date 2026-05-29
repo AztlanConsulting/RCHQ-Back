@@ -4,6 +4,30 @@ exports.convertUTCToMexicanTime = (timestamp) => {
     return new Date(timestamp.getTime() - MEXICO_TIME_OFFSET_MS);
 };
 
+exports.getUTCDateKey = (date) =>
+    date.getUTCFullYear() * 10000 +
+    (date.getUTCMonth() + 1) * 100 +
+    date.getUTCDate();
+
+exports.getMexicoTodayDateKey = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return this.getUTCDateKey(todayInMexico);
+};
+
+exports.getMexicoTodayDate = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return new Date(Date.UTC(
+        todayInMexico.getUTCFullYear(),
+        todayInMexico.getUTCMonth(),
+        todayInMexico.getUTCDate(),
+    ));
+};
+
+exports.hasDateStartedInMexico = (date) =>
+    this.getUTCDateKey(date) <= this.getMexicoTodayDateKey();
+
 exports.combineDateAndTime = (date, time) => {
     const mexicanTime = this.convertUTCToMexicanTime(time);
 
@@ -72,6 +96,17 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
                 eventEnd.getUTCDate(),
             ),
         );
+        const isExclusiveMidnightEnd =
+            (event.allDay === true || event.all_day === true) &&
+            eventEnd > eventStart &&
+            eventEnd.getUTCHours() === 0 &&
+            eventEnd.getUTCMinutes() === 0 &&
+            eventEnd.getUTCSeconds() === 0 &&
+            eventEnd.getUTCMilliseconds() === 0;
+
+        if (isExclusiveMidnightEnd) {
+            lastEventDay.setUTCDate(lastEventDay.getUTCDate() - 1);
+        }
 
         while (currentEventDay <= lastEventDay) {
             const eventDate = currentEventDay.toISOString().split("T")[0];

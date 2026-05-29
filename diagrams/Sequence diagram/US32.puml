@@ -1,5 +1,5 @@
 @startuml
-title US32 - Coordinador remueve vacaciones de un empleado
+title US32 - Coordinador rechaza solicitud de vacaciones
 
 actor "Coordinador" as Usuario
 boundary "Frontend" as Frontend
@@ -15,27 +15,24 @@ database "Base de datos" as DB
 
 autonumber
 
-Usuario -> Frontend : Selecciona solicitud pendiente, aprobada o rechazada
-Usuario -> Frontend : Da clic en remover vacaciones
-Frontend -> Usuario : Muestra confirmación
+Usuario -> Frontend : Selecciona solicitud pendiente
+Usuario -> Frontend : Confirma rechazo
+Usuario -> Frontend : Opcionalmente escribe feedback
 
-alt Usuario cancela confirmación
-Frontend --> Usuario : No se realiza ningún cambio
-else Usuario confirma eliminación
-Frontend -> Router : DELETE /vacation/request/:vacationRequestId\nAuthorization: Bearer token
+Frontend -> Router : PATCH /vacation/request/:vacationRequestId/reject\nAuthorization: Bearer token\n{ feedback? }
 
 Router -> Middleware : apiLimiter
 Router -> Middleware : verifyToken
 Router -> Middleware : requireRole(Coordinador)
 Router -> Middleware : requirePrivileges(manageEmployees)
-Router -> Middleware : validate(deleteVacationRequestSchema, "all")
+Router -> Middleware : validate(rejectVacationRequestSchema, "all")
 
 alt Middleware rechaza request
 Middleware --> Frontend : 400/401/403
 else Request HTTP válida
-Router -> Controller : deleteVacationRequest(req, res)
+Router -> Controller : rejectVacationRequest(req, res)
 
-Controller -> Service : deleteVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nipAddress\n})
+Controller -> Service : rejectVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nfeedback,\nipAddress\n})
 
 Service -> Service : Validar contrato interno con schema de caso de uso
 
@@ -53,7 +50,7 @@ Service --> Controller : USER_NOT_AUTHENTICATED
 Controller --> Frontend : 401 Usuario no autenticado
 else Actor no es Coordinador
 Service --> Controller : INSUFFICIENT_PERMISSIONS
-Controller --> Frontend : 403 Sin permisos
+Controller --> Frontend : 403 Permisos insuficientes
 else Actor válido
 Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
 VacationGetModel -> DB : SELECT vacations_request
@@ -63,7 +60,10 @@ VacationGetModel --> Service : Solicitud
 alt Solicitud no existe
 Service --> Controller : VACATION_REQUEST_NOT_FOUND
 Controller --> Frontend : 404 Solicitud no encontrada
-else Solicitud existe
+else Solicitud no pendiente
+Service --> Controller : VACATION_REQUEST_ALREADY_REVIEWED
+Controller --> Frontend : 406 Solicitud ya revisada
+else Solicitud pendiente
 Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
 EmployeeGetModel -> DB : SELECT employee + role + house
 DB --> EmployeeGetModel : Empleado dueño
@@ -72,39 +72,36 @@ EmployeeGetModel --> Service : Empleado
 alt Empleado no existe
 Service --> Controller : EMPLOYEE_NOT_FOUND
 Controller --> Frontend : 404 Empleado no encontrado
-else Empleado es Admin
-Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 403 No puede acceder a este recurso
-else Empleado fuera de casa hogar
+else Empleado fuera de alcance
 Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
 Controller --> Frontend : 403 No puede acceder a este recurso
 else Actor autorizado
-Service -> VacationUpdateModel : deleteVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId\n})
+Service -> VacationUpdateModel : rejectVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\nfeedback\n})
 
 VacationUpdateModel -> DB : BEGIN TRANSACTION
 VacationUpdateModel -> DB : SELECT employee FOR UPDATE
 VacationUpdateModel -> DB : Releer solicitud
 VacationUpdateModel -> DB : Validar que existe
 VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
-VacationUpdateModel -> DB : Releer empleado con rol
-VacationUpdateModel -> DB : Validar misma casa y que no sea Admin
-VacationUpdateModel -> DB : DELETE vacations_request
-DB --> VacationUpdateModel : Solicitud eliminada
+VacationUpdateModel -> DB : Releer empleado
+VacationUpdateModel -> DB : Validar misma casa y que no sea Administrador
+VacationUpdateModel -> DB : Validar que sigue pendiente
+VacationUpdateModel -> DB : UPDATE status = REJECTED,\nfeedback = feedback/null
+DB --> VacationUpdateModel : Solicitud rechazada
 VacationUpdateModel -> DB : COMMIT
-VacationUpdateModel --> Service : Solicitud eliminada
+VacationUpdateModel --> Service : Solicitud rechazada
 
-alt Transacción detecta solicitud inexistente o fuera de alcance
-Service --> Controller : NOT_FOUND / OUT_OF_SCOPE
-Controller --> Frontend : 404/403 Error de eliminación
-else Eliminación exitosa
-Service -> LogModel : createLog(actorEmployeeId,\nVACATION_DELETED_SUCCESS,\nipAddress,\ntargetEmployeeId)
+alt Transacción detecta solicitud ya revisada o fuera de alcance
+Service --> Controller : ALREADY_REVIEWED / OUT_OF_SCOPE
+Controller --> Frontend : 406/403 Error de rechazo
+else Rechazo exitoso
+Service -> LogModel : createLog(actorEmployeeId,\nVACATION_REJECTED_SUCCESS,\nipAddress,\ntargetEmployeeId)
 LogModel -> DB : INSERT logs
 DB --> LogModel : Log creado
 
-Service --> Controller : VACATION_DELETED
-Controller --> Frontend : 200 Vacaciones removidas correctamente
+Service --> Controller : VACATION_REJECTED
+Controller --> Frontend : 200 Solicitud rechazada correctamente
 Frontend --> Usuario : Mostrar confirmación
-end
 end
 end
 end

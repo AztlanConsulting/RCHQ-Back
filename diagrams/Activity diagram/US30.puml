@@ -1,206 +1,53 @@
 @startuml
-title US30 - Coordinador modifica vacaciones pendientes o aprobadas de un empleado
+title US 30 - Consultar mis vacaciones
 
 |Usuario|
 start
-:Entrar al módulo de solicitudes/vacaciones;
-:Seleccionar una solicitud pendiente o aprobada;
-:Dar clic en modificar;
-:Capturar nuevas fechas;
-:Guardar cambios;
+:Entra al módulo de "Mis vacaciones";
 
 |Sistema|
-:Aplicar rate limit;
-:Validar token de sesión;
-
+:Aplica rate limit;
+:Valida token de sesión;
 if (¿Token válido?) then (Sí)
 else (No)
-:Mostrar error "Token no proporcionado o inválido";
-stop
+  :Muestra error de autenticación;
+  stop
 endif
 
-:Validar rol Coordinador;
-
-if (¿Rol permitido?) then (Sí)
+:Valida rol permitido;
+:Valida privilegio viewOwnVacations;
+if (¿Tiene permisos?) then (Sí)
 else (No)
-:Mostrar error "Rol no permitido";
-stop
+  :Muestra error de permisos insuficientes;
+  stop
 endif
 
-:Validar privilegio para gestionar empleados/vacaciones;
-
-if (¿Tiene privilegio?) then (Sí)
+:Valida query params\n(paginación, búsqueda, estado y fechas);
+if (¿Query válida?) then (Sí)
 else (No)
-:Mostrar error "Permisos insuficientes";
-stop
+  :Muestra error de validación;
+  stop
 endif
 
-:Validar request HTTP con schema;
-
-if (¿Request válida?) then (Sí)
-else (No)
-:Mostrar error de validación;
-stop
-endif
-
-:Validar contrato de entrada del caso de uso;
-
-if (¿Entrada válida?) then (Sí)
-else (No)
-:Mostrar error de validación;
-stop
-endif
-
-:Buscar actor Coordinador por ID con rol y casa;
-
-if (¿Actor existe?) then (Sí)
-else (No)
-:Mostrar error "Usuario no autenticado";
-stop
-endif
-
-if (¿Actor es Coordinador?) then (Sí)
-else (No)
-:Mostrar error "No tienes permisos para modificar vacaciones";
-stop
-endif
-
-:Convertir nuevas fechas a Date UTC;
-
-if (¿Fecha inicio <= fecha fin?) then (Sí)
-else (No)
-:Mostrar error "No se puede tener una fecha de inicio posterior a la de finalización";
-stop
-endif
-
-:Buscar solicitud de vacaciones;
-
-if (¿Solicitud existe?) then (Sí)
-else (No)
-:Mostrar error "Solicitud de vacaciones no encontrada";
-stop
-endif
-
-if (¿Solicitud está pendiente o aprobada?) then (Sí)
-else (No)
-:Mostrar error "No se pueden modificar solicitudes rechazadas";
-stop
-endif
-
-:Buscar empleado dueño de la solicitud;
-
-if (¿Empleado existe?) then (Sí)
-else (No)
-:Mostrar error "Empleado no encontrado";
-stop
-endif
-
-if (¿Empleado es Administrador?) then (Sí)
-:Mostrar error "No puede acceder a este recurso";
-stop
-else (No)
-endif
-
-:Validar que el Coordinador pertenezca a la misma casa hogar que el empleado;
-
-if (¿Misma casa hogar?) then (Sí)
-else (No)
-:Mostrar error "No puede acceder a este recurso";
-stop
-endif
-
-:Obtener periodo laboral vigente del empleado;
-
-if (¿Empleado tiene fecha de inicio?) then (Sí)
-else (No)
-:Mostrar error "El empleado no tiene una fecha de inicio asociada";
-stop
-endif
-
-if (¿Nuevas fechas dentro del periodo laboral vigente?) then (Sí)
-else (No)
-:Mostrar error "No se pueden modificar vacaciones fuera del periodo actual de trabajo";
-stop
-endif
-
-:Obtener días laborales del empleado;
-
-if (¿Empleado tiene días laborales registrados?) then (Sí)
-else (No)
-:Mostrar error "Se necesitan tener registrados los días de trabajo";
-stop
-endif
-
-:Obtener eventos globales dentro del nuevo rango;
-:Recalcular días hábiles usados;
-
-if (¿Consume al menos un día hábil?) then (Sí)
-else (No)
-:Mostrar error "Dentro del rango seleccionado no hay ningún día hábil de vacaciones";
-stop
-endif
-
-:Iniciar transacción;
-:Bloquear operaciones concurrentes de vacaciones del empleado;
-:Releer solicitud dentro de la transacción;
-
-if (¿Solicitud existe?) then (Sí)
-else (No)
-:Cancelar modificación;
-:Mostrar error "Solicitud de vacaciones no encontrada";
-stop
-endif
-
-if (¿Solicitud pertenece al empleado esperado?) then (Sí)
-else (No)
-:Cancelar modificación;
-:Mostrar error "No puede acceder a este recurso";
-stop
-endif
-
-if (¿Solicitud sigue pendiente o aprobada?) then (Sí)
-else (No)
-:Cancelar modificación;
-:Mostrar error "No se pueden modificar solicitudes rechazadas";
-stop
-endif
-
-:Releer empleado dentro de la transacción;
-
-if (¿Empleado existe y sigue dentro de la casa del Coordinador?) then (Sí)
-else (No)
-:Cancelar modificación;
-:Mostrar error "No puede acceder a este recurso";
-stop
-endif
-
-:Buscar vacaciones activas traslapadas excluyendo la solicitud actual;
-
-if (¿Existe traslape?) then (Sí)
-:Cancelar modificación;
-:Mostrar error "Ya hay una solicitud de vacaciones cubriendo los días solicitados";
-stop
-else (No)
-endif
-
-:Calcular días usados por otras vacaciones activas del año laboral;
-:Validar días disponibles sin duplicar la solicitud actual;
-
-if (¿Tiene días suficientes?) then (Sí)
-else (No)
-:Cancelar modificación;
-:Mostrar error "El empleado no tiene días de vacaciones suficientes";
-stop
-endif
-
-:Actualizar start, end y used_days;
-:Conservar estado original;
-:Confirmar transacción;
-:Guardar log de modificación;
-:Mostrar mensaje "Vacaciones modificadas correctamente";
+:Consulta solicitudes de vacaciones futuras del usuario;
+:Ordena las futuras de la más cercana a la más lejana;
+:Mapea los datos de cada solicitud\nincluyendo su estado;
+:Devuelve solicitudes y paginación;
 
 |Usuario|
-:Continuar revisando solicitudes/vacaciones;
-stop
+:Visualiza la tabla con sus solicitudes futuras\ny el estado de cada una;
 
-@endumlß
+if (¿Presiona el botón para cambiar de vista?) then (Sí)
+  |Sistema|
+  :Consulta solicitudes de vacaciones pasadas del usuario;
+  :Ordena las pasadas de la más reciente a la más antigua;
+  :Mapea los datos de cada solicitud\nincluyendo su estado;
+  :Devuelve solicitudes y paginación;
+
+  |Usuario|
+  :Visualiza la tabla con sus solicitudes pasadas\ny el estado de cada una;
+else (No)
+endif
+
+stop
+@enduml

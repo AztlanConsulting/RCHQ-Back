@@ -8,6 +8,13 @@ jest.mock("../../model/event/update.model");
 jest.mock("../../model/event/get.model");
 jest.mock("../../model/log.model");
 
+const {
+    futureDate,
+    futureDatetime,
+    futureDatetimeUtc,
+    allDayEndUtc,
+} = require("../helpers/dateHelpers");
+
 describe("updateHouseEvent service", () => {
     const validUser = {
         id: "11111111-1111-4111-8111-111111111111",
@@ -23,8 +30,8 @@ describe("updateHouseEvent service", () => {
     const baseValidData = {
         eventTypeId: "33333333-3333-4333-8333-333333333333",
         name: "Reunión semanal",
-        start: "2026-06-15T09:00:00-06:00",
-        end: "2026-06-15T11:00:00-06:00",
+        start: futureDatetime(30, 9),
+        end: futureDatetime(30, 11),
         allDay: false,
         isFreeDay: false,
         description: "Reunión de coordinación",
@@ -36,8 +43,8 @@ describe("updateHouseEvent service", () => {
         houseId: validUser.houseId,
         eventTypeId: baseValidData.eventTypeId,
         name: "Evento anterior",
-        start: new Date("2026-06-15T14:00:00.000Z"),
-        end: new Date("2026-06-15T16:00:00.000Z"),
+        start: new Date(futureDatetimeUtc(30, 14)),
+        end: new Date(futureDatetimeUtc(30, 16)),
     };
 
     const mockUpdatedEvent = {
@@ -45,8 +52,8 @@ describe("updateHouseEvent service", () => {
         houseId: validUser.houseId,
         eventTypeId: baseValidData.eventTypeId,
         name: baseValidData.name,
-        start: new Date("2026-06-15T15:00:00.000Z"),
-        end: new Date("2026-06-15T17:00:00.000Z"),
+        start: new Date(futureDatetimeUtc(30, 15)),
+        end: new Date(futureDatetimeUtc(30, 17)),
         allDay: false,
         isFreeDay: false,
         description: baseValidData.description,
@@ -56,9 +63,6 @@ describe("updateHouseEvent service", () => {
         jest.clearAllMocks();
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 1: Actualización exitosa con evento con hora
-    // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento con hora", () => {
         it("actualiza el evento, retorna UPDATED y registra el log", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
@@ -105,12 +109,8 @@ describe("updateHouseEvent service", () => {
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
             expect(updateCall.start).toBeInstanceOf(Date);
             expect(updateCall.end).toBeInstanceOf(Date);
-            expect(updateCall.start.toISOString()).toBe(
-                "2026-06-15T15:00:00.000Z",
-            );
-            expect(updateCall.end.toISOString()).toBe(
-                "2026-06-15T17:00:00.000Z",
-            );
+            expect(updateCall.start.toISOString()).toBe(futureDatetimeUtc(30, 9));
+            expect(updateCall.end.toISOString()).toBe(futureDatetimeUtc(30, 11));
         });
 
         it("pasa el eventId correcto al model de actualización", async () => {
@@ -133,9 +133,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 2: Actualización exitosa con evento allDay
-    // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento allDay", () => {
         it("suma un día al end para un evento allDay de un solo día", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
@@ -146,8 +143,8 @@ describe("updateHouseEvent service", () => {
 
             const allDayData = {
                 ...baseValidData,
-                start: "2026-06-15",
-                end: "2026-06-15",
+                start: futureDate(30),
+                end: futureDate(30),
                 allDay: true,
             };
 
@@ -161,11 +158,9 @@ describe("updateHouseEvent service", () => {
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
             expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
             expect(updateCall.start.toISOString()).toBe(
-                "2026-06-15T06:00:00.000Z",
+                `${futureDate(30)}T06:00:00.000Z`,
             );
-            expect(updateCall.end.toISOString()).toBe(
-                "2026-06-16T06:00:00.000Z",
-            );
+            expect(updateCall.end.toISOString()).toBe(allDayEndUtc(30));
         });
 
         it("suma un día al end para un evento allDay de varios días", async () => {
@@ -177,8 +172,8 @@ describe("updateHouseEvent service", () => {
 
             const allDayData = {
                 ...baseValidData,
-                start: "2026-06-15",
-                end: "2026-06-17",
+                start: futureDate(30),
+                end: futureDate(32),
                 allDay: true,
             };
 
@@ -191,17 +186,12 @@ describe("updateHouseEvent service", () => {
 
             const updateCall = updateModel.updateHouseEvent.mock.calls[0][1];
             expect(updateCall.start.toISOString()).toBe(
-                "2026-06-15T06:00:00.000Z",
+                `${futureDate(30)}T06:00:00.000Z`,
             );
-            expect(updateCall.end.toISOString()).toBe(
-                "2026-06-18T06:00:00.000Z",
-            );
+            expect(updateCall.end.toISOString()).toBe(allDayEndUtc(32));
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 3: Evento no encontrado
-    // ──────────────────────────────────────────────────────────
     describe("Evento no encontrado", () => {
         it("retorna NOT_FOUND si el evento no existe", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
@@ -236,9 +226,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 4: Errores de validación de Zod
-    // ──────────────────────────────────────────────────────────
     describe("Errores de validación", () => {
         it("retorna VALIDATION_ERROR si falta eventTypeId", async () => {
             const invalidData = { ...baseValidData };
@@ -345,7 +332,7 @@ describe("updateHouseEvent service", () => {
         it("retorna VALIDATION_ERROR si start no es ISO con timezone (evento con hora)", async () => {
             const invalidData = {
                 ...baseValidData,
-                start: "2026-06-15T09:00:00",
+                start: `${futureDate(30)}T09:00:00`,
             };
 
             const result = await updateService.updateHouseEvent(
@@ -364,8 +351,8 @@ describe("updateHouseEvent service", () => {
         it("retorna VALIDATION_ERROR si start no es YYYY-MM-DD (evento allDay)", async () => {
             const invalidData = {
                 ...baseValidData,
-                start: "2026-06-15T09:00:00-06:00",
-                end: "2026-06-15",
+                start: futureDatetime(30, 9),
+                end: futureDate(30),
                 allDay: true,
             };
 
@@ -385,8 +372,8 @@ describe("updateHouseEvent service", () => {
         it("retorna VALIDATION_ERROR si end es anterior a start", async () => {
             const invalidData = {
                 ...baseValidData,
-                start: "2026-06-15T11:00:00-06:00",
-                end: "2026-06-15T09:00:00-06:00",
+                start: futureDatetime(30, 11),
+                end: futureDatetime(30, 9),
             };
 
             const result = await updateService.updateHouseEvent(
@@ -405,8 +392,8 @@ describe("updateHouseEvent service", () => {
         it("retorna VALIDATION_ERROR si start y end son iguales (evento con hora)", async () => {
             const invalidData = {
                 ...baseValidData,
-                start: "2026-06-15T09:00:00-06:00",
-                end: "2026-06-15T09:00:00-06:00",
+                start: futureDatetime(30, 9),
+                end: futureDatetime(30, 9),
             };
 
             const result = await updateService.updateHouseEvent(
@@ -422,7 +409,7 @@ describe("updateHouseEvent service", () => {
         it("retorna VALIDATION_ERROR si la fecha del mes es inválida (mes 13)", async () => {
             const invalidData = {
                 ...baseValidData,
-                start: "2026-13-15T09:00:00-06:00",
+                start: `${new Date().getFullYear()}-13-15T09:00:00-06:00`,
             };
 
             const result = await updateService.updateHouseEvent(
@@ -475,9 +462,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 5: Detección de empalmes
-    // ──────────────────────────────────────────────────────────
     describe("Detección de empalmes", () => {
         const mockCollision = {
             houseEventId: "55555555-5555-4555-8555-555555555555",
@@ -575,9 +559,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 6: Manejo del log
-    // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna UPDATED con warning si el log falla", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
@@ -651,9 +632,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 7: Defaults del schema
-    // ──────────────────────────────────────────────────────────
     describe("Defaults del schema", () => {
         it("aplica allDay=false por defecto si no se envía", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(

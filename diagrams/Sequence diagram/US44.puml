@@ -1,0 +1,118 @@
+@startuml
+title Consultar Logs de Trabajadores — Coordinador (MVC + Service + Prisma)
+actor Cliente as "Frontend"
+boundary "Router\n(log.routes.js)" as Router
+entity "Middleware\n(verifyToken)" as Middleware
+entity "Middleware RBAC\n(requireRole)" as CheckRole
+entity "Middleware RBAC\n(requirePrivileges)" as CheckPrivilege
+control "Controller\n(log.controller.js)" as Controller
+control "Service\n(log.service.js)" as Service
+entity "Model\n(log.model.js)" as Model
+database "PostgreSQL\n(via Prisma)" as Postgres
+
+Cliente -> Router : GET /logs/house?page=1&limit=6\nAuthorization: Bearer token
+
+== Autenticación y autorización ==
+
+Router -> Middleware : verifyToken(req)
+alt Token inválido o expirado
+    Middleware --> Cliente : 401 { success: false,\nmessage: "Token inválido o expirado" }
+else Token válido
+    Middleware -> Router : req.user = { id, email, role, houseId }
+end
+
+Router -> CheckRole : requireRole("Coordinador")(req)
+alt Rol no autorizado
+    CheckRole --> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Rol válido
+    CheckRole -> Router : next()
+end
+
+Router -> CheckPrivilege : requirePrivilege("ViewLogs", "CreatePDF")(req)
+alt No tiene privilegio
+    CheckPrivilege --> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Privilegio encontrado
+    CheckPrivilege -> Router : next()
+end
+
+== Lógica de negocio ==
+
+Router -> Controller : getLogsByHouse(req, res)
+Controller -> Service : getLogsByHouse(houseId, page, limit=6)
+
+Service -> Service : validateParams(page, limit)
+alt Parámetros inválidos (page < 1 / limit fuera de rango)
+    Service -->> Controller : { code: 422, message: "Parámetros inválidos" }
+    Controller -->> Router : 422 { success: false,\nmessage: "Parámetros inválidos" }
+    Router -->> Cliente : 422 { success: false,\nmessage: "Parámetros inválidos" }
+else Parámetros válidos
+
+    Service -> Model : getLogsByHouse(houseId, skip, take=6)
+    Model -> Postgres : prisma.log.findMany({\n  where: { house_id: houseId },\n  include: {\n    employee: { select: { name, curp, picture } },\n    affected: { select: { name } }\n  },\n  skip: (page - 1) * 6,\n  take: 6,\n  orderBy: { fecha: "desc" }\n})
+    Postgres -->> Model : logs[]
+    Model -> Postgres : prisma.log.count({\n  where: { house_id: houseId }\n})
+    Postgres -->> Model : totalRecords
+    Model -->> Service : { logs[], totalRecords }
+    alt Sin registros encontrados
+        Service -->> Controller : { code: 200, data: [],\ntotalPages: 0, currentPage: 1 }
+        Controller -->> Router : 200 { success: true, data: [],\ntotalPages: 0, currentPage: 1 }
+        Router -->> Cliente : 200 { success: true, data: [],\ntotalPages: 0, currentPage: 1 }
+    else Logs encontrados
+        Service -->> Controller : { code: 200,\ndata: logs[],\ntotalPages,\ncurrentPage: page,\ntotalRecords }
+    end
+end
+
+== Respuesta al frontend ==
+
+Controller -->> Router : 200 { success: true,\ndata: logs[],\ntotalPages,\ncurrentPage,\ntotalRecords }
+Router -->> Cliente : 200 { success: true,\ndata: logs[],\ntotalPages,\ncurrentPage,\ntotalRecords }
+
+== Generación de PDF ==
+
+Cliente -> Cliente : Presiona "Generar PDF"
+Cliente -> Cliente : Muestra modal para seleccionar\nmes y año del reporte
+
+Cliente -> Router : GET /logs/report?month=MM&year=YYYY\nAuthorization: Bearer token
+
+Router -> Middleware : verifyToken(req)
+alt Token inválido o expirado
+    Middleware --> Cliente : 401 { success: false,\nmessage: "Token inválido o expirado" }
+else Token válido
+    Middleware -> Router : req.user = { id, email, role, houseId }
+end
+
+Router -> CheckRole : requireRole("Coordinador")(req)
+alt Rol no autorizado
+    CheckRole --> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Rol válido
+    CheckRole -> Router : next()
+end
+
+Router -> CheckPrivilege : requirePrivilege("ViewLogs", "CreatePDF")(req)
+alt No tiene privilegio
+    CheckPrivilege --> Cliente : 403 { success: false,\nmessage: "Privilegios insuficientes" }
+else Privilegio encontrado
+    CheckPrivilege -> Router : next()
+end
+
+Router -> Controller : generateLogReport(req, res)
+Controller -> Service : getLogsInRange(houseId, month, year)
+
+Service -> Service : validateDate(month, year)
+alt Fecha inválida (month < 1 | year > 5)
+    Service -->> Controller : { code: 422, message: "Fecha inválida" }
+    Controller -->> Router : 422 { success: false,\nmessage: "Fecha inválida" }
+    Router -->> Cliente : 422 { success: false,\nmessage: "Fecha inválida" }
+else Fecha válida
+    Service -> Model : getLogsInRange(houseId, month, year)
+    Model -> Postgres : prisma.log.findMany({\n  where: {\n    house_id: houseId,\n    fecha: { gte: startDate, lte: endDate }\n  },\n  include: { employee, affected }\n})
+    Postgres -->> Model : logs[]
+    Model -->> Service : logs[]
+    Service -> Service : generatePDF(logs[])
+    Service -->> Controller : { code: 200, pdf: Buffer }
+    Controller -->> Router : 200 Content-Type: application/pdf
+    Router -->> Cliente : 200 archivo PDF descargado
+    Cliente -> Cliente : Descarga el PDF generado
+end
+
+@enduml

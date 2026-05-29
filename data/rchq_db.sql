@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS public.employee (
     start_date                       date          NOT NULL,
     end_date                         date          NULL,
     deactivation_reason              varchar(250)  NULL,
+    out_of_blacklist_reason          varchar(250)  NULL,
     nss                              varchar(11)   NULL UNIQUE,
     bank_account                     varchar(18)   NULL,
     phone_number                     varchar(20)   NULL,
@@ -132,6 +133,7 @@ CREATE TABLE IF NOT EXISTS public.employee (
     two_fa_blocked_until             timestamp     NULL,
     temp_totp_secret                 varchar       NULL,
     temp_totp_secret_created_at      timestamp     NULL,
+    refresh_token                    varchar       NULL,
     CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
     CONSTRAINT employee_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id),
     CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id),
@@ -350,7 +352,8 @@ CREATE TABLE IF NOT EXISTS public.absence (
 CREATE TABLE IF NOT EXISTS public.blacklist (
     blacklist_id uuid        NOT NULL DEFAULT gen_random_uuid(),
     curp         varchar(18) NOT NULL UNIQUE,
-    created_at   timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason       varchar(250) NOT NULL,
+    created_at   timestamp   NOT NULL DEFAULT now(),
     CONSTRAINT blacklist_pk          PRIMARY KEY (blacklist_id),
-    CONSTRAINT blacklist_employee_fk FOREIGN KEY (curp) REFERENCES public.employee(curp) ON DELETE RESTRICT
+    CONSTRAINT blacklist_employee_fk FOREIGN KEY (curp) REFERENCES public.employee(curp) ON DELETE NO ACTION
 );

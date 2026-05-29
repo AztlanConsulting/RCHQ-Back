@@ -1,4 +1,3 @@
-// tests/integration/employee.getDetail.test.js
 const request = require("supertest");
 const { randomUUID } = require("crypto");
 const jwt = require("jsonwebtoken");
@@ -12,7 +11,6 @@ const {
     SEED,
 } = require("../helpers/dbSetup");
 
-// ─── Constantes del empleado sujeto ───────────────────────────────────────────
 const TEST_SUBJECT_EMPLOYEE_ID = randomUUID();
 const TEST_WORKDAY_ID = randomUUID();
 const TEST_FAULT_ID = randomUUID();
@@ -22,7 +20,6 @@ const TEST_EMP_ADDRESS_ID = randomUUID();
 const TEST_SUBJECT_EMAIL = "integration.subject.detail@test.com";
 const TEST_CURP_SUBJECT = "GETDT123456SUBXX02";
 
-// ─── JWT con rol admin (requireRole mira el payload, no la BD) ────────────────
 const generateAdminSessionToken = () =>
   jwt.sign(
     {
@@ -37,7 +34,6 @@ const generateAdminSessionToken = () =>
     { expiresIn: "1h" },
   );
 
-// ─── Seed del empleado sujeto con sus relaciones ──────────────────────────────
 const seedSubjectEmployeeWithRelations = async () => {
     await prisma.employee.create({
         data: {
@@ -73,7 +69,6 @@ const seedSubjectEmployeeWithRelations = async () => {
         },
     });
 
-    // workday.name is @unique with max 9 chars
     const workdayName = `W${TEST_WORKDAY_ID.replace(/-/g, "").slice(0, 8)}`;
     await prisma.workday.create({
         data: { workday_id: TEST_WORKDAY_ID, name: workdayName },
@@ -115,7 +110,6 @@ const seedSubjectEmployeeWithRelations = async () => {
   });
 };
 
-// ─── Cleanup del empleado sujeto (hijos primero) ──────────────────────────────
 const cleanSubjectGraph = async () => {
     await prisma.vacations_request.deleteMany({
         where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
@@ -136,7 +130,6 @@ const cleanSubjectGraph = async () => {
     await prisma.workday.deleteMany({ where: { workday_id: TEST_WORKDAY_ID } });
 };
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
 beforeAll(async () => {
     await cleanSubjectGraph();
     await seedDb();
@@ -150,7 +143,6 @@ afterAll(async () => {
     await disconnectDb();
 });
 
-// ─── GET /employee/employee-detail/:employeeID ────────────────────────────────
 describe("GET /employee/employee-detail/:employeeID - integration", () => {
     const authHeader = () => ({
         Authorization: `Bearer ${generateAdminSessionToken()}`,

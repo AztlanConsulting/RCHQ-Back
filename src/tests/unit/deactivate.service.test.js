@@ -58,6 +58,20 @@ describe("deactivate.service — deactivateEmployee", () => {
             const req = buildReq({ body: { reason: "" } });
             const result = await deactivateEmployee(req);
             expect(result.code).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+            expect(result.data).toEqual({
+                message: "La razón es obligatoria para dar de baja al empleado.",
+            });
+        });
+
+        it("retorna VALIDATION_ERROR descriptivo si falta razón al agregar a lista negra durante la baja", async () => {
+            deactivateModel.getEmployeeToDeactivate.mockResolvedValue(MOCK_EMPLOYEE);
+            const req = buildReq({ body: { reason: "", addToBlacklist: true } });
+            const result = await deactivateEmployee(req);
+
+            expect(result.code).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+            expect(result.data).toEqual({
+                message: "La razón es obligatoria para agregar al empleado a la lista negra durante la baja.",
+            });
         });
     });
 
@@ -143,6 +157,24 @@ describe("deactivate.service — deactivateEmployee", () => {
                 LOG_ACTIONS.EMPLOYEE_DEACTIVATED,
                 expect.any(String),
                 "uuid-empleado-001",
+            );
+        });
+
+        it("crea log BLACKLIST_ADDED si también se añade a la lista negra", async () => {
+            const req = buildReq({ body: { reason: "Falta grave", addToBlacklist: true } });
+            await deactivateEmployee(req);
+            
+            expect(createLog).toHaveBeenCalledWith(
+                "uuid-actor-001",
+                LOG_ACTIONS.EMPLOYEE_DEACTIVATED,
+                expect.any(String),
+                "uuid-empleado-001",
+            );
+            expect(createLog).toHaveBeenCalledWith(
+                "uuid-actor-001",
+                LOG_ACTIONS.BLACKLIST_ADDED,
+                expect.any(String),
+                "RAMC900101HDFRZN01",
             );
         });
     });

@@ -1,0 +1,64 @@
+@startuml
+title US 12 - Modificar la información de un empleado (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "upload.js\nmiddleware" as Upload
+participant "resolvers.js\nresolveEmployeeHouse()" as Resolver
+participant "abac.js\nauthorize(modifyEmployee)" as ABAC
+participant "update.controller.js\nupdateBasicInfo()" as Controller
+participant "update.service.js\nupdateBasicInfo()" as Service
+participant "update.model.js" as Model
+database "BD (Prisma)" as BD
+
+Usuario -> Router : PUT /:employeeId/basic-info (FormData)
+
+Router -> Router : verifyToken, requireRole, requirePrivileges
+
+Router -> Upload : upload.single("picture")
+Upload --> Router : req.file adjuntado
+
+Router -> Resolver : resolveEmployeeHouse(req, res, next)
+activate Resolver
+Resolver ->> BD : prisma.employee.findUnique(employeeId)
+BD -->> Resolver : { house_id }
+Resolver -> Resolver : req.resolvedEmployee = { houseId }
+Resolver --> Router : next()
+deactivate Resolver
+
+Router -> ABAC : authorize(modifyEmployee)
+activate ABAC
+ABAC -> ABAC : Evalúa si el usuario puede modificar\nen esa houseId específica
+ABAC --> Router : next()
+deactivate ABAC
+
+Router -> Controller : updateBasicInfo(req, res)
+activate Controller
+
+Controller ->> Service : await updateBasicInfo(employeeId, req.body, req.file)
+activate Service
+
+Service ->> Model : await getEmployeeById(employeeId)
+Model -->> Service : employee
+
+alt !employee
+    Service --> Controller : { code: RESPONSES.EMPLOYEE.NOT_FOUND }
+    Controller --> Router : res.status(404).json(...)
+    Router --> Usuario : 404 Not Found
+else Empleado existe
+    alt req.file existe
+        Service -> Service : Procesa y sube nueva imagen (Cloud Storage)
+    end
+    
+    Service ->> Model : await updateEmployeeBasicInfo(employeeId, updateData)
+    Model ->> BD : prisma.employee.update(...)
+    BD -->> Model : updatedEmployee
+    Model -->> Service : updatedEmployee
+    
+    Service --> Controller : { code: RESPONSES.EMPLOYEE.UPDATED, data }
+    Controller --> Router : res.status(200).json({ success: true, data })
+    Router --> Usuario : 200 OK (Información Actualizada)
+end
+deactivate Service
+deactivate Controller
+@enduml

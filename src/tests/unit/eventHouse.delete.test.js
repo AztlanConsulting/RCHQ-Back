@@ -30,9 +30,6 @@ describe("deleteHouseEvent service", () => {
         jest.clearAllMocks();
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 1: Eliminación exitosa
-    // ──────────────────────────────────────────────────────────
     describe("Caso exitoso", () => {
         it("elimina el evento y retorna DELETED", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);
@@ -71,9 +68,6 @@ describe("deleteHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 2: Evento no encontrado
-    // ──────────────────────────────────────────────────────────
     describe("Evento no encontrado", () => {
         it("retorna NOT_FOUND si el evento no existe (null)", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
@@ -91,9 +85,6 @@ describe("deleteHouseEvent service", () => {
 
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 3: Evento de otra casa
-    // ──────────────────────────────────────────────────────────
     describe("Evento de otra casa", () => {
         it("retorna NOT_FOUND si el evento no pertenece a la casa del usuario", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
@@ -110,9 +101,6 @@ describe("deleteHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 4: Manejo del log
-    // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna DELETED aunque el log falle", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(mockEvent);

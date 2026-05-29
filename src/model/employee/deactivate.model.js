@@ -35,7 +35,10 @@ exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null, 
             prisma.blacklist.upsert({
                 where: { curp: curpToBlacklist },
                 update: {},
-                create: { curp: curpToBlacklist },
+                create: { 
+                    curp: curpToBlacklist,
+                    reason: reason 
+                },
             })
         );
     }

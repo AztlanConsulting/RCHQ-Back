@@ -8,6 +8,8 @@ jest.mock("../../model/event/create.model");
 jest.mock("../../model/event/get.model");
 jest.mock("../../model/log.model");
 
+const { futureDate } = require("../helpers/dateHelpers");
+
 describe("createPersonalEvent service", () => {
     const employeeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const coordinatorId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -30,7 +32,7 @@ describe("createPersonalEvent service", () => {
     const basePayload = {
         name: "Reunion medica",
         eventTypeId,
-        date: "2026-07-10",
+        date: futureDate(30),
         allDay: false,
         start: "09:00",
         end: "10:00",
@@ -39,7 +41,7 @@ describe("createPersonalEvent service", () => {
     const mockCreatedEvent = {
         personalEventId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
         eventTypeId,
-        date: "2026-07-10",
+        date: futureDate(30),
         start: "09:00:00",
         end: "10:00:00",
         name: "Reunion medica",
@@ -131,7 +133,7 @@ describe("createPersonalEvent service", () => {
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
             expect(createCall.start).toBe("00:00:00");
             expect(createCall.end).toBe("00:00:00");
-            expect(createCall.endDate).toBe("2026-07-11");
+            expect(createCall.endDate).toBe(futureDate(31));
         });
 
         it("normaliza hora HH:mm a HH:mm:ss antes de llamar al model", async () => {
@@ -153,6 +155,62 @@ describe("createPersonalEvent service", () => {
             const createCall = createModel.createPersonalEvent.mock.calls[0][0];
             expect(createCall.start).toBe("09:00:00");
             expect(createCall.end).toBe("10:00:00");
+        });
+
+        it("permite terminar a las 00:00 y usa el siguiente día como fin exclusivo", async () => {
+            getPersonalEventModel.getEmployeesInHouse.mockResolvedValue([
+                { employeeId },
+            ]);
+            getPersonalEventModel.findOverlappingEmployees.mockResolvedValue(
+                [],
+            );
+            createModel.createPersonalEvent.mockResolvedValue(mockCreatedEvent);
+            createLog.mockResolvedValue();
+
+            const result = await createService.createPersonalEvent(
+                employeeUser,
+                { ...basePayload, start: "23:30", end: "00:00" },
+                "127.0.0.1",
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
+            const createCall = createModel.createPersonalEvent.mock.calls[0][0];
+            expect(createCall.start).toBe("23:30:00");
+            expect(createCall.end).toBe("00:00:00");
+            expect(createCall.endDate).toBe(futureDate(31));
+        });
+
+        it("acepta fechas UTC con fecha final distinta para eventos en horario foráneo", async () => {
+            getPersonalEventModel.getEmployeesInHouse.mockResolvedValue([
+                { employeeId },
+            ]);
+            getPersonalEventModel.findOverlappingEmployees.mockResolvedValue(
+                [],
+            );
+            createModel.createPersonalEvent.mockResolvedValue(mockCreatedEvent);
+            createLog.mockResolvedValue();
+
+            const start = `${futureDate(30)}T06:00:00.000Z`;
+            const end = `${futureDate(31)}T06:00:00.000Z`;
+
+            const result = await createService.createPersonalEvent(
+                employeeUser,
+                { ...basePayload, start, end },
+                "127.0.0.1",
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
+            const createCall = createModel.createPersonalEvent.mock.calls[0][0];
+            expect(createCall.start).toBe(start);
+            expect(createCall.end).toBe(end);
+            expect(
+                getPersonalEventModel.findOverlappingEmployees,
+            ).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    start,
+                    end,
+                }),
+            );
         });
 
         it("no normaliza si la hora ya tiene formato HH:mm:ss", async () => {

@@ -1,0 +1,62 @@
+@startuml
+title US - Consultar Todos los Empleados (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "auth.js\nverifyToken()" as Auth
+participant "rbac.js\nrequireRole()" as RoleRBAC
+participant "rbac.js\nrequirePrivileges()" as PrivRBAC
+participant "get.controller.js\ngetAll()" as Controller
+participant "get.service.js\ngetEmployees()" as Service
+participant "get.model.js\ngetEmployees()" as Model
+database "BD (Prisma)" as BD
+
+Usuario -> Router : GET /getAll?page=1&limit=7&search=...
+Router -> Auth : verifyToken(req, res, next)
+Auth --> Router : next()
+
+Router -> RoleRBAC : requireRole("Administrador", "Coordinador")
+RoleRBAC --> Router : next()
+
+Router -> PrivRBAC : requirePrivileges("viewEmployees")
+PrivRBAC --> Router : next()
+
+Router -> Controller : getAll(req, res)
+activate Controller
+
+alt req.user.houseId es null o undefined
+    Controller --> Router : res.status(403).json(Acceso denegado)
+    Router --> Usuario : 403 Forbidden
+else Contiene houseId válido
+    Controller ->> Service : await getEmployees(houseId, active, page, limit, search)
+    activate Service
+    
+    Service -> Service : Transforma limit/page a skip
+    
+    Service ->> Model : await getEmployees(houseId, active, search, skip, limit)
+    activate Model
+    
+    Model -> Model : Construye whereClause con houseId y search
+    
+    Model ->> BD : Promise.all([prisma.employee.findMany, prisma.employee.count])
+    BD -->> Model : [employees[], total]
+    
+    Model -->> Service : { employees, total }
+    deactivate Model
+    
+    Service -> Service : Math.ceil(total / limit)
+    Service -> Service : mappedEmployees = employees.map(...)
+    
+    Service -->> Controller : { data: mappedEmployees, pagination }
+    deactivate Service
+    
+    alt Exito
+        Controller --> Router : res.status(200).json({ success: true, data, pagination })
+        Router --> Usuario : 200 OK (Data y paginación)
+        Controller --> Router : res.status(500).json(Error interno)
+        Router --> Usuario : 500 Internal Server Error
+    end
+end
+deactivate Controller
+
+@enduml

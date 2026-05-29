@@ -2,19 +2,29 @@ const express = require("express");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
-const { resolveRequesterHouse } = require("../middleware/resolvers");
+const {
+    resolveRequesterHouse,
+    resolveVacationRequestResource,
+} = require("../middleware/resolvers");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
 const { apiLimiter } = require("../utils/rateLimit");
 const {
     isAllowed,
     canRegisterEmployeeVacation,
+    authorize,
 } = require("../middleware/abac");
+const {
+    modifyVacationRequestDates,
+    deleteVacationRequestPolicy,
+} = require("../policies/vacation.policies");
 
 const { getRemainingVacations,
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getFutureVacationRequests,
+    getPastVacationRequests,
     getEligibleVacationEmployees
 } = require("../controller/vacation/get.controller");
 
@@ -44,6 +54,7 @@ const {
 const {
     getPendingVacationRequestsSchema,
     getReviewedVacationRequestsSchema,
+    getOwnVacationRequestsSchema,
 } = require("../schemas/vacation/get.schemas");
 
 router.get("/remaining/:id", apiLimiter, verifyToken, isAllowed, getRemainingVacations);
@@ -97,10 +108,12 @@ router.patch(
     "/request/:vacationRequestId/dates",
     apiLimiter,
     verifyToken,
+    requireRole(...allRoles),
     resolveRequesterHouse,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
+    requirePrivileges(PRIVILEGES.EDIT_VACATIONS),
     validate(updateVacationRequestDatesSchema, "all"),
+    resolveVacationRequestResource,
+    authorize(modifyVacationRequestDates, (req) => req.resolvedVacationRequest),
     updateVacationRequestDates,
 );
 
@@ -108,9 +121,10 @@ router.delete(
     "/request/:vacationRequestId",
     apiLimiter,
     verifyToken,
-    requireRole(ROLES.COORDINATOR),
-    requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(deleteVacationRequestSchema, "all"),
+    resolveRequesterHouse,
+    resolveVacationRequestResource,
+    authorize(deleteVacationRequestPolicy, (req) => req.resolvedVacationRequest),
     deleteVacationRequest,
 );
 
@@ -132,6 +146,26 @@ router.get(
     requirePrivileges(PRIVILEGES.MANAGE_EMPLOYEES),
     validate(getReviewedVacationRequestsSchema, "all"),
     getReviewedVacationRequests
+);
+
+router.get(
+    "/requests/future",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
+    validate(getOwnVacationRequestsSchema, "all"),
+    getFutureVacationRequests
+);
+
+router.get(
+    "/requests/past",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_OWN_VACATIONS),
+    validate(getOwnVacationRequestsSchema, "all"),
+    getPastVacationRequests
 );
 
 module.exports = router;

@@ -1,0 +1,89 @@
+@startuml
+
+|Empleado|
+start
+:Ingresa al calendario;
+:Presiona una vacación;
+
+|Sistema|
+:Renderiza el detalle de la vacación;
+
+if (¿La vacación ya empezó?) then (Sí)
+:Muestra únicamente el botón de cerrar;
+stop
+else (No)
+:Muestra el botón de editar;
+endif
+
+|Empleado|
+:Presiona el botón de editar;
+:Selecciona nuevas fechas;
+:Presiona en guardar;
+
+|Sistema|
+:Valida las fechas seleccionadas;
+
+if (¿Fecha inicio es posterior a fecha fin?) then (Sí)
+:Muestra mensaje de fechas inválidas;
+stop
+else (No)
+endif
+
+if (¿Empleado es dueño de la vacación?) then (Sí)
+    if (¿La vacación está pendiente?) then (Sí)
+    else (No)
+    :Muestra mensaje de que solo puede modificar\nsolicitudes pendientes;
+    stop
+    endif
+else (No)
+    if (¿Empleado es coordinador de la casa?) then (Sí)
+    else (No)
+    :Muestra mensaje de permisos insuficientes;
+    stop
+    endif
+endif
+
+if (¿La vacación está rechazada?) then (Sí)
+:Muestra mensaje de que no se pueden\nmodificar vacaciones rechazadas;
+stop
+else (No)
+endif
+
+:Obtiene días de trabajo del empleado;
+
+if (¿Empleado tiene días de trabajo?) then (Sí)
+else (No)
+:Muestra mensaje de que se necesitan\ndías de trabajo registrados;
+stop
+endif
+
+:Obtiene eventos globales y de casa;
+:Calcula días hábiles reales;
+
+if (¿El rango tiene días hábiles?) then (Sí)
+else (No)
+:Muestra mensaje de que no hay días hábiles\nde vacaciones dentro del rango;
+stop
+endif
+
+if (¿Fechas están dentro del periodo laboral?) then (Sí)
+else (No)
+:Muestra mensaje de que no se pueden modificar\nvacaciones fuera del periodo actual;
+stop
+endif
+
+if (¿Existe traslape con otra solicitud activa?) then (Sí)
+:Muestra mensaje de que ya existe una solicitud\ncubriendo los días solicitados;
+stop
+else (No)
+endif
+
+if (¿Tiene días de vacaciones suficientes?) then (Sí)
+:Actualiza las fechas de la vacación;
+:Muestra mensaje de modificación exitosa;
+else (No)
+:Muestra mensaje de días de vacaciones insuficientes;
+endif
+
+stop
+@enduml

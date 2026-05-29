@@ -1,0 +1,63 @@
+@startuml
+title US 15 - Modificar documento de empleado (Sequence Diagram)
+
+actor Usuario
+participant "employee.route.js\nrouter" as Router
+participant "Middlewares\nAuth, ABAC, Resolver" as Middlewares
+participant "uploadDocs.js\nmiddleware" as Upload
+participant "update.controller.js\nupdateDocument()" as Controller
+participant "update.service.js\nupdateDocument()" as Service
+participant "utils/deleteFile.js" as Utils
+participant "update.model.js\n& get.model.js" as Model
+participant "log.model.js" as Log
+database "BD (Prisma)" as BD
+
+Usuario -> Router : PUT /:id/documents/:field (Archivo adjunto)
+Router -> Middlewares : Validaciones de Seguridad (Token, Roles, House, ABAC)
+Middlewares --> Router : next()
+
+Router -> Upload : uploadDocs.single("file")
+Upload --> Router : req.file guardado
+
+Router -> Controller : updateDocument(req, res)
+activate Controller
+
+Controller ->> Service : await updateDocument(id, field, file)
+activate Service
+
+Service ->> Model : await findDocumentById(documentId)
+Model -->> Service : docType
+
+Service ->> Model : await findById(employeeId)
+Model -->> Service : employee
+
+Service ->> Model : await findEmployeeDocument(employeeId, documentId)
+Model -->> Service : existingDocument
+
+alt Alguna validación falla (!docType, !employee, !existingDocument)
+    Service -> Utils : deleteFileIfExists(file.path)
+    Service --> Controller : { type: ERROR, body: message }
+    Controller --> Router : res.status(400 / 404).json(message)
+    Router --> Usuario : Error HTTP
+else Todo válido
+    Service ->> Model : await updateEmployeeDocument(employeeId, documentId, fileUrl)
+    activate Model
+    Model ->> BD : prisma.employee_documents.update(...)
+    BD -->> Model : updatedDoc
+    Model -->> Service : updatedDoc
+    deactivate Model
+    
+    opt existingDocument.url existe
+        Service -> Utils : deleteFileIfExists(existingDocument.url)
+    end
+    
+    Service --> Controller : { type: RESPONSES.DOCUMENTS.UPLOADED, body }
+    deactivate Service
+    
+    Controller ->> Log : await createLog(requesterId, DOCUMENT_UPDATED, ip, id)
+    
+    Controller --> Router : res.status(200).json(result.body)
+    Router --> Usuario : 200 OK (Documento actualizado)
+end
+deactivate Controller
+@enduml

@@ -10,7 +10,7 @@
 -- =========================
 INSERT INTO public.house (house_id, name, location, phone_number, description, image)
 VALUES 
-('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', 'boop'),
+('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', ''),
 ('a0000001-0000-4000-8000-000000000002', 'Sonríe villa infantil', 'Querétaro, Qro.', '4420000001', 'Institución de asistencia infantil', 'default_house'),
 ('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'Querétaro, Qro.', '4420000002', 'Hogar para niños y niñas', 'default_house'),
 ('a0000001-0000-4000-8000-000000000004', 'Casa Hogar Esperanza Para ti', 'Querétaro, Qro.', '4420000003', 'Apoyo integral a la infancia', 'default_house'),
@@ -73,7 +73,11 @@ VALUES
 ('00000001-0000-4000-8000-000000000010', 'deleteAbsences'),
 ('00000001-0000-4000-8000-000000000011', 'addAbsences'),
 ('00000001-0000-4000-8000-000000000013', 'deleteEvent'),
-('00000001-0000-4000-8000-000000000014', 'editEvent')
+('00000001-0000-4000-8000-000000000014', 'editEvent'),
+('00000001-0000-4000-8000-000000000015', 'viewBlacklist'),
+('00000001-0000-4000-8000-000000000016', 'removeFromBlacklist'),
+('00000001-0000-4000-8000-000000000017', 'viewSelfVacations'),
+('00000001-0000-4000-8000-000000000018', 'editVacations')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -90,7 +94,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
-WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs', 'addToBlacklist')
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs', 'addToBlacklist', 'viewBlacklist', 'removeFromBlacklist')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_privilege (role_id, privilege_id)
@@ -133,6 +137,14 @@ CROSS JOIN public.privileges p
 WHERE p.name = 'viewEvents'
 ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
+-- Todos los roles pueden consultar sus propias vacaciones
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'viewSelfVacations'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
 -- Coordinadores de área — ver empleados y documentos
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
@@ -173,6 +185,14 @@ SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
 WHERE p.name = 'editEvent'
+ON CONFLICT (role_id, privilege_id) DO NOTHING;
+
+-- Modificar vacaciones - todos los roles
+INSERT INTO public.role_privilege (role_id, privilege_id)
+SELECT r.role_id, p.privilege_id
+FROM public.role r
+CROSS JOIN public.privileges p
+WHERE p.name = 'editVacations'
 ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
 -- Crear eventos personales - todos los roles
@@ -241,7 +261,7 @@ VALUES (
   'MEML900101MDFNDR01',
   NULL,
   '1990-01-01',
-  'boop',
+  NULL,
   '2026-04-09',
   NULL,
   NULL,
@@ -301,7 +321,8 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-006', 'Empleado dado de baja', true),
 ('empl-008', 'Fallo al dar de baja al empleado', true),
 ('vaca-006', 'Eliminación de vacaciones exitosa', false),
-('blck-001', 'Empleado agregado a la lista negra', true)
+('blck-001', 'Empleado agregado a la lista negra', true),
+('blck-002', 'Empleado eliminado de la lista negra', true)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.workday (workday_id, name)
@@ -664,7 +685,7 @@ SELECT
   NULL,
   '2025-01-20',
   NULL,
-  '55 5555 1002',
+  '5555551002',
   NULL,
   NULL
 WHERE NOT EXISTS (
@@ -716,7 +737,7 @@ SELECT
   NULL,
   '2025-02-03',
   NULL,
-  '55 5555 1003',
+  '5555551003',
   NULL,
   NULL,
   'nomina'
@@ -730,7 +751,7 @@ SET
     (SELECT house_id FROM public.house WHERE house_id = 'a0000001-0000-4000-8000-000000000001'),
     house_id
   ),
-  phone_number = COALESCE(phone_number, '442 479 2232')
+  phone_number = COALESCE(phone_number, '4424792232')
 WHERE email = 'andre@gmail.com';
 
 INSERT INTO public.employee_address (
@@ -1107,10 +1128,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00001',
+  'MOXC801103MBSCYE80',
   NULL,
   '1990-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1170,10 +1191,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00002',
+  'MOXC801103MBSCYE81',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1233,10 +1254,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00003',
+  'MOXC801103MBSCYE82',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1296,10 +1317,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00004',
+  'MOXC801103MBSCYE83',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1359,10 +1380,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00005',
+  'MOXC801103MBSCYE84',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1422,10 +1443,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00006',
+  'MOXC801103MBSCYE85',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1485,10 +1506,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US300101HDF00007',
+  'MOXC801103MBSCYE86',
   NULL,
   '1990-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1693,6 +1714,17 @@ VALUES
   NULL,
   NOW(),
   2
+),
+-- Solicitud para concurrencia en pasado
+(
+  'c3000000-0000-4000-8000-000000000097',
+  'e3000001-0000-4000-8000-000000000006',
+  '2026-01-27',
+  '2026-01-28',
+  2,
+  NULL,
+  NOW(),
+  2
 )
 ON CONFLICT (vacations_request_id) DO UPDATE SET
   employee_id = EXCLUDED.employee_id,
@@ -1834,10 +1866,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US320101HDF00001',
+  'MOXC801103MBSCYE87',
   NULL,
   '1990-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1897,10 +1929,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US320101HDF00002',
+  'MOXC801103MBSCYE88',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -1960,10 +1992,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US320101HDF00003',
+  'MOXC801103MBSCYE89',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -2023,10 +2055,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US320101HDF00004',
+  'MOXC801103MBSCYF80',
   NULL,
   '1995-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
@@ -2086,10 +2118,10 @@ VALUES (
   0,
   0,
   NULL,
-  'US320101HDF00005',
+  'MOXC801103MBSCYF81',
   NULL,
   '1990-01-01',
-  'boop',
+  NULL,
   '2025-01-01',
   NULL,
   NULL,
