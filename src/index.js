@@ -26,11 +26,7 @@ app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-const allowedOrigins = [
-  'https://miapp.com/',
-  'https://admin.miapp.com/',
-  'http://localhost:3000/'
-];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(origin => origin);
 
 app.use(cors({
   origin: function (origin, callback) {
