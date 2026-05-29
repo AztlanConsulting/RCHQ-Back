@@ -80,37 +80,109 @@ else Campos completos
         controller ->> event.service : createGlobalEvent(user, payload, clientIp)
         activate event.service
 
-        event.service ->> event.model : createGlobalEvent(data)
+        event.service ->> event.model : findOverlappingGlobalEvents({ start, end })
         activate event.model
-        event.model ->> PostgreSQL : prisma.global_event.create()
+
+        event.model ->> PostgreSQL : prisma.global_event.findMany(overlap_query)
         activate PostgreSQL
-        PostgreSQL -->> event.model : globalEventCreated
+        PostgreSQL -->> event.model : collisionList
         deactivate PostgreSQL
-        event.model -->> event.service : globalEvent
+
+        event.model -->> event.service : collisions[]
         deactivate event.model
 
-        event.service ->> event.model : createLog(userId, GLOBAL_EVENT_CREATED, clientIp, globalEventId)
-        activate event.model
-        event.model ->> PostgreSQL : prisma.log.create()
-        activate PostgreSQL
-        PostgreSQL -->> event.model : log
-        deactivate PostgreSQL
-        event.model -->> event.service : success
-        deactivate event.model
+        alt ¿Existe empalme? AND !forceOverlap
+            event.service -->> controller : { code: OVERLAP, data: { collisions } }
+            controller -->> routes : response.status(409).send("Conflicto")
+            activate routes
 
-        event.service -->> controller : { code: CREATED, data: { globalEvent } }
-        deactivate event.service
+            routes -->> ReactView : send("Conflicto")
+            deactivate routes
+            activate ReactView
 
-        controller -->> routes : response.status(201).send("Creado")
-        deactivate controller
-        activate routes
+            ReactView -> Navegador : Mostrar alerta de empalme
+            deactivate ReactView
 
-        routes -->> ReactView : send("Creado")
-        deactivate routes
-        activate ReactView
+            alt No desea traslape
+                Navegador -> ReactView : Selecciona "No"
+                activate ReactView
+                ReactView -> Navegador : Regresa a editar datos
+                deactivate ReactView
+            else Sí desea traslape (forceOverlap = true)
+                Navegador -> ReactView : Selecciona "Sí"
+                activate ReactView
 
-        ReactView -> Navegador : Actualizar calendario y cerrar modal
-        deactivate ReactView
+                ReactView -> routes : POST /events/global/add { ..., forceOverlap: true }
+                deactivate ReactView
+                activate routes
+
+                routes -> controller : createGlobalEvent(request, response)
+                deactivate routes
+                controller ->> event.service : createGlobalEvent(user, payload, clientIp)
+                event.service ->> event.model : createGlobalEvent(data)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.global_event.create()
+                activate PostgreSQL
+                PostgreSQL -->> event.model : globalEventCreated
+                deactivate PostgreSQL
+                event.model -->> event.service : globalEvent
+                deactivate event.model
+
+                event.service ->> event.model : createLog(userId, GLOBAL_EVENT_CREATED, clientIp, globalEventId)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.log.create()
+                activate PostgreSQL
+                PostgreSQL -->> event.model : log
+                deactivate PostgreSQL
+                event.model -->> event.service : success
+                deactivate event.model
+
+                event.service -->> controller : { code: CREATED, data: { globalEvent } }
+
+                controller -->> routes : response.status(201).send("Creado")
+                activate routes
+
+                routes -->> ReactView : send("Creado")
+                deactivate routes
+                activate ReactView
+
+                ReactView -> Navegador : Actualizar calendario y cerrar modal
+                deactivate ReactView
+            end
+
+        else No existe empalme
+            event.service ->> event.model : createGlobalEvent(data)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.global_event.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : globalEventCreated
+            deactivate PostgreSQL
+            event.model -->> event.service : globalEvent
+            deactivate event.model
+
+            event.service ->> event.model : createLog(userId, GLOBAL_EVENT_CREATED, clientIp, globalEventId)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.log.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : log
+            deactivate PostgreSQL
+            event.model -->> event.service : success
+            deactivate event.model
+
+            event.service -->> controller : { code: CREATED, data: { globalEvent } }
+            deactivate event.service
+
+            controller -->> routes : response.status(201).send("Creado")
+            deactivate controller
+            activate routes
+
+            routes -->> ReactView : send("Creado")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Actualizar calendario y cerrar modal
+            deactivate ReactView
+        end
     end
 end
 
