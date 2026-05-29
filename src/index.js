@@ -26,9 +26,7 @@ app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-const allowedOrigins = [
-  'https://tochan.redcasashogarqro.cloud/'
-];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(origin => origin);
 
 app.use(cors({
   origin: function (origin, callback) {
