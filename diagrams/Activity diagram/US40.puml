@@ -1,0 +1,46 @@
+@startuml
+title US40 - Consultar las ausencias en el calendario
+
+|Empleado|
+start
+:Ingresa a la vista de "Mi Calendario";
+
+|Sistema|
+:Recibe solicitud para consultar eventos del rango actual;
+:Ejecuta middleware apiLimiter, verifyToken;
+if (¿Token válido?) then (Sí)
+  :Verifica roles y privilegios (viewEvents);
+  if (¿Rol y privilegio permitidos?) then (Sí)
+    :Delega al Controller (getEventsInRange);
+    :Delega al Service;
+    :Valida el formato de las fechas (Zod);
+    if (¿Fechas son válidas y coherentes?) then (Sí)
+      :Busca al empleado y su casa (house_id) en BD;
+      if (¿Empleado existe?) then (Sí)
+        :Busca eventos de la Casa (houseEvents);
+        :Busca eventos Personales (personalEvents);
+        :Busca eventos Globales (globalEvents);
+        :Mapea y unifica eventos en un solo arreglo;
+        :Busca días laborales del empleado;
+        :Busca ausencias propias dentro del rango;
+        :Filtra días libres (isFreeDay == true);
+        :Calcula días usados para cada ausencia;
+        :Mapea las ausencias al arreglo unificado;
+        :Retorna status 200 con la lista completa de eventos;
+      else (No)
+        :Retorna status 404 (Empleado no encontrado);
+      endif
+    else (No)
+      :Retorna status 400 o 406 (Fechas incorrectas);
+    endif
+  else (No)
+    :Retorna status 403 (No autorizado);
+  endif
+else (No)
+  :Retorna status 401 (No autenticado);
+endif
+
+|Empleado|
+:Consulta sus ausencias en el calendario para gestionar la disponibilidad del mes;
+stop
+@enduml

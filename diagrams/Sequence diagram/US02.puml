@@ -1,0 +1,55 @@
+@startuml
+title US - Consultar Mi Perfil (Sequence Diagram)
+
+actor Usuario
+participant "user.route.js\nrouter" as Router
+participant "auth.js\nverifyToken()" as Auth
+participant "profile.controller.js\ngetUserProfile()" as Controller
+participant "profile.service.js\ngetUserProfile()" as Service
+participant "profile.model.js\nprofile" as Model
+database "BD (Prisma)" as BD
+
+Usuario -> Router : GET /profile (Header: Authorization Bearer)
+Router -> Auth : verifyToken(req, res, next)
+
+alt Token inválido o no proporcionado
+    Auth --> Router : 401 / 403 (Invalid Token)
+    Router --> Usuario : 401 / 403 Unauthorized
+else Token válido
+    Auth -> Auth : jwt.verify(token)
+    Auth -> Auth : req.user = decoded
+    Auth --> Router : next()
+    Router -> Controller : getUserProfile(req, res)
+    
+    activate Controller
+    alt Try sin excepciones
+        Controller ->> Service : await getUserProfile(req.user.id)
+        activate Service
+        
+        Service ->> Model : await findEmployeeProfile(employeeId)
+        activate Model
+        
+        Model ->> BD : prisma.employee.findUnique({ where: { employee_id: employeeId }, select: {...} })
+        BD -->> Model : employee / null
+        
+        alt !employee
+            Model -->> Service : null
+            Service --> Controller : { code: RESPONSES.PROFILE.NOT_FOUND }
+            Controller --> Router : res.status(404).json(Perfil no encontrado)
+            Router --> Usuario : 404 Not Found
+        else Empleado encontrado
+            Model -> Model : mapProfile(employee)
+            Model -->> Service : mappedProfile
+            Service --> Controller : { code: RESPONSES.PROFILE.FOUND, data: employee }
+            Controller --> Router : res.status(200).json(data: result.data)
+            Router --> Usuario : 200 OK (Datos del perfil)
+        end
+        deactivate Model
+        deactivate Service
+        Controller --> Router : res.status(500).json(Error al obtener el perfil)
+        Router --> Usuario : 500 Internal Server Error
+    end
+    deactivate Controller
+end
+
+@enduml

@@ -1,11 +1,9 @@
-// tests/unit/document.unit.test.js
 const { uploadDocument } = require("../../service/employee/create.service");
 const { updateDocument } = require("../../service/employee/update.service");
 const { deleteDocument } = require("../../service/employee/delete.service");
 const { getDocumentsByEmployee } = require("../../service/employee/get.service");
 const RESPONSES = require("../../utils/responses");
 
-// ─── Mocks ────────────────────────────────────────────────
 jest.mock("../../model/employee/get.model");
 jest.mock("../../model/employee/create.model");
 jest.mock("../../model/employee/delete.model");
@@ -16,13 +14,11 @@ const createModel = require("../../model/employee/create.model");
 const deleteModel = require("../../model/employee/delete.model");
 const updateModel = require("../../model/employee/update.model");
 
-// Evitar que deleteFileIfExists explote en unit tests
 jest.mock("../../utils/deleteFile", () => ({ deleteFileIfExists: jest.fn() }));
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 
-// ─── Fixtures ─────────────────────────────────────────────
 const EMP_ID   = "emp-uuid-123";
-const DOC_ID   = "doc-uuid-456";  // UUID real de un tipo de documento
+const DOC_ID   = "doc-uuid-456";
 const BAD_ID   = "not-a-uuid";
 const FILE     = { filename: "test.pdf", path: "uploads/documents/test.pdf" };
 const FILE_URL = `uploads/documents/${FILE.filename}`;
@@ -32,9 +28,6 @@ const MOCK_EXISTING = { document_id: DOC_ID, employee_id: EMP_ID, url: "uploads/
 
 beforeEach(() => jest.clearAllMocks());
 
-// ═══════════════════════════════════════════════════════════
-// uploadDocument
-// ═══════════════════════════════════════════════════════════
 describe("uploadDocument", () => {
     it("NOT_ALLOW — documentId no existe en la tabla documents", async () => {
         readModel.findDocumentById.mockResolvedValue(null);
@@ -93,9 +86,6 @@ describe("uploadDocument", () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// updateDocument
-// ═══════════════════════════════════════════════════════════
 describe("updateDocument", () => {
     it("NOT_ALLOW — documentId no existe", async () => {
         readModel.findDocumentById.mockResolvedValue(null);
@@ -138,7 +128,6 @@ describe("updateDocument", () => {
 
         expect(result.type).toBe(RESPONSES.DOCUMENTS.UPLOADED);
         expect(updateModel.updateEmployeeDocument).toHaveBeenCalledWith(EMP_ID, DOC_ID, FILE_URL);
-        // El archivo viejo debe eliminarse
         expect(deleteFileIfExists).toHaveBeenCalledWith(MOCK_EXISTING.url);
     });
 
@@ -150,14 +139,10 @@ describe("updateDocument", () => {
 
         await updateDocument(EMP_ID, DOC_ID, FILE);
 
-        // deleteFileIfExists solo se llama con el nuevo si falla, no con null
         expect(deleteFileIfExists).not.toHaveBeenCalledWith(null);
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// deleteDocument
-// ═══════════════════════════════════════════════════════════
 describe("deleteDocument", () => {
     it("DOCUMENTS.NOT_FOUND — el par (employee, document) no existe", async () => {
         readModel.findEmployeeDocument.mockResolvedValue(null);
@@ -187,7 +172,6 @@ describe("deleteDocument", () => {
         const result = await deleteDocument(EMP_ID, DOC_ID);
 
         expect(result.type).toBe(RESPONSES.DOCUMENTS.DELETED);
-        // deleteFileIfExists se llama con null, es su responsabilidad no explotar
         expect(deleteFileIfExists).not.toHaveBeenCalled();
     });
 
@@ -199,9 +183,6 @@ describe("deleteDocument", () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// getDocumentsByEmployee
-// ═══════════════════════════════════════════════════════════
 describe("getDocumentsByEmployee", () => {
     it("USER.NOT_FOUND — empleado no existe", async () => {
         readModel.findById.mockResolvedValue(null);

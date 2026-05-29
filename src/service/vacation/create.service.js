@@ -180,7 +180,7 @@ exports.registerEmployeeVacation = async ({
 
     const today = getMexicoTodayDate();
 
-    if (startDate < today) {
+    if (startDate <= today) {
         return {
             code: RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED,
         };

@@ -33,9 +33,6 @@ describe("deletePersonalEvent service", () => {
         jest.clearAllMocks();
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 1: Eliminación exitosa
-    // ──────────────────────────────────────────────────────────
     describe("Caso exitoso", () => {
         it("elimina el evento y retorna DELETED", async () => {
             getModel.findPersonalEventById.mockResolvedValue(mockEvent);
@@ -79,9 +76,6 @@ describe("deletePersonalEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 2: Evento no encontrado
-    // ──────────────────────────────────────────────────────────
     describe("Evento no encontrado", () => {
         it("retorna NOT_FOUND si el evento no existe (null)", async () => {
             getModel.findPersonalEventById.mockResolvedValue(null);
@@ -106,9 +100,6 @@ describe("deletePersonalEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 3: Manejo del log
-    // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna DELETED aunque el log falle", async () => {
             getModel.findPersonalEventById.mockResolvedValue(mockEvent);
@@ -177,9 +168,6 @@ describe("deletePersonalEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 4: Error al eliminar en BD
-    // ──────────────────────────────────────────────────────────
     describe("Error en base de datos al eliminar", () => {
         it("propaga el error si softDeletePersonalEvent lanza una excepción", async () => {
             getModel.findPersonalEventById.mockResolvedValue(mockEvent);

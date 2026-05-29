@@ -444,19 +444,28 @@ describe("DELETE /absence/:absenceId", () => {
             },
         });
 
-        const res = await request(app)
-            .delete(`/absence/${IDS.absenceA}`)
-            .set("Authorization", `Bearer ${sign()}`);
+        try {
+            const res = await request(app)
+                .delete(`/absence/${IDS.absenceA}`)
+                .set("Authorization", `Bearer ${sign()}`);
 
-        expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Permisos insuficientes");
-
-        await prisma.role_privilege.create({
-            data: {
-                role_id: IDS.coordinatorRole,
-                privilege_id: IDS.deleteAbsencesPrivilege,
-            },
-        });
+            expect(res.statusCode).toBe(403);
+            expect(res.body.message).toBe("Permisos insuficientes");
+        } finally {
+            await prisma.role_privilege.upsert({
+                where: {
+                    role_id_privilege_id: {
+                        role_id: IDS.coordinatorRole,
+                        privilege_id: IDS.deleteAbsencesPrivilege,
+                    },
+                },
+                update: {},
+                create: {
+                    role_id: IDS.coordinatorRole,
+                    privilege_id: IDS.deleteAbsencesPrivilege,
+                },
+            });
+        }
     });
 
     it("404 si la ausencia no existe", async () => {

@@ -1,5 +1,3 @@
-// src/tests/unit/update.service.test.js
-
 jest.mock("../../model/employee/update.model", () => ({
   updateBasicInfo:   jest.fn(),
   updateContactInfo: jest.fn(),
@@ -50,7 +48,6 @@ const { getUpdateFormData } = require("../../service/employee/get.service");
 
 const RESPONSES = require("../../utils/responses");
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const REQUESTER_ID  = "r0000001-0000-4000-8000-000000000001";
 const EMPLOYEE_ID   = "e0000001-0000-4000-8000-000000000001";
@@ -77,7 +74,6 @@ const validAdminBody = {
   ],
 };
 
-// ─── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -98,10 +94,6 @@ beforeEach(() => {
   getAllWorkdays.mockResolvedValue([{ workdayId: "wd1", name: "Lunes" }]);
   getFrecuencyPaymentOptions.mockResolvedValue([{ id: "f1", name: "Quincenal" }]);
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// getUpdateFormData
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("getUpdateFormData", () => {
   it("retorna roles editables, casas, workdays y houseId del usuario", async () => {
@@ -124,10 +116,6 @@ describe("getUpdateFormData", () => {
     await expect(getUpdateFormData({ houseId: "h1" })).rejects.toThrow("DB error");
   });
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// updateBasicInfoService
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("updateBasicInfoService", () => {
 
@@ -224,6 +212,45 @@ describe("updateBasicInfoService", () => {
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
       expect(result.errors).toBeDefined();
+    });
+
+    it("retorna VALIDATION_ERROR con nombre vacio", async () => {
+      const result = await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { name: "   " },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ campo: "name", mensaje: "El nombre es obligatorio" }),
+      ]));
+    });
+
+    it("retorna VALIDATION_ERROR con apellido vacio", async () => {
+      const result = await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { surname: "   " },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ campo: "surname", mensaje: "El apellido es obligatorio" }),
+      ]));
+    });
+
+    it("retorna VALIDATION_ERROR con CURP vacio", async () => {
+      const result = await updateBasicInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { curp: "   " },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ campo: "curp", mensaje: "El CURP es obligatorio" }),
+      ]));
     });
 
     it("retorna VALIDATION_ERROR con nombre inválido (números)", async () => {
@@ -355,10 +382,6 @@ describe("updateBasicInfoService", () => {
   });
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// updateContactInfoService
-// ══════════════════════════════════════════════════════════════════════════════
-
 describe("updateContactInfoService", () => {
 
   describe("Flujo exitoso", () => {
@@ -466,10 +489,6 @@ describe("updateContactInfoService", () => {
     });
   });
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// updateAdminInfoService
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("updateAdminInfoService", () => {
 

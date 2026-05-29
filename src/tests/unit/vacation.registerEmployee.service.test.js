@@ -80,7 +80,6 @@ describe("US28 - registerEmployeeVacation service", () => {
     const parsedValidSearchEndDate = new Date("2026-06-26T23:59:59.999Z");
 
     const todayDate = "2026-04-30";
-    const parsedTodayDate = makeUTCDate(2026, 4, 30);
 
     const yesterdayDate = "2026-04-29";
 
@@ -406,23 +405,21 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(registerVacation).not.toHaveBeenCalled();
         });
 
-        test("permite startDate igual a hoy", async () => {
+        test("retorna PAST_REGISTER_NOT_ALLOWED si startDate es igual a hoy", async () => {
             const result = await callRegisterVacation({
                 startDate: todayDate,
                 endDate: todayDate,
             });
 
-            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
-            expect(registerVacation).toHaveBeenCalledWith(
-                vacationId,
-                targetEmployeeId,
-                parsedTodayDate,
-                parsedTodayDate,
-                1
-            );
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED,
+            });
+
+            expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+            expect(registerVacation).not.toHaveBeenCalled();
         });
 
-        test("permite registrar vacaciones de hoy México aunque UTC ya sea mañana", async () => {
+        test("rechaza registrar vacaciones de hoy México aunque UTC ya sea mañana", async () => {
             jest.setSystemTime(new Date("2026-05-26T01:30:00.000Z"));
 
             try {
@@ -431,14 +428,12 @@ describe("US28 - registerEmployeeVacation service", () => {
                     endDate: "2026-05-25",
                 });
 
-                expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
-                expect(registerVacation).toHaveBeenCalledWith(
-                    vacationId,
-                    targetEmployeeId,
-                    makeUTCDate(2026, 5, 25),
-                    makeUTCDate(2026, 5, 25),
-                    1
-                );
+                expect(result).toEqual({
+                    code: RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED,
+                });
+
+                expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+                expect(registerVacation).not.toHaveBeenCalled();
             } finally {
                 jest.setSystemTime(frozenToday);
             }

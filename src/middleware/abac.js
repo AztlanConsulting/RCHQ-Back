@@ -52,10 +52,8 @@ exports.isAllowed = async (req, res, next) => {
         if (req.user.id == targetId) return next();
 
         const homeQuery = await getHome(targetId);
-        if (!homeQuery) return res.status(403).json({
-            success: false,
-            message: "Permisos insuficientes"
-        });
+        if (!homeQuery) return next();
+
         if (req.user.houseId == homeQuery.house_id && req.user.role == ROLES.COORDINATOR) {
             return next();
         }

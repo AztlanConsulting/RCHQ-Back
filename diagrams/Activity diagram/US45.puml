@@ -1,0 +1,86 @@
+@startuml
+title US45 - Añadir empleado a lista negra
+
+|Coordinador|
+start
+:Selecciona el módulo de personal;
+:Abre la información del empleado;
+:Selecciona "Añadir a lista negra";
+:Escribe la razón del bloqueo;
+:Confirma la acción;
+
+|Sistema|
+:Aplica rate limit;
+:Valida token de sesión;
+if (¿Token válido?) then (Sí)
+else (No)
+  :Muestra error "Token inválido o expirado";
+  stop
+endif
+
+:Valida rol Coordinador;
+if (¿Rol permitido?) then (Sí)
+else (No)
+  :Muestra error "Privilegios insuficientes";
+  stop
+endif
+
+:Valida privilegio addToBlacklist;
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+  :Muestra error "Privilegios insuficientes";
+  stop
+endif
+
+:Valida request HTTP con schema (CURP y razón);
+if (¿Request válida?) then (Sí)
+else (No)
+  :Muestra error de validación;
+  stop
+endif
+
+:Busca empleado objetivo por CURP (ABAC);
+if (¿Empleado existe?) then (Sí)
+else (No)
+  :Muestra error "Empleado no encontrado";
+  stop
+endif
+
+:Valida que no sea el mismo coordinador;
+if (¿Es auto-bloqueo?) then (Sí)
+  :Muestra error "No puedes agregarte a ti mismo a la lista negra";
+  stop
+else (No)
+endif
+
+:Valida que el empleado pertenezca a la misma casa hogar;
+if (¿Misma casa hogar?) then (Sí)
+else (No)
+  :Muestra error "No puede acceder a este recurso";
+  stop
+endif
+
+:Busca al empleado por CURP;
+if (¿Ya está en lista negra?) then (Sí)
+  :Muestra error "Este empleado ya se encuentra en la lista negra";
+  stop
+else (No)
+endif
+
+:Inicia transacción en base de datos;
+:Desactiva la cuenta del empleado;
+:Inserta el registro en la tabla blacklist;
+if (¿Transacción exitosa?) then (Sí)
+else (No)
+  :Muestra error "Fallo al insertar al empleado a la lista negra";
+  stop
+endif
+
+:Genera log de auditoría;
+:Muestra mensaje "Empleado agregado a la lista negra";
+
+|Coordinador|
+:Visualiza la confirmación en pantalla;
+stop
+
+@enduml

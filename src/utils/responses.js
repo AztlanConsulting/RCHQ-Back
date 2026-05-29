@@ -1,17 +1,3 @@
-// src/utils/responses.js
-/*
-    This file contains the response messages for the application. It is used to standardize the responses across the application.
-    To use this file, simply import it and use the messages as needed. For example:
-    const responses = require("../utils/responses");
-    res.json({ message: responses.profile.found });
-
-    If you want to add more responses follow the next format:
-    const responses = {
-        nameOfTheAreaForYourResponse: {
-            nameOfTheResponse: 'RESPONSE_MESSAGE',
-        },
-    };
-*/
 const RESPONSES = {
     PROFILE: {
         FOUND: "PROFILE_FOUND",
@@ -30,11 +16,17 @@ const RESPONSES = {
         NOT_FOUND: "Usuario no encontrado",
         NOT_ACCESS: "Acceso bloqueado",
     },
+    AUTH: {
+        LOGIN_SUCCESS: "LOGIN_SUCCESS",
+        REFRESH_SUCCESS: "REFRESH_SUCCESS",
+        INVALID_REFRESH_TOKEN: "INVALID_REFRESH_TOKEN",
+        LOGOUT_SUCCESS: "LOGOUT_SUCCESS",
+    },
     VACATION: {
         PAST_REQUEST_NOT_ALLOWED:
             "No se pueden pedir vacaciones en el pasado ni para el mismo día",
         PAST_REGISTER_NOT_ALLOWED:
-            "No se pueden registrar vacaciones en fechas pasadas",
+            "No se pueden registrar vacaciones en fechas pasadas ni para el mismo día",
         REMAINING_VACATIONS_FOUND:
             "Las vacaciones restantes fueron encontradas",
         NULL_DATES:

@@ -121,8 +121,8 @@ const createTargetEmployees = async () => {
             employee_id: TEST_NORMAL_EMP_ID,
             house_id: TEST_HOUSE_ID,
             role_id: testTargetRoleId,
-            name: "Limpio",
-            surname: "Pérez",
+            name: "Luis",
+            surname: "Martínez",
             email: "normal@test.com",
             password: "hashed",
             curp: TEST_NORMAL_CURP,
@@ -138,8 +138,8 @@ const createTargetEmployees = async () => {
             employee_id: TEST_BLACKLIST_EMP_ID,
             house_id: TEST_HOUSE_ID,
             role_id: testTargetRoleId,
-            name: "Malo",
-            surname: "Pérez",
+            name: "María",
+            surname: "González",
             email: "blacklist@test.com",
             password: "hashed",
             curp: TEST_BLACKLIST_CURP,
@@ -248,6 +248,24 @@ describe("GET /blacklist - integración", () => {
         expect(res.body.employees.some(emp => emp.curp === TEST_OTHER_CURP)).toBe(true);
     });
 
+    it("retorna 200 con lista vacía cuando los filtros no encuentran resultados", async () => {
+        const token = generateSessionToken();
+
+        const res = await request(app)
+            .get("/blacklist?page=1&limit=10&curp=ZZZ999")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe("No hay personas en la lista negra con los filtros aplicados");
+        expect(res.body.employees).toEqual([]);
+        expect(res.body.pagination).toEqual({
+            totalItems: 0,
+            totalPages: 0,
+            currentPage: 1,
+        });
+    });
+
     it("retorna 200 y filtra correctamente solo a los que ESTÁN en la lista negra (isBlacklisted=true)", async () => {
         const token = generateSessionToken();
 
@@ -272,14 +290,41 @@ describe("GET /blacklist - integración", () => {
         expect(res.body.employees[0].curp).toBe(TEST_NORMAL_CURP);
     });
 
-    it("retorna 404 si la búsqueda no coincide con ningún empleado", async () => {
+    it("retorna 200 y encuentra empleados por nombre sin acentos", async () => {
+        const token = generateSessionToken();
+
+        const res = await request(app)
+            .get("/blacklist?search=luis martinez")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.employees.length).toBe(1);
+        expect(res.body.employees[0].fullName).toBe("Luis Martínez");
+    });
+
+    it("retorna 200 y encuentra empleados blacklisted por apellido sin acentos", async () => {
+        const token = generateSessionToken();
+
+        const res = await request(app)
+            .get("/blacklist?isBlacklisted=true&search=maria gonzalez")
+            .set("Authorization", `Bearer ${token}`);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.employees.length).toBe(1);
+        expect(res.body.employees[0].fullName).toBe("María González");
+        expect(res.body.employees[0].isBlacklisted).toBe(true);
+    });
+
+    it("retorna 200 con lista vacía si la búsqueda no coincide con ningún empleado", async () => {
         const token = generateSessionToken();
 
         const res = await request(app)
             .get("/blacklist?curp=NOEXISTE99")
             .set("Authorization", `Bearer ${token}`);
 
-        expect(res.statusCode).toBe(404);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.employees).toEqual([]);
     });
 
     it("retorna 400 si los parámetros de paginación o booleanos son inválidos (Zod Schema)", async () => {

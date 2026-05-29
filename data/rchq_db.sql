@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS public.employee (
     two_fa_blocked_until             timestamp     NULL,
     temp_totp_secret                 varchar       NULL,
     temp_totp_secret_created_at      timestamp     NULL,
+    refresh_token                    varchar       NULL,
     CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
     CONSTRAINT employee_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id),
     CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id),

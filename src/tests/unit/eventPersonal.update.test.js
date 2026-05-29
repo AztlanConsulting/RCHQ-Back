@@ -40,7 +40,6 @@ describe("updatePersonalEvent service", () => {
         end: "10:00",
     };
 
-    // evento existente con el empleado asignado (formato crudo de Prisma, sin mapper)
     const mockExistingEvent = {
         personal_event_id: eventId,
         employee_personal_event: [{ employee_id: employeeId }],
@@ -63,9 +62,6 @@ describe("updatePersonalEvent service", () => {
     });
 
 
-    // ─────────────────────────────────────────────────────────────
-    // Caso exitoso — coordinador actualiza evento de empleados
-    // ─────────────────────────────────────────────────────────────
     describe("Caso exitoso — coordinador actualiza evento de empleados", () => {
         it("puede cambiar los empleados asignados", async () => {
             const newEmployeeIds = [employeeId, otherEmployeeId];
@@ -185,9 +181,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Errores de validación
-    // ─────────────────────────────────────────────────────────────
     describe("Errores de validación", () => {
         it("retorna VALIDATION_ERROR si falta name", async () => {
             const payload = { ...basePayload };
@@ -372,9 +365,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Restricciones por rol
-    // ─────────────────────────────────────────────────────────────
     describe("Restricciones por rol", () => {
         it("retorna NOT_PROVIDED si el coordinador no envía employeeIds", async () => {
             const payload = { ...basePayload };
@@ -414,9 +404,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Verificación del evento existente
-    // ─────────────────────────────────────────────────────────────
     describe("Verificación del evento existente", () => {
         it("retorna NOT_FOUND si el evento no existe en la casa", async () => {
             getModel.findPersonalEventById.mockResolvedValue(null);
@@ -471,9 +458,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Validación de empleados en la casa
-    // ─────────────────────────────────────────────────────────────
     describe("Validación de empleados en la casa", () => {
         it("retorna NOT_FOUND si el empleado no pertenece a la casa", async () => {
             getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
@@ -529,9 +513,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Detección de empalmes
-    // ─────────────────────────────────────────────────────────────
     describe("Detección de empalmes", () => {
         const overlappedEmployee = {
             employeeId,
@@ -670,9 +651,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Logs de auditoría
-    // ─────────────────────────────────────────────────────────────
     describe("Logs de auditoría", () => {
         it("crea un log del evento actualizado siempre", async () => {
             getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
@@ -699,7 +677,6 @@ describe("updatePersonalEvent service", () => {
         });
 
         it("no crea log de empleado si los asignados no cambiaron", async () => {
-            // Existing: [employeeId] → New: [employeeId] — sin cambio
             getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
             getModel.getEmployeesInHouse.mockResolvedValue([
                 { employee_id: employeeId },
@@ -715,12 +692,10 @@ describe("updatePersonalEvent service", () => {
                 clientIp,
             );
 
-            // Solo 1 log: evento actualizado, ninguno por cambio de empleado
             expect(createLog).toHaveBeenCalledTimes(1);
         });
 
         it("crea log de empleado por cada empleado nuevo agregado", async () => {
-            // Existing: [employeeId] → New: [employeeId, otherEmployeeId]
             getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
             getModel.getEmployeesInHouse.mockResolvedValue([
                 { employee_id: employeeId },
@@ -740,12 +715,10 @@ describe("updatePersonalEvent service", () => {
                 clientIp,
             );
 
-            // 1 log de evento + 1 log por otherEmployeeId (nuevo)
             expect(createLog).toHaveBeenCalledTimes(2);
         });
 
         it("crea log de empleado por cada empleado removido", async () => {
-            // Existing: [employeeId, otherEmployeeId] → New: [employeeId]
             getModel.findPersonalEventById.mockResolvedValue({
                 ...mockExistingEvent,
                 employee_personal_event: [
@@ -767,7 +740,6 @@ describe("updatePersonalEvent service", () => {
                 clientIp,
             );
 
-            // 1 log de evento + 1 log por otherEmployeeId (removido)
             expect(createLog).toHaveBeenCalledTimes(2);
         });
 
@@ -839,9 +811,6 @@ describe("updatePersonalEvent service", () => {
         });
     });
 
-    // ─────────────────────────────────────────────────────────────
-    // Defaults del schema
-    // ─────────────────────────────────────────────────────────────
     describe("Defaults del schema", () => {
         it("aplica forceOverlap=false por defecto y bloquea el empalme", async () => {
             const overlappedEmployee = { employeeId, employeeName: "Juan" };

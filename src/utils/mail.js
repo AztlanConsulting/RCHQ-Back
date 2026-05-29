@@ -15,6 +15,6 @@ exports.send = async (destinatary, subject, message) => {
       html: message,
       subject,
     })
-    .then((msg) => console.log(msg)) // logs response data
-    .catch((err) => console.error(err)); // logs any error
+    .then((msg) => console.log(msg))
+    .catch((err) => console.error(err));
 };

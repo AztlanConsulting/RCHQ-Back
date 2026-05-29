@@ -1,170 +1,112 @@
-@startuml HU32 - Coordinador elimina vacaciones de un empleado
+@startuml
+title US32 - Coordinador rechaza solicitud de vacaciones
 
-actor navegador
-boundary vacation.routes
-control vacation.delete.controller
-control vacation.delete.service
-entity employee.get.model
-entity vacation.get.model
-entity vacation.delete.model
-entity log.model
-database PostgreSQL
+actor "Coordinador" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "auth/rbac/validate middleware" as Middleware
+control "update.controller.js" as Controller
+control "update.service.js" as Service
+database "vacation/get.model.js" as VacationGetModel
+database "employee/get.model.js" as EmployeeGetModel
+database "vacation/update.model.js" as VacationUpdateModel
+database "log.model.js" as LogModel
+database "Base de datos" as DB
 
 autonumber
 
-navegador -> vacation.routes : DELETE /vacation/request/:vacationRequestId
-activate vacation.routes
-vacation.routes -> vacation.delete.controller : deleteVacationRequest(req, res)
-deactivate vacation.routes
-activate vacation.delete.controller
+Usuario -> Frontend : Selecciona solicitud pendiente
+Usuario -> Frontend : Confirma rechazo
+Usuario -> Frontend : Opcionalmente escribe feedback
 
-vacation.delete.controller -> vacation.delete.controller : actorEmployeeId = req.user.id\nvacationRequestId = req.params.vacationRequestId
-vacation.delete.controller -> vacation.delete.controller : ipAddress = getClientIp(req)
-vacation.delete.controller ->> vacation.delete.service : deleteVacationRequest({\n\tactorEmployeeId,\n\tvacationRequestId,\n\tipAddress\n})
-activate vacation.delete.service
+Frontend -> Router : PATCH /vacation/request/:vacationRequestId/reject\nAuthorization: Bearer token\n{ feedback? }
 
-vacation.delete.service -> vacation.delete.service : deleteVacationRequestInputSchema.safeParse({\n\tactorEmployeeId,\n\tvacationRequestId,\n\tipAddress\n})
-alt datos inválidos
-vacation.delete.service -->> vacation.delete.controller : VACATION.VALIDATION_ERROR
-vacation.delete.controller -> navegador : 422 Unprocessable Entity {\n\tsuccess: false,\n\tmessage: "Datos inválidos"\n}
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(Coordinador)
+Router -> Middleware : requirePrivileges(manageEmployees)
+Router -> Middleware : validate(rejectVacationRequestSchema, "all")
+
+alt Middleware rechaza request
+Middleware --> Frontend : 400/401/403
+else Request HTTP válida
+Router -> Controller : rejectVacationRequest(req, res)
+
+Controller -> Service : rejectVacationRequest({\nactorEmployeeId,\nvacationRequestId,\nfeedback,\nipAddress\n})
+
+Service -> Service : Validar contrato interno con schema de caso de uso
+
+alt Entrada interna inválida
+Service --> Controller : VALIDATION_ERROR
+Controller --> Frontend : 400 Datos inválidos
+else Entrada interna válida
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Actor coordinador
+EmployeeGetModel --> Service : Actor
+
+alt Actor no existe
+Service --> Controller : USER_NOT_AUTHENTICATED
+Controller --> Frontend : 401 Usuario no autenticado
+else Actor no es Coordinador
+Service --> Controller : INSUFFICIENT_PERMISSIONS
+Controller --> Frontend : 403 Permisos insuficientes
+else Actor válido
+Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
+VacationGetModel -> DB : SELECT vacations_request
+DB --> VacationGetModel : Solicitud
+VacationGetModel --> Service : Solicitud
+
+alt Solicitud no existe
+Service --> Controller : VACATION_REQUEST_NOT_FOUND
+Controller --> Frontend : 404 Solicitud no encontrada
+else Solicitud no pendiente
+Service --> Controller : VACATION_REQUEST_ALREADY_REVIEWED
+Controller --> Frontend : 406 Solicitud ya revisada
+else Solicitud pendiente
+Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
+EmployeeGetModel -> DB : SELECT employee + role + house
+DB --> EmployeeGetModel : Empleado dueño
+EmployeeGetModel --> Service : Empleado
+
+alt Empleado no existe
+Service --> Controller : EMPLOYEE_NOT_FOUND
+Controller --> Frontend : 404 Empleado no encontrado
+else Empleado fuera de alcance
+Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
+Controller --> Frontend : 403 No puede acceder a este recurso
+else Actor autorizado
+Service -> VacationUpdateModel : rejectVacationRequestAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\nfeedback\n})
+
+VacationUpdateModel -> DB : BEGIN TRANSACTION
+VacationUpdateModel -> DB : SELECT employee FOR UPDATE
+VacationUpdateModel -> DB : Releer solicitud
+VacationUpdateModel -> DB : Validar que existe
+VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
+VacationUpdateModel -> DB : Releer empleado
+VacationUpdateModel -> DB : Validar misma casa y que no sea Administrador
+VacationUpdateModel -> DB : Validar que sigue pendiente
+VacationUpdateModel -> DB : UPDATE status = REJECTED,\nfeedback = feedback/null
+DB --> VacationUpdateModel : Solicitud rechazada
+VacationUpdateModel -> DB : COMMIT
+VacationUpdateModel --> Service : Solicitud rechazada
+
+alt Transacción detecta solicitud ya revisada o fuera de alcance
+Service --> Controller : ALREADY_REVIEWED / OUT_OF_SCOPE
+Controller --> Frontend : 406/403 Error de rechazo
+else Rechazo exitoso
+Service -> LogModel : createLog(actorEmployeeId,\nVACATION_REJECTED_SUCCESS,\nipAddress,\ntargetEmployeeId)
+LogModel -> DB : INSERT logs
+DB --> LogModel : Log creado
+
+Service --> Controller : VACATION_REJECTED
+Controller --> Frontend : 200 Solicitud rechazada correctamente
+Frontend --> Usuario : Mostrar confirmación
 end
-
-vacation.delete.service ->> employee.get.model : findByIdWithRoleAndHouse(actorEmployeeId)
-activate employee.get.model
-employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: actorEmployeeId\n\t},\n\tinclude: {\n\t\trole: {\n\t\t\tinclude: {\n\t\t\t\trole_privilege: {\n\t\t\t\t\tinclude: {\n\t\t\t\t\t\tprivilege: true\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t},\n\t\thouse: true\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> employee.get.model : result
-deactivate PostgreSQL
-employee.get.model -->> vacation.delete.service : actorEmployee
-deactivate employee.get.model
-
-alt actorEmployee == null
-vacation.delete.service -->> vacation.delete.controller : USER.NOT_ACCESS
-vacation.delete.controller -> navegador : 401 Unauthorized {\n\tsuccess: false,\n\tmessage: "Usuario no autenticado"\n}
 end
-
-vacation.delete.service -> vacation.delete.service : actorRoleName = actorEmployee.role?.name
-alt actorRoleName != ROLES.COORDINATOR
-vacation.delete.service -->> vacation.delete.controller : VACATION.INSUFFICIENT_PERMISSIONS
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "No tienes permisos para remover vacaciones"\n}
 end
-
-vacation.delete.service ->> vacation.get.model : getVacationRequestById(vacationRequestId)
-activate vacation.get.model
-vacation.get.model ->> PostgreSQL : prisma.vacations_request.findUnique({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> vacation.get.model : result
-deactivate PostgreSQL
-vacation.get.model -->> vacation.delete.service : vacationRequest
-deactivate vacation.get.model
-
-alt vacationRequest == null
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Solicitud de vacaciones no encontrada"\n}
 end
-
-vacation.delete.service -> vacation.delete.service : targetEmployeeId = vacationRequest.employee_id
-vacation.delete.service ->> employee.get.model : findByIdWithRoleAndHouse(targetEmployeeId)
-activate employee.get.model
-employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: targetEmployeeId\n\t},\n\tinclude: {\n\t\trole: {\n\t\t\tinclude: {\n\t\t\t\trole_privilege: {\n\t\t\t\t\tinclude: {\n\t\t\t\t\t\tprivilege: true\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t},\n\t\thouse: true\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> employee.get.model : result
-deactivate PostgreSQL
-employee.get.model -->> vacation.delete.service : targetEmployee
-deactivate employee.get.model
-
-alt targetEmployee == null
-vacation.delete.service -->> vacation.delete.controller : EMPLOYEE.NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Empleado no encontrado"\n}
 end
-
-vacation.delete.service -> vacation.delete.service : targetRoleName = targetEmployee.role?.name
-alt targetRoleName == ROLES.ADMIN
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
 end
-
-alt actorEmployee.house_id != targetEmployee.house_id
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
-end
-
-vacation.delete.service -> vacation.delete.service : currentDate = getTodayUTC()
-vacation.delete.service -> vacation.delete.service : canRemoveVacationRequest(vacationRequest, currentDate)
-rnote over vacation.delete.service
-La solicitud se puede remover si no está aprobada.
-Si está aprobada, sólo se puede remover antes de su fecha de inicio.
-endrnote
-
-alt solicitud no removible
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_MODIFIABLE
-vacation.delete.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron"\n}
-end
-
-vacation.delete.service ->> vacation.delete.model : deleteVacationRequestAtomically({\n\tvacationRequestId,\n\temployeeId: targetEmployeeId,\n\tactorHouseId: actorEmployee.house_id,\n\tcurrentDate\n})
-activate vacation.delete.model
-
-vacation.delete.model ->> PostgreSQL : prisma.$transaction(async (transaction) => { ... })
-activate PostgreSQL
-vacation.delete.model ->> PostgreSQL : transaction.$queryRaw({\n\tSELECT employee_id\n\tFROM employee\n\tWHERE employee_id = employeeId::uuid\n\tFOR UPDATE\n})
-PostgreSQL -->> vacation.delete.model : employee bloqueado
-
-vacation.delete.model ->> PostgreSQL : transaction.vacations_request.findUnique({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
-PostgreSQL -->> vacation.delete.model : vacationRequest
-
-alt vacationRequest == null
-vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: VACATION.REQUEST_NOT_FOUND }
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Solicitud de vacaciones no encontrada"\n}
-end
-
-alt vacationRequest.employee_id != employeeId
-vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: VACATION.EMPLOYEE_OUT_OF_SCOPE }
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
-end
-
-vacation.delete.model ->> PostgreSQL : transaction.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tinclude: {\n\t\trole: true\n\t}\n})
-PostgreSQL -->> vacation.delete.model : targetEmployee
-
-alt targetEmployee == null
-vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: EMPLOYEE.NOT_FOUND }
-vacation.delete.service -->> vacation.delete.controller : EMPLOYEE.NOT_FOUND
-vacation.delete.controller -> navegador : 404 Not Found {\n\tsuccess: false,\n\tmessage: "Empleado no encontrado"\n}
-end
-
-alt targetEmployee.role?.name == ROLES.ADMIN o targetEmployee.house_id != actorHouseId
-vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: VACATION.EMPLOYEE_OUT_OF_SCOPE }
-vacation.delete.service -->> vacation.delete.controller : VACATION.EMPLOYEE_OUT_OF_SCOPE
-vacation.delete.controller -> navegador : 403 Forbidden {\n\tsuccess: false,\n\tmessage: "Permisos insuficientes"\n}
-end
-
-vacation.delete.model -> vacation.delete.model : canRemoveVacationRequest(vacationRequest, currentDate)
-alt solicitud ya no es removible
-vacation.delete.model -->> vacation.delete.service : { success: false,\n\tcode: VACATION.REQUEST_NOT_MODIFIABLE }
-vacation.delete.service -->> vacation.delete.controller : VACATION.REQUEST_NOT_MODIFIABLE
-vacation.delete.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron"\n}
-end
-
-vacation.delete.model ->> PostgreSQL : transaction.vacations_request.delete({\n\twhere: {\n\t\tvacations_request_id: vacationRequestId\n\t}\n})
-PostgreSQL -->> vacation.delete.model : deletedVacationRequest
-PostgreSQL -->> vacation.delete.model : COMMIT
-deactivate PostgreSQL
-vacation.delete.model -->> vacation.delete.service : { success: true,\n\tdata: { vacationRequest: deletedVacationRequest }\n}
-deactivate vacation.delete.model
-
-vacation.delete.service ->> log.model : createLog(actorEmployeeId,\n\tVACATION_DELETED_SUCCESS,\n\tipAddress,\n\ttargetEmployeeId)
-activate log.model
-log.model ->> PostgreSQL : prisma.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: actorEmployeeId,\n\t\tmoment: new Date(),\n\t\taction_id: VACATION_DELETED_SUCCESS,\n\t\taffected: targetEmployeeId,\n\t\tip_address: encryptLogIp(ipAddress)\n\t}\n})
-activate PostgreSQL
-PostgreSQL -->> log.model : result
-deactivate PostgreSQL
-log.model -->> vacation.delete.service : result
-deactivate log.model
-
-vacation.delete.service -->> vacation.delete.controller : VACATION.DELETED,\n{ vacationRequest: deletedVacationRequest }
-deactivate vacation.delete.service
-vacation.delete.controller -> navegador : 200 OK {\n\tsuccess: true,\n\tmessage: "Vacaciones removidas correctamente",\n\tdata: {\n\t\tvacationRequest\n\t}\n}
-deactivate vacation.delete.controller
 
 @enduml

@@ -1,0 +1,54 @@
+@startuml
+title US 12 - Modificar la información de un empleado (Activity Diagram)
+
+|Usuario|
+start
+:Edita los campos de información básica (nombre, foto, etc.);
+:Presiona el botón "Guardar Cambios";
+
+|Frontend|
+:Empaqueta datos en FormData (incluyendo archivo de imagen si aplica);
+:Envía solicitud PUT /:employeeId/basic-info al backend;
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware apiLimiter y verifyToken;
+if (¿Token válido?) then (Sí)
+  :Ejecuta middleware upload.single("picture");
+  :Sube imagen temporalmente o la procesa;
+  :Ejecuta middleware requireRole("Administrador", "Coordinador");
+  if (¿Tiene rol permitido?) then (Sí)
+    :Ejecuta middleware requirePrivileges("manageEmployees");
+    if (¿Tiene el privilegio?) then (Sí)
+      :Ejecuta middleware resolver (resolveEmployeeHouse);
+      :Busca y asigna la casa a la que pertenece el empleado;
+      :Ejecuta middleware ABAC authorize(modifyEmployee);
+      
+      if (¿Está autorizado a modificar en esa casa?) then (Sí)
+        :Delega al Controller (updateBasicInfo);
+        :Delega al Service;
+        :Busca el empleado en la BD para validar existencia;
+        if (¿El empleado existe?) then (Sí)
+          :Procesa y sube la nueva foto a la nube (si se envió);
+          :Ejecuta prisma.employee.update con los nuevos datos;
+          :Retorna status 200 (Empleado actualizado);
+        else (No)
+          :Retorna status 404 (Empleado no encontrado);
+        endif
+      else (No)
+        :Retorna status 403 (No autorizado por ABAC para editar);
+      endif
+    else (No)
+      :Retorna status 403 (Privilegio insuficiente);
+    endif
+  else (No)
+    :Retorna status 403 (Rol insuficiente);
+  endif
+else (No)
+  :Retorna status 401 (No autenticado);
+endif
+
+|Frontend|
+:Muestra notificación de éxito y actualiza la vista del perfil;
+stop
+@enduml

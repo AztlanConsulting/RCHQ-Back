@@ -1,5 +1,5 @@
 @startuml
-title US80 - Consultar solicitudes de vacaciones pendientes y revisadas
+title US29 - Consultar solicitudes de vacaciones pendientes y revisadas
 
 |Usuario|
 start

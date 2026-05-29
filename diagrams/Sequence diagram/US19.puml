@@ -1,0 +1,73 @@
+@startuml
+title US 19 - Filtrar eventos en pantalla (Sequence Diagram)
+
+actor Empleado
+boundary "CalendarPage.jsx" as Page
+control "useCalendarFilters.js" as Hook
+boundary "event.service.js\n(Frontend)" as FEService
+participant "event.route.js\nrouter" as Router
+participant "get.controller.js\ngetEventsInRange()" as Controller
+participant "get.service.js\ngetEventsInRange()" as Service
+participant "event/get.model.js" as EventModel
+participant "vacation & absence\nget.model.js" as VacAbsModel
+database "BD (Prisma)" as BD
+
+Empleado -> Page : Abre la vista de calendario
+Page -> Hook : loadCalendarRange(employeeId, startDate, endDate)
+activate Hook
+
+Hook -> FEService : getEventsInRange(employeeId, startDate, endDate)
+activate FEService
+FEService -> Router : GET /range/:id/:startDate/:endDate
+activate Router
+
+Router -> Controller : getEventsInRange(req, res)
+activate Controller
+Controller ->> Service : await getEventsInRange(employeeId, startDate, endDate)
+activate Service
+
+Service ->> EventModel : getHouseEventsInRange(...)
+EventModel ->> BD : Consultas de eventos de casa y globales
+BD -->> EventModel : eventos[]
+EventModel -->> Service : eventos base
+
+Service ->> VacAbsModel : getVacationsInRange(...)\ngetAbsencesInRange(...)
+VacAbsModel ->> BD : Consultas de vacaciones y ausencias
+BD -->> VacAbsModel : vacations[], absences[]
+VacAbsModel -->> Service : eventos complementarios
+
+Service --> Controller : { code: FOUND, data: { events } }
+deactivate Service
+Controller --> Router : res.status(200).json(events)
+deactivate Controller
+Router --> FEService : events[]
+deactivate Router
+FEService --> Hook : events[]
+deactivate FEService
+
+Hook -> Hook : Guarda allEvents y visibleEvents
+Hook --> Page : Renderizar calendario con todos los eventos
+deactivate Hook
+
+Empleado -> Page : Selecciona filtros en pantalla
+Page -> Hook : applyFilters(criteria)
+activate Hook
+
+alt Hay criterios seleccionados
+    Hook -> Hook : Filtra allEvents por tipo,\norigen, categoría o estado
+
+    alt Existen coincidencias
+        Hook --> Page : visibleEvents filtrados
+        Page --> Empleado : Muestra solo los eventos coincidentes
+    else Sin coincidencias
+        Hook --> Page : []
+        Page --> Empleado : Muestra estado vacío
+    end
+else Sin filtros
+    Hook -> Hook : Restablece visibleEvents = allEvents
+    Hook --> Page : Todos los eventos
+    Page --> Empleado : Muestra el calendario completo
+end
+
+deactivate Hook
+@enduml

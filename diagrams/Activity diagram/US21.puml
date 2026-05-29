@@ -1,31 +1,33 @@
-@startuml HU - Registro de evento de casa
+@startuml HU - Registro de evento personal
 
-|Coordinador|
+|Coordinador/Empleado|
 start
 :Interactuar con el calendario;
 
 |Sistema|
 :Renderizar modal de creación;
 
-|Coordinador|
-:Seleccionar opción "Casa";
+|Coordinador/Empleado|
+:Seleccionar opción "Personal";
 repeat
 :Llenar campos obligatorios:
 - Título
 - Tipo de evento
-- Fecha y hora de inicio
-- Fecha y hora de fin;
+- Fecha
+- Hora inicio
+- Hora de fin
+- Seleccionar empleado(s);
 
 |Sistema|
 if (¿Activar "Todo el día"?) then (SI)
     :Eliminar selectores de hora;
-    :Registrar solo fechas;
+    :Registrar solo fecha;
 else (NO)
     :Mantener selectores de hora;
 endif
 
 if (¿Ingresar descripción?) then (SI)
-    |Coordinador|
+    |Coordinador/Empleado|
     :Ingresar descripción del evento;
 else (NO)
 endif
@@ -35,7 +37,7 @@ repeat while (¿Los campos obligatorios están completos?) is (NO)
 :Validar disponibilidad de horario;
 
 if (¿Existe empalme con otro evento?) then (SI)
-    |Coordinador|
+    |Coordinador/Empleado|
     if (¿Desea agregar el evento de todos modos?) then (SI)
         |Sistema|
         :Registrar evento con traslape;
