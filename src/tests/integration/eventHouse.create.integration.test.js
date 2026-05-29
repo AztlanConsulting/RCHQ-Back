@@ -181,7 +181,6 @@ const seedDependencies = async () => {
         },
     });
 
-    // ─── Casas ──────────────────────────────────
     await prisma.house.create({
         data: {
             house_id: TEST_HOUSE_ID,

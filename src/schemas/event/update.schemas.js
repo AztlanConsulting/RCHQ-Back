@@ -112,7 +112,7 @@ exports.houseEventUpdateSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["start"],
                     message:
-                        "Para eventos de todo el día, start debe tener fecha válida.",
+                        "Para eventos de todo el día, el inicio debe ser una fecha válida.",
                 });
             }
 
@@ -121,7 +121,7 @@ exports.houseEventUpdateSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["end"],
                     message:
-                        "Para eventos de todo el día, end debe tener fecha válida.",
+                        "Para eventos de todo el día, el final debe ser una fecha válida.",
                 });
             }
 
