@@ -231,7 +231,7 @@ describe("login", () => {
         expect(createLog).toHaveBeenCalled();
     });
 
-    it("bloquea la cuenta y retorna 423 al llegar a 3 intentos fallidos", async () => {
+    it("bloquea la cuenta y retorna 423 al llegar a 5 intentos fallidos", async () => {
         auth.findEmployeeByEmail.mockResolvedValue(mockEmployee);
         verifyPassword.mockResolvedValue(false);
         auth.incrementFailedAttempts.mockResolvedValue(5);
