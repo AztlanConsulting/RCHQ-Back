@@ -1,5 +1,6 @@
 const {
     createHouseEvent,
+    createGlobalEvent,
     createPersonalEvent,
 } = require("../../model/event/create.model");
 const { randomUUID } = require("crypto");
@@ -8,10 +9,12 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const RESPONSES = require("../../utils/responses");
 const {
     houseEventCreateSchema,
+    globalEventCreateSchema,
     createPersonalEventSchema,
 } = require("../../schemas/event/create.schemas");
 const {
     findOverlappingHouseEvents,
+    findOverlappingGlobalEvents,
     findOverlappingEmployees,
     getEmployeesInHouse,
 } = require("../../model/event/get.model");
@@ -31,7 +34,10 @@ const validateAvailability = async (data) => {
 };
 
 exports.createHouseEvent = async (user, payload, clientIp) => {
-    const parsed = houseEventCreateSchema.safeParse({ ...payload, houseId: user.houseId });
+    const parsed = houseEventCreateSchema.safeParse({
+        ...payload,
+        houseId: user.houseId,
+    });
 
     if (!parsed.success) {
         return {
@@ -94,6 +100,67 @@ exports.createHouseEvent = async (user, payload, clientIp) => {
     return {
         code: RESPONSES.EVENTS.CREATED,
         data: { houseEvent, warning },
+    };
+};
+
+exports.createGlobalEvent = async (user, payload, clientIp) => {
+    const parsed = globalEventCreateSchema.safeParse(payload);
+
+    if (!parsed.success) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+            data: {
+                errors: parsed.error.issues.map((issue) => ({
+                    field: issue.path.join("."),
+                    message: issue.message,
+                })),
+            },
+        };
+    }
+
+    const validData = parsed.data;
+
+    const collisions = await findOverlappingGlobalEvents({
+        start: validData.start,
+        end: validData.end,
+    });
+
+    if (collisions.length > 0 && !validData.forceOverlap) {
+        return {
+            code: RESPONSES.EVENTS.OVERLAP,
+            data: { collisions },
+        };
+    }
+
+    const globalEvent = await createGlobalEvent({
+        eventTypeId: validData.eventTypeId,
+        name: validData.name,
+        start: validData.start,
+        end: validData.end,
+        allDay: validData.allDay,
+        isFreeDay: validData.isFreeDay,
+        description: validData.description ?? null,
+        isRecurring: validData.isRecurring,
+        recurrenceType: validData.recurrenceType,
+    });
+
+    let warning = null;
+
+    try {
+        await createLog(
+            user.id,
+            LOG_ACTIONS.GLOBAL_EVENT_CREATED,
+            clientIp,
+            globalEvent.globalEventId,
+        );
+    } catch (error) {
+        console.error("Error creando log de evento global:", error);
+        warning = "Evento creado pero el log falló";
+    }
+
+    return {
+        code: RESPONSES.EVENTS.CREATED,
+        data: { globalEvent, warning },
     };
 };
 
