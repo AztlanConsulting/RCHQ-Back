@@ -13,7 +13,6 @@
 - [ ] Breaking change (cambio que afecta funcionalidad existente)
 - [ ] Refactoring (mejora de código sin cambiar funcionalidad)
 - [ ] Documentation (cambios en documentación)
-- [ ] Código, diagramas y documentación son consistentes entre sí.
 - [ ] Test
 - [ ] Chore
 - [ ] Other (especificar):
@@ -33,6 +32,7 @@
 - [ ] Mi código sigue los estándares del proyecto
 - [ ] Seguí la convención de commits del equipo
 - [ ] He realizado una revisión de mi propio código
+- [ ] Código, diagramas y documentación son consistentes entre sí.
 - [ ] He comentado código complejo cuando es necesario
 - [ ] He actualizado la documentación correspondiente
 - [ ] Mis cambios no generan nuevos warnings
