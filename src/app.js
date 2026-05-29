@@ -25,12 +25,24 @@ app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    }),
-);
+const allowedOrigins = [
+  'https://miapp.com/',
+  'https://admin.miapp.com/',
+  'http://localhost:3000/'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origen no permitido por CORS'));
+  },
+  credentials: true
+}));
 
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
