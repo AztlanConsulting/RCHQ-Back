@@ -446,21 +446,7 @@ exports.globalEventCreateSchema = z
     .refine((data) => data.start < data.end, {
         message: "La fecha de inicio debe ser anterior a la fecha de fin.",
         path: ["start"],
-    })
-    .refine(
-        (data) => data.start.toISOString().slice(0, 10) >= getHouseMinDateStr(),
-        {
-            message: `No se pueden crear eventos antes del 1 de enero de ${new Date().getFullYear()}.`,
-            path: ["start"],
-        },
-    )
-    .refine(
-        (data) => data.start.toISOString().slice(0, 10) <= getHouseMaxDateStr(),
-        {
-            message: `No se pueden crear eventos más allá del año ${new Date().getFullYear() + 2}.`,
-            path: ["start"],
-        },
-    );
+    });
 
 exports.searchEmployeesSchema = z.object({
     search: z
