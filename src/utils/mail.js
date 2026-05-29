@@ -14,6 +14,5 @@ exports.send = async (destinatary, subject, message) => {
             html: message,
             subject,
         })
-        .then((msg) => console.log(msg))
         .catch((err) => console.error(err));
 };
