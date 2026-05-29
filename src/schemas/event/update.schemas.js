@@ -1,24 +1,25 @@
 const { z } = require("zod");
-const { convertUTCToMexicanTime } = require("../../utils/dates");
-const { normalizeTime } = require("../../utils/event/dateTime");
+const { 
+    normalizeTime, 
+    TIME_REGEX, 
+    DATETIME_WITH_TIMEZONE_REGEX, 
+    DATE_ONLY_REGEX,
+    TEXT_REGEX,
+    ONE_DAY_MS,
+    MEXICO_TIMEZONE_OFFSET,
+    dateOnlyToMexicoUtcStart,
+    eventDateTimeToUtc,
+    getTodayStr,
+    getMaxDateStr,
+    getHouseMinDateStr,
+    getHouseMaxDateStr
+} = require("../../utils/event/dateTime");
 
-const TEXT_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-!¿¡?.,:;()]+$/;
-const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const DATETIME_WITH_TIMEZONE_REGEX =
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-
-const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
-
-const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
 const isDateOrDateTimeWithTimezone = (value) =>
-    DATE_REGEX.test(value) || DATETIME_WITH_TIMEZONE_REGEX.test(value);
+    DATE_ONLY_REGEX.test(value) || DATETIME_WITH_TIMEZONE_REGEX.test(value);
 const isTimeOrDateTimeWithTimezone = (value) =>
     TIME_REGEX.test(value) || DATETIME_WITH_TIMEZONE_REGEX.test(value);
-const eventDateTimeForValidation = (date, value) => {
-    if (DATETIME_WITH_TIMEZONE_REGEX.test(value)) return new Date(value);
-    return new Date(`${date}T${normalizeTime(value)}-06:00`);
-};
+
 const eventEndDateTimeForValidation = (date, value) => {
     if (DATETIME_WITH_TIMEZONE_REGEX.test(value)) return new Date(value);
     const resolvedDate =
@@ -27,22 +28,7 @@ const eventEndDateTimeForValidation = (date, value) => {
                   .toISOString()
                   .slice(0, 10)
             : date;
-    return eventDateTimeForValidation(resolvedDate, value);
-};
-
-const getTodayStr = () => convertUTCToMexicanTime(new Date()).toISOString().slice(0, 10);
-const getMaxDateStr = () => {
-    const d = convertUTCToMexicanTime(new Date());
-    d.setUTCFullYear(d.getUTCFullYear() + 2);
-    return d.toISOString().slice(0, 10);
-};
-const getHouseMinDateStr = () => {
-    const year = convertUTCToMexicanTime(new Date()).getUTCFullYear();
-    return `${year}-01-01`;
-};
-const getHouseMaxDateStr = () => {
-    const year = convertUTCToMexicanTime(new Date()).getUTCFullYear() + 2;
-    return `${year}-12-31`;
+    return eventDateTimeToUtc(resolvedDate, value);
 };
 
 exports.houseEventUpdateSchema = z
@@ -151,16 +137,16 @@ exports.houseEventUpdateSchema = z
         let end;
 
         if (data.isFreeDay) {
-            start = dateOnlyToUtcDate(data.start.slice(0, 10));
-            end = dateOnlyToUtcDate(data.end.slice(0, 10));
+            start = dateOnlyToMexicoUtcStart(new Date(data.start));
+            end = dateOnlyToMexicoUtcStart(new Date(data.end));
 
             if (!isNaN(end.getTime())) {
                 end = new Date(end.getTime() + ONE_DAY_MS);
             }
         } else if (data.allDay) {
-            if (DATE_REGEX.test(data.start)) {
-                start = dateOnlyToUtcDate(data.start);
-                end = dateOnlyToUtcDate(data.end);
+            if (DATE_ONLY_REGEX.test(data.start)) {
+                start = dateOnlyToMexicoUtcStart(new Date(data.start));
+                end = dateOnlyToMexicoUtcStart(new Date(data.end));
 
                 if (!isNaN(end.getTime())) {
                     end = new Date(end.getTime() + ONE_DAY_MS);
@@ -237,7 +223,7 @@ exports.updatePersonalEventSchema = z
 
         date: z
             .string({ required_error: "La fecha es obligatoria" })
-            .regex(DATE_REGEX, "La fecha debe tener formato YYYY-MM-DD"),
+            .regex(DATE_ONLY_REGEX, "La fecha debe tener formato YYYY-MM-DD"),
 
         description: z
             .string()
@@ -284,7 +270,7 @@ exports.updatePersonalEventSchema = z
                 data.start &&
                 data.end &&
                 eventEndDateTimeForValidation(data.date, data.end) <=
-                    eventDateTimeForValidation(data.date, data.start)
+                    eventDateTimeToUtc(data.date, data.start)
             ) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -317,7 +303,7 @@ exports.updatePersonalEventSchema = z
             data.start &&
             data.end &&
             eventEndDateTimeForValidation(data.date, data.end) <=
-                eventDateTimeForValidation(data.date, data.start)
+                eventDateTimeToUtc(data.date, data.start)
         ) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
