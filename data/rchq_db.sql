@@ -316,8 +316,11 @@ CREATE TABLE IF NOT EXISTS public.global_event (
     all_day boolean NOT NULL,
     is_free_day boolean NOT NULL,
     is_deleted boolean NOT NULL DEFAULT false,
+    is_recurring boolean NOT NULL DEFAULT false,
+    recurrence_type varchar(20) NULL,
     CONSTRAINT global_event_pk PRIMARY KEY (global_event_id),
-    CONSTRAINT global_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id)
+    CONSTRAINT global_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id),
+    CONSTRAINT global_event_recurrence_type_check CHECK (recurrence_type IS NULL OR recurrence_type IN ('daily', 'weekly', 'monthly', 'yearly'))
 );
 
 CREATE TABLE IF NOT EXISTS public.employee_personal_event (
