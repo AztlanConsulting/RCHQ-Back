@@ -1,0 +1,131 @@
+@startuml
+title US34 - Registrar solicitud de vacaciones
+
+actor "Empleado" as Usuario
+boundary "Frontend" as Frontend
+control "vacation.route.js" as Router
+control "create.controller.js" as Controller
+control "create.service.js" as Service
+database "employee/get.model.js" as EmployeeGetModel
+database "vacation/get.model.js" as VacationGetModel
+database "event/get.model.js" as EventGetModel
+database "vacation/create.model.js" as VacationCreateModel
+database "log.model.js" as LogModel
+database "PostgreSQL" as DB
+
+autonumber
+
+Usuario -> Frontend : Captura fecha inicio y fecha fin
+Frontend -> Router : POST /vacation/request\nAuthorization: Bearer token\n{ startDate, endDate }
+
+Router -> Router : apiLimiter
+Router -> Router : verifyToken
+Router -> Router : resolveRequesterHouse
+Router -> Controller : requestVacation(req, res)
+
+Controller -> Controller : Obtener employeeId de req.user.id
+Controller -> Controller : Obtener requesterHouseId de req.resolvedRequester.houseId
+Controller -> Controller : Obtener clientIp con getClientIp(req)
+Controller -> Service : requestVacation(employeeId, rawStartDate, rawEndDate, ipAddress, requesterHouseId)
+
+Service -> Service : dateRangeSchema.safeParse({ startDate, endDate })
+
+alt Fechas con formato inválido
+Service --> Controller : RESPONSES.DATES.WRONG_FORMAT
+Controller --> Frontend : 400 Bad Request\n"Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD"
+else Fechas válidas
+Service -> Service : stringToDate(startDate), stringToDate(endDate)
+Service -> Service : searchEndDate = endDate + 1 día
+end
+
+alt endDate < startDate
+Service --> Controller : RESPONSES.DATES.BAD_DATES
+Controller --> Frontend : 406 Not Acceptable\n"No se puede tener una fecha de inicio posterior a la de finalización"
+end
+
+Service -> EmployeeGetModel : getWorkDays(employeeId)
+EmployeeGetModel -> DB : prisma.employee_workday.findMany(...)
+DB --> EmployeeGetModel : workDays
+EmployeeGetModel --> Service : workDays
+
+alt workDays.length == 0
+Service --> Controller : RESPONSES.VACATION.WITHOUT_DATES
+Controller --> Frontend : 406 Not Acceptable\n"Se necesitan tener registrados los días de trabajo"
+end
+
+Service -> Service : getRemainingVacations(employeeId)
+Service -> EmployeeGetModel : getStartDate / datos de periodo laboral
+EmployeeGetModel -> DB : Consulta datos del empleado
+DB --> EmployeeGetModel : datos de periodo laboral
+EmployeeGetModel --> Service : anniversaryStartDate, anniversaryEndDate
+
+alt Rango fuera del periodo laboral vigente
+Service --> Controller : RESPONSES.VACATION.OUT_OF_RANGE
+Controller --> Frontend : 406 Not Acceptable\n"No se pueden solicitar vacaciones fuera del periodo actual de trabajo"
+end
+
+Service -> Service : today = getMexicoTodayDate()
+
+alt startDate <= today
+Service --> Controller : RESPONSES.VACATION.PAST_REQUEST_NOT_ALLOWED
+Controller --> Frontend : 406 Not Acceptable\n"No se pueden pedir vacaciones en el pasado ni para el mismo día"
+end
+
+Service -> EventGetModel : getGlobalEventsInRange(startDate, searchEndDate)
+EventGetModel -> DB : prisma.global_event.findMany(...)
+DB --> EventGetModel : globalEvents
+EventGetModel --> Service : globalEvents
+
+Service -> EventGetModel : getHouseEventsInRange(requesterHouseId, startDate, searchEndDate)
+EventGetModel -> DB : prisma.house_event.findMany(...)
+DB --> EventGetModel : houseEvents
+EventGetModel --> Service : houseEvents
+
+Service -> Service : Filtrar freeDays y convertir fechas a tiempo de México
+Service -> Service : calculateUsedDays(workDays, startDate, endDate, freeDays, true)
+
+alt usedDays == 0
+Service --> Controller : RESPONSES.VACATION.NULL_DATES
+Controller --> Frontend : 406 Not Acceptable\n"Dentro del rango seleccionado no hay ningún día hábil de vacaciones"
+end
+
+alt usedDays > remainingVacations
+Service --> Controller : RESPONSES.VACATION.INSUFFICIENT_DATES
+Controller --> Frontend : 406 Not Acceptable\n"No se tienen suficientes días disponibles para solicitar las vacaciones"
+end
+
+Service -> VacationGetModel : getVacationsInRange(employeeId, startDate, endDate)
+VacationGetModel -> DB : Consulta vacaciones traslapadas dentro del rango
+DB --> VacationGetModel : vacationsInsideRequest
+VacationGetModel --> Service : vacationsInsideRequest
+
+alt vacationsInsideRequest.length > 0
+Service --> Controller : RESPONSES.VACATION.ALREADY_REQUEST
+Controller --> Frontend : 406 Not Acceptable\n"Ya hay una solicitud de vacaciones cubriendo los días solicitados"
+end
+
+Service -> VacationGetModel : getOutsideVacations(employeeId, startDate, endDate)
+VacationGetModel -> DB : Consulta vacaciones traslapadas fuera del rango
+DB --> VacationGetModel : vacationsOutsideRequest
+VacationGetModel --> Service : vacationsOutsideRequest
+
+alt vacationsOutsideRequest.length > 0
+Service --> Controller : RESPONSES.VACATION.ALREADY_REQUEST
+Controller --> Frontend : 406 Not Acceptable\n"Ya hay una solicitud de vacaciones cubriendo los días solicitados"
+end
+
+Service -> VacationCreateModel : requestVacation(vacationId, employeeId, startDate, endDate, usedDays)
+VacationCreateModel -> DB : prisma.vacations_request.create({\n status: PENDING,\n used_days: usedDays,\n created_at: now\n})
+DB --> VacationCreateModel : vacationRequest
+VacationCreateModel --> Service : vacationRequest
+
+Service -> LogModel : createLog(employeeId,\n LOG_ACTIONS.VACATION_REQUESTED_SUCCESS,\n ipAddress,\n employeeId)
+LogModel -> DB : prisma.logs.create({ data })
+DB --> LogModel : log
+LogModel --> Service : log
+
+Service --> Controller : RESPONSES.VACATION.REQUESTED
+Controller --> Frontend : 201 Created\n"Se solicitaron las vacaciones de forma correcta"
+Frontend --> Usuario : Mostrar confirmación
+
+@enduml

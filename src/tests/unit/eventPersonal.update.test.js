@@ -114,6 +114,71 @@ describe("updatePersonalEvent service", () => {
             const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
             expect(updateCall.employeeIds).toEqual(uniqueIds);
         });
+
+        it("permite terminar a las 00:00 y usa el siguiente día como fin exclusivo", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEmployeesInHouse.mockResolvedValue([
+                { employee_id: employeeId },
+            ]);
+            getModel.findOverlappingEmployees.mockResolvedValue([]);
+            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
+            createLog.mockResolvedValue();
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                {
+                    ...basePayload,
+                    start: "23:30",
+                    end: "00:00",
+                    employeeIds: [employeeId],
+                },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
+            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
+            expect(updateCall.start).toBe("23:30:00");
+            expect(updateCall.end).toBe("00:00:00");
+            expect(updateCall.endDate).toBe(futureDate(31));
+        });
+
+        it("acepta fechas UTC con fecha final distinta para eventos en horario foráneo", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEmployeesInHouse.mockResolvedValue([
+                { employee_id: employeeId },
+            ]);
+            getModel.findOverlappingEmployees.mockResolvedValue([]);
+            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
+            createLog.mockResolvedValue();
+
+            const start = `${futureDate(30)}T06:00:00.000Z`;
+            const end = `${futureDate(31)}T06:00:00.000Z`;
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                {
+                    ...basePayload,
+                    start,
+                    end,
+                    employeeIds: [employeeId],
+                },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
+            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
+            expect(updateCall.start).toBe(start);
+            expect(updateCall.end).toBe(end);
+            expect(getModel.findOverlappingEmployees).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    start,
+                    end,
+                    excludeEventId: eventId,
+                }),
+            );
+        });
     });
 
     describe("Errores de validación", () => {

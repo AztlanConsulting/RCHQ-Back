@@ -492,7 +492,7 @@ describe("DELETE /absence/:absenceId", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("No puede acceder a este recurso");
+        expect(res.body.message).toBe("Permisos insuficientes");
     });
 
     it("200 y hace soft delete para un coordinador de la misma casa", async () => {
