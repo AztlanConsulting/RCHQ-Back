@@ -1,5 +1,6 @@
 const { z } = require("zod");
 const { convertUTCToMexicanTime } = require("../../utils/dates");
+const { normalizeTime } = require("../../utils/event/dateTime");
 
 const TEXT_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s\-!¿¡?.,:;()]+$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -15,8 +16,7 @@ const isTimeOrDateTimeWithTimezone = (value) =>
     TIME_REGEX.test(value) || DATETIME_WITH_TIMEZONE_REGEX.test(value);
 const eventDateTimeForValidation = (date, value) => {
     if (DATETIME_WITH_TIMEZONE_REGEX.test(value)) return new Date(value);
-    const normalizedTime = value.length === 5 ? `${value}:00` : value;
-    return new Date(`${date}T${normalizedTime}-06:00`);
+    return new Date(`${date}T${normalizeTime(value)}-06:00`);
 };
 const eventEndDateTimeForValidation = (date, value) => {
     if (DATETIME_WITH_TIMEZONE_REGEX.test(value)) return new Date(value);

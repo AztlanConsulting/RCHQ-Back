@@ -4,7 +4,7 @@ const DATETIME_WITH_TIMEZONE_REGEX =
 
 const MEXICO_TIMEZONE_OFFSET = "-06:00";
 
-const normalizeTime = (value) => {
+exports.normalizeTime = (value) => {
     if (!value) return "00:00:00";
     return value.length === 5 ? `${value}:00` : value;
 };
@@ -23,7 +23,7 @@ exports.eventDateTimeToUtc = (date, value) => {
     }
 
     return new Date(
-        `${date}T${normalizeTime(value)}${MEXICO_TIMEZONE_OFFSET}`,
+        `${date}T${this.normalizeTime(value)}${MEXICO_TIMEZONE_OFFSET}`,
     );
 };
 
