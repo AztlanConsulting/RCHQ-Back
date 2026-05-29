@@ -189,6 +189,8 @@ model global_event {
   all_day         Boolean
   is_free_day     Boolean
   is_deleted      Boolean    @default(false)
+  is_recurring    Boolean    @default(false)
+  recurrence_type String?    @db.VarChar(20)
   event_type      event_type @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "global_event_event_type_fk")
 }
 
