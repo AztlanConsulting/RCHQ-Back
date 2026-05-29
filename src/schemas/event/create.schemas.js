@@ -10,7 +10,8 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 const dateOnlyToUtcDate = (value) => new Date(`${value}T06:00:00.000Z`);
 
-const getTodayStr = () => convertUTCToMexicanTime(new Date()).toISOString().slice(0, 10);
+const getTodayStr = () =>
+    convertUTCToMexicanTime(new Date()).toISOString().slice(0, 10);
 const getMaxDateStr = () => {
     const d = convertUTCToMexicanTime(new Date());
     d.setUTCFullYear(d.getUTCFullYear() + 2);
@@ -279,9 +280,187 @@ exports.createPersonalEventSchema = z
         path: ["date"],
     })
     .refine((data) => data.date <= getMaxDateStr(), {
-        message: "No se pueden crear eventos con más de 2 años de anticipación.",
+        message:
+            "No se pueden crear eventos con más de 2 años de anticipación.",
         path: ["date"],
     });
+
+const RECURRENCE_TYPES = ["daily", "weekly", "monthly", "yearly"];
+
+exports.globalEventCreateSchema = z
+    .object({
+        eventTypeId: z
+            .string({ error: "El eventTypeId es obligatorio." })
+            .uuid({
+                message: "El identificador del tipo de evento no es válido.",
+            }),
+
+        name: z
+            .string({ error: "El título es obligatorio." })
+            .trim()
+            .min(1, { message: "El título es obligatorio." })
+            .max(70, { message: "El título no debe exceder 70 caracteres." })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            }),
+
+        start: z.string({ error: "La fecha de inicio es obligatoria." }),
+
+        end: z.string({ error: "La fecha de fin es obligatoria." }),
+
+        allDay: z
+            .boolean({ error: "El campo allDay debe ser verdadero o falso." })
+            .optional()
+            .default(false),
+
+        isFreeDay: z
+            .boolean({
+                error: "El campo isFreeDay debe ser verdadero o falso.",
+            })
+            .optional()
+            .default(false),
+
+        isRecurring: z
+            .boolean({
+                error: "El campo isRecurring debe ser verdadero o falso.",
+            })
+            .optional()
+            .default(false),
+
+        recurrenceType: z
+            .enum(RECURRENCE_TYPES, {
+                error: "El tipo de recurrencia debe ser: daily, weekly, monthly o yearly.",
+            })
+            .nullable()
+            .optional(),
+
+        description: z
+            .string()
+            .trim()
+            .max(250, {
+                message: "La descripción no debe exceder los 250 caracteres.",
+            })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            })
+            .nullable()
+            .optional(),
+
+        forceOverlap: z
+            .boolean({
+                error: "El campo forceOverlap debe ser verdadero o falso.",
+            })
+            .optional()
+            .default(false),
+    })
+    .superRefine((data, ctx) => {
+        if (data.allDay) {
+            if (!DATE_REGEX.test(data.start)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["start"],
+                    message:
+                        "Para eventos de todo el día, start debe tener formato YYYY-MM-DD.",
+                });
+            }
+            if (!DATE_REGEX.test(data.end)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["end"],
+                    message:
+                        "Para eventos de todo el día, end debe tener formato YYYY-MM-DD.",
+                });
+            }
+            return;
+        }
+
+        if (!DATETIME_WITH_TIMEZONE_REGEX.test(data.start)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["start"],
+                message:
+                    "Para eventos con hora, start debe incluir fecha, hora y zona horaria.",
+            });
+        }
+        if (!DATETIME_WITH_TIMEZONE_REGEX.test(data.end)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["end"],
+                message:
+                    "Para eventos con hora, end debe incluir fecha, hora y zona horaria.",
+            });
+        }
+    })
+    .superRefine((data, ctx) => {
+        if (data.isRecurring && !data.recurrenceType) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["recurrenceType"],
+                message:
+                    "El tipo de recurrencia es obligatorio cuando isRecurring es true.",
+            });
+        }
+    })
+    .transform((data, ctx) => {
+        let start;
+        let end;
+
+        if (data.allDay) {
+            start = dateOnlyToUtcDate(data.start);
+            end = dateOnlyToUtcDate(data.end);
+            if (!isNaN(end.getTime())) {
+                end = new Date(end.getTime() + ONE_DAY_MS);
+            }
+        } else {
+            start = new Date(data.start);
+            end = new Date(data.end);
+        }
+
+        if (isNaN(start.getTime())) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["start"],
+                message: "La fecha de inicio no es una fecha válida.",
+            });
+            return z.NEVER;
+        }
+
+        if (isNaN(end.getTime())) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["end"],
+                message: "La fecha de fin no es una fecha válida.",
+            });
+            return z.NEVER;
+        }
+
+        return {
+            ...data,
+            start,
+            end,
+            recurrenceType: data.isRecurring ? data.recurrenceType : null,
+        };
+    })
+    .refine((data) => data.start < data.end, {
+        message: "La fecha de inicio debe ser anterior a la fecha de fin.",
+        path: ["start"],
+    })
+    .refine(
+        (data) => data.start.toISOString().slice(0, 10) >= getHouseMinDateStr(),
+        {
+            message: `No se pueden crear eventos antes del 1 de enero de ${new Date().getFullYear()}.`,
+            path: ["start"],
+        },
+    )
+    .refine(
+        (data) => data.start.toISOString().slice(0, 10) <= getHouseMaxDateStr(),
+        {
+            message: `No se pueden crear eventos más allá del año ${new Date().getFullYear() + 2}.`,
+            path: ["start"],
+        },
+    );
 
 exports.searchEmployeesSchema = z.object({
     search: z
