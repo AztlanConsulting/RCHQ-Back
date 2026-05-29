@@ -6,8 +6,6 @@ const IV_LENGTH = 12;
 const TAG_LENGTH = 16;
 const SALT_ROUNDS = 10;
 
-// ----- HASHING (one-way; bcrypt)
-
 exports.hashValue = async (value) => bcrypt.hash(value, SALT_ROUNDS);
 
 exports.verifyHashedValue = async (plainValue, hashedValue) => {
@@ -27,9 +25,6 @@ exports.verifyPassword = async (plainPassword, hashedPassword) => {
     return bcrypt.compare(plainPassword, hashedPassword);
 };
 
-// ----- ENCRYPTION (reversible)
-
-/** 32-byte key: 64 hex chars, or standard base64 of 32 raw bytes */
 function getEncryptionKeyBuffer() {
     const raw = process.env.ENCRYPTION_KEY;
     if (!raw || typeof raw !== "string") {
@@ -60,7 +55,6 @@ function getEncryptionKeyBuffer() {
     );
 }
 
-/** Returns base64: iv (12) + tag (16) + ciphertext — safe for a text column */
 exports.encryptValue = (plainValue) => {
     if (plainValue === null || plainValue === undefined) {
         throw new Error("encryptValue requires a value");

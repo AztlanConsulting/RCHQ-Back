@@ -105,7 +105,11 @@ const employeeBasicUpdateSchema = z
       }, { message: "El empleado debe ser mayor de 18 años y la fecha debe ser posterior a 1900" })
       .optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    { message: "Debe enviarse al menos un campo para actualizar" }
+  );
 
 const employeeContactUpdateSchema = z
   .object({
@@ -201,8 +205,7 @@ const employeeAdminUpdateSchema = z
         .regex(SALARY_REGEX, "El salario debe ser un número válido con hasta 2 decimales")
         .refine((val) => Number(val) >= 0, { message: "El salario no puede ser negativo" })
         .refine((val) => Number(val) <= 1_000_000, { message: "El salario excede el límite permitido" })
-        .optional()
-    ),
+    ).optional(),
 
     workdays: z.array(workdayUpdateSchema).min(1, "Debe incluir al menos un día").optional(),
   })

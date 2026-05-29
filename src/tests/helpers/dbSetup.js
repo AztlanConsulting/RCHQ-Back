@@ -1,4 +1,3 @@
-// tests/integration/helpers/dbSetup.js
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient({
@@ -7,14 +6,12 @@ const prisma = new PrismaClient({
     },
 });
 
-// ─── IDs fijos ───────────────────────────────────────────────────────────────
 const IDS = {
     house: "a1b2c3d4-0000-0000-0000-000000000001",
     role: "a1b2c3d4-0000-0000-0000-000000000002",
     employee: "a1b2c3d4-0000-0000-0000-000000000003",
 };
 
-// ─── Actions requeridas por createLog ────────────────────────────────────────
 const SEED_ACTIONS = [
     { action_id: "auth-001", description: "Login fallido", important: false },
     { action_id: "auth-002", description: "Cuenta bloqueada", important: true },
@@ -173,7 +170,6 @@ const SEED_ACTIONS = [
     },
 ];
 
-// ─── Datos de prueba ─────────────────────────────────────────────────────────
 const SEED = {
     house: {
         house_id: IDS.house,
@@ -211,14 +207,6 @@ const SEED = {
     },
 };
 
-/**
- * Inserta los registros mínimos necesarios en la DB de test.
- * Usa upsert para ser idempotente (seguro correrlo varias veces).
- *
- * @param {object} options
- * @param {string} [options.passwordOverride] - Hash bcrypt para el empleado.
- *   Usar cuando el test necesita login real: await bcrypt.hash("Andatti67", 10)
- */
 async function seedDb({ passwordOverride } = {}) {
     await cleanDb();
 

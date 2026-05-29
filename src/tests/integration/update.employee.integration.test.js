@@ -4,7 +4,6 @@ const prisma  = require("../../prisma");
 const { hashPassword } = require("../../utils/password");
 const { buildSessionToken } = require("../../utils/auth/authTokens");
 
-// ─── IDs fijos ────────────────────────────────────────────────────────────────
 
 const HOUSE_ID    = "f1000001-0000-4000-8000-000000000001";
 const OTHER_HOUSE_ID = "f1000001-0000-4000-8000-000000000002";
@@ -21,7 +20,6 @@ let token;
 let adminRoleId = FALLBACK_ADMIN_ROLE_ID;
 let shouldCleanupAdminRole = false;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const authHeader = () => ({ Authorization: `Bearer ${token}` });
 
@@ -30,10 +28,8 @@ const json = () => ({
   ...authHeader(),
 });
 
-// ─── Seed / teardown ──────────────────────────────────────────────────────────
 
 beforeAll(async () => {
-  // 1. Limpieza inicial profunda (Orden inverso de dependencias)
   await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
@@ -45,7 +41,6 @@ beforeAll(async () => {
   await prisma.house.deleteMany({ where: { house_id: OTHER_HOUSE_ID } });
   await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
 
-  // 2. Preparar dependencias (Catálogos)
   await prisma.workday.upsert({
     where:  { workday_id: WD_ID },
     update: {},
@@ -114,7 +109,6 @@ beforeAll(async () => {
     }
   });
 
-  // 3. Crear el empleado base
   const password = await hashPassword("TestPass123!");
 
   await prisma.employee.create({
@@ -133,7 +127,6 @@ beforeAll(async () => {
     },
   });
 
-  // 4. Token de sesión
   token = await buildSessionToken({ 
     employeeId: EMP_ID, 
     id: EMP_ID,
@@ -147,7 +140,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    // Limpieza final
     await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
@@ -164,10 +156,6 @@ afterAll(async () => {
 
     await prisma.$disconnect();
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// GET /employee/update-form
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("GET /employee/update-form", () => {
   it("retorna 401 sin token", async () => {
@@ -187,10 +175,6 @@ describe("GET /employee/update-form", () => {
     expect(Array.isArray(res.body.workdays)).toBe(true);
   });
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PUT /employee/:employeeId/basic-info
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("PUT /employee/:employeeId/basic-info", () => {
   it("retorna 401 sin token", async () => {
@@ -324,10 +308,6 @@ describe("PUT /employee/:employeeId/basic-info", () => {
   });
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PUT /employee/:employeeId/contact-info
-// ══════════════════════════════════════════════════════════════════════════════
-
 describe("PUT /employee/:employeeId/contact-info", () => {
   it("retorna 401 sin token", async () => {
     const res = await request(app)
@@ -391,12 +371,12 @@ describe("PUT /employee/:employeeId/contact-info", () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it("retorna 200 con body vacío", async () => {
+  it("retorna 400 con body vacío", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/contact-info`)
       .set(json())
       .send({});
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(400);
   });
 
   it("retorna 400 con campo no permitido", async () => {
@@ -415,10 +395,6 @@ describe("PUT /employee/:employeeId/contact-info", () => {
     expect(res.statusCode).toBe(404);
   });
 });
-
-// ══════════════════════════════════════════════════════════════════════════════
-// PUT /employee/:employeeId/admin-info
-// ══════════════════════════════════════════════════════════════════════════════
 
 describe("PUT /employee/:employeeId/admin-info", () => {
   it("retorna 401 sin token", async () => {

@@ -63,9 +63,6 @@ describe("updateHouseEvent service", () => {
         jest.clearAllMocks();
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 1: Actualización exitosa con evento con hora
-    // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento con hora", () => {
         it("actualiza el evento, retorna UPDATED y registra el log", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
@@ -136,9 +133,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 2: Actualización exitosa con evento allDay
-    // ──────────────────────────────────────────────────────────
     describe("Caso exitoso con evento allDay", () => {
         it("suma un día al end para un evento allDay de un solo día", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
@@ -198,9 +192,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 3: Evento no encontrado
-    // ──────────────────────────────────────────────────────────
     describe("Evento no encontrado", () => {
         it("retorna NOT_FOUND si el evento no existe", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(null);
@@ -235,9 +226,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 4: Errores de validación de Zod
-    // ──────────────────────────────────────────────────────────
     describe("Errores de validación", () => {
         it("retorna VALIDATION_ERROR si falta eventTypeId", async () => {
             const invalidData = { ...baseValidData };
@@ -474,9 +462,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 5: Detección de empalmes
-    // ──────────────────────────────────────────────────────────
     describe("Detección de empalmes", () => {
         const mockCollision = {
             houseEventId: "55555555-5555-4555-8555-555555555555",
@@ -574,9 +559,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 6: Manejo del log
-    // ──────────────────────────────────────────────────────────
     describe("Manejo del log", () => {
         it("retorna UPDATED con warning si el log falla", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(
@@ -650,9 +632,6 @@ describe("updateHouseEvent service", () => {
         });
     });
 
-    // ──────────────────────────────────────────────────────────
-    //  CASO 7: Defaults del schema
-    // ──────────────────────────────────────────────────────────
     describe("Defaults del schema", () => {
         it("aplica allDay=false por defecto si no se envía", async () => {
             getModel.findHouseEventByIdAndHouseId.mockResolvedValue(

@@ -1,4 +1,3 @@
-// employee.policies.js
 const { ROLES, DOCUMENT_VIEWER_ROLES } = require("../utils/roles");
 
 exports.employeePolicy = (user, resource) => {
