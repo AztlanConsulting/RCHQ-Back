@@ -17,6 +17,24 @@ exports.mapHouseEvent = (event) => {
     };
 };
 
+exports.mapGlobalEvent = (event) => {
+    if (!event) return null;
+
+    return {
+        globalEventId: event.global_event_id,
+        eventTypeId: event.event_type_id,
+        name: event.name,
+        start: convertUTCToMexicanTime(event.start),
+        end: convertUTCToMexicanTime(event.end),
+        allDay: event.all_day,
+        isFreeDay: event.is_free_day,
+        isDeleted: event.is_deleted,
+        isRecurring: event.is_recurring,
+        recurrenceType: event.recurrence_type,
+        description: event.description,
+    };
+};
+
 exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
     const calendarEnd = new Date(absence.end);
     calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
