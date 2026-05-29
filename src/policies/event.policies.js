@@ -15,6 +15,14 @@ exports.deleteHouseEventPolicy = coordinatorPolicy(PRIVILEGES.DELETE_EVENT);
 exports.updatePersonalEventPolicy = coordinatorPolicy(PRIVILEGES.EDIT_EVENT);
 exports.deletePersonalEventPolicy = coordinatorPolicy(PRIVILEGES.DELETE_EVENT);
 
+exports.globalEventPolicy = (user, _resource) => {
+    if (!user) return false;
+    if (!(user.privileges || []).includes(PRIVILEGES.CREATE_EVENT))
+        return false;
+    if (user.role !== ROLES.ADMIN) return false;
+    return true;
+};
+
 exports.personalEventPolicy = (user, resource) => {
     if (!user) return false;
     if (!(user.privileges || []).includes(PRIVILEGES.CREATE_EVENT))
