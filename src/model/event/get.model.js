@@ -2,6 +2,7 @@ const prisma = require("../../prisma");
 const { Prisma } = require("@prisma/client");
 const {
     mapHouseEvent,
+    mapGlobalEvent,
     mapPersonalEventOverlap,
 } = require("../../utils/mappers/event.map");
 const personalEventTimeToUtc = (date, time) =>
@@ -174,6 +175,31 @@ exports.getGlobalEventsInRange = async (startDate, endDate) => {
         isFreeDay: is_free_day,
         isDeleted: is_deleted,
     }));
+};
+
+exports.findOverlappingGlobalEvents = async ({
+    start,
+    end,
+    excludeEventId,
+}) => {
+    const events = await prisma.global_event.findMany({
+        where: {
+            global_event_id: excludeEventId
+                ? { not: excludeEventId }
+                : undefined,
+            is_deleted: false,
+            start: { lt: end },
+            end: { gt: start },
+        },
+        select: {
+            global_event_id: true,
+            name: true,
+            start: true,
+            end: true,
+        },
+    });
+
+    return events.map(mapGlobalEvent);
 };
 
 exports.getEventsByIds = async (eventIds) => {
