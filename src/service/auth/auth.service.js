@@ -20,7 +20,7 @@ const { generateRefreshToken, decodeToken } = require("../../utils/jwt");
 
 const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
-const MAX_LOGIN_ATTEMPTS = 3;
+const MAX_LOGIN_ATTEMPTS = 5;
 
 async function login(req) {
     const { email, password } = req.body;
@@ -57,24 +57,23 @@ async function login(req) {
         };
     }
 
-    if (isBlockedUntil(employee.blockedUntil)) {
-        return {
-            status: 423,
-            body: {
-                success: false,
-                code: "ACCOUNT_TEMPORARILY_BLOCKED",
-                message:
-                    "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
-                blockedUntil: employee.blockedUntil,
-            },
-        };
-    }
-
     await clearExpiredLoginBlock(employee);
 
     const passwordMatches = await verifyPassword(password, employee.pwd);
+    const isLoginBlocked = isBlockedUntil(employee.blockedUntil);
 
     if (!passwordMatches) {
+        if (isLoginBlocked) {
+            return {
+                status: 401,
+                body: {
+                    success: false,
+                    code: "INVALID_CREDENTIALS",
+                    message: "Credenciales inválidas",
+                },
+            };
+        }
+
         const attempts = await User.incrementFailedAttempts(
             employee.employeeId,
         );
@@ -116,6 +115,19 @@ async function login(req) {
                 success: false,
                 code: "INVALID_CREDENTIALS",
                 message: "Credenciales inválidas",
+            },
+        };
+    }
+
+    if (isLoginBlocked) {
+        return {
+            status: 423,
+            body: {
+                success: false,
+                code: "ACCOUNT_TEMPORARILY_BLOCKED",
+                message:
+                    "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
+                blockedUntil: employee.blockedUntil,
             },
         };
     }

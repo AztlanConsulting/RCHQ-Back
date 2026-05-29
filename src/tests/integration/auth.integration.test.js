@@ -177,18 +177,14 @@ describe("POST /auth/login - integration", () => {
         expect(emp.failed_login_attempts).toBe(1);
     });
 
-    it("bloquea la cuenta en BD después de 3 intentos fallidos", async () => {
+    it("bloquea la cuenta en BD después de 5 intentos fallidos", async () => {
         await createTestEmployee();
 
-        await request(app)
-            .post("/auth/login")
-            .send({ email: TEST_EMAIL, password: "wrong" });
-        await request(app)
-            .post("/auth/login")
-            .send({ email: TEST_EMAIL, password: "wrong" });
-        await request(app)
-            .post("/auth/login")
-            .send({ email: TEST_EMAIL, password: "wrong" });
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            await request(app)
+                .post("/auth/login")
+                .send({ email: TEST_EMAIL, password: "wrong" });
+        }
         const emp = await prisma.employee.findUnique({
             where: { employee_id: TEST_EMPLOYEE_ID },
         });
