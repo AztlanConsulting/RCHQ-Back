@@ -27,9 +27,7 @@ app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 const allowedOrigins = [
-  'https://miapp.com/',
-  'https://admin.miapp.com/',
-  'http://localhost:3000/'
+  'https://tochan.redcasashogarqro.cloud/'
 ];
 
 app.use(cors({
