@@ -286,6 +286,7 @@ CREATE TABLE IF NOT EXISTS public.personal_event (
     description varchar(250) NULL,
     all_day boolean NOT NULL,
     is_deleted boolean NOT NULL DEFAULT false,
+    trainer varchar(150) NULL,
     CONSTRAINT personal_event_pk PRIMARY KEY (personal_event_id),
     CONSTRAINT personal_event_event_type_fk FOREIGN KEY (event_type_id) REFERENCES public.event_type(event_type_id)
 );

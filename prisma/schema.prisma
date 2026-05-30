@@ -265,6 +265,7 @@ model personal_event {
   description             String?                   @db.VarChar(250)
   all_day                 Boolean
   is_deleted              Boolean                   @default(false)
+  trainer                 String?                   @db.VarChar(150)
   employee_personal_event employee_personal_event[]
   event_type              event_type                @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "personal_event_event_type_fk")
 }
