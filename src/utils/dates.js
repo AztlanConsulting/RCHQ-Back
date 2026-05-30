@@ -112,6 +112,18 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
         );
         const lastEventDay = this.getLastIncludedDateForRange(eventStart, eventEnd);
 
+        const isExclusiveMidnightEnd =
+            (event.allDay === true || event.all_day === true) &&
+            eventEnd > eventStart &&
+            eventEnd.getUTCHours() === 0 &&
+            eventEnd.getUTCMinutes() === 0 &&
+            eventEnd.getUTCSeconds() === 0 &&
+            eventEnd.getUTCMilliseconds() === 0;
+
+        if (isExclusiveMidnightEnd) {
+            lastEventDay.setUTCDate(lastEventDay.getUTCDate() - 1);
+        }
+
         while (currentEventDay <= lastEventDay) {
             const eventDate = currentEventDay.toISOString().split("T")[0];
             const eventDay = currentEventDay.getUTCDay();

@@ -54,19 +54,22 @@ exports.isAllowed = async (req, res, next) => {
         const homeQuery = await getHome(targetId);
         if (!homeQuery) return next();
 
-        if (req.user.houseId == homeQuery.house_id && req.user.role == ROLES.COORDINATOR) {
+        if (
+            req.user.houseId == homeQuery.house_id &&
+            req.user.role == ROLES.COORDINATOR
+        ) {
             return next();
         }
 
         return res.status(403).json({
             success: false,
-            message: "No puede acceder a este recurso"
+            message: "Permisos insuficientes",
         });
     } catch (error) {
         console.error("Error en middleware isAllowed:", error);
         return res.status(403).json({
             success: false,
-            message: "No puede acceder a este recurso"
+            message: "Permisos insuficientes",
         });
     }
 };
@@ -80,7 +83,7 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
         if (!targetEmployee) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
@@ -88,33 +91,36 @@ exports.canRegisterEmployeeVacation = async (req, res, next) => {
             return next();
         }
 
-        if (req.user.role !== ROLES.COORDINATOR && req.user.role !== ROLES.ADMIN) {
+        if (
+            req.user.role !== ROLES.COORDINATOR &&
+            req.user.role !== ROLES.ADMIN
+        ) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
         if (isAdminRole(targetEmployee.role?.name)) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
         if (req.user.houseId !== targetEmployee.house_id) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
         return next();
     } catch (error) {
         console.error("Error en canRegisterEmployeeVacation:", error);
-         return res.status(403).json({
+        return res.status(403).json({
             success: false,
-            message: "No puede acceder a este recurso",
+            message: "Permisos insuficientes",
         });
     }
 };

@@ -1,4 +1,7 @@
-const { convertUTCToMexicanTime, combineDateAndTime } = require("../dates");
+const {
+    calculateMexicoDateRangeDays,
+    dateRangeToMexicoCalendarInterval,
+} = require("../event/dateTime");
 
 exports.mapHouseEvent = (event) => {
     if (!event) return null;
@@ -8,8 +11,8 @@ exports.mapHouseEvent = (event) => {
         houseId: event.house_id,
         eventTypeId: event.event_type_id,
         name: event.name,
-        start: convertUTCToMexicanTime(event.start),
-        end: convertUTCToMexicanTime(event.end),
+        start: event.start,
+        end: event.end,
         allDay: event.all_day,
         isFreeDay: event.is_free_day,
         isDeleted: event.is_deleted,
@@ -18,16 +21,18 @@ exports.mapHouseEvent = (event) => {
 };
 
 exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
-    const calendarEnd = new Date(absence.end);
-    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+    const { start, end } = dateRangeToMexicoCalendarInterval(
+        absence.start,
+        absence.end,
+    );
 
     return {
         absenceId: absence.absence_id,
         employeeId: absence.employee_id,
         name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
         curp: absence.employee.curp,
-        start: absence.start,
-        end: calendarEnd,
+        start,
+        end,
         startDate: absence.start,
         endDate: absence.end,
         type: absence.absence_type?.name || "Ausencia",
@@ -36,6 +41,7 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
         link: absence.url || "",
         isDeleted: absence.is_deleted,
         usedDays,
+        totalDays: calculateMexicoDateRangeDays(absence.start, absence.end),
         focus: "ausencias",
         scope: "personal",
         color: "#BA274A",
@@ -44,16 +50,18 @@ exports.mapEmployeeAbsenceCalendarEvent = (absence, usedDays) => {
 };
 
 exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
-    const calendarEnd = new Date(vacation.end);
-    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+    const { start, end } = dateRangeToMexicoCalendarInterval(
+        vacation.start,
+        vacation.end,
+    );
 
     return {
         vacationId: vacation.vacations_request_id,
         employeeId: vacation.employee.employee_id,
         name: `${vacation.employee.name} ${vacation.employee.surname}`.trim(),
         curp: vacation.employee.curp,
-        start: vacation.start,
-        end: calendarEnd,
+        start,
+        end,
         startDate: vacation.start,
         endDate: vacation.end,
         status: vacation.status,
@@ -64,16 +72,14 @@ exports.mapHouseVacationCalendarEvent = (vacation, usedDays) => {
         color: vacation.status == 1 ? "#203766" : "#6298C7",
         allDay: true,
         usedDays,
+        totalDays: calculateMexicoDateRangeDays(vacation.start, vacation.end),
     };
 };
 
 exports.mapPersonalCalendarEvent = (event) => {
     const peopleData = [];
-    const start = combineDateAndTime(event.date, event.start);
-    const endCalendarDate = event.all_day
-        ? convertUTCToMexicanTime(event.end)
-        : event.date;
-    const end = combineDateAndTime(endCalendarDate, event.end);
+    const start = event.start;
+    const end = event.end;
 
     event.employee_personal_event.forEach((employeeEvent) => {
         peopleData.push({
@@ -95,7 +101,7 @@ exports.mapPersonalCalendarEvent = (event) => {
         scope: "personal",
         description: event.description ?? "",
         color: "#D58936",
-        allDay: event.all_day || false,
+        allDay: event.all_day,
         peopleInsideEvent: peopleData,
     };
 };
@@ -117,11 +123,6 @@ exports.mapPersonalEvent = (event, options = {}) => {
     };
 };
 
-const formatTime = (time) => {
-    if (!time) return null;
-    return convertUTCToMexicanTime(time).toISOString().slice(11, 19);
-};
-
 exports.mapPersonalEventOverlap = (row) => {
     if (!row) return null;
 
@@ -136,8 +137,8 @@ exports.mapPersonalEventOverlap = (row) => {
             personalEventId: row.personal_event?.personal_event_id,
             name: row.personal_event?.name,
             date: row.personal_event?.date,
-            start: formatTime(row.personal_event?.start),
-            end: formatTime(row.personal_event?.end),
+            start: row.personal_event?.start,
+            end: row.personal_event?.end,
         },
     };
 };

@@ -47,7 +47,11 @@ exports.getEventsInRange = async (req, res) => {
         const startDate = req.params.startDate;
         const endDate = req.params.endDate;
 
-        const result = await getEventsInRange(employeeId, startDate, endDate);
+        const result = await getEventsInRange(
+            employeeId,
+            startDate,
+            endDate,
+        );
 
         if (result.code == RESPONSES.DATES.WRONG_FORMAT) {
             return res.status(400).json({
@@ -162,7 +166,7 @@ exports.getHouseCalendarRecordsInRange = async (req, res) => {
         if (!requesterHouseId) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 

@@ -219,7 +219,7 @@ describe("updateVacationRequestDates service", () => {
         expect(result.code).toBe(RESPONSES.VACATION.UPDATED);
         expect(getGlobalEventsInRange).toHaveBeenCalledWith(
             new Date("2026-06-16T00:00:00.000Z"),
-            new Date("2026-06-20T00:00:00.000Z"),
+            new Date("2026-06-19T23:59:59.999Z"),
         );
         expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -250,7 +250,7 @@ describe("updateVacationRequestDates service", () => {
         expect(getHouseEventsInRange).toHaveBeenCalledWith(
             houseId,
             new Date("2026-06-16T00:00:00.000Z"),
-            new Date("2026-06-20T00:00:00.000Z"),
+            new Date("2026-06-19T23:59:59.999Z"),
         );
         expect(updateVacationRequestDatesAtomically).toHaveBeenCalledWith(
             expect.objectContaining({

@@ -4,6 +4,7 @@ const {
 } = require("../model/event/get.model");
 const { getActiveVacationsInRange } = require("../model/vacation/get.model");
 const { convertUTCToMexicanTime } = require("./dates");
+const { endOfUtcDay } = require("./event/dateTime");
 
 const toUtcDate = (date) =>
     new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -16,8 +17,7 @@ exports.getAbsenceCalculationContext = async ({
     startDate,
     endDate,
 }) => {
-    const searchEndDate = new Date(endDate);
-    searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+    const searchEndDate = endOfUtcDay(endDate);
 
     const [globalEvents, houseEvents, overlappingVacations] = await Promise.all([
         getGlobalEventsInRange(startDate, searchEndDate),
