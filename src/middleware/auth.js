@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
+const User = require("../model/auth/auth.model");
+const { decodeToken } = require("../utils/jwt");
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.authorization || req.headers.Authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -18,6 +20,21 @@ const verifyToken = (req, res, next) => {
             return res
                 .status(403)
                 .json({ success: false, message: "Token de sesión inválido" });
+        }
+
+        if (decoded.sessionId) {
+            const employeeId = decoded.id || decoded.employeeId;
+            const employee = await User.getEmployeeById(employeeId);
+            const activeRefreshToken = decodeToken(employee?.refreshToken);
+
+            if (
+                !employee?.refreshToken ||
+                activeRefreshToken?.sessionId !== decoded.sessionId
+            ) {
+                return res
+                    .status(401)
+                    .json({ success: false, message: "SesiÃ³n no activa" });
+            }
         }
 
         req.user = decoded;

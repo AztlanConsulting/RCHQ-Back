@@ -15,6 +15,7 @@ const generateToken = (user) => {
             houseId: user.houseId,
             privileges: user.privileges || [],
             tokenType: "SESSION",
+            sessionId: user.sessionId,
         },
         jwtSecret,
         { expiresIn: sessionExpiresIn },
@@ -46,11 +47,12 @@ const generatePreTwoFactorAuthToken = (user) => {
     );
 };
 
-const generateRefreshToken = (user) => {
+const generateRefreshToken = (user, sessionId) => {
     return jwt.sign(
         {
             id: user.id || user.employeeId,
             tokenType: "REFRESH",
+            sessionId,
         },
         jwtSecret,
         { expiresIn: refreshExpiresIn },
