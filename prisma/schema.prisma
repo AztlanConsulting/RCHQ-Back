@@ -66,6 +66,7 @@ model employee {
   start_date                      DateTime                        @db.Date
   end_date                        DateTime?                       @db.Date
   deactivation_reason             String?                         @db.VarChar(250)
+  out_of_blacklist_reason         String?                         @db.VarChar(250)
   nss                             String?                         @unique @db.VarChar(11)
   bank_account                    String?                         @db.VarChar(18)
   phone_number                    String?                         @db.VarChar(20)
@@ -76,6 +77,7 @@ model employee {
   two_fa_blocked_until            DateTime?                       @db.Timestamp(6)
   temp_totp_secret                String?                         @db.VarChar
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
+  refresh_token                   String?                         @db.VarChar
   absence                         absence[]
   blacklist                       blacklist?
   frecuency_of_payment            frecuency_of_payment?           @relation(fields: [frequency_of_payment_id], references: [frecuency_of_payment_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_frecuency_of_payment_fk")
@@ -263,6 +265,7 @@ model personal_event {
   description             String?                   @db.VarChar(250)
   all_day                 Boolean
   is_deleted              Boolean                   @default(false)
+  trainer                 String?                   @db.VarChar(150)
   employee_personal_event employee_personal_event[]
   event_type              event_type                @relation(fields: [event_type_id], references: [event_type_id], onDelete: NoAction, onUpdate: NoAction, map: "personal_event_event_type_fk")
 }
@@ -343,6 +346,7 @@ model frecuency_of_payment {
 model blacklist {
   blacklist_id String   @id(map: "blacklist_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   curp         String   @unique @db.VarChar(18)
+  reason       String   @db.VarChar(250)
   created_at   DateTime @default(now()) @db.Timestamp(6)
   employee     employee @relation(fields: [curp], references: [curp], onUpdate: NoAction, map: "blacklist_employee_fk")
 }

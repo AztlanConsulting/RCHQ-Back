@@ -261,3 +261,93 @@ Calendarios y eventos. (s. f.). Google For Developers. https://developers.googl
 **Reglas:**
 - NUNCA revertir la transformación de `+1 día` en el backend al devolver eventos.
 - SIEMPRE incluir `all_day` en las respuestas para que el cliente sepa cómo interpretar el `end`.
+
+---
+
+## Autenticación y Manejo de Sesión (Refresh Token)
+
+El backend utiliza un sistema de doble token para mantener la seguridad y la persistencia de la sesión:
+1. **Access Token (`SESSION`)**: De corta duración (1h). Se devuelve en el cuerpo JSON de la respuesta y debe ser enviado en el header `Authorization: Bearer <token>` para rutas protegidas.
+2. **Refresh Token (`REFRESH`)**: De larga duración (1 día). **No es accesible vía JavaScript**. El servidor lo envía e invalida exclusivamente a través de la cabecera HTTP `Set-Cookie` (`HttpOnly`, `Secure`, `SameSite=Strict`).
+
+### Endpoints que emiten Refresh Tokens
+Los siguientes endpoints devolverán en sus cabeceras un `Set-Cookie: refreshToken=...`:
+- `POST /auth/login` (Si no requiere 2FA ni cambio de contraseña)
+- `POST /auth/first-login/change-password`
+- `POST /auth/2fa/validate`
+
+### `POST /auth/refresh`
+**Descripción:** Renueva el `accessToken` y rota el `refreshToken` cuando la sesión está por expirar.
+**Requisitos:** La petición HTTP debe incluir credenciales para que el navegador adjunte automáticamente la cookie `refreshToken`.
+
+**Respuestas:**
+- **200 OK**: Sesión renovada con éxito.
+  - **Headers:** Emite un nuevo `Set-Cookie: refreshToken=...`
+  - **Body:**
+    ```json
+    {
+      "success": true,
+      "code": "REFRESH_SUCCESS",
+      "message": "Sesión actualizada",
+      "data": {
+        "token": "eyJhbGciOiJIUzI1NiIs..."
+      }
+    }
+    ```
+- **401 Unauthorized / 403 Forbidden**: Token expirado, inválido, no proporcionado o detectado como reutilizado (robo de sesión).
+  - **Headers:** Emite un `Set-Cookie: refreshToken=; Max-Age=0` (Destruye la cookie).
+  - **Body:** `{ "success": false, "code": "INVALID_REFRESH_TOKEN", ... }`
+
+### `POST /auth/logout`
+**Descripción:** Cierra la sesión activa, invalidando el token en la base de datos y limpiando la cookie del navegador.
+**Requisitos:** Debe enviar las credenciales (cookies).
+
+**Respuestas:**
+- **200 OK**: Sesión cerrada.
+  - **Headers:** Emite un `Set-Cookie: refreshToken=; Max-Age=0` (Destruye la cookie).
+  - **Body:**
+    ```json
+    {
+      "success": true,
+      "code": "LOGOUT_SUCCESS",
+      "message": "Sesión cerrada"
+    }
+    ```
+*(Nota: Este endpoint siempre retorna 200, incluso si no se envió cookie, para asegurar la limpieza del estado en el cliente).*
+
+---
+
+## Rate Limiting (Control de Peticiones)
+
+Para proteger el sistema contra ataques de denegación de servicio (DoS) y fuerza bruta, la API implementa limitadores de peticiones.
+
+Existen dos tipos de limitadores configurados:
+
+### 1. `apiLimiter` (Rutas Generales)
+- **Límite:** 100 peticiones por minuto.
+- **Identificador (Tracking):** Rastrea por el ID del usuario (`decoded.id` o `decoded.employeeId` del JWT). Si la petición es anónima (sin token), rastrea por la dirección IP.
+- **Uso:** En la gran mayoría de las rutas protegidas y endpoints generales de datos.
+
+### 2. `authLimiter` (Rutas Críticas de Autenticación)
+- **Límite:** 5 peticiones cada 10 minutos.
+- **Identificador (Tracking):** Rastrea primero por el email (`req.body.email`), si no lo hay por el ID del token, y en último caso por IP.
+- **Uso:** En endpoints donde se envían credenciales sensibles (ej. `/auth/login`, `/auth/change-password`, `/auth/2fa/validate`).
+
+### Respuesta HTTP (Manejo en el Cliente)
+Cuando un usuario o IP excede cualquiera de los dos límites, la API bloquea automáticamente la petición y devuelve la siguiente estructura:
+
+- **Status HTTP:** `429 Too Many Requests`
+- **Body (JSON):**
+  ```json
+  {
+    "success": false,
+    "message": "Estás haciendo demasiadas consultas muy rápido. Inténtalo más tarde."
+  }
+  ```
+- **Headers de Respuesta:** El servidor devuelve cabeceras estándar de Rate Limit útiles para el frontend:
+  - `RateLimit-Limit`: El límite total de peticiones permitidas en la ventana actual.
+  - `RateLimit-Remaining`: Peticiones restantes antes de ser bloqueado.
+  - `RateLimit-Reset`: Tiempo (en segundos) que falta para que el límite se reinicie.
+
+**Nota para Frontends:**
+Cualquier cliente o sistema que consuma la API debe estar preparado para interceptar el código HTTP `429`. Se recomienda leer el campo `message` y mostrar un Toast o Alerta para notificar al usuario que debe esperar.

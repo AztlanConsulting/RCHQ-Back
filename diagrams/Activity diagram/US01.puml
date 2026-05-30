@@ -1,45 +1,152 @@
-@startuml HU01 - Administrador y coordinador registra usuario
+@startuml
+title US01 - Flujo de inicio de sesion
 
-|Administrador|
+|Usuario|
 start
-:Seleccionar registrar empleado;
+:Accede a la pantalla de inicio de sesion;
+:Ingresa correo electronico y contrasena;
+:Presiona iniciar sesion;
 
-|Sistema|
-:Solicita datos al administrador;
-
-|Administrador|
-repeat
-:Registra datos obligatorios:
-- Casa en la que se contrató
-- Puesto de trabajo
-- Nombre
-- Apellidos
-- Correo
-- CURP;
-
-|Sistema|
-if (¿Ingresar datos opcionales?) then (SI)
-    |Administrador|
-    :Registra datos opcionales:
-    - RFC
-    - Cuenta bancaria
-    - Cumpleaños
-    - Foto del empleado;
-else (NO)
-endif
-
-|Sistema|
-repeat while (¿Los campos obligatorios están completos?) is (NO)
-:Revisar si el usuario existe;
-
-if (¿El usuario ya existe?) then (SI)
-    :Notifica al administrador que ya existe;
-    stop
-else (NO)
-    :Registra nuevo empleado;
-    :Registrar acción en logs;
-    :Confirma registro;
+|Frontend|
+:Valida campos requeridos;
+:Valida formato de correo y longitud maxima;
+if (Campos validos?) then (Si)
+    :Envia POST /auth/login;
+else (No)
+    :Muestra error de validacion;
     stop
 endif
 
+|Backend|
+:auth.route.js recibe la solicitud;
+:Ejecuta authLimiter;
+if (IP dentro del limite?) then (Si)
+    :Ejecuta validate(loginSchema);
+else (No)
+    :Retorna 429 Too Many Requests;
+    |Frontend|
+    :Muestra mensaje de demasiados intentos;
+    stop
+endif
+
+if (Payload valido?) then (Si)
+    :auth.controller.js llama auth.service.login();
+else (No)
+    :Retorna 400 Bad Request;
+    |Frontend|
+    :Muestra mensaje de datos invalidos;
+    stop
+endif
+
+:Busca empleado por correo normalizado;
+if (Empleado existe?) then (Si)
+else (No)
+    :Retorna 401 INVALID_CREDENTIALS;
+    |Frontend|
+    :Muestra credenciales invalidas;
+    stop
+endif
+
+if (Empleado activo?) then (Si)
+else (No)
+    :Registra log INACTIVE_ACCESS_DENIED;
+    :Retorna 401 INVALID_CREDENTIALS;
+    |Frontend|
+    :Muestra credenciales invalidas;
+    stop
+endif
+
+:Limpia bloqueo expirado si aplica;
+:Verifica contrasena;
+if (Contrasena correcta?) then (Si)
+else (No)
+    if (Cuenta bloqueada?) then (Si)
+        :Retorna 401 INVALID_CREDENTIALS;
+    else (No)
+        :Incrementa intentos fallidos;
+        :Registra log LOGIN_FAILED;
+        if (Intentos >= MAX_LOGIN_ATTEMPTS?) then (Si)
+            :Establece bloqueo temporal;
+            :Registra log ACCOUNT_BLOCKED;
+            :Retorna 423 ACCOUNT_TEMPORARILY_BLOCKED;
+        else (No)
+            :Retorna 401 INVALID_CREDENTIALS;
+        endif
+    endif
+
+    |Frontend|
+    if (Respuesta 423?) then (Si)
+        :Muestra cuenta bloqueada temporalmente;
+    else (No)
+        :Muestra credenciales invalidas;
+    endif
+    stop
+endif
+
+if (Cuenta bloqueada?) then (Si)
+    :Retorna 423 ACCOUNT_TEMPORARILY_BLOCKED;
+    |Frontend|
+    :Muestra cuenta bloqueada temporalmente;
+    stop
+else (No)
+    :Limpia intentos fallidos y bloqueo;
+endif
+
+if (Empleado tiene refreshToken en BD?) then (Si)
+    :Decodifica refreshToken guardado;
+    if (refreshToken guardado es valido\ny tokenType == "REFRESH"?) then (Si)
+        :Conserva refreshToken en BD;
+        :Retorna 409 SESSION_ALREADY_ACTIVE;
+        |Frontend|
+        :Muestra mensaje de sesion activa;
+        :No inicia otra sesion;
+        stop
+    else (No - sesion vieja o invalida)
+        :Limpia refreshToken viejo en BD;
+    endif
+else (No)
+endif
+
+if (Requiere cambio de contrasena en primer login?) then (Si)
+    :Registra log FIRST_LOGIN_PENDING_PASSWORD_CHANGE;
+    :Genera firstLoginToken;
+    :Retorna 200 nextStep CHANGE_PASSWORD_FIRST_LOGIN;
+elseif (Tiene 2FA activo?) then (Si)
+    :Genera preTwoFactorAuthToken;
+    :Retorna 200 isActiveTwoFactorAuth true;
+else (Login normal)
+    :Genera sessionId;
+    :Genera accessToken SESSION con sessionId;
+    :Genera refreshToken REFRESH con sessionId;
+    :Guarda refreshToken en BD;
+    :Registra log LOGIN_SUCCESS;
+    :auth.controller.js configura cookie HttpOnly refreshToken;
+    :Elimina refreshToken del body;
+    :Retorna 200 LOGIN_SUCCESS con accessToken y usuario;
+endif
+
+|Frontend|
+if (Respuesta 200?) then (Si)
+    if (nextStep == CHANGE_PASSWORD_FIRST_LOGIN?) then (Si)
+        :Redirige a cambio de contrasena;
+    elseif (isActiveTwoFactorAuth == true?) then (Si)
+        :Redirige a verificacion 2FA;
+    else (Login normal)
+        :Guarda accessToken;
+        :Guarda usuario;
+        :Redirige a calendario;
+    endif
+elseif (Respuesta 409 SESSION_ALREADY_ACTIVE?) then (Si)
+    :Muestra que ya hay una sesion activa;
+elseif (Respuesta 401?) then (Si)
+    :Muestra credenciales invalidas;
+elseif (Respuesta 423?) then (Si)
+    :Muestra cuenta bloqueada temporalmente;
+elseif (Respuesta 429?) then (Si)
+    :Muestra demasiados intentos;
+else (Error servidor)
+    :Muestra error generico;
+endif
+
+stop
 @enduml

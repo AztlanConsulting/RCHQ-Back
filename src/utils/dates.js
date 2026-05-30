@@ -4,6 +4,30 @@ exports.convertUTCToMexicanTime = (timestamp) => {
     return new Date(timestamp.getTime() - MEXICO_TIME_OFFSET_MS);
 };
 
+exports.getUTCDateKey = (date) =>
+    date.getUTCFullYear() * 10000 +
+    (date.getUTCMonth() + 1) * 100 +
+    date.getUTCDate();
+
+exports.getMexicoTodayDateKey = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return this.getUTCDateKey(todayInMexico);
+};
+
+exports.getMexicoTodayDate = () => {
+    const todayInMexico = this.convertUTCToMexicanTime(new Date());
+
+    return new Date(Date.UTC(
+        todayInMexico.getUTCFullYear(),
+        todayInMexico.getUTCMonth(),
+        todayInMexico.getUTCDate(),
+    ));
+};
+
+exports.hasDateStartedInMexico = (date) =>
+    this.getUTCDateKey(date) <= this.getMexicoTodayDateKey();
+
 exports.combineDateAndTime = (date, time) => {
     const mexicanTime = this.convertUTCToMexicanTime(time);
 
@@ -38,6 +62,27 @@ exports.spanishToDay = (day) => {
     return -1;
 };
 
+const isUtcMidnight = (date) =>
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0;
+
+exports.getLastIncludedDateForRange = (startDate, endDate) => {
+    const effectiveEndDate =
+        endDate > startDate && isUtcMidnight(endDate)
+            ? new Date(endDate.getTime() - 1)
+            : endDate;
+
+    return new Date(
+        Date.UTC(
+            effectiveEndDate.getUTCFullYear(),
+            effectiveEndDate.getUTCMonth(),
+            effectiveEndDate.getUTCDate(),
+        ),
+    );
+};
+
 exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const days = [];
     workDays.forEach((workDay) => {
@@ -65,13 +110,7 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
                 eventStart.getUTCDate(),
             ),
         );
-        const lastEventDay = new Date(
-            Date.UTC(
-                eventEnd.getUTCFullYear(),
-                eventEnd.getUTCMonth(),
-                eventEnd.getUTCDate(),
-            ),
-        );
+        const lastEventDay = this.getLastIncludedDateForRange(eventStart, eventEnd);
 
         while (currentEventDay <= lastEventDay) {
             const eventDate = currentEventDay.toISOString().split("T")[0];

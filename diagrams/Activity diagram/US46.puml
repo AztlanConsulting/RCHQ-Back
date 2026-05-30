@@ -1,0 +1,85 @@
+@startuml
+title US87 - Coordinador elimina empleado a la lista negra
+
+|Usuario|
+start
+:Entrar al dashboard y seleccionar el ícono de personal;
+:Abrir la lista de empleados y seleccionar "Ver usuario";
+:Seleccionar "Modo lista negra";
+:Seleccionar el botón "Eliminar";
+:Escribir la razón de la eliminación;
+:Confirmar la eliminación;
+
+|Sistema|
+:Aplicar rate limit;
+:Validar token de sesión;
+
+if (¿Token válido?) then (Sí)
+else (No)
+:Mostrar error "User not authenticated";
+stop
+endif
+
+:Validar rol (Administrador o Coordinador);
+
+if (¿Rol permitido?) then (Sí)
+else (No)
+:Mostrar error "Permisos insuficientes";
+stop
+endif
+
+:Validar privilegio (removeFromBlacklist);
+
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+:Mostrar error "Permisos insuficientes";
+stop
+endif
+
+:Validar request HTTP con schema (CURP y razón);
+
+if (¿Request válida?) then (Sí)
+else (No)
+:Mostrar error de validación;
+stop
+endif
+
+:Buscar empleado objetivo por CURP (ABAC);
+
+if (¿Empleado existe?) then (Sí)
+else (No)
+:Mostrar error "Empleado no encontrado";
+stop
+endif
+
+:Validar que el usuario pertenezca a la misma casa hogar que el empleado;
+
+if (¿Misma casa hogar?) then (Sí)
+else (No)
+:Mostrar error "Permisos insuficientes";
+stop
+endif
+
+:Validar que el empleado esté en la lista negra;
+
+if (¿Empleado isBlacklisted == true?) then (Sí)
+else (No)
+:Mostrar error "El empleado no se encuentra en la lista negra";
+stop
+endif
+
+:Iniciar transacción en base de datos;
+:Eliminar el registro de la tabla blacklist;
+:Actualizar el campo out_of_blacklist_reason en el registro del empleado;
+
+if (¿Transacción exitosa?) then (Sí)
+else (No)
+:Mostrar error "Error interno del servidor";
+stop
+endif
+
+:Generar log de auditoría;
+:Mostrar mensaje "Empleado eliminado de la lista negra";
+
+stop
+@enduml

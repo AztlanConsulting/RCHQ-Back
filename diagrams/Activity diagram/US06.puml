@@ -1,26 +1,114 @@
-@startuml HU06 - Ver información de los trabajadores de una casa
+@startuml
+title US 06 - Mantener inicio de sesion seguro y una sola sesion activa
 
-|Administrador|
+|Usuario|
 start
-:Seleccionar ver empleados;
 
-|Sistema|
-:Cargar listado de empleados activos;
-:Mostrar información de empleados activos al administrador;
+if (Accion del usuario?) then (Iniciar sesion)
+    |Frontend|
+    :Envia credenciales a /auth/login\no valida 2FA en /auth/2fa/login/validate;
 
-|Administrador|
-if (¿Desea aplicar filtro?) then (Sí)
-    :Seleccionar filtro de empleados inactivos;
+    |Backend|
+    :Valida credenciales y estado del empleado;
+    if (Login requiere 2FA?) then (Si)
+        :Valida codigo TOTP;
+    else (No)
+    endif
 
-    |Sistema|
-    :Cargar listado de empleados inactivos;
-    :Mostrar información de empleados inactivos al administrador;
+    if (Empleado tiene refreshToken en BD?) then (Si)
+        :jwt.js decodifica refreshToken guardado;
+        if (refreshToken guardado es valido\ny tokenType == "REFRESH"?) then (Si)
+            :Conserva el refreshToken en BD;
+            :Retorna 409 SESSION_ALREADY_ACTIVE;
 
-else (No)
+            |Frontend|
+            :Muestra mensaje de sesion activa;
+            :No inicia nueva sesion;
+
+            |Usuario|
+            stop
+        else (No - sesion vieja o invalida)
+            :auth.model.js limpia refreshToken viejo en BD;
+        endif
+    else (No)
+    endif
+
+    :Genera nuevo sessionId;
+    :Genera accessToken SESSION con sessionId;
+    :Genera refreshToken REFRESH con sessionId;
+    :Guarda refreshToken en BD;
+    :Configura cookie HttpOnly refreshToken;
+    :Retorna 200 con accessToken;
+
+    |Frontend|
+    :Guarda accessToken;
+    :Entra a la aplicacion;
+
+else (Usar sesion existente)
+    |Frontend|
+    :Envia peticion protegida con accessToken;
+
+    |Backend|
+    if (La peticion responde 401?) then (Si)
+    else (No)
+        :Retorna respuesta normal;
+        |Usuario|
+        stop
+    endif
+
+    |Frontend|
+    :secureFetchWrapper detecta 401;
+    if (Ya hay un refresh en curso?) then (Si)
+        :Espera el refresh compartido;
+    else (No)
+        :Inicia POST /auth/refresh;
+    endif
+
+    |Backend|
+    :El navegador envia cookie HttpOnly automaticamente;
+    :Aplica apiLimiter;
+    :auth.controller.js extrae req.cookies.refreshToken;
+
+    if (Existe refreshToken en la cookie?) then (Si)
+        :jwt.js decodifica y verifica firma;
+        if (Token valido y tokenType == "REFRESH"?) then (Si)
+            :auth.model.js busca empleado por ID;
+            if (Empleado existe y esta activo?) then (Si)
+                if (refreshToken coincide con el guardado en BD?) then (Si)
+                    :Genera nuevo accessToken SESSION\ncon el mismo sessionId;
+                    :Conserva el mismo refreshToken;
+                    :auth.controller.js renueva cookie HttpOnly;
+                    :Elimina refreshToken del body;
+                    :Retorna 200 REFRESH_SUCCESS\ncon nuevo accessToken;
+                else (No - token robado o reuso)
+                    :auth.model.js borra refreshToken en BD;
+                    :auth.controller.js limpia cookie refreshToken;
+                    :Retorna 401 INVALID_REFRESH_TOKEN;
+                endif
+            else (No)
+                :auth.controller.js limpia cookie refreshToken;
+                :Retorna 403 INVALID_REFRESH_TOKEN;
+            endif
+        else (No)
+            :auth.controller.js limpia cookie refreshToken;
+            :Retorna 401 INVALID_REFRESH_TOKEN;
+        endif
+    else (No)
+        :auth.controller.js limpia cookie refreshToken;
+        :Retorna 401 INVALID_REFRESH_TOKEN;
+    endif
+
+    |Frontend|
+    if (Refresh respondio 200?) then (Si)
+        :Guarda nuevo accessToken;
+        :Notifica a otras peticiones/pestanas;
+        :Reintenta peticion original\ncon accessToken nuevo;
+    else (No)
+        :Limpia autenticacion local;
+        :Redirige a Login;
+    endif
 endif
 
-|Administrador|
-:Revisar información de los empleados;
-
+|Usuario|
 stop
 @enduml

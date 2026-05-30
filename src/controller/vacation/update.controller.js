@@ -37,7 +37,7 @@ exports.approveVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
@@ -164,7 +164,7 @@ exports.rejectVacationRequest = async (req, res) => {
         if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
@@ -252,7 +252,7 @@ exports.updateVacationRequestDates = async (req, res) => {
         if (result.code === RESPONSES.VACATION.EMPLOYEE_OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 
@@ -274,6 +274,20 @@ exports.updateVacationRequestDates = async (req, res) => {
             return res.status(406).json({
                 success: false,
                 message: "No se pueden modificar vacaciones rechazadas",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.SELF_REQUEST_NOT_MODIFIABLE) {
+            return res.status(406).json({
+                success: false,
+                message: "Solo puedes modificar solicitudes de vacaciones pendientes",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.REQUEST_ALREADY_STARTED) {
+            return res.status(406).json({
+                success: false,
+                message: "No se pueden modificar vacaciones que ya comenzaron o asignar una fecha de inicio anterior al día de hoy",
             });
         }
 

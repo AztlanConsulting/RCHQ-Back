@@ -71,16 +71,15 @@ describe("US28 - registerEmployeeVacation service", () => {
         return new Date(Date.UTC(year, month - 1, day));
     };
 
-    const frozenToday = makeUTCDate(2026, 4, 30);
+    const frozenToday = new Date("2026-04-30T18:00:00.000Z");
 
     const validStartDate = "2026-06-22";
     const validEndDate = "2026-06-26";
     const parsedValidStartDate = makeUTCDate(2026, 6, 22);
     const parsedValidEndDate = makeUTCDate(2026, 6, 26);
-    const parsedValidSearchEndDate = makeUTCDate(2026, 6, 27);
+    const parsedValidSearchEndDate = new Date("2026-06-26T23:59:59.999Z");
 
     const todayDate = "2026-04-30";
-    const parsedTodayDate = makeUTCDate(2026, 4, 30);
 
     const yesterdayDate = "2026-04-29";
 
@@ -406,20 +405,38 @@ describe("US28 - registerEmployeeVacation service", () => {
             expect(registerVacation).not.toHaveBeenCalled();
         });
 
-        test("permite startDate igual a hoy", async () => {
+        test("retorna PAST_REGISTER_NOT_ALLOWED si startDate es igual a hoy", async () => {
             const result = await callRegisterVacation({
                 startDate: todayDate,
                 endDate: todayDate,
             });
 
-            expect(result.code).toBe(RESPONSES.VACATION.REGISTERED);
-            expect(registerVacation).toHaveBeenCalledWith(
-                vacationId,
-                targetEmployeeId,
-                parsedTodayDate,
-                parsedTodayDate,
-                1
-            );
+            expect(result).toEqual({
+                code: RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED,
+            });
+
+            expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+            expect(registerVacation).not.toHaveBeenCalled();
+        });
+
+        test("rechaza registrar vacaciones de hoy México aunque UTC ya sea mañana", async () => {
+            jest.setSystemTime(new Date("2026-05-26T01:30:00.000Z"));
+
+            try {
+                const result = await callRegisterVacation({
+                    startDate: "2026-05-25",
+                    endDate: "2026-05-25",
+                });
+
+                expect(result).toEqual({
+                    code: RESPONSES.VACATION.PAST_REGISTER_NOT_ALLOWED,
+                });
+
+                expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+                expect(registerVacation).not.toHaveBeenCalled();
+            } finally {
+                jest.setSystemTime(frozenToday);
+            }
         });
 
         test("retorna OUT_OF_RANGE si está fuera del año laboral actual", async () => {

@@ -1,8 +1,9 @@
 const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
-const sessionExpiresIn = "1h";
-const firstLoginExpiresIn = "15m";
-const preTwoFactorAuthExpiresIn = "10m";
+const sessionExpiresIn = process.env.JWT_SESSION_EXPIRES_IN || "10m";
+const firstLoginExpiresIn = process.env.JWT_FIRST_LOGIN_EXPIRES_IN || "10m";
+const preTwoFactorAuthExpiresIn = process.env.JWT_PRE_TWO_FACTOR_AUTH_EXPIRES_IN || "10m";
+const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "1d";
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -14,6 +15,7 @@ const generateToken = (user) => {
             houseId: user.houseId,
             privileges: user.privileges || [],
             tokenType: "SESSION",
+            sessionId: user.sessionId,
         },
         jwtSecret,
         { expiresIn: sessionExpiresIn },
@@ -45,6 +47,18 @@ const generatePreTwoFactorAuthToken = (user) => {
     );
 };
 
+const generateRefreshToken = (user, sessionId) => {
+    return jwt.sign(
+        {
+            id: user.id || user.employeeId,
+            tokenType: "REFRESH",
+            sessionId,
+        },
+        jwtSecret,
+        { expiresIn: refreshExpiresIn },
+    );
+};
+
 const decodeToken = (token) => {
     if (!token) {
         return null;
@@ -61,4 +75,5 @@ module.exports = {
     decodeToken,
     generateFirstLoginToken,
     generatePreTwoFactorAuthToken,
+    generateRefreshToken,
 };

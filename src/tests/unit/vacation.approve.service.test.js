@@ -132,7 +132,7 @@ describe("US34 - approveVacationRequest service", () => {
 
     const getSearchEndDate = (date) => {
         const searchEndDate = new Date(date);
-        searchEndDate.setUTCDate(searchEndDate.getUTCDate() + 1);
+        searchEndDate.setUTCHours(23, 59, 59, 999);
 
         return searchEndDate;
     };

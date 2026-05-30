@@ -73,6 +73,27 @@ const makeAbsence = ({
     };
 };
 
+const makeVacation = ({
+    vacationId = "vacation-id",
+    start = makeUTCDate(2026, 5, 1),
+    end = makeUTCDate(2026, 5, 1),
+} = {}) => {
+    return {
+        vacations_request_id: vacationId,
+        start,
+        end,
+        status: 1,
+        feedback: null,
+        url: "",
+        employee: {
+            employee_id: EMPLOYEE_ID,
+            name: "John",
+            surname: "Smith",
+            curp: "CURP123",
+        },
+    };
+};
+
 const makeGlobalEvent = ({
     date = makeUTCDate(2026, 5, 4),
     name = "Evento global",
@@ -199,14 +220,37 @@ describe("event.get.service", () => {
             description: "Consulta",
             link: "https://example.com/absence.pdf",
             usedDays: 2,
+            totalDays: 5,
             focus: "ausencias",
             scope: "personal",
             allDay: true,
         });
-        expect(absenceEvent.start).toEqual(makeUTCDate(2026, 5, 1));
+        expect(absenceEvent.start).toEqual(new Date("2026-05-01T06:00:00.000Z"));
         expect(absenceEvent.startDate).toEqual(makeUTCDate(2026, 5, 1));
         expect(absenceEvent.endDate).toEqual(makeUTCDate(2026, 5, 5));
-        expect(absenceEvent.end).toEqual(makeUTCDate(2026, 5, 6));
+        expect(absenceEvent.end).toEqual(new Date("2026-05-06T06:00:00.000Z"));
+    });
+
+    it("regresa vacaciones como rango UTC basado en horario central de Mexico", async () => {
+        getVacationsInRange.mockResolvedValue([makeVacation()]);
+
+        const result = await getEventsInRange(
+            EMPLOYEE_ID,
+            "2026-05-01",
+            "2026-05-08",
+        );
+
+        const vacationEvent = result.data.events.find(
+            (event) => event.vacationId === "vacation-id",
+        );
+
+        expect(vacationEvent).toMatchObject({
+            allDay: true,
+            focus: "vacaciones",
+            totalDays: 1,
+        });
+        expect(vacationEvent.start).toEqual(new Date("2026-05-01T06:00:00.000Z"));
+        expect(vacationEvent.end).toEqual(new Date("2026-05-02T06:00:00.000Z"));
     });
 
     it("descuenta eventos de casa como dias no laborables de la ausencia", async () => {
@@ -315,10 +359,9 @@ describe("event.get.service", () => {
 
         expect(personalEvent).toMatchObject({
             allDay: true,
-            allDay: true,
         });
-        expect(personalEvent.start).toEqual(makeUTCDate(2026, 5, 5));
-        expect(personalEvent.end).toEqual(makeUTCDate(2026, 5, 6));
+        expect(personalEvent.start).toEqual(new Date("2026-05-05T06:00:00.000Z"));
+        expect(personalEvent.end).toEqual(new Date("2026-05-06T06:00:00.000Z"));
     });
 
     it("normaliza is_free_day undefined o null como false sin descontar dias", async () => {

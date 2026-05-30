@@ -22,6 +22,8 @@ const {
     getOverlapError,
 } = require("../../utils/event/helpers");
 
+const isMidnightEnd = (value) => String(value ?? "").slice(0, 5) === "00:00";
+
 const validateAvailability = async (data) => {
     return await findOverlappingHouseEvents({
         houseId: data.houseId,
@@ -138,7 +140,8 @@ exports.createPersonalEvent = async (user, payload, clientIp) => {
     }
 
     const { start, end } = resolveSchedule(allDay, startInput, endInput);
-    const endDate = allDay === true ? addOneDay(date) : date;
+    const endDate =
+        allDay === true || isMidnightEnd(endInput) ? addOneDay(date) : date;
 
     const overlappedEmployees = await findOverlappingEmployees({
         employeeIds,

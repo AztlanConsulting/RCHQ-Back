@@ -7,6 +7,7 @@ jest.mock("../../../src/model/vacation/get.model", () => ({
     getVacationsInRange: jest.fn(),
     getPendingVacationRequestsByHouse: jest.fn(),
     getReviewedVacationRequestsByHouse: jest.fn(),
+    getVacationRequestsByEmployee: jest.fn(),
     getEligibleVacationEmployees: jest.fn(),
 }));
 
@@ -17,6 +18,8 @@ jest.mock("../../../src/utils/pagination", () => ({
 
 jest.mock("../../../src/utils/vacationFilters", () => ({
     buildVacationListWhere: jest.fn(),
+    buildVacationDateFilter: jest.fn(),
+    buildVacationEmployeeSearchFilter: jest.fn(),
 }));
 
 jest.mock("../../../src/utils/mappers/vacation.map", () => ({
@@ -31,6 +34,7 @@ const {
 const {
     getPendingVacationRequestsByHouse,
     getReviewedVacationRequestsByHouse,
+    getVacationRequestsByEmployee,
     getEligibleVacationEmployees: getEligibleVacationEmployeesModel,
 } = require("../../../src/model/vacation/get.model");
 
@@ -41,6 +45,8 @@ const {
 
 const {
     buildVacationListWhere,
+    buildVacationDateFilter,
+    buildVacationEmployeeSearchFilter,
 } = require("../../../src/utils/vacationFilters");
 
 const {
@@ -51,6 +57,8 @@ const {
 const {
     getPendingVacationRequests,
     getReviewedVacationRequests,
+    getFutureVacationRequests,
+    getPastVacationRequests,
     getEligibleVacationEmployees,
 } = require("../../../src/service/vacation/get.service");
 
@@ -414,6 +422,165 @@ describe("US80 - getReviewedVacationRequests service", () => {
 
         expect(result.code).toBe(RESPONSES.VACATION.INSUFFICIENT_PERMISSIONS);
         expect(getReviewedVacationRequestsByHouse).not.toHaveBeenCalled();
+    });
+});
+
+describe("getFutureVacationRequests y getPastVacationRequests service", () => {
+    beforeAll(() => {
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date("2026-05-22T12:00:00.000Z"));
+    });
+
+    afterAll(() => {
+        jest.useRealTimers();
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+
+        parsePagination.mockReturnValue({
+            page: 1,
+            limit: 6,
+            skip: 0,
+            take: 6,
+        });
+
+        buildPagination.mockReturnValue({
+            page: 1,
+            limit: 6,
+            total: 1,
+            totalPages: 1,
+        });
+
+        buildVacationDateFilter.mockReturnValue({});
+        buildVacationEmployeeSearchFilter.mockReturnValue({});
+
+        mapVacationRequestForList.mockImplementation((request) => ({
+            vacationRequestId: request.vacations_request_id,
+            status: request.status,
+        }));
+    });
+
+    test("debe regresar VALIDATION_ERROR si status es inválido", async () => {
+        const result = await getFutureVacationRequests(
+            "e8000000-0000-4000-8000-000000000002",
+            {
+                status: "cancelled",
+            },
+        );
+
+        expect(result.code).toBe(RESPONSES.VACATION.VALIDATION_ERROR);
+        expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+    });
+
+    test("debe regresar NOT_ACCESS si no recibe actorEmployeeId", async () => {
+        const result = await getPastVacationRequests(undefined, {});
+
+        expect(result.code).toBe(RESPONSES.USER.NOT_ACCESS);
+        expect(findByIdWithRoleAndHouse).not.toHaveBeenCalled();
+        expect(getVacationRequestsByEmployee).not.toHaveBeenCalled();
+    });
+
+    test("debe consultar vacaciones futuras del empleado autenticado", async () => {
+        buildVacationDateFilter.mockReturnValue({
+            start: {
+                lte: new Date("2026-06-30T00:00:00.000Z"),
+            },
+            end: {
+                gte: new Date("2026-06-01T00:00:00.000Z"),
+            },
+        });
+
+        getVacationRequestsByEmployee.mockResolvedValue({
+            requests: [
+                {
+                    vacations_request_id: "c8000000-0000-4000-8000-000000000005",
+                    status: VACATION_STATUS.PENDING,
+                },
+            ],
+            total: 1,
+        });
+
+        const result = await getFutureVacationRequests(
+            "e8000000-0000-4000-8000-000000000002",
+            {
+                page: "1",
+                limit: "6",
+                status: "pending",
+                startDate: "2026-06-01",
+                endDate: "2026-06-30",
+            },
+        );
+
+        expect(result.code).toBe(RESPONSES.VACATION.REQUESTS_FOUND);
+        expect(buildVacationDateFilter).toHaveBeenCalledWith(
+            new Date("2026-06-01T00:00:00.000Z"),
+            new Date("2026-06-30T00:00:00.000Z"),
+        );
+        expect(getVacationRequestsByEmployee).toHaveBeenCalledWith({
+            where: {
+                employee_id: "e8000000-0000-4000-8000-000000000002",
+                status: VACATION_STATUS.PENDING,
+                start: {
+                    lte: new Date("2026-06-30T00:00:00.000Z"),
+                    gt: new Date("2026-05-22T00:00:00.000Z"),
+                },
+                end: {
+                    gte: new Date("2026-06-01T00:00:00.000Z"),
+                },
+            },
+            skip: 0,
+            take: 6,
+            orderBy: [
+                { start: "asc" },
+                { created_at: "desc" },
+                { vacations_request_id: "asc" },
+            ],
+        });
+        expect(result.data.requests).toEqual([
+            {
+                vacationRequestId: "c8000000-0000-4000-8000-000000000005",
+                status: VACATION_STATUS.PENDING,
+            },
+        ]);
+    });
+
+    test("debe consultar vacaciones pasadas aprobadas del empleado autenticado", async () => {
+        getVacationRequestsByEmployee.mockResolvedValue({
+            requests: [
+                {
+                    vacations_request_id: "c8000000-0000-4000-8000-000000000006",
+                    status: VACATION_STATUS.APPROVED,
+                },
+            ],
+            total: 1,
+        });
+
+        const result = await getPastVacationRequests(
+            "e8000000-0000-4000-8000-000000000002",
+            {
+                status: "approved",
+            },
+        );
+
+        expect(result.code).toBe(RESPONSES.VACATION.REQUESTS_FOUND);
+        expect(getVacationRequestsByEmployee).toHaveBeenCalledWith({
+            where: {
+                employee_id: "e8000000-0000-4000-8000-000000000002",
+                status: VACATION_STATUS.APPROVED,
+                start: {
+                    lte: new Date("2026-05-22T00:00:00.000Z"),
+                },
+            },
+            skip: 0,
+            take: 6,
+            orderBy: [
+                { start: "desc" },
+                { created_at: "desc" },
+                { vacations_request_id: "asc" },
+            ],
+        });
+        expect(result.data.pagination.total).toBe(1);
     });
 });
 

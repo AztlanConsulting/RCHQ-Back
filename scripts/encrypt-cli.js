@@ -1,7 +1,3 @@
-/**
- * Encrypt salary strings using the same encryptValue() as create/update APIs.
- * Run from rhcq_back: node scripts/encrypt-cli.js <value> [<value> ...]
- */
 require("dotenv").config();
 const { encryptValue } = require("../src/utils/password");
 

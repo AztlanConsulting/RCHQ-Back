@@ -1,158 +1,107 @@
 @startuml
-title US30 - Coordinador modifica vacaciones pendientes o aprobadas de un empleado
+title US 30 - Consultar mis vacaciones (Sequence Diagram)
 
-actor "Coordinador" as Usuario
-boundary "Frontend" as Frontend
+actor Usuario
+boundary "Frontend\nTabla de vacaciones" as Frontend
 control "vacation.route.js" as Router
 control "auth/rbac/validate middleware" as Middleware
-control "update.controller.js" as Controller
-control "update.service.js" as Service
+control "get.controller.js" as Controller
+control "get.service.js" as Service
 database "vacation/get.model.js" as VacationGetModel
-database "employee/get.model.js" as EmployeeGetModel
-database "event/get.model.js" as EventGetModel
-database "vacation/update.model.js" as VacationUpdateModel
-database "log.model.js" as LogModel
 database "Base de datos" as DB
 
 autonumber
 
-Usuario -> Frontend : Selecciona solicitud pendiente/aprobada
-Usuario -> Frontend : Modifica fecha inicio y fecha fin
-Usuario -> Frontend : Guarda cambios
+Usuario -> Frontend : Entra al módulo "Mis vacaciones"
 
-Frontend -> Router : PATCH /vacation/request/:vacationRequestId/dates\nAuthorization: Bearer token\n{ startDate, endDate }
-
+Frontend -> Router : GET /vacation/requests/future?page&limit&search&status&startDate&endDate\nAuthorization: Bearer token
 Router -> Middleware : apiLimiter
 Router -> Middleware : verifyToken
-Router -> Middleware : requireRole(Coordinador)
-Router -> Middleware : requirePrivileges(manageEmployees)
-Router -> Middleware : validate(updateVacationRequestDatesSchema, "all")
+Router -> Middleware : requireRole(...allRoles)
+Router -> Middleware : requirePrivileges(viewOwnVacations)
+Router -> Middleware : validate(getOwnVacationRequestsSchema, "all")
 
 alt Middleware rechaza request
-Middleware --> Frontend : 400/401/403
+    Middleware --> Frontend : 401/403/422
+    Frontend --> Usuario : Muestra error
 else Request HTTP válida
-Router -> Controller : updateVacationRequestDates(req, res)
+    Router -> Controller : getFutureVacationRequests(req, res)
+    Controller -> Service : getFutureVacationRequests(employeeId, query)
 
-Controller -> Service : updateVacationRequestDates({\nactorEmployeeId,\nvacationRequestId,\nrawStartDate,\nrawEndDate,\nipAddress\n})
+    alt no existe employeeId
+        Service --> Controller : USER.NOT_ACCESS
+        Controller --> Frontend : 401 Usuario no autenticado
+    else employeeId existe
+        Service -> Service : getOwnVacationRequestsInputSchema.safeParse({ employeeId, query })
 
-Service -> Service : Validar contrato interno\nupdateVacationRequestDatesInputSchema
+        alt datos inválidos
+            Service --> Controller : VACATION.VALIDATION_ERROR
+            Controller --> Frontend : 422 Datos inválidos
+        else datos válidos
+            Service -> Service : parsePagination(page, limit)
+            Service -> Service : statusFilter = mapOwnVacationStatus(query.status || "all")
+            Service -> Service : search = query.search?.trim() || ""
+            Service -> Service : dateFilter = buildVacationDateFilter(startDate, endDate)
+            Service -> Service : where.start.gt = getTodayUtcDate()
 
-alt Entrada interna inválida
-Service --> Controller : VALIDATION_ERROR
-Controller --> Frontend : 400 Datos inválidos
-else Entrada interna válida
-Service -> EmployeeGetModel : findByIdWithRoleAndHouse(actorEmployeeId)
-EmployeeGetModel -> DB : SELECT employee + role + house
-DB --> EmployeeGetModel : Actor coordinador
-EmployeeGetModel --> Service : Actor
+            Service -> VacationGetModel : getVacationRequestsByEmployee({ where, skip, take, orderBy })
+            VacationGetModel -> DB : findMany + count de solicitudes futuras
+            DB --> VacationGetModel : requests, total
+            VacationGetModel --> Service : requests, total
 
-alt Actor no existe
-Service --> Controller : USER_NOT_AUTHENTICATED
-Controller --> Frontend : 401 Usuario no autenticado
-else Actor no es Coordinador
-Service --> Controller : INSUFFICIENT_PERMISSIONS
-Controller --> Frontend : 403 Sin permisos
-else Actor válido
-Service -> Service : Convertir fechas a Date UTC
-Service -> Service : Validar startDate <= endDate
-
-alt Fechas inválidas
-Service --> Controller : BAD_DATES / WRONG_FORMAT
-Controller --> Frontend : 400/406 Error de fechas
-else Fechas válidas
-Service -> VacationGetModel : getVacationRequestById(vacationRequestId)
-VacationGetModel -> DB : SELECT vacations_request
-DB --> VacationGetModel : Solicitud
-VacationGetModel --> Service : Solicitud
-
-alt Solicitud no existe
-Service --> Controller : VACATION_REQUEST_NOT_FOUND
-Controller --> Frontend : 404 Solicitud no encontrada
-else Solicitud rechazada
-Service --> Controller : VACATION_REQUEST_NOT_MODIFIABLE
-Controller --> Frontend : 406 No se pueden modificar solicitudes rechazadas
-else Solicitud pendiente/aprobada
-Service -> EmployeeGetModel : findByIdWithRoleAndHouse(targetEmployeeId)
-EmployeeGetModel -> DB : SELECT employee + role + house
-DB --> EmployeeGetModel : Empleado dueño
-EmployeeGetModel --> Service : Empleado
-
-alt Empleado no existe
-Service --> Controller : EMPLOYEE_NOT_FOUND
-Controller --> Frontend : 404 Empleado no encontrado
-else Empleado fuera de alcance
-Service --> Controller : EMPLOYEE_OUT_OF_SCOPE
-Controller --> Frontend : 403 No puede acceder a este recurso
-else Actor autorizado
-Service -> Service : getVacationYearInfoForApproval(targetEmployeeId)
-
-alt Empleado sin fecha de inicio
-Service --> Controller : WITHOUT_START_DATE
-Controller --> Frontend : 406 Sin fecha de inicio
-else Periodo laboral encontrado
-Service -> Service : Validar nuevas fechas dentro del periodo laboral
-
-alt Fuera de periodo laboral
-Service --> Controller : OUT_OF_RANGE
-Controller --> Frontend : 406 Fuera del periodo actual
-else Dentro de periodo
-Service -> EmployeeGetModel : getWorkDays(targetEmployeeId)
-EmployeeGetModel -> DB : SELECT employee_workday
-DB --> EmployeeGetModel : Días laborales
-
-alt Sin días laborales
-Service --> Controller : WITHOUT_DATES
-Controller --> Frontend : 406 Sin días laborales
-else Tiene días laborales
-Service -> EventGetModel : getGlobalEventsInRange(newStartDate, newEndDate)
-EventGetModel -> DB : SELECT global_event
-DB --> EventGetModel : Eventos globales
-
-Service -> Service : Recalcular usedDays con nuevas fechas
-
-alt usedDays = 0
-Service --> Controller : NULL_DATES
-Controller --> Frontend : 406 No hay días hábiles
-else usedDays válido
-Service -> VacationUpdateModel : updateVacationRequestDatesAtomically({\nvacationRequestId,\nemployeeId,\nactorHouseId,\nnewStartDate,\nnewEndDate,\nusedDays,\nanniversaryStartDate,\nanniversaryEndDate,\nmaxDays\n})
-
-VacationUpdateModel -> DB : BEGIN TRANSACTION
-VacationUpdateModel -> DB : SELECT employee FOR UPDATE
-VacationUpdateModel -> DB : Releer solicitud
-VacationUpdateModel -> DB : Validar que existe
-VacationUpdateModel -> DB : Validar que pertenece al empleado esperado
-VacationUpdateModel -> DB : Validar status PENDING o APPROVED
-VacationUpdateModel -> DB : Releer empleado
-VacationUpdateModel -> DB : Validar misma casa y que no sea Administrador
-VacationUpdateModel -> DB : Buscar traslapes activos excluyendo solicitud actual
-VacationUpdateModel -> DB : Calcular used_days de otras vacaciones activas del año
-VacationUpdateModel -> DB : Validar días disponibles
-VacationUpdateModel -> DB : UPDATE start, end, used_days\nConservar status original
-DB --> VacationUpdateModel : Solicitud modificada
-VacationUpdateModel -> DB : COMMIT
-VacationUpdateModel --> Service : Solicitud modificada
-
-alt Transacción detecta error
-Service --> Controller : OUT_OF_SCOPE / NOT_MODIFIABLE / OVERLAP / INSUFFICIENT_DATES
-Controller --> Frontend : 403/406 Error de modificación
-else Modificación exitosa
-Service -> LogModel : createLog(actorEmployeeId,\nVACATION_UPDATED_SUCCESS,\nipAddress,\ntargetEmployeeId)
-LogModel -> DB : INSERT logs
-DB --> LogModel : Log creado
-
-Service --> Controller : VACATION_UPDATED
-Controller --> Frontend : 200 Vacaciones modificadas correctamente
-Frontend --> Usuario : Mostrar confirmación
+            Service -> Service : requests.map(mapVacationRequestForList)
+            Service -> Service : buildPagination({ page, limit, total })
+            Service --> Controller : VACATION.REQUESTS_FOUND
+            Controller --> Frontend : 200 solicitudes futuras + paginación
+            Frontend --> Usuario : Muestra tabla con estado de cada solicitud
+        end
+    end
 end
-end
-end
-end
-end
-end
-end
-end
-end
-end
+
+Usuario -> Frontend : Presiona el botón para ver pasadas
+
+Frontend -> Router : GET /vacation/requests/past?page&limit&search&status&startDate&endDate\nAuthorization: Bearer token
+Router -> Middleware : apiLimiter
+Router -> Middleware : verifyToken
+Router -> Middleware : requireRole(...allRoles)
+Router -> Middleware : requirePrivileges(viewOwnVacations)
+Router -> Middleware : validate(getOwnVacationRequestsSchema, "all")
+
+alt Middleware rechaza request
+    Middleware --> Frontend : 401/403/422
+    Frontend --> Usuario : Muestra error
+else Request HTTP válida
+    Router -> Controller : getPastVacationRequests(req, res)
+    Controller -> Service : getPastVacationRequests(employeeId, query)
+
+    alt no existe employeeId
+        Service --> Controller : USER.NOT_ACCESS
+        Controller --> Frontend : 401 Usuario no autenticado
+    else employeeId existe
+        Service -> Service : getOwnVacationRequestsInputSchema.safeParse({ employeeId, query })
+
+        alt datos inválidos
+            Service --> Controller : VACATION.VALIDATION_ERROR
+            Controller --> Frontend : 422 Datos inválidos
+        else datos válidos
+            Service -> Service : parsePagination(page, limit)
+            Service -> Service : statusFilter = mapOwnVacationStatus(query.status || "all")
+            Service -> Service : search = query.search?.trim() || ""
+            Service -> Service : dateFilter = buildVacationDateFilter(startDate, endDate)
+            Service -> Service : where.start.lte = getTodayUtcDate()
+
+            Service -> VacationGetModel : getVacationRequestsByEmployee({ where, skip, take, orderBy })
+            VacationGetModel -> DB : findMany + count de solicitudes pasadas
+            DB --> VacationGetModel : requests, total
+            VacationGetModel --> Service : requests, total
+
+            Service -> Service : requests.map(mapVacationRequestForList)
+            Service -> Service : buildPagination({ page, limit, total })
+            Service --> Controller : VACATION.REQUESTS_FOUND
+            Controller --> Frontend : 200 solicitudes pasadas + paginación
+            Frontend --> Usuario : Muestra tabla con estado de cada solicitud
+        end
+    end
 end
 
 @enduml

@@ -12,7 +12,7 @@
     "test:coverage": "jest --coverage",
     "test:unit": "jest tests/unit",
     "test:integration": "dotenv -e .env.test -- jest tests/integration --runInBand",
-    "test:db:setup": "dotenv -e .env.test -- npx prisma db pull",
+    "test:db:setup": "dotenv -e .env.test -- npx prisma db push --force-reset",
     "test:db:generate": "dotenv -e .env.test -- npx prisma generate",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -26,6 +26,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "express-rate-limit": "^8.4.1",

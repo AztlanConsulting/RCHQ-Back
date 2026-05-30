@@ -1,4 +1,3 @@
-// tests/integration/document.integration.test.js
 const request = require("supertest");
 const { PrismaClient } = require("@prisma/client");
 const { randomUUID } = require("crypto");
@@ -47,7 +46,6 @@ const sign = (overrides = {}) =>
         { expiresIn: "1h" },
     );
 
-// ─── Seed / Teardown ──────────────────────────────────────
 const seed = async () => {
     await prisma.house.upsert({
         where: { house_id: IDS.house },
@@ -96,13 +94,13 @@ const seed = async () => {
     await prisma.employee.upsert({
         where:  { employee_id: IDS.employee },
         update: {},
-        create: { employee_id: IDS.employee, email: "docmain@test.com", curp: "DOCM000000000001AB", ...empBase },
+        create: { employee_id: IDS.employee, email: "docmain@test.com", curp: "MOXC801103MBSCYE80", ...empBase },
     });
 
     await prisma.employee.upsert({
         where:  { employee_id: IDS.stranger },
         update: {},
-        create: { employee_id: IDS.stranger, email: "docstranger@test.com", curp: "DOCS000000000002AB", ...empBase },
+        create: { employee_id: IDS.stranger, email: "docstranger@test.com", curp: "MOXC801103MBSCYE81", ...empBase },
     });
 
     await prisma.documents.upsert({
@@ -153,7 +151,6 @@ afterEach(async () => {
     await prisma.employee_documents.deleteMany({ where: { employee_id: IDS.employee } });
 });
 
-// ─── Helper ───────────────────────────────────────────────
 const upload = (employeeId, docId, token) =>
     request(app)
         .post(`/employee/${employeeId}/documents`)
@@ -161,10 +158,7 @@ const upload = (employeeId, docId, token) =>
         .field("documentField", docId)
         .attach("file", PDF, "test.pdf");
 
-// ═══════════════════════════════════════════════════════════
-// AUTH & AUTORIZACIÓN
-// ═══════════════════════════════════════════════════════════
-describe("Autenticación y autorización", () => {
+        describe("Autenticación y autorización", () => {
     it("401 — sin token", async () => {
         const res = await request(app).get(`/employee/${IDS.employee}/documents`);
         expect(res.statusCode).toBe(401);
@@ -191,7 +185,6 @@ describe("Autenticación y autorización", () => {
     });
 
     it("403 — rol sin acceso a modifyDocuments", async () => {
-        // Token con rol que la policy rechaza
         const token = sign({ role: "Empleado" });
         const res = await upload(IDS.employee, IDS.doc, token);
         expect(res.statusCode).toBe(403);
@@ -206,9 +199,6 @@ describe("Autenticación y autorización", () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// POST /:id/documents
-// ═══════════════════════════════════════════════════════════
 describe("POST /:id/documents", () => {
     let token;
     beforeAll(() => { token = sign(); });
@@ -263,9 +253,6 @@ describe("POST /:id/documents", () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// PUT /:id/documents/:field
-// ═══════════════════════════════════════════════════════════
 describe("PUT /:id/documents/:field", () => {
     let token;
     beforeAll(() => { token = sign(); });
@@ -313,9 +300,6 @@ describe("PUT /:id/documents/:field", () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// DELETE /:id/documents/:field
-// ═══════════════════════════════════════════════════════════
 describe("DELETE /:id/documents/:field", () => {
     let token;
     beforeAll(() => { token = sign(); });
@@ -357,9 +341,6 @@ describe("DELETE /:id/documents/:field", () => {
     });
 });
 
-// ═══════════════════════════════════════════════════════════
-// GET /:id/documents
-// ═══════════════════════════════════════════════════════════
 describe("GET /:id/documents", () => {
     let token;
     beforeAll(() => { token = sign(); });

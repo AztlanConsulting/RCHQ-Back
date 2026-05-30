@@ -1,155 +1,28 @@
 @startuml
-title US28 - Registrar vacaciones de un empleado
+title US 28 - Filtrar las vacaciones en pantalla
 
-|Usuario|
+|Empleado|
 start
-:Administrador/Coordinador entra a registrar vacaciones;
-:Seleccionar empleado;
-:Seleccionar fecha de inicio;
-:Seleccionar fecha final;
-:Enviar registro de vacaciones;
+:Ingresa a la vista de "Mi Calendario";
+:Visualiza las vacaciones cargadas en pantalla;
+:Selecciona uno o varios criterios de filtro\n(estado, rango de fechas o tipo);
+
 
 |Sistema|
-:Validar token de sesión;
-if (¿Usuario autenticado?) then (Sí)
+:Recibe los criterios de filtrado;
+if (¿Hay criterios seleccionados?) then (Sí)
+  :Evalúa las vacaciones visibles según los filtros;
+  :Genera la lista de vacaciones coincidentes;
+  if (¿Hay coincidencias?) then (Sí)
+    :Muestra únicamente las vacaciones filtradas;
+  else (No)
+    :Muestra un estado vacío;
+  endif
 else (No)
-:Mostrar error "Token no proporcionado o inválido";
-stop
+  :Mantiene visibles todas las vacaciones cargadas;
 endif
 
-:Aplicar rate limit;
-
-:Validar rol del usuario;
-if (¿Rol es Administrador o Coordinador?) then (Sí)
-else (No)
-:Mostrar error "Permisos insuficientes";
+|Empleado|
+:Visualiza únicamente las vacaciones específicas\no un estado vacío;
 stop
-endif
-
-:Validar formato de fechas YYYY-MM-DD;
-if (¿Fechas válidas?) then (Sí)
-:Convertir fechas a UTC;
-else (No)
-:Mostrar error "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD";
-stop
-endif
-
-:Validar que fecha final no sea anterior a fecha inicial;
-if (¿Fecha final >= fecha inicial?) then (Sí)
-else (No)
-:Mostrar error "No se puede tener una fecha de inicio posterior a la de finalización";
-stop
-endif
-
-:Validar que fecha inicial no sea anterior a hoy;
-if (¿Fecha inicial >= hoy?) then (Sí)
-else (No)
-:Mostrar error "No se pueden registrar vacaciones en fechas pasadas";
-stop
-endif
-
-:Buscar actor con rol y casa hogar;
-if (¿Actor existe?) then (Sí)
-else (No)
-:Mostrar error "Usuario no autenticado";
-stop
-endif
-
-:Validar rol del actor en servicio;
-if (¿Actor es Administrador o Coordinador?) then (Sí)
-else (No)
-:Mostrar error "No tienes permisos para registrar vacaciones de otros empleados";
-stop
-endif
-
-:Buscar empleado objetivo con rol y casa hogar;
-if (¿Empleado existe?) then (Sí)
-else (No)
-:Mostrar error "Empleado no encontrado";
-stop
-endif
-
-if (¿Actor es Coordinador?) then (Sí)
-:Validar que empleado pertenezca a la misma casa hogar;
-if (¿Misma casa hogar?) then (Sí)
-else (No)
-:Mostrar error "No puedes registrar vacaciones para empleados fuera de tu casa hogar";
-stop
-endif
-else (No)
-endif
-
-:Obtener días laborales del empleado;
-if (¿Empleado tiene días laborales registrados?) then (Sí)
-else (No)
-:Mostrar error "Se necesitan tener registrados los días de trabajo";
-stop
-endif
-
-:Obtener periodo laboral vigente del empleado;
-if (¿Rango solicitado pertenece al periodo laboral vigente?) then (Sí)
-else (No)
-:Mostrar error "No se pueden registrar vacaciones fuera del periodo actual de trabajo";
-stop
-endif
-
-:Obtener eventos globales del rango solicitado;
-:Calcular días hábiles de vacaciones descontando días libres globales;
-
-if (¿El rango consume al menos un día hábil?) then (Sí)
-else (No)
-:Mostrar error "Dentro del rango seleccionado no hay ningún día hábil de vacaciones";
-stop
-endif
-
-:Buscar vacaciones PENDING y APPROVED que se traslapen;
-note right
-Se ignoran vacaciones rechazadas.
-Status:
-0 = pendiente
-1 = aprobada
-2 = rechazada
-end note
-
-if (¿Existe traslape?) then (Sí)
-:Mostrar error "Ya hay una solicitud de vacaciones cubriendo los días solicitados";
-stop
-else (No)
-endif
-
-:Calcular días disponibles actuales;
-note right
-Los días usados incluyen solicitudes:
-- pendientes
-- aprobadas
-
-No incluyen:
-- rechazadas
-end note
-
-if (¿Días solicitados <= días disponibles?) then (Sí)
-else (No)
-:Mostrar error "No se tienen suficientes días disponibles";
-stop
-endif
-
-:Crear registro en vacations_request con status = APPROVED;
-:Guardar used_days;
-:Guardar created_at;
-:Crear log de auditoría;
-note right
-El log debe registrar:
-- actor que hizo la acción
-- empleado afectado
-- acción vaca-002
-- IP
-- fecha/hora
-end note
-
-:Mostrar confirmación "Vacaciones registradas correctamente";
-
-|Usuario|
-:Visualizar confirmación en pantalla;
-stop
-
 @enduml

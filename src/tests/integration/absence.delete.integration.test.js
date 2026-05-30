@@ -299,13 +299,21 @@ const cleanup = async () => {
         },
     });
 
-    await prisma.logs.deleteMany({
+    await prisma.absence.deleteMany({
         where: {
             employee_id: {
                 in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
             },
         },
     });
+
+    await prisma.logs.deleteMany({
+        where: {
+            employee_id: {
+                in: [IDS.coordinatorA, IDS.adminA, IDS.employeeA, IDS.employeeB],
+            },
+        },
+    });    
 
     await prisma.employee.deleteMany({
         where: {
@@ -436,19 +444,28 @@ describe("DELETE /absence/:absenceId", () => {
             },
         });
 
-        const res = await request(app)
-            .delete(`/absence/${IDS.absenceA}`)
-            .set("Authorization", `Bearer ${sign()}`);
+        try {
+            const res = await request(app)
+                .delete(`/absence/${IDS.absenceA}`)
+                .set("Authorization", `Bearer ${sign()}`);
 
-        expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("Insufficient privileges");
-
-        await prisma.role_privilege.create({
-            data: {
-                role_id: IDS.coordinatorRole,
-                privilege_id: IDS.deleteAbsencesPrivilege,
-            },
-        });
+            expect(res.statusCode).toBe(403);
+            expect(res.body.message).toBe("Permisos insuficientes");
+        } finally {
+            await prisma.role_privilege.upsert({
+                where: {
+                    role_id_privilege_id: {
+                        role_id: IDS.coordinatorRole,
+                        privilege_id: IDS.deleteAbsencesPrivilege,
+                    },
+                },
+                update: {},
+                create: {
+                    role_id: IDS.coordinatorRole,
+                    privilege_id: IDS.deleteAbsencesPrivilege,
+                },
+            });
+        }
     });
 
     it("404 si la ausencia no existe", async () => {
@@ -475,7 +492,7 @@ describe("DELETE /absence/:absenceId", () => {
             .set("Authorization", `Bearer ${sign()}`);
 
         expect(res.statusCode).toBe(403);
-        expect(res.body.message).toBe("No puede acceder a este recurso");
+        expect(res.body.message).toBe("Permisos insuficientes");
     });
 
     it("200 y hace soft delete para un coordinador de la misma casa", async () => {

@@ -3,16 +3,14 @@ const { allRoles } = require("../utils/roles");
 const requirePrivileges = (...requiredPrivileges) => {
     return (req, res, next) => {
         try {
-            // User should be attached by auth.middleware
             if (!req.user) {
                 return res
                     .status(401)
-                    .json({ message: "User not authenticated" });
+                    .json({ message: "Usuario no autenticado" });
             }
 
             const userPrivileges = req.user.privileges || [];
 
-            // Check if user has all required privileges
             const hasAllPrivileges = requiredPrivileges.every((privilege) =>
                 userPrivileges.includes(privilege),
             );
@@ -20,12 +18,11 @@ const requirePrivileges = (...requiredPrivileges) => {
             if (!hasAllPrivileges) {
                 return res
                     .status(403)
-                    .json({ message: "Insufficient privileges" });
+                    .json({ message: "Permisos insuficientes" });
             }
 
             next();
         } catch (error) {
-            // Pass error to the next middleware
             next(error);
         }
     };
@@ -37,12 +34,11 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
             if (!req.user) {
                 return res
                     .status(401)
-                    .json({ message: "User not authenticated" });
+                    .json({ message: "Usuario no autenticado" });
             }
 
             const userPrivileges = req.user.privileges || [];
 
-            // Check if user has at least one required privilege
             const hasAnyPrivilege = requiredPrivileges.some((privilege) =>
                 userPrivileges.includes(privilege),
             );
@@ -50,12 +46,11 @@ const requireAnyPrivilege = (...requiredPrivileges) => {
             if (!hasAnyPrivilege) {
                 return res
                     .status(403)
-                    .json({ message: "Insufficient privileges" });
+                    .json({ message: "Permisos insuficientes" });
             }
 
             next();
         } catch (error) {
-            // Pass error to the next middleware
             next(error);
         }
     };
@@ -65,11 +60,11 @@ const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ message: "User not authenticated" });
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
       if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({ message: "Role not allowed" });
+        return res.status(403).json({ message: "Permisos insuficientes" });
       }
       next();
     } catch (error) {

@@ -6,13 +6,17 @@ const {
     getVacationsInRange,
     getPendingVacationRequestsByHouse,
     getReviewedVacationRequestsByHouse,
+    getVacationRequestsByEmployee,
     getEligibleVacationEmployees,
 } = require("../../model/vacation/get.model");
 const { getVacationDays } = require("../../utils/vacationDays");
+const { stringToDate } = require("../../utils/dates");
 const RESPONSES = require("../../utils/responses");
 const { parsePagination, buildPagination } = require("../../utils/pagination");
 const {
     buildVacationListWhere,
+    buildVacationDateFilter,
+    buildVacationEmployeeSearchFilter,
 } = require("../../utils/vacationFilters");
 const {
     mapReviewedStatus,
@@ -23,12 +27,37 @@ const { ROLES } = require("../../utils/roles");
 const PRIVILEGES = require("../../utils/privileges");
 const {
     getVacationRequestsInputSchema,
+    getOwnVacationRequestsInputSchema,
 } = require("../../schemas/vacation/get.schemas");
 
 const hasCurrentPrivilege = (employee, privilegeName) => {
     return employee.role?.role_privilege?.some(
         (rolePrivilege) => rolePrivilege.privilege?.name === privilegeName,
     );
+};
+
+const getTodayUtcDate = () => {
+    const now = new Date();
+
+    return new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+    ));
+};
+
+const mapOwnVacationStatus = (status = "all") => {
+    if (status === "pending") return VACATION_STATUS.PENDING;
+    if (status === "approved") return VACATION_STATUS.APPROVED;
+    if (status === "rejected") return VACATION_STATUS.REJECTED;
+
+    return {
+        in: [
+            VACATION_STATUS.PENDING,
+            VACATION_STATUS.APPROVED,
+            VACATION_STATUS.REJECTED,
+        ],
+    };
 };
 
 exports.getRemainingVacations = async (employeeId) => {
@@ -301,6 +330,134 @@ exports.getReviewedVacationRequests = async ({ actorEmployeeId, query }) => {
         skip,
         take,
         searchFilters,
+    });
+
+    return {
+        code: RESPONSES.VACATION.REQUESTS_FOUND,
+        data: {
+            requests: requests.map(mapVacationRequestForList),
+            pagination: buildPagination({ page, limit, total }),
+        },
+    };
+};
+
+exports.getFutureVacationRequests = async (employeeId, query) => {
+    if (!employeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const validation = getOwnVacationRequestsInputSchema.safeParse({
+        employeeId,
+        query,
+    });
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.VACATION.VALIDATION_ERROR,
+        };
+    }
+
+    query = validation.data.query;
+
+    const { page, limit, skip, take } = parsePagination(
+        query.page,
+        query.limit,
+    );
+
+    const statusFilter = mapOwnVacationStatus(query.status || "all");
+    const search = query.search?.trim() || "";
+    const dateFilter = buildVacationDateFilter(
+        query.startDate ? stringToDate(query.startDate) : undefined,
+        query.endDate ? stringToDate(query.endDate) : undefined,
+    );
+
+    const where = {
+        ...dateFilter,
+        employee_id: employeeId,
+        status: statusFilter,
+        ...buildVacationEmployeeSearchFilter(search),
+    };
+
+    where.start = {
+        ...(where.start || {}),
+        gt: getTodayUtcDate(),
+    };
+
+    const { requests, total } = await getVacationRequestsByEmployee({
+        where,
+        skip,
+        take,
+        orderBy: [
+            { start: "asc" },
+            { created_at: "desc" },
+            { vacations_request_id: "asc" },
+        ],
+    });
+
+    return {
+        code: RESPONSES.VACATION.REQUESTS_FOUND,
+        data: {
+            requests: requests.map(mapVacationRequestForList),
+            pagination: buildPagination({ page, limit, total }),
+        },
+    };
+};
+
+exports.getPastVacationRequests = async (employeeId, query) => {
+    if (!employeeId) {
+        return {
+            code: RESPONSES.USER.NOT_ACCESS,
+        };
+    }
+
+    const validation = getOwnVacationRequestsInputSchema.safeParse({
+        employeeId,
+        query,
+    });
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.VACATION.VALIDATION_ERROR,
+        };
+    }
+
+    query = validation.data.query;
+
+    const { page, limit, skip, take } = parsePagination(
+        query.page,
+        query.limit,
+    );
+
+    const statusFilter = mapOwnVacationStatus(query.status || "all");
+    const search = query.search?.trim() || "";
+    const dateFilter = buildVacationDateFilter(
+        query.startDate ? stringToDate(query.startDate) : undefined,
+        query.endDate ? stringToDate(query.endDate) : undefined,
+    );
+
+    const where = {
+        ...dateFilter,
+        employee_id: employeeId,
+        status: statusFilter,
+        ...buildVacationEmployeeSearchFilter(search),
+    };
+
+    where.start = {
+        ...(where.start || {}),
+        lte: getTodayUtcDate(),
+    };
+
+    const { requests, total } = await getVacationRequestsByEmployee({
+        where,
+        skip,
+        take,
+        orderBy: [
+            { start: "desc" },
+            { created_at: "desc" },
+            { vacations_request_id: "asc" },
+        ],
     });
 
     return {

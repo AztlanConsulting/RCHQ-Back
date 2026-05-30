@@ -1,119 +1,130 @@
-@startuml HU06 - Administrador visualiza empleados de una casa
+@startuml
+title Diagrama de Secuencia - US06 Sesion segura y sesion unica
 
-actor navegador
-boundary employee.routes
-boundary "React (employeeList.jsx)" as ReactView
-control employee.controller
-control employee.service
-entity employee.model
-database PostgreSQL
+actor Usuario
+boundary "Frontend" as Front
+boundary "auth.route.js" as Route
+control "auth.controller.js" as Controller
+control "auth.service.js" as Service
+control "jwt.js" as JWT
+control "authTokens.js\nbuildSessionToken()" as AuthTokens
+entity "auth.model.js" as Model
+database "PostgreSQL\nPrisma" as BD
 
-autonumber
+== Creacion de sesion: solo una sesion activa por cuenta ==
 
-navegador -> employee.routes : GET /employee/getAll
-activate employee.routes
+Usuario -> Front : Envia credenciales\no codigo 2FA
+Front -> Route : POST /auth/login\no POST /auth/2fa/login/validate
+Route -> Controller : login(req, res)\no validateTwoFactorAuth(req, res)
+Controller ->> Service : login(req)\no validateTwoFactorAuth(req)
 
-employee.routes -> employee.controller : getAll(request, response)
-deactivate employee.routes
-activate employee.controller
+Service ->> Model : findEmployeeByEmail()\no getEmployeeById()
+Model ->> BD : Busca empleado
+BD -->> Model : DB_ROW
+Model -->> Service : employee
+Service -> Service : Valida password / TOTP / estado activo
 
-employee.controller -> employee.service : getEmployees(house_id, active=true)
-activate employee.service
+alt employee.refreshToken existe en BD
+    Service -> JWT : decodeToken(employee.refreshToken)
+    JWT --> Service : decodedRefresh
 
-employee.service -> employee.model : getEmployees(house_id, active=true)
-activate employee.model
-
-employee.model -> PostgreSQL : prisma.employee.findMany()
-activate PostgreSQL
-PostgreSQL -->> employee.model : empleados activos
-deactivate PostgreSQL
-
-employee.model -->> employee.service : empleados activos
-deactivate employee.model
-
-employee.service -->> employee.controller : empleados activos
-deactivate employee.service
-
-employee.controller -> ReactView : response.send(lista activos)
-deactivate employee.controller
-activate ReactView
-
-ReactView -> navegador : Mostrar empleados activos
-
-loop Mientras administrador use filtros
-
-alt Administrador selecciona "Inactivos"
-
-    navegador -> ReactView : Elegir filtro inactivos
-
-    ReactView -> employee.routes : GET /employee/getAll?active=false
-    deactivate ReactView
-    activate employee.routes
-
-    employee.routes -> employee.controller : getAll(request, response)
-    deactivate employee.routes
-    activate employee.controller
-
-    employee.controller -> employee.service : getEmployees(house_id, active=false)
-    activate employee.service
-
-    employee.service -> employee.model : getEmployees(house_id, active=false)
-    activate employee.model
-
-    employee.model -> PostgreSQL : prisma.employee.findMany()
-    activate PostgreSQL
-    PostgreSQL -->> employee.model : empleados inactivos
-    deactivate PostgreSQL
-
-    employee.model -->> employee.service : empleados inactivos
-    deactivate employee.model
-
-    employee.service -->> employee.controller : empleados inactivos
-    deactivate employee.service
-
-    employee.controller -> ReactView : response.send(lista inactivos)
-    deactivate employee.controller
-    activate ReactView
-
-    ReactView -> navegador : Mostrar empleados inactivos
-
-else Administrador selecciona "Activos"
-
-    navegador -> ReactView : Elegir filtro activos
-
-    ReactView -> employee.routes : GET /employee/getAll?active=true
-    deactivate ReactView
-    activate employee.routes
-
-    employee.routes -> employee.controller : getAll(request, response)
-    deactivate employee.routes
-    activate employee.controller
-
-    employee.controller -> employee.service : getEmployees(house_id, active=true)
-    activate employee.service
-
-    employee.service -> employee.model : getEmployees(house_id, active=true)
-    activate employee.model
-
-    employee.model -> PostgreSQL : prisma.employee.findMany()
-    activate PostgreSQL
-    PostgreSQL -->> employee.model : empleados activos
-    deactivate PostgreSQL
-
-    employee.model -->> employee.service : empleados activos
-    deactivate employee.model
-
-    employee.service -->> employee.controller : empleados activos
-    deactivate employee.service
-
-    employee.controller -> ReactView : response.send(lista activos)
-    deactivate employee.controller
-    activate ReactView
-
-    ReactView -> navegador : Mostrar empleados activos
-    deactivate ReactView
-
+    alt decodedRefresh.tokenType == "REFRESH"
+        Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
+        Controller --> Front : 409 Ya existe una sesion activa
+        Front --> Usuario : Muestra mensaje y no inicia sesion
+    else refresh viejo, expirado o invalido
+        Service ->> Model : clearRefreshToken(employee.employeeId)
+        Model ->> BD : prisma.employee.update({ refresh_token: null })
+        BD -->> Model : success
+        Model -->> Service : void
+        Service -> Service : Continua creacion de nueva sesion
+    end
+else no hay refreshToken en BD
+    Service -> Service : Continua creacion de nueva sesion
 end
 
+alt nueva sesion permitida
+    Service -> Service : sessionId = randomUUID()
+    Service -> AuthTokens : buildSessionToken(employee, sessionId)
+    AuthTokens --> Service : accessToken (SESSION)
+    Service -> JWT : generateRefreshToken(employee, sessionId)
+    JWT --> Service : refreshToken (REFRESH)
+    Service ->> Model : saveRefreshToken(employee.employeeId, refreshToken)
+    Model ->> BD : prisma.employee.update({ refresh_token: refreshToken })
+    BD -->> Model : success
+    Model -->> Service : void
+    Service -->> Controller : { status: 200, data: { token, refreshToken } }
+    Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
+    Controller -> Controller : delete result.body.data.refreshToken
+    Controller --> Front : 200 { data: { token } }
+    Front --> Usuario : Entra a la aplicacion
 end
+
+== Renovacion de sesion: refresh compartido entre peticiones ==
+
+Usuario -> Front : Navega y dispara peticion protegida
+Front -> Route : Request con accessToken
+Route --> Front : 401 Unauthorized
+
+alt existe refresh compartido en curso
+    Front -> Front : Espera la promesa de refresh existente
+else no existe refresh en curso
+    Front -> Route : POST /auth/refresh\n(Cookie HttpOnly refreshToken)
+    Route -> Controller : refreshToken(req, res)
+    Controller -> Controller : token = req.cookies?.refreshToken\nipAddress = getClientIp()
+    Controller ->> Service : refreshSession(token, ipAddress)
+
+    alt token == undefined
+        Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+        Controller -> Controller : res.clearCookie("refreshToken")
+        Controller --> Front : 401 Token no proporcionado
+    else token recibido
+        Service -> JWT : decodeToken(token)
+        JWT --> Service : decodedPayload
+
+        alt decoded == null o tokenType != "REFRESH"
+            Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+            Controller -> Controller : res.clearCookie("refreshToken")
+            Controller --> Front : 401 Token invalido o expirado
+        else token REFRESH valido
+            Service ->> Model : getEmployeeById(decoded.id)
+            Model ->> BD : prisma.employee.findUnique(employee_id)
+            BD -->> Model : DB_ROW
+            Model -->> Service : employee
+
+            alt employee == null o employee.isActive == false
+                Service -->> Controller : { status: 403, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 403 Acceso denegado
+            else employee.refreshToken != token
+                Service ->> Model : clearRefreshToken(employeeId)
+                Model ->> BD : prisma.employee.update({ refresh_token: null })
+                BD -->> Model : success
+                Model -->> Service : void
+                Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 401 Sesion invalida
+            else validacion exitosa
+                Service -> AuthTokens : buildSessionToken(employee, decoded.sessionId)
+                AuthTokens --> Service : newAccessToken (SESSION)
+                Service -> Service : newRefreshToken = token\n(No rota; conserva BD)
+                Service -->> Controller : { status: 200, code: "REFRESH_SUCCESS", data: { token, refreshToken } }
+                Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
+                Controller -> Controller : delete result.body.data.refreshToken
+                Controller --> Front : 200 { data: { token } }
+            end
+        end
+    end
+end
+
+alt refresh exitoso
+    Front -> Front : Guarda nuevo accessToken
+    Front -> Route : Reintenta peticion original\ncon nuevo accessToken
+    Route --> Front : Respuesta protegida
+    Front --> Usuario : Continua sesion
+else refresh fallido
+    Front -> Front : Limpia auth local
+    Front --> Usuario : Redirige a Login
+end
+
 @enduml

@@ -5,7 +5,7 @@ const {
 } = require("../jwt");
 const prisma = require("../../prisma")
 
-async function buildUserPayload(employee) {
+async function buildUserPayload(employee, sessionId) {
 
   const roleWithPrivileges = await prisma.role.findUnique({
     where: { role_id: employee.roleId },
@@ -27,11 +27,12 @@ async function buildUserPayload(employee) {
     houseId: employee.houseId,
     privileges,
     tokenType: "SESSION",
+    sessionId,
   };
 }
 
-exports.buildSessionToken = async (employee) => {
-  const payload = await buildUserPayload(employee);
+exports.buildSessionToken = async (employee, sessionId) => {
+  const payload = await buildUserPayload(employee, sessionId);
   const token = generateToken(payload);
   return token;
 };

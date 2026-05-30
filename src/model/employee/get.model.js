@@ -7,6 +7,29 @@ const {
     mapEmployeeVacationRequests,
 } = require("../../utils/mappers/employee.map");
 
+const normalizeSearchTerm = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const matchesEmployeeSearch = (employee, search) => {
+    const searchTerms = String(search)
+        .trim()
+        .split(/\s+/)
+        .map(normalizeSearchTerm)
+        .filter(Boolean);
+
+    if (searchTerms.length === 0) {
+        return true;
+    }
+
+    const fullName = normalizeSearchTerm(
+        `${employee.name || ""} ${employee.surname || ""}`,
+    );
+
+    return searchTerms.every((term) => fullName.includes(term));
+};
+
 exports.findByCurp = async (curp) => {
     return await prisma.employee.findUnique({
         where: { curp },
@@ -80,43 +103,32 @@ exports.getEmployees = async (houseId, active, search, skip, take) => {
         is_active: active,
     };
 
-    if (search) {
-        const terms = search.trim().split(/\s+/);
-
-        whereClause.AND = terms.map((term) => ({
-            OR: [
-                { name: { contains: term, mode: "insensitive" } },
-                { surname: { contains: term, mode: "insensitive" } },
-            ],
-        }));
-    }
-
-    const [employees, total] = await Promise.all([
-        prisma.employee.findMany({
-            where: whereClause,
-            select: {
-                employee_id: true,
-                name: true,
-                surname: true,
-                picture: true,
-                is_active: true,
-                role: {
-                    select: {
-                        name: true,
-                    },
+    const employees = await prisma.employee.findMany({
+        where: whereClause,
+        select: {
+            employee_id: true,
+            name: true,
+            surname: true,
+            picture: true,
+            is_active: true,
+            role: {
+                select: {
+                    name: true,
                 },
             },
-            orderBy: { name: "asc" },
-            skip,
-            take,
-        }),
-        prisma.employee.count({
-            where: whereClause,
-        }),
-    ]);
+        },
+        orderBy: { name: "asc" },
+    });
+
+    const filteredEmployees = search
+        ? employees.filter((employee) => matchesEmployeeSearch(employee, search))
+        : employees;
+
+    const total = filteredEmployees.length;
+    const paginatedEmployees = filteredEmployees.slice(skip, skip + take);
 
     return {
-        employees: employees.map((e) => ({
+        employees: paginatedEmployees.map((e) => ({
             employeeId: e.employee_id,
             name: e.name,
             surname: e.surname,

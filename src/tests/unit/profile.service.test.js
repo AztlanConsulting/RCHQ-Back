@@ -1,11 +1,9 @@
-// src/tests/unit/profile.service.test.js
 const { getUserProfile } = require("../../service/user/profile.service");
 
 jest.mock("../../model/user/profile.model");
 const profileModel = require("../../model/user/profile.model");
 const RESPONSES = require("../../utils/responses");
 
-// ─── Fixtures ────────────────────────────────────────────────────────────────
 const MOCK_PROFILE = {
     houseName: "Casa Hogar Querétaro",
     roleName: "Coordinador",
@@ -20,7 +18,6 @@ const MOCK_PROFILE = {
     picture: "https://cdn.example.com/foto.jpg",
 };
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
 describe("profile.service — getUserProfile", () => {
     beforeEach(() => jest.clearAllMocks());
 

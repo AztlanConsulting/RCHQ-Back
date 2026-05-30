@@ -2,10 +2,6 @@ const employee = require("../../model/employee/create.model");
 const { createLog } = require("../../model/log.model");
 const consult = require("../../model/employee/get.model");
 
-// =====================================================
-// MOCKS
-// =====================================================
-
 jest.mock("../../model/employee/get.model", () => ({
     findByCurp: jest.fn(),
     findById: jest.fn(),
@@ -26,12 +22,7 @@ jest.mock("../../utils/ip", () => ({
 
 const { createEmployee } = require("../../service/employee/create.service");
 
-// =====================================================
-// TEST SUITE
-// =====================================================
-
 describe("Employee Service - createEmployee", () => {
-    // Variables globales para las pruebas
     const mockUserAdmin = {
         id: "user-1",
         role: "Administrador",
@@ -89,10 +80,6 @@ describe("Employee Service - createEmployee", () => {
         jest.restoreAllMocks();
     });
 
-    // =====================================================
-    // ÉXITO Y LÓGICA DE NEGOCIO
-    // =====================================================
-
     it("debería crear empleado como admin", async () => {
         const result = await createEmployee(baseEmployee, mockUserAdmin, mockReq);
 
@@ -137,10 +124,6 @@ describe("Employee Service - createEmployee", () => {
         const result = await createEmployee(data, mockUserAdmin, mockReq);
         expect(result.success).toBe(true);
     });
-
-    // =====================================================
-    // VALIDACIONES BÁSICAS (ZOD SCHEMA)
-    // =====================================================
 
     it("debería fallar si falta name", async () => {
         const data = { ...baseEmployee };
@@ -198,9 +181,6 @@ describe("Employee Service - createEmployee", () => {
         expect(result.type).toBe("VALIDATION_ERROR");
     });
 
-    // =====================================================
-    // SEGURIDAD Y PERMISOS
-    // =====================================================
 
     it("nombre con números", async () => {
         const data = { ...baseEmployee, name: "Juan123" };
@@ -264,10 +244,6 @@ describe("Employee Service - createEmployee", () => {
         expect(result.type).toBe("VALIDATION_ERROR");
     });
 
-    // =====================================================
-    // NORMALIZACIÓN E INTEGRIDAD (LONGITUDES)
-    // =====================================================
-
     it("nombre demasiado largo", async () => {
         const data = { ...baseEmployee, name: "A".repeat(60) };
 
@@ -308,10 +284,6 @@ describe("Employee Service - createEmployee", () => {
         );
     });
 
-    // =====================================================
-    // TIPOS Y NUMÉRICOS
-    // =====================================================
-
     it("name no string", async () => {
         const data = { ...baseEmployee, name: 12345 };
 
@@ -334,10 +306,6 @@ describe("Employee Service - createEmployee", () => {
         expect(result.success).toBe(false);
         expect(result.type).toBe("VALIDATION_ERROR");
     });
-
-    // =====================================================
-    // VALIDACIONES DE FECHAS AVANZADAS
-    // =====================================================
 
     it("fecha inválida", async () => {
         const data = { ...baseEmployee, birthDate: "2020-13-40" };
@@ -371,10 +339,6 @@ describe("Employee Service - createEmployee", () => {
         expect(result.type).toBe("VALIDATION_ERROR");
     });
 
-    // =====================================================
-    // IMAGEN Y MULTI ERROR
-    // =====================================================
-
     it("formato inválido imagen", async () => {
         const data = { ...baseEmployee, picture: "foto.exe" };
 
@@ -397,10 +361,6 @@ describe("Employee Service - createEmployee", () => {
         expect(result.type).toBe("VALIDATION_ERROR");
         expect(result.errors.length).toBeGreaterThan(1);
     });
-
-    // =====================================================
-    // INFRAESTRUCTURA Y CONFLICTOS
-    // =====================================================
 
     it("debería retornar error si el empleado ya está registrado (Duplicado)", async () => {
         const idExistente = "19c23934-e20a-42f4-b963-fab77caf1a1c";

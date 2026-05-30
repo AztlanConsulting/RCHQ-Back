@@ -27,6 +27,7 @@ function mapEmployee(employee) {
         twoFaBlockedUntil: employee.two_fa_blocked_until,
         tempTotpSecret: employee.temp_totp_secret,
         tempTotpSecretCreatedAt: employee.temp_totp_secret_created_at,
+        refreshToken: employee.refresh_token,
     };
 }
 
@@ -245,6 +246,28 @@ async function clearTwoFactorAuthSecurityState(employeeId) {
     });
 }
 
+async function saveRefreshToken(employeeId, token) {
+    await prisma.employee.update({
+        where: { employee_id: employeeId },
+        data: { refresh_token: token },
+    });
+}
+
+async function rotateRefreshToken(employeeId, oldToken, newToken) {
+    const result = await prisma.employee.updateMany({
+        where: { employee_id: employeeId, refresh_token: oldToken },
+        data: { refresh_token: newToken },
+    });
+    return result.count > 0;
+}
+
+async function clearRefreshToken(employeeId) {
+    await prisma.employee.update({
+        where: { employee_id: employeeId },
+        data: { refresh_token: null },
+    });
+}
+
 module.exports = {
     findEmployeeByEmail,
     updatePassword,
@@ -263,4 +286,7 @@ module.exports = {
     incrementFailedTwoFactorAuthAttempts,
     setTwoFactorAuthBlockedUntil,
     clearTwoFactorAuthSecurityState,
+    saveRefreshToken,
+    clearRefreshToken,
+    rotateRefreshToken,
 };

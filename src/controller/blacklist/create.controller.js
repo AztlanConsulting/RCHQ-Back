@@ -4,11 +4,11 @@ const { getClientIp } = require("../../utils/ip");
 
 exports.insertIntoBlacklist = async (req, res) => {
     try {
-        const { curp } = req.body;
+        const { curp, reason } = req.body;
         const executorId = req.user.id;
         const ipAddress = getClientIp(req);
 
-        const result = await insertIntoBlacklist(curp, executorId, ipAddress);
+        const result = await insertIntoBlacklist(curp, reason, executorId, ipAddress);
 
         if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
             return res.status(404).json({

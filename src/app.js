@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const authRouter = require("./router/auth.route");
 const employeeRouter = require("./router/employee.route");
 const userRouter = require("./router/user.route");
@@ -15,21 +16,34 @@ const { startLogRetentionJob } = require("./utils/logRetentionJob");
 const errorHandler = require("./middleware/ErrorHandler");
 const path = require("path");
 
-// Loads the variables in the enviorment file
 require("dotenv").config();
 
 const port = Number(process.env.RUNNING_PORT || 3000);
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-app.use(
-    cors({
-        origin: true,
-        credentials: true,
-    }),
-);
+app.use("/uploads", (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/notFound`);
+});
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(origin => origin);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origen no permitido por CORS'));
+  },
+  credentials: true
+}));
 
 app.use("/auth", authRouter);
 app.use("/user", userRouter);

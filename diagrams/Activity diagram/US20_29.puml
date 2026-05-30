@@ -1,0 +1,46 @@
+@startuml
+
+|Usuario|
+start
+:Seleccionar la opción en la \nnavbar de ausencias;
+
+|Sistema| 
+:Verificar rol del usuario;
+if (rol es diferente a \nAdministrador o Coordinador) then (no)
+    :Continuar en US 78 y 79...;
+    stop
+else (yes)
+    :Verificar privilegios del usuario;
+
+    if (Privilegios válidos) then (yes)
+        :Consultar el id del usuario;
+    else (no)
+        :mostrar mensaje de error de privilegios insuficientes;
+        stop
+    endif
+endif
+
+:Consultar la tabla de ausencias;
+:Recuperar la información de:\n  -fecha de inicio \n  -fecha de fin \n  -url \n  -id del tipo de ausencia;
+:Consultar la tabla de tipo de ausencia;
+:Recuperar la información de: \n  -tipo de ausencia;
+:Mandar los datos de: \n  -fecha de inicio \n  -fecha de fin \n  -url \n  -tipo de ausencia;
+:Renderizar la vista con los datos de: \n  -fecha de inicio \n  -fecha de fin \n  -url \n  -tipo de ausencia \n  -botón de acción;
+:Mostrar la vista al usuario;
+
+|Usuario|
+:Ver la vista de ausencias;
+:Dar click en el botón de acción;
+
+|Sistema|
+:Consultar el id del usuario;
+:Consultar la tabla de ausencias;
+:Recuperar la información de: \n  -fecha de inicio \n  -fecha de fin \n  -descripción;
+:Calcular los días habiles ausente;
+:Mandar los datos de: \n  -descripción \n  -días hábiles ausentes;
+:Mostrar una ventana modal con la información de: \n  -descripción \n  -días hábiles ausente\nDe la ausencia en específico;
+
+|Usuario|
+:Ver la ventana modal;
+stop
+@enduml

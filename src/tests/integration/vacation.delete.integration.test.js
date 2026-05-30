@@ -30,11 +30,9 @@ const WORKDAY_IDS = {
 function getTodayUTC() {
     const now = new Date();
 
-    return new Date(Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate()
-    ));
+    return new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 }
 
 function addDays(date, days) {
@@ -63,11 +61,9 @@ function toDbDate(dateString) {
 
 const TODAY_UTC = getTodayUTC();
 
-const EMPLOYEE_START_DATE = new Date(Date.UTC(
-    TODAY_UTC.getUTCFullYear() - 1,
-    TODAY_UTC.getUTCMonth(),
-    1
-));
+const EMPLOYEE_START_DATE = new Date(
+    Date.UTC(TODAY_UTC.getUTCFullYear() - 1, TODAY_UTC.getUTCMonth(), 1),
+);
 
 const BASE_FUTURE_DATE = addDays(TODAY_UTC, 14);
 
@@ -86,7 +82,7 @@ function generateSessionToken(employee) {
             tokenType: "SESSION",
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
     );
 }
 
@@ -119,6 +115,17 @@ function getUserToken() {
         name: "User",
         roleName: "Usuario",
         house_id: HOUSE_A_ID,
+        privileges: [],
+    });
+}
+
+function getOtherHouseUserToken() {
+    return generateSessionToken({
+        employee_id: OTHER_HOUSE_EMPLOYEE_ID,
+        email: "other.us32@test.com",
+        name: "Other",
+        roleName: "Usuario",
+        house_id: HOUSE_B_ID,
         privileges: [],
     });
 }
@@ -187,13 +194,7 @@ async function seedBaseData() {
     const existingWorkdays = await prisma.workday.findMany({
         where: {
             name: {
-                in: [
-                    "Lunes",
-                    "Martes",
-                    "Miércoles",
-                    "Jueves",
-                    "Viernes",
-                ],
+                in: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
             },
         },
     });
@@ -201,8 +202,10 @@ async function seedBaseData() {
     for (const workday of existingWorkdays) {
         if (workday.name === "Lunes") WORKDAY_IDS.monday = workday.workday_id;
         if (workday.name === "Martes") WORKDAY_IDS.tuesday = workday.workday_id;
-        if (workday.name === "Miércoles") WORKDAY_IDS.wednesday = workday.workday_id;
-        if (workday.name === "Jueves") WORKDAY_IDS.thursday = workday.workday_id;
+        if (workday.name === "Miércoles")
+            WORKDAY_IDS.wednesday = workday.workday_id;
+        if (workday.name === "Jueves")
+            WORKDAY_IDS.thursday = workday.workday_id;
         if (workday.name === "Viernes") WORKDAY_IDS.friday = workday.workday_id;
     }
 
@@ -232,7 +235,7 @@ async function seedBaseData() {
                 is_active_two_factor_auth: false,
                 failed_login_attempts: 0,
                 failed_two_factor_auth_attempts: 0,
-                curp: "USAA010101HDFA3231",
+                curp: "MOXC801103MBSCYE80",
                 start_date: EMPLOYEE_START_DATE,
                 type: "nomina",
             },
@@ -249,7 +252,7 @@ async function seedBaseData() {
                 is_active_two_factor_auth: false,
                 failed_login_attempts: 0,
                 failed_two_factor_auth_attempts: 0,
-                curp: "USAA010101HDFA3232",
+                curp: "MOXC801103MBSCYE81",
                 start_date: EMPLOYEE_START_DATE,
                 type: "nomina",
             },
@@ -266,7 +269,7 @@ async function seedBaseData() {
                 is_active_two_factor_auth: false,
                 failed_login_attempts: 0,
                 failed_two_factor_auth_attempts: 0,
-                curp: "USAA010101HDFA3233",
+                curp: "MOXC801103MBSCYE82",
                 start_date: EMPLOYEE_START_DATE,
                 type: "nomina",
             },
@@ -283,7 +286,7 @@ async function seedBaseData() {
                 is_active_two_factor_auth: false,
                 failed_login_attempts: 0,
                 failed_two_factor_auth_attempts: 0,
-                curp: "USAA010101HDFA3234",
+                curp: "MOXC801103MBSCYE83",
                 start_date: EMPLOYEE_START_DATE,
                 type: "nomina",
             },
@@ -300,7 +303,7 @@ async function seedBaseData() {
                 is_active_two_factor_auth: false,
                 failed_login_attempts: 0,
                 failed_two_factor_auth_attempts: 0,
-                curp: "USAA010101HDFA3235",
+                curp: "MOXC801103MBSCYE84",
                 start_date: EMPLOYEE_START_DATE,
                 type: "nomina",
             },
@@ -470,13 +473,36 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(res.body.success).toBe(true);
         expect(res.body.message).toBe("Vacaciones removidas correctamente");
         expect(res.body.data.vacationRequest.vacations_request_id).toBe(
-            vacation.vacations_request_id
+            vacation.vacations_request_id,
         );
         expect(deletedVacation).toBeNull();
         expect(logs).toHaveLength(1);
     });
 
-    test("coordinador elimina solicitud aprobada de empleado de su misma casa", async () => {
+    test("coordinador elimina solicitud pendiente pasada de empleado de su misma casa", async () => {
+        const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 0,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const deletedVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(deletedVacation).toBeNull();
+    });
+
+    test("coordinador elimina solicitud aprobada futura de empleado de su misma casa", async () => {
         const vacation = await createVacation({
             status: 1,
         });
@@ -497,8 +523,59 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(deletedVacation).toBeNull();
     });
 
-    test("coordinador elimina solicitud rechazada de empleado de su misma casa", async () => {
+    test("coordinador no elimina solicitud aprobada en curso", async () => {
         const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -2)),
+            endDate: formatDate(addDays(TODAY_UTC, 2)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toBe(
+            "No se pueden remover vacaciones aprobadas que ya iniciaron o terminaron",
+        );
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("coordinador no elimina solicitud aprobada pasada", async () => {
+        const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getCoordinatorToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("coordinador elimina solicitud rechazada pasada de empleado de su misma casa", async () => {
+        const vacation = await createVacation({
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
             status: 2,
             feedback: "No procede",
         });
@@ -561,7 +638,102 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(existingVacation).not.toBeNull();
     });
 
-    test("usuario sin permisos no puede eliminar solicitudes", async () => {
+    test("usuario elimina su propia solicitud futura", async () => {
+        const vacation = await createVacation({
+            employeeId: USER_ID,
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getUserToken()}`)
+            .send({});
+
+        const deletedVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(deletedVacation).toBeNull();
+    });
+
+    test("usuario elimina su propia solicitud rechazada pasada", async () => {
+        const vacation = await createVacation({
+            employeeId: USER_ID,
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 2,
+            feedback: "No procede",
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getUserToken()}`)
+            .send({});
+
+        const deletedVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(deletedVacation).toBeNull();
+    });
+
+    test("usuario no elimina su propia solicitud aprobada que ya inició", async () => {
+        const vacation = await createVacation({
+            employeeId: USER_ID,
+            startDate: formatDate(addDays(TODAY_UTC, -2)),
+            endDate: formatDate(addDays(TODAY_UTC, 2)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getUserToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("usuario no puede eliminar su propia solicitud si es aprobada y ya pasó", async () => {
+        const vacation = await createVacation({
+            employeeId: USER_ID,
+            startDate: formatDate(addDays(TODAY_UTC, -30)),
+            endDate: formatDate(addDays(TODAY_UTC, -26)),
+            status: 1,
+        });
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getUserToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(406);
+        expect(res.body.success).toBe(false);
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("usuario no puede eliminar solicitudes de otros empleados", async () => {
         const vacation = await createVacation();
 
         const res = await request(app)
@@ -579,7 +751,25 @@ describe("US32 - DELETE /vacation/request/:vacationRequestId", () => {
         expect(existingVacation).not.toBeNull();
     });
 
-    test("admin no puede eliminar solicitudes porque la ruta exige Coordinador", async () => {
+    test("usuario de otra casa no puede eliminar solicitudes de otros empleados", async () => {
+        const vacation = await createVacation();
+
+        const res = await request(app)
+            .delete(`/vacation/request/${vacation.vacations_request_id}`)
+            .set("Authorization", `Bearer ${getOtherHouseUserToken()}`)
+            .send({});
+
+        const existingVacation = await prisma.vacations_request.findUnique({
+            where: {
+                vacations_request_id: vacation.vacations_request_id,
+            },
+        });
+
+        expect(res.statusCode).toBe(403);
+        expect(existingVacation).not.toBeNull();
+    });
+
+    test("admin no puede eliminar solicitudes si no es dueño ni Coordinador", async () => {
         const vacation = await createVacation();
 
         const res = await request(app)

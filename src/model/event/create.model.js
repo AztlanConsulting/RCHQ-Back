@@ -4,8 +4,7 @@ const {
     mapHouseEvent,
     mapPersonalEvent,
 } = require("../../utils/mappers/event.map");
-const personalEventTimeToUtc = (date, time) =>
-    new Date(`${date}T${time}-06:00`);
+const { eventDateTimeToUtc } = require("../../utils/event/dateTime");
 
 exports.createHouseEvent = async (data) => {
     const houseEvent = await prisma.house_event.create({
@@ -32,8 +31,8 @@ exports.createPersonalEvent = async (data) => {
                 personal_event_id: data.personalEventId,
                 event_type_id: data.eventTypeId,
                 date: new Date(data.date),
-                start: personalEventTimeToUtc(data.date, data.start),
-                end: personalEventTimeToUtc(
+                start: eventDateTimeToUtc(data.date, data.start),
+                end: eventDateTimeToUtc(
                     data.endDate ?? data.date,
                     data.end,
                 ),

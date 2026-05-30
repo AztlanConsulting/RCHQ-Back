@@ -1,16 +1,27 @@
 const { z } = require("zod");
+const REASON_REGEX = /^[a-zA-Z0-9\s.,!?áéíóúÁÉÍÓÚñÑ-]*$/;
 
-const deactivateEmployeeSchema = z.object({
+exports.deactivateEmployeeSchema = z.object({
     reason: z
         .string()
-        .max(250, { message: 'El campo "Razón" es de máximo 250 caracteres' })
-        .regex(/^[^<>]*$/, { message: 'El campo "Razón" contiene caracteres no permitidos' })
+        .trim()
+        .max(250, { message: "La razón no puede exceder los 250 caracteres." })
+        .regex(
+            REASON_REGEX,
+            { message: "La razón solo admite letras, números y signos básicos." },
+        )
         .optional(),
     addToBlacklist: z.boolean().optional(),
+}).refine((data) => {
+    if (data.addToBlacklist && (!data.reason || data.reason.trim() === "")) {
+        return false;
+    }
+    return true;
+}, {
+    message: "La razón es obligatoria para agregar al empleado a la lista negra durante la baja.",
+    path: ["reason"],
 });
 
-const deactivateEmployeeParamsSchema = z.object({
+exports.deactivateEmployeeParamsSchema = z.object({
     employeeId: z.uuidv4({ message: "El ID del empleado no es válido" }),
 });
-
-module.exports = { deactivateEmployeeSchema, deactivateEmployeeParamsSchema };
