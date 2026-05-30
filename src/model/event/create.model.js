@@ -39,6 +39,7 @@ exports.createPersonalEvent = async (data) => {
                 name: data.name,
                 description: data.description ?? null,
                 all_day: data.allDay,
+                trainer: data.trainer ?? null,
             },
         });
 
