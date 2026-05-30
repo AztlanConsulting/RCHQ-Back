@@ -62,6 +62,27 @@ exports.spanishToDay = (day) => {
     return -1;
 };
 
+const isUtcMidnight = (date) =>
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0;
+
+exports.getLastIncludedDateForRange = (startDate, endDate) => {
+    const effectiveEndDate =
+        endDate > startDate && isUtcMidnight(endDate)
+            ? new Date(endDate.getTime() - 1)
+            : endDate;
+
+    return new Date(
+        Date.UTC(
+            effectiveEndDate.getUTCFullYear(),
+            effectiveEndDate.getUTCMonth(),
+            effectiveEndDate.getUTCDate(),
+        ),
+    );
+};
+
 exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
     const days = [];
     workDays.forEach((workDay) => {
@@ -89,24 +110,7 @@ exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
                 eventStart.getUTCDate(),
             ),
         );
-        const lastEventDay = new Date(
-            Date.UTC(
-                eventEnd.getUTCFullYear(),
-                eventEnd.getUTCMonth(),
-                eventEnd.getUTCDate(),
-            ),
-        );
-        const isExclusiveMidnightEnd =
-            (event.allDay === true || event.all_day === true) &&
-            eventEnd > eventStart &&
-            eventEnd.getUTCHours() === 0 &&
-            eventEnd.getUTCMinutes() === 0 &&
-            eventEnd.getUTCSeconds() === 0 &&
-            eventEnd.getUTCMilliseconds() === 0;
-
-        if (isExclusiveMidnightEnd) {
-            lastEventDay.setUTCDate(lastEventDay.getUTCDate() - 1);
-        }
+        const lastEventDay = this.getLastIncludedDateForRange(eventStart, eventEnd);
 
         while (currentEventDay <= lastEventDay) {
             const eventDate = currentEventDay.toISOString().split("T")[0];

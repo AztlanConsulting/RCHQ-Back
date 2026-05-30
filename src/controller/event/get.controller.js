@@ -3,6 +3,7 @@ const {
     getEventsInRange,
     getHouseCalendarRecordsInRange,
     getEmployeesForSelector,
+    getEmployeeDateRules: getEmployeeDateRulesService,
 } = require("../../service/event/get.service");
 const RESPONSES = require("../../utils/responses");
 
@@ -90,6 +91,64 @@ exports.getEventsInRange = async (req, res) => {
         });
     } catch (error) {
         console.error("getEventsInRange error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getEmployeeDateRules = async (req, res) => {
+    try {
+        const result = await getEmployeeDateRulesService({
+            employeeId: req.params.employeeId,
+            mode: req.query.mode,
+        });
+
+        if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
+            return res.status(404).json({
+                success: false,
+                message: "Empleado no encontrado",
+            });
+        }
+
+        if (
+            result.code === RESPONSES.VACATION.WITHOUT_DATES ||
+            result.code === RESPONSES.ABSENCE.WITHOUT_DATES
+        ) {
+            return res.status(406).json({
+                success: false,
+                message: "El empleado no tiene días laborales registrados",
+            });
+        }
+
+        if (result.code === RESPONSES.VACATION.WITHOUT_START_DATE) {
+            return res.status(406).json({
+                success: false,
+                message: "El empleado no tiene fecha de ingreso registrada",
+            });
+        }
+
+        if (result.code === RESPONSES.DATES.BAD_DATES) {
+            return res.status(406).json({
+                success: false,
+                message: "No hay fechas disponibles para este rango",
+            });
+        }
+
+        if (result.code === RESPONSES.EVENTS.FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: result.data,
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al obtener reglas de fechas",
+        });
+    } catch (error) {
+        console.error("getEmployeeDateRules error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

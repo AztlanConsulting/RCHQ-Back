@@ -11,11 +11,15 @@ const {
     calculateUsedDays,
     stringToDate,
     convertUTCToMexicanTime,
+    getMexicoTodayDate,
+    getLastIncludedDateForRange,
+    spanishToDay,
 } = require("../../utils/dates");
 const {
     getHome,
     findById,
     getWorkDays,
+    findByIdWithRoleAndHouse,
 } = require("../../model/employee/get.model");
 const {
     getAllEventTypes,
@@ -35,6 +39,68 @@ const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
 } = require("../../utils/mappers/absence.map");
+const { getRemainingVacations } = require("../vacation/get.service");
+
+const DATE_RULE_MODES = {
+    VACATION: "vacation",
+    ABSENCE: "absence",
+};
+
+const toDateOnly = (date) => date.toISOString().slice(0, 10);
+
+const addUtcDays = (date, amount) => {
+    const nextDate = new Date(date);
+    nextDate.setUTCDate(nextDate.getUTCDate() + amount);
+    return nextDate;
+};
+
+const addUtcMonths = (date, amount) =>
+    new Date(Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth() + amount,
+        date.getUTCDate(),
+    ));
+
+const addUtcYears = (date, amount) =>
+    new Date(Date.UTC(
+        date.getUTCFullYear() + amount,
+        date.getUTCMonth(),
+        date.getUTCDate(),
+    ));
+
+const getWorkdayNumbers = (workDays = []) =>
+    workDays
+        .map((workDay) => spanishToDay(workDay.workday?.name))
+        .filter((day) => day >= 0);
+
+const getFreeDayDates = (events = [], minDate, maxDate) => {
+    const dates = new Set();
+
+    events
+        .filter((event) => event.isFreeDay === true)
+        .forEach((event) => {
+            if (!event.start || !event.end) return;
+
+            const eventStart = convertUTCToMexicanTime(event.start);
+            const eventEnd = convertUTCToMexicanTime(event.end);
+            let currentDate = new Date(Date.UTC(
+                eventStart.getUTCFullYear(),
+                eventStart.getUTCMonth(),
+                eventStart.getUTCDate(),
+            ));
+            const lastDate = getLastIncludedDateForRange(eventStart, eventEnd);
+
+            while (currentDate <= lastDate) {
+                if (currentDate >= minDate && currentDate <= maxDate) {
+                    dates.add(toDateOnly(currentDate));
+                }
+
+                currentDate = addUtcDays(currentDate, 1);
+            }
+        });
+
+    return [...dates].sort();
+};
 
 exports.getAllEventTypes = async () => {
     const result = await getAllEventTypes();
@@ -54,6 +120,108 @@ exports.getAllEventTypes = async () => {
                 }),
                 name: eventType.name,
             })),
+        },
+    };
+};
+
+exports.getEmployeeDateRules = async ({ employeeId, mode = DATE_RULE_MODES.ABSENCE }) => {
+    const normalizedMode =
+        mode === DATE_RULE_MODES.VACATION
+            ? DATE_RULE_MODES.VACATION
+            : DATE_RULE_MODES.ABSENCE;
+    const employee = await findByIdWithRoleAndHouse(employeeId);
+
+    if (!employee || employee.is_active === false) {
+        return {
+            code: RESPONSES.EMPLOYEE.NOT_FOUND,
+        };
+    }
+
+    const workDays = await getWorkDays(employeeId);
+
+    if (workDays.length === 0) {
+        return {
+            code:
+                normalizedMode === DATE_RULE_MODES.VACATION
+                    ? RESPONSES.VACATION.WITHOUT_DATES
+                    : RESPONSES.ABSENCE.WITHOUT_DATES,
+        };
+    }
+
+    const today = getMexicoTodayDate();
+    let minDate = addUtcMonths(today, -1);
+    let maxDate = addUtcYears(today, 1);
+    let vacationPeriod = null;
+    let remainingVacations = null;
+
+    if (normalizedMode === DATE_RULE_MODES.VACATION) {
+        const remainingVacationResult = await getRemainingVacations(employeeId);
+
+        if (!remainingVacationResult.data) {
+            return {
+                code: remainingVacationResult.code,
+            };
+        }
+
+        const anniversaryStartDate = remainingVacationResult.data.startDate;
+        const anniversaryEndDate = remainingVacationResult.data.endDate;
+        const tomorrow = addUtcDays(today, 1);
+
+        minDate =
+            anniversaryStartDate > tomorrow ? anniversaryStartDate : tomorrow;
+        maxDate = anniversaryEndDate;
+        remainingVacations = remainingVacationResult.data.remainingDays;
+        vacationPeriod = {
+            startDate: toDateOnly(anniversaryStartDate),
+            endDate: toDateOnly(anniversaryEndDate),
+        };
+    }
+
+    if (maxDate < minDate) {
+        return {
+            code: RESPONSES.DATES.BAD_DATES,
+        };
+    }
+
+    const freeDaySearchStartDate = addUtcYears(today, -1);
+    const freeDaySearchEndDate = addUtcYears(today, 1);
+    const searchEndDate = addUtcDays(freeDaySearchEndDate, 1);
+    const [globalEvents, houseEvents] = await Promise.all([
+        getGlobalEventsInRange(freeDaySearchStartDate, searchEndDate),
+        getHouseEventsInRange(
+            employee.house_id,
+            freeDaySearchStartDate,
+            searchEndDate,
+        ),
+    ]);
+    const workdayNumbers = getWorkdayNumbers(workDays);
+    const nonWorkingWeekdays = [0, 1, 2, 3, 4, 5, 6].filter(
+        (day) => !workdayNumbers.includes(day),
+    );
+
+    return {
+        code: RESPONSES.EVENTS.FOUND,
+        data: {
+            employeeId,
+            mode: normalizedMode,
+            minDate: toDateOnly(minDate),
+            maxDate: toDateOnly(maxDate),
+            today: toDateOnly(today),
+            workDays: workDays.map((workDay) => ({
+                workdayId: workDay.workday?.workday_id,
+                name: workDay.workday?.name,
+                weekday: spanishToDay(workDay.workday?.name),
+                start: workDay.start,
+                end: workDay.end,
+            })),
+            nonWorkingWeekdays,
+            freeDays: getFreeDayDates(
+                [...houseEvents, ...globalEvents],
+                freeDaySearchStartDate,
+                freeDaySearchEndDate,
+            ),
+            vacationPeriod,
+            remainingVacations,
         },
     };
 };

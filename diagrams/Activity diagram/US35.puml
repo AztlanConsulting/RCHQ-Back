@@ -26,7 +26,7 @@ else (No)
 :Mostrar error "Rol no permitido";
 stop
 endif
-
+ 
 :Validar privilegio para gestionar empleados/vacaciones;
 
 if (¿Tiene privilegio?) then (Sí)
