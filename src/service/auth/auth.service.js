@@ -685,9 +685,9 @@ async function refreshSession(refreshToken, ipAddress) {
     }
 
     const newToken = await buildSessionToken(employee);
-    const newRefreshToken = generateRefreshToken(employee);
+    const newRefreshToken = refreshToken;
 
-    const rotated = await User.rotateRefreshToken(employeeId, refreshToken, newRefreshToken);
+    const rotated = employee.refreshToken === refreshToken;
 
     if (!rotated) {
         await User.clearRefreshToken(employeeId);
