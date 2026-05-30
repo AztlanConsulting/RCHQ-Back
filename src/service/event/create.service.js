@@ -14,6 +14,7 @@ const {
     findOverlappingHouseEvents,
     findOverlappingEmployees,
     getEmployeesInHouse,
+    getEventTypeById,
 } = require("../../model/event/get.model");
 const {
     addOneDay,
@@ -119,7 +120,27 @@ exports.createPersonalEvent = async (user, payload, clientIp) => {
         end: endInput,
         employeeIds: employeeIdsInput,
         forceOverlap = false,
+        trainer = null,
     } = parsed.data;
+
+    const eventType = await getEventTypeById(eventTypeId);
+    if (!eventType) {
+        return { code: RESPONSES.EVENTS.NOT_FOUND };
+    }
+
+    const isTraining = eventType.name.toLowerCase() === "capacitaciones";
+    if (isTraining && !trainer?.trim()) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+            data: {
+                errors: {
+                    fieldErrors: {
+                        trainer: ["El nombre del capacitador es obligatorio para capacitaciones."],
+                    },
+                },
+            },
+        };
+    }
 
     const employeeIdsResult = resolveEmployeeIds(
         user,
@@ -173,6 +194,7 @@ exports.createPersonalEvent = async (user, payload, clientIp) => {
         description,
         allDay,
         employeeIds,
+        trainer: isTraining ? trainer : null,
     });
 
     let warning = null;
