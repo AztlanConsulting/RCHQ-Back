@@ -65,6 +65,7 @@ describe("dates.util", () => {
                         start: new Date("2026-05-04T00:00:00Z"),
                         end: new Date("2026-05-05T00:00:00Z"),
                         isFreeDay: true,
+                        allDay: true,
                     },
                 ],
             );
