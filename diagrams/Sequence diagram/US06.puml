@@ -1,5 +1,5 @@
 @startuml
-title Diagrama de Secuencia - US06 POST /auth/refresh
+title US 06 - Mantener inicio de sesion seguro
 
 actor Usuario
 boundary "Frontend\nsecureFetchWrapper" as Front
