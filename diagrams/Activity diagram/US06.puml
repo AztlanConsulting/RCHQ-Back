@@ -1,49 +1,71 @@
 @startuml
-title US 06 - Mantener inicio de sesión seguro
+title US 06 - Mantener inicio de sesion seguro
+
 |Usuario|
 start
-:Navega en la aplicación;
+:Navega en la aplicacion;
 
-|Sistema|
-:Detecta que el accessToken expiró\no una petición regresó 401;
-:Ejecuta POST /auth/refresh\n(El navegador envía la Cookie HttpOnly automáticamente);
-:Aplica apiLimiter (rate limit);
-:auth.controller.js \n Extrae req.cookies.refreshToken;
+|Frontend|
+:Envia una peticion protegida con accessToken;
 
-if (¿Existe el token en la petición?) then (Sí)
-    :jwt.js \n Decodifica y verifica firma (decodeToken);
-    if (¿Token es válido y su tokenType es "REFRESH"?) then (Sí)
-        :auth.model.js \n Busca al empleado por ID (getEmployeeById);
-        if (¿Empleado existe y está activo?) then (Sí)
-            if (¿El token coincide con el guardado en BD?) then (Sí)
-                :Genera un nuevo accessToken (SESSION);
-                :Genera un nuevo refreshToken (REFRESH);
-                :auth.model.js \n Guarda el nuevo refreshToken en BD (saveRefreshToken);
-                :auth.controller.js \n Configura res.cookie con el nuevo token;
-                :Retorna 200 REFRESH_SUCCESS y el nuevo accessToken;
-            else (No - Prevención de robo/reuso)
-                :auth.model.js \n Borra refreshToken de la BD (clearRefreshToken);
-                :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
-                :Retorna 401 INVALID_REFRESH_TOKEN (Sesión inválida);
-            endif
-        else (No)
-            :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
-            :Retorna 403 INVALID_REFRESH_TOKEN (Acceso denegado);
-        endif
-    else (No)
-        :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
-        :Retorna 401 INVALID_REFRESH_TOKEN (Token expirado/inválido);
-    endif
+|Backend|
+if (La peticion responde 401?) then (Si)
 else (No)
-    :auth.controller.js \n Ejecuta res.clearCookie("refreshToken");
-    :Retorna 401 INVALID_REFRESH_TOKEN (No proporcionado);
+    :Retorna la respuesta normal;
+    |Usuario|
+    stop
 endif
 
-if (¿La respuesta es 200 OK?) then (Sí)
-    :Actualiza accessToken en memoria;
-    :Reintenta la petición original fallida;
+|Frontend|
+:secureFetchWrapper detecta 401;
+if (Ya hay un refresh en curso?) then (Si)
+    :Espera el refresh compartido;
 else (No)
-    :Redirige a la pantalla de Login\n(Sesión expirada);
+    :Inicia POST /auth/refresh;
+endif
+
+|Backend|
+:El navegador envia la cookie HttpOnly automaticamente;
+:Aplica apiLimiter;
+:auth.controller.js extrae req.cookies.refreshToken;
+
+if (Existe refreshToken en la cookie?) then (Si)
+    :jwt.js decodifica y verifica firma;
+    if (Token valido y tokenType == "REFRESH"?) then (Si)
+        :auth.model.js busca empleado por ID;
+        if (Empleado existe y esta activo?) then (Si)
+            if (refreshToken coincide con el guardado en BD?) then (Si)
+                :Genera nuevo accessToken SESSION\ncon el mismo sessionId;
+                :Conserva el mismo refreshToken;
+                :auth.controller.js renueva la cookie HttpOnly;
+                :Elimina refreshToken del body de respuesta;
+                :Retorna 200 REFRESH_SUCCESS\ncon el nuevo accessToken;
+            else (No - token robado o reuso)
+                :auth.model.js borra refreshToken en BD;
+                :auth.controller.js limpia cookie refreshToken;
+                :Retorna 401 INVALID_REFRESH_TOKEN\n(Sesion invalida);
+            endif
+        else (No)
+            :auth.controller.js limpia cookie refreshToken;
+            :Retorna 403 INVALID_REFRESH_TOKEN\n(Acceso denegado);
+        endif
+    else (No)
+        :auth.controller.js limpia cookie refreshToken;
+        :Retorna 401 INVALID_REFRESH_TOKEN\n(Token expirado o invalido);
+    endif
+else (No)
+    :auth.controller.js limpia cookie refreshToken;
+    :Retorna 401 INVALID_REFRESH_TOKEN\n(Token no proporcionado);
+endif
+
+|Frontend|
+if (Refresh respondio 200?) then (Si)
+    :Guarda el nuevo accessToken;
+    :Notifica a otras peticiones/pestanas;
+    :Reintenta la peticion original\ncon el accessToken nuevo;
+else (No)
+    :Limpia estado local de autenticacion;
+    :Redirige a Login\n(Sesion expirada);
 endif
 
 |Usuario|
