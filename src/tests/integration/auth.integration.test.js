@@ -291,6 +291,35 @@ describe("POST /auth/refresh - integration", () => {
         expect(res.statusCode).toBe(401);
         expect(res.body.code).toBe("INVALID_REFRESH_TOKEN");
     });
+
+    it("permite refresh concurrentes con la misma cookie sin invalidar la sesion", async () => {
+        await createTestEmployee();
+        const refreshToken = generateTestRefreshToken();
+
+        await prisma.employee.update({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+            data: { refresh_token: refreshToken }
+        });
+
+        const [firstRes, secondRes] = await Promise.all([
+            request(app)
+                .post("/auth/refresh")
+                .set("Cookie", [`refreshToken=${refreshToken}`]),
+            request(app)
+                .post("/auth/refresh")
+                .set("Cookie", [`refreshToken=${refreshToken}`]),
+        ]);
+
+        expect(firstRes.statusCode).toBe(200);
+        expect(secondRes.statusCode).toBe(200);
+        expect(firstRes.body.data).toHaveProperty("token");
+        expect(secondRes.body.data).toHaveProperty("token");
+
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+        expect(emp.refresh_token).toBe(refreshToken);
+    });
 });
 
 describe("POST /auth/logout - integration", () => {
