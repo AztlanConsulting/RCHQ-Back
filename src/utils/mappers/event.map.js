@@ -103,6 +103,7 @@ exports.mapPersonalCalendarEvent = (event) => {
         color: "#D58936",
         allDay: event.all_day,
         peopleInsideEvent: peopleData,
+        trainer: event.trainer ?? null,
     };
 };
 
@@ -120,6 +121,7 @@ exports.mapPersonalEvent = (event, options = {}) => {
         allDay: event.all_day,
         isDeleted: event.is_deleted,
         employeeIds: options.employeeIds,
+        trainer: event.trainer ?? null,
     };
 };
 
