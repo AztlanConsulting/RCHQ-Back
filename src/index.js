@@ -26,6 +26,11 @@ app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+app.use("/uploads", (req, res) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/404`);
+});
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(origin => origin);
 
 app.use(cors({
@@ -59,6 +64,12 @@ app.use("/health", (req, res) => {
 });
 
 app.use(errorHandler);
+
+app.use("/", (req, res) => {
+  res.status(404).json({
+    message: "Elemento no encontrado",
+  });
+});
 
 if (require.main === module) {
     app.listen(port, () => {
