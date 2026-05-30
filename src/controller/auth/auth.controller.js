@@ -5,7 +5,7 @@ const { getClientIp } = require("../../utils/ip");
 const COOKIE_OPTIONS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.REFRESH_COOKIE_SAMESITE || "lax",
     path: "/",
 };
 
