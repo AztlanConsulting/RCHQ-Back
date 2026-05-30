@@ -807,7 +807,7 @@ SELECT
   '2026-05-12',
   '2026-05-14',
   'Incapacidad médica de seguimiento para revisión postoperatoria.',
-  'https://example.com/justificante-medico-maria',
+  '',
   false
 FROM public.employee e
 WHERE e.email = 'maria.operaciones@example.com'
@@ -837,7 +837,7 @@ SELECT
   '2026-05-18',
   '2026-05-22',
   'Permiso por paternidad del coordinador de la Casa María Goretti I.A.P.',
-  'https://example.com/permiso-paternidad-luis',
+  '',
   false
 FROM public.employee e
 WHERE e.email = 'luis.coordinacion@example.com'
@@ -868,7 +868,7 @@ VALUES
   '2026-05-01',
   '2026-05-05',
   'Consulta medica y reposo indicado',
-  'https://example.com/ausencias/andre-consulta-medica.pdf',
+  '',
   false
 ),
 (
@@ -878,7 +878,7 @@ VALUES
   '2026-05-12',
   '2026-05-12',
   'Permiso por tramite familiar',
-  'https://example.com/ausencias/andre-permiso-familiar.pdf',
+  '',
   false
 ),
 (
@@ -888,7 +888,7 @@ VALUES
   '2026-06-18',
   '2026-06-19',
   'Seguimiento medico programado',
-  'https://example.com/ausencias/andre-seguimiento-medico.pdf',
+  '',
   false
 ),
 (
@@ -898,7 +898,7 @@ VALUES
   '2026-05-01',
   '2026-05-08',
   'Reposo de Laura con cruce de evento global y evento de casa',
-  'https://example.com/ausencias/laura-reposo-mayo.pdf',
+  '',
   false
 ),
 (
@@ -908,7 +908,7 @@ VALUES
   '2026-05-20',
   '2026-05-22',
   'Permiso de Laura con dos eventos libres de mayo',
-  'https://example.com/ausencias/laura-permiso-mayo.pdf',
+  '',
   false
 )
 ON CONFLICT (absence_id) DO UPDATE SET
