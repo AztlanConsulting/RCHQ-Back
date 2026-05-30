@@ -1,15 +1,66 @@
 @startuml
-title US 06 - Mantener inicio de sesion seguro
+title Diagrama de Secuencia - US06 Sesion segura y sesion unica
 
 actor Usuario
-boundary "Frontend\nsecureFetchWrapper" as Front
-boundary "auth.route.js\nPOST /refresh" as Route
-control "auth.controller.js\nrefreshToken()" as Controller
-control "auth.service.js\nrefreshSession()" as Service
-control "jwt.js\ndecodeToken()" as JWT
+boundary "Frontend" as Front
+boundary "auth.route.js" as Route
+control "auth.controller.js" as Controller
+control "auth.service.js" as Service
+control "jwt.js" as JWT
 control "authTokens.js\nbuildSessionToken()" as AuthTokens
-entity "auth.model.js\ngetEmployeeById()\nclearRefreshToken()" as Model
+entity "auth.model.js" as Model
 database "PostgreSQL\nPrisma" as BD
+
+== Creacion de sesion: solo una sesion activa por cuenta ==
+
+Usuario -> Front : Envia credenciales\no codigo 2FA
+Front -> Route : POST /auth/login\no POST /auth/2fa/login/validate
+Route -> Controller : login(req, res)\no validateTwoFactorAuth(req, res)
+Controller ->> Service : login(req)\no validateTwoFactorAuth(req)
+
+Service ->> Model : findEmployeeByEmail()\no getEmployeeById()
+Model ->> BD : Busca empleado
+BD -->> Model : DB_ROW
+Model -->> Service : employee
+Service -> Service : Valida password / TOTP / estado activo
+
+alt employee.refreshToken existe en BD
+    Service -> JWT : decodeToken(employee.refreshToken)
+    JWT --> Service : decodedRefresh
+
+    alt decodedRefresh.tokenType == "REFRESH"
+        Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
+        Controller --> Front : 409 Ya existe una sesion activa
+        Front --> Usuario : Muestra mensaje y no inicia sesion
+    else refresh viejo, expirado o invalido
+        Service ->> Model : clearRefreshToken(employee.employeeId)
+        Model ->> BD : prisma.employee.update({ refresh_token: null })
+        BD -->> Model : success
+        Model -->> Service : void
+        Service -> Service : Continua creacion de nueva sesion
+    end
+else no hay refreshToken en BD
+    Service -> Service : Continua creacion de nueva sesion
+end
+
+alt nueva sesion permitida
+    Service -> Service : sessionId = randomUUID()
+    Service -> AuthTokens : buildSessionToken(employee, sessionId)
+    AuthTokens --> Service : accessToken (SESSION)
+    Service -> JWT : generateRefreshToken(employee, sessionId)
+    JWT --> Service : refreshToken (REFRESH)
+    Service ->> Model : saveRefreshToken(employee.employeeId, refreshToken)
+    Model ->> BD : prisma.employee.update({ refresh_token: refreshToken })
+    BD -->> Model : success
+    Model -->> Service : void
+    Service -->> Controller : { status: 200, data: { token, refreshToken } }
+    Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
+    Controller -> Controller : delete result.body.data.refreshToken
+    Controller --> Front : 200 { data: { token } }
+    Front --> Usuario : Entra a la aplicacion
+end
+
+== Renovacion de sesion: refresh compartido entre peticiones ==
 
 Usuario -> Front : Navega y dispara peticion protegida
 Front -> Route : Request con accessToken
@@ -39,7 +90,6 @@ else no existe refresh en curso
             Service ->> Model : getEmployeeById(decoded.id)
             Model ->> BD : prisma.employee.findUnique(employee_id)
             BD -->> Model : DB_ROW
-            Model -> Model : mapEmployee(DB_ROW)
             Model -->> Service : employee
 
             alt employee == null o employee.isActive == false
@@ -61,7 +111,7 @@ else no existe refresh en curso
                 Service -->> Controller : { status: 200, code: "REFRESH_SUCCESS", data: { token, refreshToken } }
                 Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
                 Controller -> Controller : delete result.body.data.refreshToken
-                Controller --> Front : 200 { success: true, data: { token } }
+                Controller --> Front : 200 { data: { token } }
             end
         end
     end

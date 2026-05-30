@@ -33,7 +33,7 @@ const verifyToken = async (req, res, next) => {
             ) {
                 return res
                     .status(401)
-                    .json({ success: false, message: "SesiÃ³n no activa" });
+                    .json({ success: false, message: "Sesión no activa" });
             }
         }
 

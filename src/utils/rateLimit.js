@@ -41,7 +41,7 @@ exports.apiLimiter = rateLimit({
 
 exports.authLimiter = rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 3,
+    max: 9,
     skip: (req) => process.env.NODE_ENV === "test",
     message: {
         success: false,

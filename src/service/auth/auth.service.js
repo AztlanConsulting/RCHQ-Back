@@ -21,7 +21,7 @@ const { randomUUID } = require("crypto");
 
 const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
-const MAX_LOGIN_ATTEMPTS = 5;
+const MAX_LOGIN_ATTEMPTS = 12;
 
 const buildSessionAlreadyActiveResult = () => ({
     status: 409,
