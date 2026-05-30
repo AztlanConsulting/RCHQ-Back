@@ -23,7 +23,7 @@
 - [ ] Estilos
 - [ ] Pruebas
 - [ ] Refactoriza
-- [ ] Correción de error(es)
+- [ ] Resuelve defectos
 - [ ] He modificado la seed
 - [ ] Modificación a la base de datos
 - [ ] Resuelve inconsistencias
