@@ -31,7 +31,7 @@ exports.deleteAbsence = async (req, res) => {
         if (result.code === RESPONSES.ABSENCE.OUT_OF_SCOPE) {
             return res.status(403).json({
                 success: false,
-                message: "No puede acceder a este recurso",
+                message: "Permisos insuficientes",
             });
         }
 

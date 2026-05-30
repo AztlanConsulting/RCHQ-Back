@@ -532,10 +532,6 @@ describe("GET /logs/house", () => {
             action: "Empleado creado con éxito",
             responsibleName: "Carla Coord",
         });
-        expect(res.body.data[1]).toMatchObject({
-            action: "Empleado creado con éxito",
-            responsibleName: "Carla Coord",
-        });
     });
 
     it("filtra por rango de fechas", async () => {

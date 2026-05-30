@@ -177,18 +177,14 @@ describe("POST /auth/login - integration", () => {
         expect(emp.failed_login_attempts).toBe(1);
     });
 
-    it("bloquea la cuenta en BD después de 3 intentos fallidos", async () => {
+    it("bloquea la cuenta en BD después de 5 intentos fallidos", async () => {
         await createTestEmployee();
 
-        await request(app)
-            .post("/auth/login")
-            .send({ email: TEST_EMAIL, password: "wrong" });
-        await request(app)
-            .post("/auth/login")
-            .send({ email: TEST_EMAIL, password: "wrong" });
-        await request(app)
-            .post("/auth/login")
-            .send({ email: TEST_EMAIL, password: "wrong" });
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            await request(app)
+                .post("/auth/login")
+                .send({ email: TEST_EMAIL, password: "wrong" });
+        }
         const emp = await prisma.employee.findUnique({
             where: { employee_id: TEST_EMPLOYEE_ID },
         });
@@ -294,6 +290,35 @@ describe("POST /auth/refresh - integration", () => {
         
         expect(res.statusCode).toBe(401);
         expect(res.body.code).toBe("INVALID_REFRESH_TOKEN");
+    });
+
+    it("permite refresh concurrentes con la misma cookie sin invalidar la sesion", async () => {
+        await createTestEmployee();
+        const refreshToken = generateTestRefreshToken();
+
+        await prisma.employee.update({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+            data: { refresh_token: refreshToken }
+        });
+
+        const [firstRes, secondRes] = await Promise.all([
+            request(app)
+                .post("/auth/refresh")
+                .set("Cookie", [`refreshToken=${refreshToken}`]),
+            request(app)
+                .post("/auth/refresh")
+                .set("Cookie", [`refreshToken=${refreshToken}`]),
+        ]);
+
+        expect(firstRes.statusCode).toBe(200);
+        expect(secondRes.statusCode).toBe(200);
+        expect(firstRes.body.data).toHaveProperty("token");
+        expect(secondRes.body.data).toHaveProperty("token");
+
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+        expect(emp.refresh_token).toBe(refreshToken);
     });
 });
 

@@ -1,14 +1,21 @@
+const {
+    calculateMexicoDateRangeDays,
+    dateRangeToMexicoCalendarInterval,
+} = require("../event/dateTime");
+
 exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
-    const calendarEnd = new Date(absence.end);
-    calendarEnd.setUTCDate(calendarEnd.getUTCDate() + 1);
+    const { start, end } = dateRangeToMexicoCalendarInterval(
+        absence.start,
+        absence.end,
+    );
 
     return {
         absenceId: absence.absence_id,
         employeeId: absence.employee.employee_id,
         name: `${absence.employee.name} ${absence.employee.surname}`.trim(),
         curp: absence.employee.curp,
-        start: absence.start,
-        end: calendarEnd,
+        start,
+        end,
         startDate: absence.start,
         endDate: absence.end,
         type: absence.absence_type.name,
@@ -17,6 +24,7 @@ exports.mapHouseAbsenceCalendarEvent = (absence, usedDays) => {
         link: absence.url || "",
         isDeleted: absence.is_deleted,
         usedDays,
+        totalDays: calculateMexicoDateRangeDays(absence.start, absence.end),
         focus: "ausencias",
         scope: "house",
         color: "#A8201A",

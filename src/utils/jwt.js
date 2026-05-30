@@ -1,9 +1,9 @@
 const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET;
-const sessionExpiresIn = "10m";
-const firstLoginExpiresIn = "15m";
-const preTwoFactorAuthExpiresIn = "10m";
-const refreshExpiresIn = "1d";
+const sessionExpiresIn = process.env.JWT_SESSION_EXPIRES_IN || "10m";
+const firstLoginExpiresIn = process.env.JWT_FIRST_LOGIN_EXPIRES_IN || "10m";
+const preTwoFactorAuthExpiresIn = process.env.JWT_PRE_TWO_FACTOR_AUTH_EXPIRES_IN || "10m";
+const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || "1d";
 
 const generateToken = (user) => {
     return jwt.sign(
