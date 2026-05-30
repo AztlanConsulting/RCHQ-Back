@@ -10,7 +10,7 @@
 -- =========================
 INSERT INTO public.house (house_id, name, location, phone_number, description, image)
 VALUES 
-('a0000001-0000-4000-8000-000000000001', 'Desarrollo', 'Tec de Monterrey', '4424792232', 'Casa de desarrollo', ''),
+('a0000001-0000-4000-8000-000000000001', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house'),
 ('a0000001-0000-4000-8000-000000000002', 'Sonríe villa infantil', 'Querétaro, Qro.', '4420000001', 'Institución de asistencia infantil', 'default_house'),
 ('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'Querétaro, Qro.', '4420000002', 'Hogar para niños y niñas', 'default_house'),
 ('a0000001-0000-4000-8000-000000000004', 'Casa Hogar Esperanza Para ti', 'Querétaro, Qro.', '4420000003', 'Apoyo integral a la infancia', 'default_house'),
@@ -21,8 +21,7 @@ VALUES
 ('a0000001-0000-4000-8000-000000000009', 'Hogares Providencia de Querétaro', 'Querétaro, Qro.', '4420000008', 'Protección a niños en situación de calle', 'default_house'),
 ('a0000001-0000-4000-8000-000000000010', 'Proyecto de Vida I.A.P', 'Querétaro, Qro.', '4420000009', 'Desarrollo humano y social', 'default_house'),
 ('a0000001-0000-4000-8000-000000000011', 'Puerta Abierta I.A.P', 'Querétaro, Qro.', '4420000010', 'Atención a niñas y adolescentes', 'default_house'),
-('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'Querétaro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house'),
-('a0000001-0000-4000-8000-000000000013', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house')
+('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'Querétaro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -225,7 +224,7 @@ INSERT INTO public.employee (
 )
 VALUES (
   'b8f54b14-701e-4e87-a019-caef53dcda99',
-  (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT house_id FROM public.house  WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
   (SELECT role_id  FROM public.role   WHERE name = 'Administrador'      LIMIT 1),
   'Carlos',
   'Ramírez',
@@ -248,7 +247,7 @@ VALUES (
   'nomina'
 ), (
   'b8f54b14-701e-4e87-a019-caef53dcda70',
-  (SELECT house_id FROM public.house  WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT house_id FROM public.house  WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
   (SELECT role_id  FROM public.role   WHERE name = 'Mantenimiento' LIMIT 1),
   'Laura',
   'Mendoza',
@@ -412,7 +411,7 @@ INSERT INTO public.house_event (
 VALUES (
   'c2000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
   '2026-05-03 10:00:00',
   '2026-05-03 12:00:00',
   'Visita DIF',
@@ -422,7 +421,7 @@ VALUES (
 ), (
   'c2000000-0000-4000-8000-000000000010',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
   '2026-05-07 09:00:00',
   '2026-05-07 17:00:00',
   'Descanso de casa de prueba',
@@ -432,7 +431,7 @@ VALUES (
 ), (
   'c2000000-0000-4000-8000-000000000011',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+  (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
   '2026-05-21 09:00:00',
   '2026-05-21 17:00:00',
   'Jornada libre de casa',
@@ -484,69 +483,6 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO public.vacations_request (
-  vacations_request_id,
-  employee_id,
-  start,
-  "end",
-  status,
-  feedback,
-  created_at,
-  used_days
-)
-VALUES (
-  'c4000000-0000-4000-8000-000000000004',
-  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
-  '2026-05-06',
-  '2026-05-12',
-  0,
-  NULL,
-  NOW(),
-  4
-);
-
-INSERT INTO public.vacations_request (
-  vacations_request_id,
-  employee_id,
-  start,
-  "end",
-  status,
-  feedback,
-  created_at,
-  used_days
-)
-VALUES (
-  'c4000000-0000-4000-9000-000000000004',
-  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
-  '2026-05-15',
-  '2026-05-19',
-  1,
-  NULL,
-  NOW(),
-  3
-);
-
-INSERT INTO public.vacations_request (
-  vacations_request_id,
-  employee_id,
-  start,
-  "end",
-  status,
-  feedback,
-  created_at,
-  used_days
-)
-VALUES (
-  'c4000000-0000-4000-1100-000000000004',
-  (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com'),
-  '2026-05-26',
-  '2026-05-28',
-  2,
-  NULL,
-  NOW(),
-  3
-);
-
 -- =========================
 -- DOCUMENTOS
 -- =========================
@@ -589,34 +525,11 @@ INSERT INTO public.house (
 )
 VALUES (
   'a0000001-0000-4000-8000-000000000001',
-  'Desarrollo',
-  'Campus Monterrey, Av. Eugenio Garza Sada 2501, Monterrey',
-  '524424792232',
-  'Casa de desarrollo y pruebas del sistema',
-  'https://placehold.co/100x100/e2e8f0/64748b?text=Dev'
-)
-ON CONFLICT (house_id) DO UPDATE SET
-  name = EXCLUDED.name,
-  location = EXCLUDED.location,
-  phone_number = EXCLUDED.phone_number,
-  description = EXCLUDED.description,
-  image = EXCLUDED.image;
-
-INSERT INTO public.house (
-  house_id,
-  name,
-  location,
-  phone_number,
-  description,
-  image
-)
-VALUES (
-  'b0000001-0000-4000-8000-000000000001',
-  'Operaciones CDMX',
-  'Insurgentes Sur 1000, Ciudad de México',
-  '525555100200',
-  'Casa de operaciones central',
-  'https://placehold.co/100x100/dbeafe/1e40af?text=OP'
+  'Casa María Goretti I.A.P',
+  'Querétaro, Qro.',
+  '4420000012',
+  'Atención especializada',
+  'default_house'
 )
 ON CONFLICT (house_id) DO UPDATE SET
   name = EXCLUDED.name,
@@ -667,7 +580,7 @@ INSERT INTO public.employee (
 )
 SELECT
   'e0000001-0000-4000-8000-000000000001',
-  'b0000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
   'María',
   'González',
@@ -719,7 +632,7 @@ INSERT INTO public.employee (
 )
 SELECT
   'e0000001-0000-4000-8000-000000000002',
-  'b0000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
   'Luis',
   'Martínez',
@@ -870,26 +783,6 @@ SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '08:00:00', '17:00
 FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.vacations_request (
-  vacations_request_id,
-  employee_id,
-  start,
-  "end",
-  status,
-  feedback,
-  created_at,
-  used_days
-)
-VALUES (
-  'c4000000-0000-4000-8000-000000000005',
-  (SELECT employee_id FROM public.employee WHERE email = 'maria.operaciones@example.com'),
-  '2026-06-10',
-  '2026-06-15',
-  0,
-  NULL,
-  NOW(),
-  4
-);
 INSERT INTO public.absence_type (absence_type_id, name)
 VALUES
 ('a0000001-0000-4000-8000-000000000001', 'Médica'),
@@ -943,7 +836,7 @@ SELECT
   'a0000001-0000-4000-8000-000000000002',
   '2026-05-18',
   '2026-05-22',
-  'Permiso por paternidad del coordinador de la casa de Operaciones CDMX.',
+  'Permiso por paternidad del coordinador de la Casa María Goretti I.A.P.',
   'https://example.com/permiso-paternidad-luis',
   false
 FROM public.employee e
@@ -1041,30 +934,6 @@ ON CONFLICT DO NOTHING;
 -- Password todos: Andatti67
 -- ============================================================
 
--- Casa externa para probar out of scope
-INSERT INTO public.house (
-  house_id,
-  name,
-  location,
-  phone_number,
-  description,
-  image
-)
-VALUES (
-  'a3000001-0000-4000-8000-000000000001',
-  'Casa Externa US30',
-  'Querétaro, Qro.',
-  '4423000001',
-  'Casa externa para pruebas US30',
-  'default_house'
-)
-ON CONFLICT (house_id) DO UPDATE SET
-  name = EXCLUDED.name,
-  location = EXCLUDED.location,
-  phone_number = EXCLUDED.phone_number,
-  description = EXCLUDED.description,
-  image = EXCLUDED.image;
-
 -- Acción requerida por logs de US30
 INSERT INTO public.action (action_id, description, important)
 VALUES (
@@ -1087,7 +956,7 @@ ON CONFLICT (action_id) DO UPDATE SET
   description = EXCLUDED.description,
   important = EXCLUDED.important;
 
--- Coordinador Desarrollo para US30
+-- Coordinador Maria Goretti para US30
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -1150,7 +1019,7 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Empleado válido Desarrollo
+-- Empleado válido Maria Goretti
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -1242,7 +1111,7 @@ INSERT INTO public.employee (
 )
 VALUES (
   'e3000001-0000-4000-8000-000000000003',
-  'a3000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
   'Empleado',
   'Otra Casa US30',
@@ -1627,17 +1496,6 @@ VALUES
   NOW(),
   3
 ),
--- Caso empleado Administrador, debe bloquearse para Coordinador
-(
-  'c3000000-0000-4000-8000-000000000005',
-  'e3000001-0000-4000-8000-000000000007',
-  '2026-05-11',
-  '2026-05-12',
-  0,
-  NULL,
-  NOW(),
-  2
-),
 -- Caso empleado sin días laborales
 (
   'c3000000-0000-4000-8000-000000000006',
@@ -1681,17 +1539,6 @@ VALUES
   NULL,
   NOW(),
   2
-),
--- Solicitud activa que consume días para provocar insuficiencia
-(
-  'c3000000-0000-4000-8000-000000000010',
-  'e3000001-0000-4000-8000-000000000002',
-  '2026-12-08',
-  '2026-12-19',
-  1,
-  NULL,
-  NOW(),
-  10
 ),
 -- Solicitud para fuera de rango
 (
@@ -1763,7 +1610,7 @@ INSERT INTO public.employee (
 )
 SELECT
     'e0000002-0000-4000-8000-000000000002',
-    (SELECT house_id FROM public.house WHERE name = 'Desarrollo' LIMIT 1),
+    (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
     (SELECT role_id  FROM public.role  WHERE name = 'Mantenimiento' LIMIT 1),
     'Luis',
     'Pérez',
@@ -1825,7 +1672,7 @@ ON CONFLICT (action_id) DO UPDATE SET
   description = EXCLUDED.description,
   important = EXCLUDED.important;
 
--- Coordinador Desarrollo US32
+-- Coordinador Maria Goretti US32
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -2233,17 +2080,6 @@ VALUES
   'e3200001-0000-4000-8000-000000000004',
   '2026-10-26',
   '2026-10-27',
-  0,
-  NULL,
-  NOW(),
-  2
-),
--- Caso out of scope: empleado Admin
-(
-  'c3200000-0000-4000-8000-000000000005',
-  'e3200001-0000-4000-8000-000000000005',
-  '2026-11-02',
-  '2026-11-03',
   0,
   NULL,
   NOW(),
