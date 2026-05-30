@@ -2,7 +2,7 @@
 
 ## Rama usada en el otro repositorio
 
-<!-- Si estás en back, escribir la de front -->
+<!-- Si estás en front, escribir la de back -->
 <!-- Si estás en back, escribir la de front -->
 
 ## Descripción
