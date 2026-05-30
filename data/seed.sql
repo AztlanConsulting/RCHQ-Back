@@ -1113,8 +1113,8 @@ VALUES (
   'e3000001-0000-4000-8000-000000000003',
   'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
-  'Empleado',
-  'Otra Casa US30',
+  'Manuel',
+  'Jímenez',
   true,
   'empleado.otracasa.us30@rchq.test',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -1489,17 +1489,6 @@ VALUES
 (
   'c3000000-0000-4000-8000-000000000004',
   'e3000001-0000-4000-8000-000000000003',
-  '2026-10-06',
-  '2026-10-08',
-  0,
-  NULL,
-  NOW(),
-  3
-),
--- Caso empleado sin días laborales
-(
-  'c3000000-0000-4000-8000-000000000006',
-  'e3000001-0000-4000-8000-000000000004',
   '2026-10-06',
   '2026-10-08',
   0,
