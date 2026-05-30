@@ -220,6 +220,31 @@ describe("POST /auth/login - integration", () => {
         expect(emp.failed_login_attempts).toBe(0);
         expect(emp.blocked_until).toBeNull();
     });
+
+    it("rechaza un segundo login de la misma cuenta y conserva la sesion previa", async () => {
+        await createTestEmployee();
+
+        const firstLogin = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+
+        const secondLogin = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+
+        const emp = await prisma.employee.findUnique({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+        });
+        const oldSessionStatus = await request(app)
+            .get("/auth/2fa/status")
+            .set("Authorization", `Bearer ${firstLogin.body.data.token}`);
+
+        expect(firstLogin.statusCode).toBe(200);
+        expect(secondLogin.statusCode).toBe(409);
+        expect(secondLogin.body.code).toBe("SESSION_ALREADY_ACTIVE");
+        expect(emp.refresh_token).toBeTruthy();
+        expect(oldSessionStatus.statusCode).toBe(200);
+    });
 });
 
 describe("POST /auth/2fa/setup - integration", () => {
