@@ -78,7 +78,9 @@ end
 deactivate Service
 
 Controller -> Router : res.status(200).json(data)
-Router -> Empleado: res.status(200).json(data)
 deactivate Controller
+activate Router
+Router -> Empleado: res.status(200).json(data)
+deactivate Router
 
 @enduml
