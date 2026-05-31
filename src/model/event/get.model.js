@@ -15,6 +15,13 @@ exports.getAllEventTypes = async () => {
     });
 };
 
+exports.getEventTypeById = async (eventTypeId) => {
+    return await prisma.event_type.findUnique({
+        where: { event_type_id: eventTypeId },
+        select: { event_type_id: true, name: true },
+    });
+};
+
 exports.findHouseEventByIdAndHouseId = async (eventId, houseId) => {
     const event = await prisma.house_event.findFirst({
         where: {

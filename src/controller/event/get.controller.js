@@ -9,7 +9,7 @@ const RESPONSES = require("../../utils/responses");
 
 exports.getAllEventTypes = async (req, res) => {
     try {
-        const result = await getAllEventTypes();
+        const result = await getAllEventTypes(req.user, req.query.scope);
 
         if (result.code == RESPONSES.EVENTS.NOT_FOUND) {
             return res.status(204).json({

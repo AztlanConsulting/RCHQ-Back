@@ -16,6 +16,7 @@ describe("createPersonalEvent service", () => {
     const houseId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
     const eventTypeId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
     const otherEmployeeId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    const trainingEventTypeId = "b1000000-0000-4000-8000-000000000004";
 
     const employeeUser = {
         id: employeeId,
@@ -48,10 +49,15 @@ describe("createPersonalEvent service", () => {
         description: null,
         allDay: false,
         employeeIds: [employeeId],
+        trainer: null,
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
+        getPersonalEventModel.getEventTypeById.mockResolvedValue({
+            event_type_id: eventTypeId,
+            name: "General",
+        });
     });
 
     describe("Caso exitoso — empleado crea evento para sí mismo", () => {
@@ -773,6 +779,123 @@ describe("createPersonalEvent service", () => {
                 "10.0.0.1",
                 expect.any(String),
             );
+        });
+    });
+
+    describe("Capacitaciones", () => {
+        const trainingPayload = {
+            name: "Capacitacion de primeros auxilios",
+            eventTypeId: trainingEventTypeId,
+            date: futureDate(30),
+            allDay: false,
+            start: "09:00",
+            end: "11:00",
+            trainer: "Dr. Juan Perez",
+            employeeIds: ["{employeeId}"],
+        };
+
+        beforeEach(() => {
+            getPersonalEventModel.getEventTypeById.mockResolvedValue({
+                event_type_id: trainingEventTypeId,
+                name: "Capacitaciones",
+            });
+        });
+
+        it("coordinador crea capacitacion con trainer y retorna CREATED", async () => {
+            getPersonalEventModel.getEmployeesInHouse.mockResolvedValue([
+                { employeeId },
+            ]);
+            getPersonalEventModel.findOverlappingEmployees.mockResolvedValue([]);
+            createModel.createPersonalEvent.mockResolvedValue({
+                ...mockCreatedEvent,
+                eventTypeId: trainingEventTypeId,
+                trainer: "Dr. Juan Perez",
+            });
+            createLog.mockResolvedValue();
+
+            const result = await createService.createPersonalEvent(
+                coordinatorUser,
+                { ...trainingPayload, employeeIds: [employeeId] },
+                "127.0.0.1",
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.CREATED);
+        });
+
+        it("pasa trainer al model cuando el evento es capacitacion", async () => {
+            getPersonalEventModel.getEmployeesInHouse.mockResolvedValue([
+                { employeeId },
+            ]);
+            getPersonalEventModel.findOverlappingEmployees.mockResolvedValue([]);
+            createModel.createPersonalEvent.mockResolvedValue({
+                ...mockCreatedEvent,
+                eventTypeId: trainingEventTypeId,
+                trainer: "Dr. Juan Perez",
+            });
+            createLog.mockResolvedValue();
+
+            await createService.createPersonalEvent(
+                coordinatorUser,
+                { ...trainingPayload, employeeIds: [employeeId] },
+                "127.0.0.1",
+            );
+
+            const createCall = createModel.createPersonalEvent.mock.calls[0][0];
+            expect(createCall.trainer).toBe("Dr. Juan Perez");
+        });
+
+        it("retorna VALIDATION_ERROR si el evento es capacitacion y no se envia trainer", async () => {
+            const result = await createService.createPersonalEvent(
+                coordinatorUser,
+                {
+                    ...trainingPayload,
+                    employeeIds: [employeeId],
+                    trainer: undefined,
+                },
+                "127.0.0.1",
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+            expect(result.data.errors.fieldErrors.trainer).toBeDefined();
+            expect(createModel.createPersonalEvent).not.toHaveBeenCalled();
+        });
+
+        it("retorna VALIDATION_ERROR si trainer es una cadena vacía", async () => {
+            const result = await createService.createPersonalEvent(
+                coordinatorUser,
+                { ...trainingPayload, employeeIds: [employeeId], trainer: "   " },
+                "127.0.0.1",
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+            expect(createModel.createPersonalEvent).not.toHaveBeenCalled();
+        });
+
+        it("pasa trainer=null al model cuando el evento NO es capacitacion", async () => {
+            getPersonalEventModel.getEventTypeById.mockResolvedValue({
+                event_type_id: eventTypeId,
+                name: "General",
+            });
+            getPersonalEventModel.getEmployeesInHouse.mockResolvedValue([
+                { employeeId },
+            ]);
+            getPersonalEventModel.findOverlappingEmployees.mockResolvedValue([]);
+            createModel.createPersonalEvent.mockResolvedValue(mockCreatedEvent);
+            createLog.mockResolvedValue();
+
+            await createService.createPersonalEvent(
+                coordinatorUser,
+                {
+                    ...trainingPayload,
+                    eventTypeId,
+                    employeeIds: [employeeId],
+                    trainer: "valor que debe ignorarse",
+                },
+                "127.0.0.1",
+            );
+
+            const createCall = createModel.createPersonalEvent.mock.calls[0][0];
+            expect(createCall.trainer).toBeNull();
         });
     });
 
