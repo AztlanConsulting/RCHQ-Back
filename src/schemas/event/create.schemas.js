@@ -397,20 +397,20 @@ exports.globalEventCreateSchema = z
     })
     .superRefine((data, ctx) => {
         if (data.allDay) {
-            if (!DATE_ONLY_REGEX.test(data.start)) {
+            if (!isDateOrDateTimeWithTimezone(data.start)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["start"],
                     message:
-                        "Para eventos de todo el día, start debe tener formato YYYY-MM-DD.",
+                        "Para eventos de todo el día, el inicio debe ser una fecha válida.",
                 });
             }
-            if (!DATE_ONLY_REGEX.test(data.end)) {
+            if (!isDateOrDateTimeWithTimezone(data.end)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
                     path: ["end"],
                     message:
-                        "Para eventos de todo el día, end debe tener formato YYYY-MM-DD.",
+                        "Para eventos de todo el día, el final debe ser una fecha válida.",
                 });
             }
             return;
@@ -448,10 +448,15 @@ exports.globalEventCreateSchema = z
         let end;
 
         if (data.allDay) {
-            start = dateOnlyToMexicoUtcStart(new Date(data.start));
-            end = dateOnlyToMexicoUtcStart(new Date(data.end));
-            if (!isNaN(end.getTime())) {
-                end = new Date(end.getTime() + ONE_DAY_MS);
+            if (DATE_ONLY_REGEX.test(data.start)) {
+                start = dateOnlyToMexicoUtcStart(new Date(data.start));
+                end = dateOnlyToMexicoUtcStart(new Date(data.end));
+                if (!isNaN(end.getTime())) {
+                    end = new Date(end.getTime() + ONE_DAY_MS);
+                }
+            } else {
+                start = new Date(data.start);
+                end = new Date(data.end);
             }
         } else {
             start = new Date(data.start);
