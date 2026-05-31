@@ -1,22 +1,18 @@
 <!-- El título del PR deberá estar relacionado a los cambios realizados -->
 
 ## Rama usada en el otro repositorio
-
 <!-- Si estás en front, escribir la de back -->
 <!-- Si estás en back, escribir la de front -->
 
 ## Descripción
-
 <!-- Descripción breve de los cambios realizados -->
 
 
 ## Detalles técnicos
-
 <!-- Explicar alguna funcionalidad compleja que se haya implementado -->
 
 
 ## Tipo de cambio
-
 <!-- Marca con una 'x' la opción que aplique -->
 
 - [ ] Nueva funcionalidad
@@ -32,8 +28,8 @@
 - [ ] Otro (especificar):
 
 ## ¿Cómo se ha probado?
-
 <!-- Describe las pruebas realizadas -->
+
 - [ ] Test unitario
 - [ ] Test de integración
 - [ ] Matriz de pruebas
