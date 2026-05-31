@@ -4,10 +4,12 @@ const {
     findPersonalEventById,
     getEmployeesInHouse,
     findOverlappingEmployees,
+    getEventTypeById,
 } = require("../../model/event/get.model");
 const {
     updateHouseEvent,
     updatePersonalEvent: updatePersonalEventModel,
+    updatePersonalEventEmployees,
 } = require("../../model/event/update.model");
 const { createLog } = require("../../model/log.model");
 const { LOG_ACTIONS } = require("../../utils/logActions");
@@ -15,7 +17,9 @@ const RESPONSES = require("../../utils/responses");
 const {
     houseEventUpdateSchema,
     updatePersonalEventSchema,
+    updatePastPersonalEventSchema,
 } = require("../../schemas/event/update.schemas");
+const { getTodayStr } = require("../../utils/event/dateTime");
 const { ROLES } = require("../../utils/roles");
 const {
     addOneDay,
@@ -101,6 +105,109 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
         return { code: RESPONSES.USER.NOT_ACCESS };
     }
 
+    const existingEvent = await findPersonalEventById(eventId, user.houseId);
+    if (!existingEvent) {
+        return { code: RESPONSES.EVENTS.NOT_FOUND };
+    }
+
+    const eventDateStr = existingEvent.date.toISOString().slice(0, 10);
+    const isPast = eventDateStr < getTodayStr();
+
+    if (isPast) {
+        const parsed = updatePastPersonalEventSchema.safeParse(payload);
+        if (!parsed.success) {
+            return {
+                code: RESPONSES.EVENTS.VALIDATION_ERROR,
+                data: { errors: parsed.error.flatten() },
+            };
+        }
+
+        const { employeeIds: employeeIdsInput, trainer = null } = parsed.data;
+
+        const eventType = await getEventTypeById(existingEvent.event_type_id);
+        const isTraining = eventType?.name.toLowerCase() === "capacitaciones";
+        if (isTraining && !trainer?.trim()) {
+            return {
+                code: RESPONSES.EVENTS.VALIDATION_ERROR,
+                data: {
+                    errors: {
+                        fieldErrors: {
+                            trainer: [
+                                "El nombre del instructor es obligatorio para capacitaciones.",
+                            ],
+                        },
+                    },
+                },
+            };
+        }
+
+        const employeeIdsResult = resolveEmployeeIds(
+            user,
+            employeeIdsInput,
+            false,
+        );
+        if (employeeIdsResult.code) {
+            return employeeIdsResult;
+        }
+        const { employeeIds } = employeeIdsResult;
+
+        const foundEmployees = await getEmployeesInHouse(
+            employeeIds,
+            user.houseId,
+        );
+        if (foundEmployees.length !== employeeIds.length) {
+            return { code: RESPONSES.EMPLOYEE.NOT_FOUND };
+        }
+
+        const oldEmployeeIds = existingEvent.employee_personal_event.map(
+            (ep) => ep.employee_id,
+        );
+
+        const personalEvent = await updatePersonalEventEmployees(
+            eventId,
+            employeeIds,
+            isTraining ? trainer : null,
+        );
+
+        const changedEmployeeIds = [
+            ...oldEmployeeIds.filter((id) => !employeeIds.includes(id)),
+            ...employeeIds.filter((id) => !oldEmployeeIds.includes(id)),
+        ];
+
+        let warning = null;
+        try {
+            await createLog(
+                user.id,
+                LOG_ACTIONS.PERSONAL_EVENT_UPDATED,
+                clientIp,
+                eventId,
+            );
+            if (changedEmployeeIds.length > 0) {
+                await Promise.all(
+                    changedEmployeeIds.map((employeeId) =>
+                        createLog(
+                            user.id,
+                            LOG_ACTIONS.PERSONAL_EVENT_EMPLOYEE_UPDATED,
+                            clientIp,
+                            employeeId,
+                        ),
+                    ),
+                );
+            }
+        } catch (error) {
+            console.error(
+                "Error creando logs de actualización de evento pasado:",
+                error,
+            );
+            warning = "Evento actualizado pero los logs fallaron";
+        }
+
+        return {
+            code: RESPONSES.EVENTS.UPDATED,
+            data: { personalEvent, warning },
+        };
+    }
+
     const parsed = updatePersonalEventSchema.safeParse(payload);
 
     if (!parsed.success) {
@@ -120,7 +227,29 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
         end: endInput,
         employeeIds: employeeIdsInput,
         forceOverlap = false,
+        trainer = null,
     } = parsed.data;
+
+    const eventType = await getEventTypeById(eventTypeId);
+    if (!eventType) {
+        return { code: RESPONSES.EVENTS.NOT_FOUND };
+    }
+
+    const isTraining = eventType.name.toLowerCase() === "capacitaciones";
+    if (isTraining && !trainer?.trim()) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+            data: {
+                errors: {
+                    fieldErrors: {
+                        trainer: [
+                            "El nombre del instructor es obligatorio para capacitaciones.",
+                        ],
+                    },
+                },
+            },
+        };
+    }
 
     const employeeIdsResult = resolveEmployeeIds(
         user,
@@ -131,11 +260,6 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
         return employeeIdsResult;
     }
     const { employeeIds } = employeeIdsResult;
-
-    const existingEvent = await findPersonalEventById(eventId, user.houseId);
-    if (!existingEvent) {
-        return { code: RESPONSES.EVENTS.NOT_FOUND };
-    }
 
     const foundEmployees = await getEmployeesInHouse(employeeIds, user.houseId);
     if (foundEmployees.length !== employeeIds.length) {
@@ -155,7 +279,11 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
         excludeEventId: eventId,
     });
 
-    const overlapError = getOverlapError(user, overlappedEmployees, forceOverlap);
+    const overlapError = getOverlapError(
+        user,
+        overlappedEmployees,
+        forceOverlap,
+    );
     if (overlapError) {
         return overlapError;
     }
@@ -174,6 +302,7 @@ exports.updatePersonalEvent = async (eventId, user, payload, clientIp) => {
         allDay,
         description,
         employeeIds,
+        trainer: isTraining ? trainer : null,
     });
 
     const changedEmployeeIds = [
