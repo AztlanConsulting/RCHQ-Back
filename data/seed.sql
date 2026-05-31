@@ -483,6 +483,60 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+INSERT INTO public.personal_event (
+  personal_event_id,
+  event_type_id,
+  date,
+  start,
+  "end",
+  name,
+  description,
+  all_day,
+  trainer
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000025',
+  (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
+  '2026-05-25',
+  '2026-05-25 10:00:00',
+  '2026-05-25 12:00:00',
+  'Capacitación de prueba',
+  'Evento personal de prueba para validar edición solo de eventos',
+  false,
+  'Capacitador de prueba'
+), (
+  'c3000000-0000-4000-8000-000000000026',
+  (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
+  '2026-05-27',
+  '2026-05-27 09:00:00',
+  '2026-05-27 11:00:00',
+  'Capacitación de seguridad interna',
+  'Sesión para reforzar protocolos de seguridad y atención cotidiana',
+  false,
+  'Capacitador de seguridad'
+), (
+  'c3000000-0000-4000-8000-000000000027',
+  (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
+  '2026-05-29',
+  '2026-05-29 12:00:00',
+  '2026-05-29 14:00:00',
+  'Capacitación de manejo de crisis',
+  'Taller para practicar respuesta coordinada ante incidentes y escalaciones',
+  false,
+  'Capacitadora clínica'
+), (
+  'c3000000-0000-4000-8000-000000000028',
+  (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
+  '2026-06-02',
+  '2026-06-02 08:30:00',
+  '2026-06-02 10:30:00',
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  'Práctica enfocada en seguimiento de instrucciones y reporte entre turnos',
+  false,
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+)
+ON CONFLICT (personal_event_id) DO NOTHING;
+
 -- =========================
 -- DOCUMENTOS
 -- =========================
@@ -1333,6 +1387,52 @@ ON CONFLICT (employee_id) DO UPDATE SET
   is_active = EXCLUDED.is_active,
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
+
+INSERT INTO public.employee_personal_event (
+  personal_event_id,
+  employee_id
+)
+VALUES (
+  'c3000000-0000-4000-8000-000000000025',
+  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'Ramírez' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000025',
+  (SELECT employee_id FROM public.employee WHERE name = 'Laura' AND surname = 'Mendoza' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000025',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Valido US30' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000025',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Exitos US30' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000026',
+  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'Ramírez' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000026',
+  (SELECT employee_id FROM public.employee WHERE name = 'Laura' AND surname = 'Mendoza' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000026',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Concurrencia US30' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000027',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Valido US30' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000027',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Exitos US30' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000027',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Concurrencia US30' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000028',
+  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'Ramírez' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000028',
+  (SELECT employee_id FROM public.employee WHERE name = 'Laura' AND surname = 'Mendoza' LIMIT 1)
+), (
+  'c3000000-0000-4000-8000-000000000028',
+  (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Exitos US30' LIMIT 1)
+)
+ON CONFLICT (personal_event_id, employee_id) DO NOTHING;
 
 -- Empleado Administrador aislado para validar que Coordinador no pueda modificar vacaciones de Administrador
 INSERT INTO public.employee (
