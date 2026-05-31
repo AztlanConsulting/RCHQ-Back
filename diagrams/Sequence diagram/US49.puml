@@ -237,9 +237,7 @@ else Campos completos
                                 deactivate event.model
 
                                 event.service -->> controller : { code: UPDATED, data: { personalEvent } }
-                                deactivate event.service
                                 controller -->> routes : response.status(200).send("Actualizado")
-                                deactivate controller
                                 activate routes
                                 routes -->> ReactView : send("Actualizado")
                                 deactivate routes
