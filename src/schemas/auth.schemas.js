@@ -22,8 +22,8 @@ const loginSchema = z.object({
         .string()
         .trim()
         .min(1, "El correo es requerido")
-        .email("Formato de email inválido")
-        .max(255, "El email es demasiado largo"),
+        .email("Formato de correo inválido")
+        .max(255, "El correo es demasiado largo"),
     password: z
         .string()
         .trim()

@@ -182,15 +182,36 @@ describe("login", () => {
             ...mockEmployee,
             blockedUntil,
         });
+        verifyPassword.mockResolvedValue(true);
         isBlockedUntil.mockReturnValue(true);
 
         const result = await login(
-            makeReq({ email: "test@gmail.com", password: "pass" }),
+            makeReq({ email: "test@gmail.com", password: "correct" }),
         );
 
         expect(result.status).toBe(423);
         expect(result.body.code).toBe("ACCOUNT_TEMPORARILY_BLOCKED");
         expect(result.body).toHaveProperty("blockedUntil");
+    });
+
+    it("retorna 401 genérico si la cuenta está bloqueada y la contraseña es incorrecta", async () => {
+        const blockedUntil = new Date(Date.now() + 10 * 60 * 1000);
+        auth.findEmployeeByEmail.mockResolvedValue({
+            ...mockEmployee,
+            blockedUntil,
+        });
+        verifyPassword.mockResolvedValue(false);
+        isBlockedUntil.mockReturnValue(true);
+
+        const result = await login(
+            makeReq({ email: "test@gmail.com", password: "wrong" }),
+        );
+
+        expect(result.status).toBe(401);
+        expect(result.body.code).toBe("INVALID_CREDENTIALS");
+        expect(result.body).not.toHaveProperty("blockedUntil");
+        expect(auth.incrementFailedAttempts).not.toHaveBeenCalled();
+        expect(auth.setBlockedUntil).not.toHaveBeenCalled();
     });
 
     it("retorna 401 con contraseña incorrecta sin bloqueo", async () => {
@@ -210,10 +231,10 @@ describe("login", () => {
         expect(createLog).toHaveBeenCalled();
     });
 
-    it("bloquea la cuenta y retorna 423 al llegar a 3 intentos fallidos", async () => {
+    it("bloquea la cuenta y retorna 423 al llegar a 12 intentos fallidos", async () => {
         auth.findEmployeeByEmail.mockResolvedValue(mockEmployee);
         verifyPassword.mockResolvedValue(false);
-        auth.incrementFailedAttempts.mockResolvedValue(3);
+        auth.incrementFailedAttempts.mockResolvedValue(12);
         auth.setBlockedUntil.mockResolvedValue();
 
         const result = await login(
@@ -266,6 +287,56 @@ describe("login", () => {
         expect(auth.saveRefreshToken).toHaveBeenCalledWith(mockEmployee.employeeId, "fake-refresh-token");
         expect(result.body.isActiveTwoFactorAuth).toBe(false);
         expect(createLog).toHaveBeenCalled();
+        expect(buildSessionToken).toHaveBeenCalledWith(
+            expect.objectContaining({ employeeId: mockEmployee.employeeId }),
+            expect.any(String),
+        );
+        expect(generateRefreshToken).toHaveBeenCalledWith(
+            expect.objectContaining({ employeeId: mockEmployee.employeeId }),
+            expect.any(String),
+        );
+    });
+
+    it("rechaza el login y conserva la sesion previa si ya hay una sesion activa", async () => {
+        auth.findEmployeeByEmail.mockResolvedValue({
+            ...mockEmployee,
+            refreshToken: "active-refresh-token",
+        });
+        verifyPassword.mockResolvedValue(true);
+        auth.clearLoginSecurityState.mockResolvedValue();
+
+        const result = await login(
+            makeReq({ email: "test@gmail.com", password: "correct" }),
+        );
+
+        expect(result.status).toBe(409);
+        expect(result.body.code).toBe("SESSION_ALREADY_ACTIVE");
+        expect(auth.clearRefreshToken).not.toHaveBeenCalled();
+        expect(auth.saveRefreshToken).not.toHaveBeenCalled();
+        expect(buildSessionToken).not.toHaveBeenCalled();
+    });
+
+    it("permite el login si el refresh token previo ya no es valido", async () => {
+        auth.findEmployeeByEmail.mockResolvedValue({
+            ...mockEmployee,
+            refreshToken: "expired-refresh-token",
+        });
+        verifyPassword.mockResolvedValue(true);
+        decodeToken.mockReturnValueOnce(null);
+        auth.clearLoginSecurityState.mockResolvedValue();
+
+        const result = await login(
+            makeReq({ email: "test@gmail.com", password: "correct" }),
+        );
+
+        expect(result.status).toBe(200);
+        expect(auth.clearRefreshToken).toHaveBeenCalledWith(
+            mockEmployee.employeeId,
+        );
+        expect(auth.saveRefreshToken).toHaveBeenCalledWith(
+            mockEmployee.employeeId,
+            "fake-refresh-token",
+        );
     });
 
     it("retorna preTwoFactorAuthToken cuando el usuario tiene factor de dos pasos activo", async () => {
@@ -570,6 +641,33 @@ describe("validateTwoFactorAuth", () => {
         expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
         expect(auth.saveRefreshToken).toHaveBeenCalledWith(mockEmployee.employeeId, "fake-refresh-token");
         expect(auth.clearTwoFactorAuthSecurityState).toHaveBeenCalled();
+        expect(buildSessionToken).toHaveBeenCalledWith(
+            expect.objectContaining({ employeeId: mockEmployee.employeeId }),
+            expect.any(String),
+        );
+        expect(generateRefreshToken).toHaveBeenCalledWith(
+            expect.objectContaining({ employeeId: mockEmployee.employeeId }),
+            expect.any(String),
+        );
+    });
+
+    it("rechaza el 2FA y conserva la sesion previa si ya hay una sesion activa", async () => {
+        auth.getEmployeeById.mockResolvedValue({
+            ...mockEmployee,
+            totpSecret: "SECRET",
+            refreshToken: "active-refresh-token",
+        });
+        speakeasy.totp.verify.mockReturnValue(true);
+        auth.clearTwoFactorAuthSecurityState.mockResolvedValue();
+
+        const result = await validateTwoFactorAuth(
+            makeReq({ token: "123456" }, { id: "abc-123" }),
+        );
+
+        expect(result.status).toBe(409);
+        expect(result.body.code).toBe("SESSION_ALREADY_ACTIVE");
+        expect(auth.clearRefreshToken).not.toHaveBeenCalled();
+        expect(auth.saveRefreshToken).not.toHaveBeenCalled();
     });
 });
 
@@ -748,7 +846,6 @@ describe("refreshSession", () => {
             ...mockEmployee,
             refreshToken: "different-token",
         });
-        auth.rotateRefreshToken.mockResolvedValue(false);
         const result = await refreshSession("old-token", "127.0.0.1");
         expect(result.status).toBe(401);
         expect(auth.clearRefreshToken).toHaveBeenCalledWith("abc-123");
@@ -759,12 +856,21 @@ describe("refreshSession", () => {
             ...mockEmployee,
             refreshToken: "valid-token",
         });
+        decodeToken.mockReturnValue({
+            id: "abc-123",
+            tokenType: "REFRESH",
+            sessionId: "session-123",
+        });
         const result = await refreshSession("valid-token", "127.0.0.1");
         
         expect(result.status).toBe(200);
         expect(result.body.data).toHaveProperty("token", "fake-session-token");
-        expect(result.body.data).toHaveProperty("refreshToken", "fake-refresh-token");
-        expect(auth.rotateRefreshToken).toHaveBeenCalledWith("abc-123", "valid-token", "fake-refresh-token");
+        expect(result.body.data).toHaveProperty("refreshToken", "valid-token");
+        expect(auth.rotateRefreshToken).not.toHaveBeenCalled();
+        expect(buildSessionToken).toHaveBeenCalledWith(
+            expect.objectContaining({ employeeId: mockEmployee.employeeId }),
+            "session-123",
+        );
     });
 });
 

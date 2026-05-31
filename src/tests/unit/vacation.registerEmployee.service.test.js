@@ -77,7 +77,7 @@ describe("US28 - registerEmployeeVacation service", () => {
     const validEndDate = "2026-06-26";
     const parsedValidStartDate = makeUTCDate(2026, 6, 22);
     const parsedValidEndDate = makeUTCDate(2026, 6, 26);
-    const parsedValidSearchEndDate = makeUTCDate(2026, 6, 27);
+    const parsedValidSearchEndDate = new Date("2026-06-26T23:59:59.999Z");
 
     const todayDate = "2026-04-30";
 

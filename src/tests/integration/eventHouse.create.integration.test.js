@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const { randomUUID } = require("crypto");
 const app = require("../../app");
 const prisma = require("../../prisma");
+const { LOG_ACTIONS } = require("../../utils/logActions");
 
 const TEST_HOUSE_ID = randomUUID();
 const TEST_OTHER_HOUSE_ID = randomUUID();
@@ -16,7 +17,10 @@ const TEST_EVENT_TYPE_ID = randomUUID();
 const TEST_OTHER_EVENT_TYPE_ID = randomUUID();
 const TEST_PRIVILEGE_CREATE_ID = randomUUID();
 const TEST_PRIVILEGE_VIEW_ID = randomUUID();
-const TEST_ACTION_ID = "even-001";
+const TEST_ACTION_IDS = [
+    LOG_ACTIONS.HOUSE_EVENT_CREATED,
+    LOG_ACTIONS.HOUSE_EVENT_ASSIGNED,
+];
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_ROUTE = "/event/house/add";
@@ -81,7 +85,7 @@ const seedDependencies = async () => {
         "Administrador",
         TEST_ADMIN_ROLE_ID,
     );
-    const employeeRoleId = await getOrCreateRoleId(
+    await getOrCreateRoleId(
         "Mantenimiento",
         TEST_EMPLOYEE_ROLE_ID,
     );
@@ -152,14 +156,27 @@ const seedDependencies = async () => {
     });
 
     await prisma.action.upsert({
-        where: { action_id: TEST_ACTION_ID },
+        where: { action_id: LOG_ACTIONS.HOUSE_EVENT_CREATED },
         update: {
             description: "Evento de casa creado con éxito",
             important: false,
         },
         create: {
-            action_id: TEST_ACTION_ID,
+            action_id: LOG_ACTIONS.HOUSE_EVENT_CREATED,
             description: "Evento de casa creado con éxito",
+            important: false,
+        },
+    });
+
+    await prisma.action.upsert({
+        where: { action_id: LOG_ACTIONS.HOUSE_EVENT_ASSIGNED },
+        update: {
+            description: "Evento de casa asignado con éxito",
+            important: false,
+        },
+        create: {
+            action_id: LOG_ACTIONS.HOUSE_EVENT_ASSIGNED,
+            description: "Evento de casa asignado con éxito",
             important: false,
         },
     });
@@ -298,7 +315,9 @@ const cleanDb = async () => {
         },
     });
 
-    await prisma.logs.deleteMany({ where: { action_id: TEST_ACTION_ID } });
+    await prisma.logs.deleteMany({
+        where: { action_id: { in: TEST_ACTION_IDS } },
+    });
 };
 
 const cleanEvents = async () => {

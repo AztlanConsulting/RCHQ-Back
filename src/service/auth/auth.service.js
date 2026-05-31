@@ -17,10 +17,27 @@ const {
 } = require("../../utils/auth/authGuards");
 const prisma = require("../../prisma");
 const { generateRefreshToken, decodeToken } = require("../../utils/jwt");
+const { randomUUID } = require("crypto");
 
 const TEMP_TwoFactorAuth_SETUP_EXPIRATION_MINUTES = 10;
 const LOGIN_BLOCK_MINUTES = 15;
-const MAX_LOGIN_ATTEMPTS = 3;
+const MAX_LOGIN_ATTEMPTS = 12;
+
+const buildSessionAlreadyActiveResult = () => ({
+    status: 409,
+    body: {
+        success: false,
+        code: "SESSION_ALREADY_ACTIVE",
+        message: "Ya existe una sesion activa para esta cuenta.",
+    },
+});
+
+const getActiveRefreshSession = (employee) => {
+    if (!employee.refreshToken) return null;
+
+    const decoded = decodeToken(employee.refreshToken);
+    return decoded?.tokenType === "REFRESH" ? decoded : null;
+};
 
 async function login(req) {
     const { email, password } = req.body;
@@ -57,24 +74,23 @@ async function login(req) {
         };
     }
 
-    if (isBlockedUntil(employee.blockedUntil)) {
-        return {
-            status: 423,
-            body: {
-                success: false,
-                code: "ACCOUNT_TEMPORARILY_BLOCKED",
-                message:
-                    "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
-                blockedUntil: employee.blockedUntil,
-            },
-        };
-    }
-
     await clearExpiredLoginBlock(employee);
 
     const passwordMatches = await verifyPassword(password, employee.pwd);
+    const isLoginBlocked = isBlockedUntil(employee.blockedUntil);
 
     if (!passwordMatches) {
+        if (isLoginBlocked) {
+            return {
+                status: 401,
+                body: {
+                    success: false,
+                    code: "INVALID_CREDENTIALS",
+                    message: "Credenciales inválidas",
+                },
+            };
+        }
+
         const attempts = await User.incrementFailedAttempts(
             employee.employeeId,
         );
@@ -120,7 +136,26 @@ async function login(req) {
         };
     }
 
+    if (isLoginBlocked) {
+        return {
+            status: 423,
+            body: {
+                success: false,
+                code: "ACCOUNT_TEMPORARILY_BLOCKED",
+                message:
+                    "Tu cuenta está bloqueada temporalmente. Intenta más tarde.",
+                blockedUntil: employee.blockedUntil,
+            },
+        };
+    }
+
     await User.clearLoginSecurityState(employee.employeeId);
+
+    if (employee.refreshToken) {
+        const activeRefreshSession = getActiveRefreshSession(employee);
+        if (activeRefreshSession) return buildSessionAlreadyActiveResult();
+        await User.clearRefreshToken(employee.employeeId);
+    }
 
     if (employee.hasFirstLogin) {
         const firstLoginToken = buildFirstLoginJwt(employee);
@@ -160,8 +195,9 @@ async function login(req) {
     };
   }
 
-  const token = await buildSessionToken(employee);
-  const refreshToken = generateRefreshToken(employee);
+  const sessionId = randomUUID();
+  const token = await buildSessionToken(employee, sessionId);
+  const refreshToken = generateRefreshToken(employee, sessionId);
 
   await User.saveRefreshToken(employee.employeeId, refreshToken);
 
@@ -489,8 +525,15 @@ async function validateTwoFactorAuth(req) {
 
   await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
-  const tokenJwt = await buildSessionToken(employee);
-  const refreshToken = generateRefreshToken(employee);
+  if (employee.refreshToken) {
+    const activeRefreshSession = getActiveRefreshSession(employee);
+    if (activeRefreshSession) return buildSessionAlreadyActiveResult();
+    await User.clearRefreshToken(employee.employeeId);
+  }
+
+  const sessionId = randomUUID();
+  const tokenJwt = await buildSessionToken(employee, sessionId);
+  const refreshToken = generateRefreshToken(employee, sessionId);
 
   await User.saveRefreshToken(employee.employeeId, refreshToken);
 
@@ -672,10 +715,10 @@ async function refreshSession(refreshToken, ipAddress) {
         return { status: 403, body: { success: false, message: "Acceso denegado", code: "INVALID_REFRESH_TOKEN" } };
     }
 
-    const newToken = await buildSessionToken(employee);
-    const newRefreshToken = generateRefreshToken(employee);
+    const newToken = await buildSessionToken(employee, decoded.sessionId);
+    const newRefreshToken = refreshToken;
 
-    const rotated = await User.rotateRefreshToken(employeeId, refreshToken, newRefreshToken);
+    const rotated = employee.refreshToken === refreshToken;
 
     if (!rotated) {
         await User.clearRefreshToken(employeeId);

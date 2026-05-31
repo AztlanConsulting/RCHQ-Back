@@ -711,7 +711,7 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody());
 
         expect(res.statusCode).toBe(404);
-        expect(res.body.message).toBe("usuario no encontrado");
+        expect(res.body.message).toBe("Usuario no encontrado");
     });
 
     it("404 si el tipo de ausencia no existe", async () => {
@@ -721,7 +721,7 @@ describe("POST /absence/:employeeId/add", () => {
             .send(validBody({ absenceTypeId: randomUUID() }));
 
         expect(res.statusCode).toBe(404);
-        expect(res.body.message).toBe("tipo de ausencia no encontrado");
+        expect(res.body.message).toBe("Tipo de ausencia no encontrado");
     });
 
     it("406 si el empleado no tiene días de trabajo registrados", async () => {

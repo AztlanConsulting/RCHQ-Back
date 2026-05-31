@@ -89,7 +89,7 @@ stop
 endif
 
 if (¿Empleado es Administrador?) then (Sí)
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 else (No)
 endif
@@ -98,7 +98,7 @@ endif
 
 if (¿Misma casa hogar?) then (Sí)
 else (No)
-:Mostrar error "No puede acceder a este recurso";
+:Mostrar error "Permisos insuficientes";
 stop
 endif
 

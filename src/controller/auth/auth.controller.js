@@ -5,7 +5,7 @@ const { getClientIp } = require("../../utils/ip");
 const COOKIE_OPTIONS = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.REFRESH_COOKIE_SAMESITE || "lax",
     path: "/",
 };
 
@@ -15,7 +15,7 @@ exports.loginFunction = async (req, res) => {
         if (result.status === 200 && result.body.data?.refreshToken) {
             res.cookie("refreshToken", result.body.data.refreshToken, {
                 ...COOKIE_OPTIONS,
-                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
+                maxAge: 1 * 24 * 60 * 60 * 1000,
             });
             delete result.body.data.refreshToken;
         }
@@ -24,7 +24,7 @@ exports.loginFunction = async (req, res) => {
         console.error("Login error:", err);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -44,7 +44,7 @@ exports.changePasswordFirstLogin = async (req, res) => {
         if (result.status === 200 && result.body.data?.refreshToken) {
             res.cookie("refreshToken", result.body.data.refreshToken, {
                 ...COOKIE_OPTIONS,
-                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
+                maxAge: 1 * 24 * 60 * 60 * 1000,
             });
             delete result.body.data.refreshToken;
         }
@@ -53,7 +53,7 @@ exports.changePasswordFirstLogin = async (req, res) => {
         console.error("First login password change error:", err);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -76,7 +76,7 @@ exports.changePassword = async (req, res) => {
         console.error("Change password error:", err);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -96,7 +96,7 @@ exports.setupTwoFactorAuth = async (req, res) => {
         console.error("Error en la configuración del factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -109,7 +109,7 @@ exports.verifyTwoFactorSetup = async (req, res) => {
         console.error("Error al verificar el factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -129,7 +129,7 @@ exports.validateTwoFactorAuth = async (req, res) => {
         console.error("Error al validar el factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -142,7 +142,7 @@ exports.getTwoFactorAuthStatus = async (req, res) => {
         console.error("Error al obtener el estado del factor de dos pasos:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: "Error interno del servidor",
         });
     }
 };
@@ -155,7 +155,7 @@ exports.disableTwoFactorAuth = async (req, res) => {
         console.error("Error al deshabilitar el factor de dos pasos:", error);
         return res
             .status(500)
-            .json({ success: false, message: "Internal Server Error" });
+            .json({ success: false, message: "Error interno del servidor" });
     }
 };
 
@@ -168,7 +168,7 @@ exports.refreshToken = async (req, res) => {
         if (result.status === 200 && result.body.data?.refreshToken) {
             res.cookie("refreshToken", result.body.data.refreshToken, {
                 ...COOKIE_OPTIONS,
-                maxAge: 1 * 24 * 60 * 60 * 1000, // 1 día
+                maxAge: 1 * 24 * 60 * 60 * 1000,
             });
             delete result.body.data.refreshToken;
         } else if (result.status === 401 || result.status === 403) {
@@ -177,7 +177,7 @@ exports.refreshToken = async (req, res) => {
         return res.status(result.status).json(result.body);
     } catch (err) {
         console.error("Refresh token error:", err);
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
+        return res.status(500).json({ success: false, message: "Error interno del servidor" });
     }
 };
 
@@ -189,6 +189,6 @@ exports.logout = async (req, res) => {
         return res.status(result.status).json(result.body);
     } catch (err) {
         console.error("Logout error:", err);
-        return res.status(500).json({ success: false, message: "Internal Server Error" });
+        return res.status(500).json({ success: false, message: "Error interno del servidor" });
     }
 };

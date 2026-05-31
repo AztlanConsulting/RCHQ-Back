@@ -1,74 +1,130 @@
 @startuml
-title Diagrama de Secuencia - POST /auth/refresh
+title Diagrama de Secuencia - US06 Sesion segura y sesion unica
 
 actor Usuario
-boundary "auth.route.js\nPOST /refresh" as Route
-control "auth.controller.js\nrefreshToken()" as Controller
-control "auth.service.js\nrefreshSession()" as Service
-control "jwt.js\ndecodeToken()\ngenerateRefreshToken()" as JWT
-entity "auth.model.js\ngetEmployeeById()\nsaveRefreshToken()" as Model
+boundary "Frontend" as Front
+boundary "auth.route.js" as Route
+control "auth.controller.js" as Controller
+control "auth.service.js" as Service
+control "jwt.js" as JWT
+control "authTokens.js\nbuildSessionToken()" as AuthTokens
+entity "auth.model.js" as Model
 database "PostgreSQL\nPrisma" as BD
 
-Usuario -> Route : POST /auth/refresh\n(Incluye Cookie HttpOnly)
-Route -> Controller : refreshToken(req, res)
+== Creacion de sesion: solo una sesion activa por cuenta ==
 
-Controller -> Controller : token = req.cookies?.refreshToken\nipAddress = getClientIp()
+Usuario -> Front : Envia credenciales\no codigo 2FA
+Front -> Route : POST /auth/login\no POST /auth/2fa/login/validate
+Route -> Controller : login(req, res)\no validateTwoFactorAuth(req, res)
+Controller ->> Service : login(req)\no validateTwoFactorAuth(req)
 
-Controller ->> Service : refreshSession(token, ipAddress)
+Service ->> Model : findEmployeeByEmail()\no getEmployeeById()
+Model ->> BD : Busca empleado
+BD -->> Model : DB_ROW
+Model -->> Service : employee
+Service -> Service : Valida password / TOTP / estado activo
 
-alt token == undefined (No proporcionado)
-    Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
-    Controller -> Controller : res.clearCookie("refreshToken")
-    Controller --> Usuario : 401 Token no proporcionado
-else token válido
-    Service -> JWT : decodeToken(token)
-    JWT --> Service : decodedPayload
-    
-    alt decoded == null o tokenType != "REFRESH"
+alt employee.refreshToken existe en BD
+    Service -> JWT : decodeToken(employee.refreshToken)
+    JWT --> Service : decodedRefresh
+
+    alt decodedRefresh.tokenType == "REFRESH"
+        Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
+        Controller --> Front : 409 Ya existe una sesion activa
+        Front --> Usuario : Muestra mensaje y no inicia sesion
+    else refresh viejo, expirado o invalido
+        Service ->> Model : clearRefreshToken(employee.employeeId)
+        Model ->> BD : prisma.employee.update({ refresh_token: null })
+        BD -->> Model : success
+        Model -->> Service : void
+        Service -> Service : Continua creacion de nueva sesion
+    end
+else no hay refreshToken en BD
+    Service -> Service : Continua creacion de nueva sesion
+end
+
+alt nueva sesion permitida
+    Service -> Service : sessionId = randomUUID()
+    Service -> AuthTokens : buildSessionToken(employee, sessionId)
+    AuthTokens --> Service : accessToken (SESSION)
+    Service -> JWT : generateRefreshToken(employee, sessionId)
+    JWT --> Service : refreshToken (REFRESH)
+    Service ->> Model : saveRefreshToken(employee.employeeId, refreshToken)
+    Model ->> BD : prisma.employee.update({ refresh_token: refreshToken })
+    BD -->> Model : success
+    Model -->> Service : void
+    Service -->> Controller : { status: 200, data: { token, refreshToken } }
+    Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
+    Controller -> Controller : delete result.body.data.refreshToken
+    Controller --> Front : 200 { data: { token } }
+    Front --> Usuario : Entra a la aplicacion
+end
+
+== Renovacion de sesion: refresh compartido entre peticiones ==
+
+Usuario -> Front : Navega y dispara peticion protegida
+Front -> Route : Request con accessToken
+Route --> Front : 401 Unauthorized
+
+alt existe refresh compartido en curso
+    Front -> Front : Espera la promesa de refresh existente
+else no existe refresh en curso
+    Front -> Route : POST /auth/refresh\n(Cookie HttpOnly refreshToken)
+    Route -> Controller : refreshToken(req, res)
+    Controller -> Controller : token = req.cookies?.refreshToken\nipAddress = getClientIp()
+    Controller ->> Service : refreshSession(token, ipAddress)
+
+    alt token == undefined
         Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
         Controller -> Controller : res.clearCookie("refreshToken")
-        Controller --> Usuario : 401 Token inválido o expirado
-    else Token verificado
-        Service ->> Model : getEmployeeById(decoded.id)
-        Model ->> BD : prisma.employee.findUnique(employee_id)
-        BD -->> Model : DB_ROW
-        Model -> Model : mapEmployee(DB_ROW)
-        Model -->> Service : employee
-        
-        alt employee == null o employee.isActive == false
-            Service -->> Controller : { status: 403, code: "INVALID_REFRESH_TOKEN" }
-            Controller -> Controller : res.clearCookie("refreshToken")
-            Controller --> Usuario : 403 Acceso denegado
-        else employee.refreshToken != token (Prevención de Reuso)
-            Service ->> Model : clearRefreshToken(employee.employeeId)
-            Model ->> BD : prisma.employee.update({ refresh_token: null })
-            BD -->> Model : success
-            Model -->> Service : void
+        Controller --> Front : 401 Token no proporcionado
+    else token recibido
+        Service -> JWT : decodeToken(token)
+        JWT --> Service : decodedPayload
+
+        alt decoded == null o tokenType != "REFRESH"
             Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
             Controller -> Controller : res.clearCookie("refreshToken")
-            Controller --> Usuario : 401 Sesión inválida
-        else Validación exitosa
-            Service -> JWT : buildSessionToken(employee)
-            JWT --> Service : newToken (SESSION)
-            Service -> JWT : generateRefreshToken(employee)
-            JWT --> Service : newRefreshToken (REFRESH)
-            
-            Service ->> Model : saveRefreshToken(employee.employeeId, newRefreshToken)
-            Model ->> BD : prisma.employee.update({ refresh_token: newRefreshToken })
-            BD -->> Model : success
-            Model -->> Service : void
-            
-            Service -->> Controller : { status: 200, code: "REFRESH_SUCCESS", data: { token, refreshToken } }
-            
-            Controller -> Controller : res.cookie("refreshToken", newRefreshToken, { httpOnly, secure, maxAge... })
-            Controller -> Controller : delete result.body.data.refreshToken
-            Controller --> Usuario : 200 { success: true, data: { token } }
+            Controller --> Front : 401 Token invalido o expirado
+        else token REFRESH valido
+            Service ->> Model : getEmployeeById(decoded.id)
+            Model ->> BD : prisma.employee.findUnique(employee_id)
+            BD -->> Model : DB_ROW
+            Model -->> Service : employee
+
+            alt employee == null o employee.isActive == false
+                Service -->> Controller : { status: 403, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 403 Acceso denegado
+            else employee.refreshToken != token
+                Service ->> Model : clearRefreshToken(employeeId)
+                Model ->> BD : prisma.employee.update({ refresh_token: null })
+                BD -->> Model : success
+                Model -->> Service : void
+                Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 401 Sesion invalida
+            else validacion exitosa
+                Service -> AuthTokens : buildSessionToken(employee, decoded.sessionId)
+                AuthTokens --> Service : newAccessToken (SESSION)
+                Service -> Service : newRefreshToken = token\n(No rota; conserva BD)
+                Service -->> Controller : { status: 200, code: "REFRESH_SUCCESS", data: { token, refreshToken } }
+                Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
+                Controller -> Controller : delete result.body.data.refreshToken
+                Controller --> Front : 200 { data: { token } }
+            end
         end
     end
 end
 
-alt catch (error)
-    Controller --> Usuario : 500 Internal Server Error
+alt refresh exitoso
+    Front -> Front : Guarda nuevo accessToken
+    Front -> Route : Reintenta peticion original\ncon nuevo accessToken
+    Route --> Front : Respuesta protegida
+    Front --> Usuario : Continua sesion
+else refresh fallido
+    Front -> Front : Limpia auth local
+    Front --> Usuario : Redirige a Login
 end
 
 @enduml

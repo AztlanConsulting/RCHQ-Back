@@ -1,92 +1,171 @@
 @startuml
-title US - Flujo de Inicio de Sesión (Sequence Diagram)
+title US01 - Flujo de inicio de sesion
 
 actor Usuario
-participant "auth.route.js\nrouter" as Router
-participant "validate.js\nmiddleware" as Validator
-participant "auth.controller.js\nloginFunction()" as Controller
-participant "auth.service.js\nlogin()" as Service
-participant "utils/password.js\nverifyPassword()" as PasswordUtil
-participant "auth.model.js\nUser" as Model
-participant "log.model.js" as LogModel
-database "BD (Prisma)" as BD
+boundary "Frontend\nLogin" as Front
+boundary "auth.route.js\nPOST /auth/login" as Router
+control "rateLimit.js\nauthLimiter" as AuthLimiter
+control "validate.js\nloginSchema" as Validator
+control "auth.controller.js\nloginFunction()" as Controller
+control "auth.service.js\nlogin()" as Service
+control "password.js\nverifyPassword()" as PasswordUtil
+control "jwt.js\ndecodeToken()\ngenerateRefreshToken()" as JWT
+control "authTokens.js\nbuildSessionToken()" as AuthTokens
+entity "auth.model.js\nUser" as Model
+entity "log.model.js" as LogModel
+database "PostgreSQL\nPrisma" as BD
 
-Usuario -> Router : POST /login (email, password)
-Router -> Validator : validate(loginSchema)
-alt Fallo en validación
-    Validator --> Router : 400 Bad Request
-    Router --> Usuario : 400 (Validation Error)
-else Validación exitosa
-    Validator --> Router : next()
-    Router -> Controller : loginFunction(req, res)
-    
-    activate Controller
-    Controller ->> Service : await login(req)
-    activate Service
-    
-    Service ->> Model : await findEmployeeByEmail(normalizedEmail)
-    activate Model
-    Model ->> BD : prisma.employee.findFirst({ email })
-    BD -->> Model : employee / null
-    Model -->> Service : mapEmployee(employee)
-    deactivate Model
-    
-    alt !employee
-        Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
-    else !employee.isActive
-        Service ->> LogModel : await createLog(employeeId, INACTIVE_ACCESS_DENIED, ip)
-        LogModel ->> BD : prisma.logs.create(...)
-        BD -->> LogModel : success
-        Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
-    else isBlockedUntil(employee.blockedUntil)
-        Service --> Controller : { status: 423, body: ACCOUNT_TEMPORARILY_BLOCKED }
-    else Usuario y estado válidos
-        Service ->> Model : await clearExpiredLoginBlock(employee)
-        Service ->> PasswordUtil : await verifyPassword(password, employee.pwd)
-        activate PasswordUtil
-        PasswordUtil -->> Service : passwordMatches
-        deactivate PasswordUtil
-        
-        alt !passwordMatches
-            Service ->> Model : await incrementFailedAttempts(employeeId)
-            Model ->> BD : prisma.employee.update(...)
-            BD -->> Model : attempts
-            Service ->> LogModel : await createLog(employeeId, LOGIN_FAILED, ip)
-            
-            alt attempts >= MAX_LOGIN_ATTEMPTS
-                Service ->> Model : await setBlockedUntil(employeeId, blockedUntil)
-                Model ->> BD : prisma.employee.update(...)
-                BD -->> Model : success
-                Service ->> LogModel : await createLog(employeeId, ACCOUNT_BLOCKED, ip)
-                Service --> Controller : { status: 423, body: ACCOUNT_TEMPORARILY_BLOCKED }
-            else attempts < MAX_LOGIN_ATTEMPTS
-                Service --> Controller : { status: 401, body: INVALID_CREDENTIALS }
+Usuario -> Front : Captura email y contrasena
+Front -> Front : Valida campos y formato
+
+alt validacion frontend falla
+    Front --> Usuario : Muestra errores de formulario
+else validacion frontend correcta
+    Front -> Router : POST /auth/login\n{ email, password }
+    Router -> AuthLimiter : authLimiter(req, res, next)
+
+    alt limite por IP excedido
+        AuthLimiter --> Router : 429 Too Many Requests
+        Router --> Front : 429
+        Front --> Usuario : Muestra demasiados intentos
+    else IP dentro del limite
+        AuthLimiter --> Router : next()
+        Router -> Validator : validate(loginSchema)
+
+        alt payload invalido
+            Validator --> Router : 400 Bad Request
+            Router --> Front : 400
+            Front --> Usuario : Muestra datos invalidos
+        else payload valido
+            Validator --> Router : next()
+            Router -> Controller : loginFunction(req, res)
+            activate Controller
+            Controller ->> Service : login(req)
+            activate Service
+
+            Service ->> Model : findEmployeeByEmail(normalizedEmail)
+            Model ->> BD : prisma.employee.findFirst({ email })
+            BD -->> Model : employee / null
+            Model -->> Service : employee
+
+            alt employee == null
+                Service -->> Controller : { status: 401, code: "INVALID_CREDENTIALS" }
+            else employee.isActive == false
+                Service ->> LogModel : createLog(INACTIVE_ACCESS_DENIED)
+                LogModel ->> BD : prisma.logs.create(...)
+                BD -->> LogModel : success
+                Service -->> Controller : { status: 401, code: "INVALID_CREDENTIALS" }
+            else employee activo
+                Service ->> Model : clearExpiredLoginBlock(employee)
+                Service -> PasswordUtil : verifyPassword(password, employee.pwd)
+                PasswordUtil --> Service : passwordMatches
+                Service -> Service : isBlockedUntil(employee.blockedUntil)
+
+                alt passwordMatches == false
+                    alt cuenta ya bloqueada
+                        Service -->> Controller : { status: 401, code: "INVALID_CREDENTIALS" }
+                    else cuenta no bloqueada
+                        Service ->> Model : incrementFailedAttempts(employeeId)
+                        Model ->> BD : prisma.employee.update(...)
+                        BD -->> Model : attempts
+                        Service ->> LogModel : createLog(LOGIN_FAILED)
+
+                        alt attempts >= MAX_LOGIN_ATTEMPTS
+                            Service ->> Model : setBlockedUntil(employeeId, blockedUntil)
+                            Model ->> BD : prisma.employee.update(...)
+                            BD -->> Model : success
+                            Service ->> LogModel : createLog(ACCOUNT_BLOCKED)
+                            Service -->> Controller : { status: 423, code: "ACCOUNT_TEMPORARILY_BLOCKED" }
+                        else attempts < MAX_LOGIN_ATTEMPTS
+                            Service -->> Controller : { status: 401, code: "INVALID_CREDENTIALS" }
+                        end
+                    end
+                else passwordMatches == true
+                    alt cuenta bloqueada
+                        Service -->> Controller : { status: 423, code: "ACCOUNT_TEMPORARILY_BLOCKED" }
+                    else cuenta no bloqueada
+                        Service ->> Model : clearLoginSecurityState(employeeId)
+                        Model ->> BD : prisma.employee.update(...)
+                        BD -->> Model : success
+
+                        alt employee.refreshToken existe
+                            Service -> JWT : decodeToken(employee.refreshToken)
+                            JWT --> Service : decodedRefresh
+
+                            break decodedRefresh.tokenType == "REFRESH"
+                                Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
+                            end
+
+                            alt decodedRefresh == null o tokenType != "REFRESH"
+                                Service ->> Model : clearRefreshToken(employeeId)
+                                Model ->> BD : prisma.employee.update({ refresh_token: null })
+                                BD -->> Model : success
+                                Service -> Service : Continua flujo de login
+                            end
+                        else sin refreshToken activo
+                            Service -> Service : Continua flujo de login
+                        end
+
+                        alt employee.hasFirstLogin
+                            Service ->> LogModel : createLog(FIRST_LOGIN_PENDING_PASSWORD_CHANGE)
+                            Service -> AuthTokens : buildFirstLoginJwt(employee)
+                            AuthTokens --> Service : firstLoginToken
+                            Service -->> Controller : { status: 200, nextStep: "CHANGE_PASSWORD_FIRST_LOGIN" }
+                        else employee.isActiveTwoFactorAuth
+                            Service -> AuthTokens : buildPreTwoFactorAuthJwt(employee)
+                            AuthTokens --> Service : preTwoFactorAuthToken
+                            Service -->> Controller : { status: 200, isActiveTwoFactorAuth: true, preTwoFactorAuthToken }
+                        else login normal
+                            Service -> Service : sessionId = randomUUID()
+                            Service -> AuthTokens : buildSessionToken(employee, sessionId)
+                            AuthTokens --> Service : accessToken
+                            Service -> JWT : generateRefreshToken(employee, sessionId)
+                            JWT --> Service : refreshToken
+                            Service ->> Model : saveRefreshToken(employeeId, refreshToken)
+                            Model ->> BD : prisma.employee.update({ refresh_token: refreshToken })
+                            BD -->> Model : success
+                            Service ->> LogModel : createLog(LOGIN_SUCCESS)
+                            Service -->> Controller : { status: 200, code: "LOGIN_SUCCESS", data: { token, refreshToken, user } }
+                        end
+                    end
+                end
             end
-            
-        else passwordMatches == true
-            Service ->> Model : await clearLoginSecurityState(employeeId)
-            Model ->> BD : prisma.employee.update(...)
-            BD -->> Model : success
-            
-            alt employee.hasFirstLogin
-                Service ->> LogModel : await createLog(..., FIRST_LOGIN_PENDING_PASSWORD_CHANGE, ...)
-                Service --> Controller : { status: 200, nextStep: CHANGE_PASSWORD_FIRST_LOGIN, ... }
-            else employee.isActiveTwoFactorAuth
-                Service --> Controller : { status: 200, isActiveTwoFactorAuth: true, preTwoFactorAuthToken }
-            else Flujo Normal
-                Service ->> LogModel : await createLog(..., LOGIN_SUCCESS, ...)
-                Service --> Controller : { status: 200, data: { token, user } }
+
+            deactivate Service
+
+            alt result.status == 200 y data.refreshToken existe
+                Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
+                Controller -> Controller : delete result.body.data.refreshToken
+                Controller --> Router : res.status(200).json({ data: { token, user } })
+            else SESSION_ALREADY_ACTIVE
+                Controller --> Router : res.status(409).json({ code: "SESSION_ALREADY_ACTIVE" })
+            else otra respuesta controlada
+                Controller --> Router : res.status(result.status).json(result.body)
+            else excepcion
+                Controller --> Router : res.status(500).json({ message: "Error interno del servidor" })
+            end
+
+            deactivate Controller
+            Router --> Front : HTTP response
+
+            alt 200 CHANGE_PASSWORD_FIRST_LOGIN
+                Front --> Usuario : Redirige a cambio de contrasena
+            else 200 isActiveTwoFactorAuth
+                Front --> Usuario : Redirige a 2FA
+            else 200 LOGIN_SUCCESS
+                Front -> Front : Guarda accessToken y usuario
+                Front --> Usuario : Entra a calendario
+            else 409 SESSION_ALREADY_ACTIVE
+                Front --> Usuario : Muestra que ya hay una sesion activa
+            else 401 INVALID_CREDENTIALS
+                Front --> Usuario : Muestra credenciales invalidas
+            else 423 ACCOUNT_TEMPORARILY_BLOCKED
+                Front --> Usuario : Muestra cuenta bloqueada
+            else error
+                Front --> Usuario : Muestra error
             end
         end
     end
-    deactivate Service
-    
-    alt Try sin excepciones
-        Controller --> Router : res.status(result.status).json(result.body)
-        Router --> Usuario : 200 OK / 401 / 423
-        Controller --> Router : res.status(500).json(Internal Server Error)
-        Router --> Usuario : 500 (Internal Server Error)
-    end
-    deactivate Controller
 end
+
 @enduml

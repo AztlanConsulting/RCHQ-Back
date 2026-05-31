@@ -316,7 +316,7 @@ describe("US35 - PATCH /vacation/request/:vacationRequestId/reject", () => {
 
         expect(response.status).toBe(403);
         expect(response.body.success).toBe(false);
-        expect(response.body.message).toBe("No puede acceder a este recurso");
+        expect(response.body.message).toBe("Permisos insuficientes");
     });
 
     it("rechaza exitosamente sin feedback", async () => {

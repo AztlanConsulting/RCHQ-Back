@@ -1021,7 +1021,7 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
             expect(inDb.event_type_id).toBe(TEST_OTHER_EVENT_TYPE_ID);
             expect(inDb.house_id).toBe(TEST_HOUSE_ID);
             expect(inDb.is_free_day).toBe(true);
-            expect(inDb.all_day).toBe(false);
+            expect(inDb.all_day).toBe(true);
         });
     });
 

@@ -54,5 +54,43 @@ describe("dates.util", () => {
 
             expect(result).toBe(2);
         });
+
+        it("no descuenta el día siguiente cuando un feriado allDay termina a medianoche", async () => {
+            const result = datesUtil.calculateUsedDays(
+                WORK_DAYS,
+                START_DATE,
+                END_DATE,
+                [
+                    {
+                        start: new Date("2026-05-04T00:00:00Z"),
+                        end: new Date("2026-05-05T00:00:00Z"),
+                        isFreeDay: true,
+                        allDay: true,
+                    },
+                ],
+            );
+
+            expect(result).toBe(2);
+        });
+    });
+
+    describe("getLastIncludedDateForRange", () => {
+        it("trata el fin a medianoche como exclusivo cuando el rango avanza de día", () => {
+            const result = datesUtil.getLastIncludedDateForRange(
+                new Date(Date.UTC(2026, 5, 10, 6)),
+                new Date(Date.UTC(2026, 5, 11, 0)),
+            );
+
+            expect(result.toISOString()).toBe("2026-06-10T00:00:00.000Z");
+        });
+
+        it("mantiene el mismo día cuando el fin no está en medianoche", () => {
+            const result = datesUtil.getLastIncludedDateForRange(
+                new Date(Date.UTC(2026, 5, 10, 6)),
+                new Date(Date.UTC(2026, 5, 10, 23, 59)),
+            );
+
+            expect(result.toISOString()).toBe("2026-06-10T00:00:00.000Z");
+        });
     });
 });

@@ -16,6 +16,7 @@ const {
     getEventsInRange,
     getHouseCalendarRecordsInRange,
     getEmployeesForSelector,
+    getEmployeeDateRules,
 } = require("../controller/event/get.controller");
 
 const {
@@ -51,6 +52,15 @@ router.get(
     requirePrivileges("viewEvents"),
     isAllowed,
     getEventsInRange,
+);
+
+router.get(
+    "/employee/:employeeId/date-rules",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    isAllowed,
+    getEmployeeDateRules,
 );
 
 router.get(
