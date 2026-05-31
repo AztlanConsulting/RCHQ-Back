@@ -14,6 +14,7 @@ exports.updatePersonalEvent = async (eventId, data) => {
                 end: eventDateTimeToUtc(data.endDate ?? data.date, data.end),
                 all_day: data.allDay,
                 description: data.description ?? null,
+                trainer: data.trainer ?? null,
             },
         });
 
@@ -35,6 +36,29 @@ exports.updatePersonalEvent = async (eventId, data) => {
             end: data.end,
             employeeIds: data.employeeIds,
         });
+    });
+};
+
+exports.updatePersonalEventEmployees = async (eventId, employeeIds, trainer = null) => {
+    return prisma.$transaction(async (transaction) => {
+        const event = await transaction.personal_event.update({
+            where: { personal_event_id: eventId },
+            data: { trainer },
+        });
+
+        await transaction.employee_personal_event.deleteMany({
+            where: { personal_event_id: eventId },
+        });
+
+        await transaction.employee_personal_event.createMany({
+            data: employeeIds.map((employeeId) => ({
+                personal_event_id: eventId,
+                employee_id: employeeId,
+            })),
+            skipDuplicates: true,
+        });
+
+        return mapPersonalEvent(event, { employeeIds });
     });
 };
 
