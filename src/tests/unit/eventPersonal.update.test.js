@@ -43,6 +43,8 @@ describe("updatePersonalEvent service", () => {
     const mockExistingEvent = {
         personal_event_id: eventId,
         employee_personal_event: [{ employee_id: employeeId }],
+        date: new Date(futureDate(30)),
+        event_type_id: eventTypeId,
     };
 
     const mockUpdatedEvent = {
@@ -59,6 +61,7 @@ describe("updatePersonalEvent service", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        getModel.getEventTypeById.mockResolvedValue({ name: "Reunion" });
     });
 
 
@@ -833,6 +836,245 @@ describe("updatePersonalEvent service", () => {
             );
 
             expect(result.code).toBe(RESPONSES.EVENTS.OVERLAP);
+        });
+    });
+
+    describe("Campo trainer / Capacitaciones (evento futuro)", () => {
+        it("retorna VALIDATION_ERROR si trainer excede 150 caracteres", async () => {
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: "a".repeat(151) },
+                clientIp,
+            );
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+        });
+
+        it("retorna VALIDATION_ERROR si trainer tiene caracteres no permitidos (XSS)", async () => {
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: "<script>xss</script>" },
+                clientIp,
+            );
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+        });
+
+        it("retorna VALIDATION_ERROR si trainer es cadena vacía", async () => {
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: "" },
+                clientIp,
+            );
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+        });
+
+        it("retorna NOT_FOUND si el tipo de evento no existe en BD", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue(null);
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.NOT_FOUND);
+            expect(updateModel.updatePersonalEvent).not.toHaveBeenCalled();
+        });
+
+        it("retorna VALIDATION_ERROR si el tipo es capacitaciones y no se envía trainer", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Capacitaciones" });
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId] },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+            expect(updateModel.updatePersonalEvent).not.toHaveBeenCalled();
+        });
+
+        it("retorna VALIDATION_ERROR si el tipo es capacitaciones y trainer es null", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Capacitaciones" });
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: null },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+            expect(updateModel.updatePersonalEvent).not.toHaveBeenCalled();
+        });
+
+        it("actualiza el evento con trainer cuando el tipo es capacitaciones", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Capacitaciones" });
+            getModel.getEmployeesInHouse.mockResolvedValue([{ employee_id: employeeId }]);
+            getModel.findOverlappingEmployees.mockResolvedValue([]);
+            updateModel.updatePersonalEvent.mockResolvedValue({
+                ...mockUpdatedEvent,
+                trainer: "Juan Instructor",
+            });
+            createLog.mockResolvedValue();
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: "Juan Instructor" },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
+            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
+            expect(updateCall.trainer).toBe("Juan Instructor");
+        });
+
+        it("pasa trainer como null al modelo cuando el tipo no es capacitaciones", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Reunion" });
+            getModel.getEmployeesInHouse.mockResolvedValue([{ employee_id: employeeId }]);
+            getModel.findOverlappingEmployees.mockResolvedValue([]);
+            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
+            createLog.mockResolvedValue();
+
+            await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: "Instructor Ignorado" },
+                clientIp,
+            );
+
+            const updateCall = updateModel.updatePersonalEvent.mock.calls[0][1];
+            expect(updateCall.trainer).toBeNull();
+        });
+
+        it("acepta trainer null cuando el tipo no es capacitaciones", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Reunion" });
+            getModel.getEmployeesInHouse.mockResolvedValue([{ employee_id: employeeId }]);
+            getModel.findOverlappingEmployees.mockResolvedValue([]);
+            updateModel.updatePersonalEvent.mockResolvedValue(mockUpdatedEvent);
+            createLog.mockResolvedValue();
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { ...basePayload, employeeIds: [employeeId], trainer: null },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
+        });
+    });
+
+    describe("Campo trainer / Capacitaciones (evento pasado)", () => {
+        const pastDate = "2024-01-15";
+        const mockPastExistingEvent = {
+            personal_event_id: eventId,
+            employee_personal_event: [{ employee_id: employeeId }],
+            date: new Date(pastDate),
+            event_type_id: eventTypeId,
+        };
+
+        it("retorna VALIDATION_ERROR si es capacitación pasada y no se envía trainer", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockPastExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Capacitaciones" });
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { employeeIds: [employeeId] },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+            expect(updateModel.updatePersonalEventEmployees).not.toHaveBeenCalled();
+        });
+
+        it("retorna VALIDATION_ERROR si es capacitación pasada y trainer es null", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockPastExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Capacitaciones" });
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { employeeIds: [employeeId], trainer: null },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.VALIDATION_ERROR);
+        });
+
+        it("actualiza evento pasado de capacitación con trainer válido", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockPastExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Capacitaciones" });
+            getModel.getEmployeesInHouse.mockResolvedValue([{ employee_id: employeeId }]);
+            updateModel.updatePersonalEventEmployees.mockResolvedValue({
+                ...mockUpdatedEvent,
+                trainer: "Instructor Pasado",
+            });
+            createLog.mockResolvedValue();
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { employeeIds: [employeeId], trainer: "Instructor Pasado" },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
+            expect(updateModel.updatePersonalEventEmployees).toHaveBeenCalledWith(
+                eventId,
+                [employeeId],
+                "Instructor Pasado",
+            );
+        });
+
+        it("acepta evento pasado sin trainer cuando no es capacitación", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockPastExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Reunion" });
+            getModel.getEmployeesInHouse.mockResolvedValue([{ employee_id: employeeId }]);
+            updateModel.updatePersonalEventEmployees.mockResolvedValue(mockUpdatedEvent);
+            createLog.mockResolvedValue();
+
+            const result = await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { employeeIds: [employeeId] },
+                clientIp,
+            );
+
+            expect(result.code).toBe(RESPONSES.EVENTS.UPDATED);
+        });
+
+        it("pasa trainer como null al modelo cuando evento pasado no es capacitación", async () => {
+            getModel.findPersonalEventById.mockResolvedValue(mockPastExistingEvent);
+            getModel.getEventTypeById.mockResolvedValue({ name: "Reunion" });
+            getModel.getEmployeesInHouse.mockResolvedValue([{ employee_id: employeeId }]);
+            updateModel.updatePersonalEventEmployees.mockResolvedValue(mockUpdatedEvent);
+            createLog.mockResolvedValue();
+
+            await updatePersonalEvent(
+                eventId,
+                coordinatorUser,
+                { employeeIds: [employeeId], trainer: "Ignorado" },
+                clientIp,
+            );
+
+            expect(updateModel.updatePersonalEventEmployees).toHaveBeenCalledWith(
+                eventId,
+                [employeeId],
+                null,
+            );
         });
     });
 });
