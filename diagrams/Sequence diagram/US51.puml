@@ -51,12 +51,12 @@ Router -> Resolver : resolveEmployeeHouse(req, res, next)
 deactivate Router
 activate Resolver
 
-alt Empleado no encontrado
+alt Empleado no está registrado en la casa
     Resolver -> Router : res.status(404).json({message: "Empleado no encontrado"})
     activate Router
     Router -> Usuario : res.status(404).json({message: "Empleado no encontrado"})
     deactivate Router
-else Empleado encontrado
+else Empleado registrado en la casa
     Resolver -> Resolver : req.resolvedEmployee = { houseId }
     Resolver -> Router : next()
     deactivate Resolver
