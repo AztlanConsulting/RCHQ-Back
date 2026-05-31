@@ -1,0 +1,67 @@
+@startuml HU47 - Coordinador registra capacitación
+
+|Coordinador|
+start
+:Interactuar con el calendario;
+
+|Sistema|
+:Renderizar modal de creación;
+
+|Coordinador|
+:Seleccionar opción "Personal";
+:Seleccionar tipo de evento "Capacitaciones";
+
+repeat
+:Llenar campos obligatorios:
+- Título
+- Tipo de evento
+- Fecha
+- Nombre del instructor
+- Seleccionar empleado(s);
+
+|Sistema|
+if (¿Activar "Todo el día"?) then (SI)
+    :Eliminar selectores de hora;
+    :Registrar solo fecha;
+else (NO)
+    |Coordinador|
+    :Ingresar hora de inicio;
+    :Ingresar hora de fin;
+endif
+
+if (¿Ingresar descripción?) then (SI)
+    |Coordinador|
+    :Ingresar descripción de la capacitación;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos y válidos?) is (NO)
+
+:Validar disponibilidad de horario de los empleados;
+
+if (¿Existe empalme con otro evento personal?) then (SI)
+    |Coordinador|
+    if (¿Desea registrar la capacitación de todos modos?) then (SI)
+        |Sistema|
+        :Registrar capacitación con empalme forzado;
+    else (NO)
+        |Sistema|
+        :Cancelar operación;
+        stop
+    endif
+else (NO)
+    |Sistema|
+    :Registrar capacitación normalmente;
+endif
+
+|Sistema|
+:Crear evento personal tipo "Capacitaciones";
+:Asignar capacitación a empleado(s);
+:Registrar logs de creación y asignación;
+:Notificar éxito al usuario;
+:Actualizar calendario;
+
+stop
+
+@enduml

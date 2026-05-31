@@ -1,0 +1,304 @@
+@startuml HU47 - Coordinador registra capacitación
+
+actor Navegador
+boundary "event.personal.routes" as routes
+boundary "React (calendarModal.jsx)" as ReactView
+control "create.controller" as controller
+control "create.service" as event.service
+entity "event.model / get.model" as event.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> routes : GET /events/personal/add
+activate routes
+
+routes -> controller : getAllEventTypes(request, response)
+deactivate routes
+activate controller
+
+controller ->> event.service : getAllEventTypes()
+activate event.service
+event.service ->> event.model : getAllEventTypes()
+activate event.model
+event.model ->> PostgreSQL : prisma.event_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> event.model : eventTypes[]
+deactivate PostgreSQL
+event.model -->> event.service : eventTypes[]
+deactivate event.model
+event.service -->> controller : eventTypes[]
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ eventTypes })
+deactivate controller
+activate routes
+
+routes -> ReactView : render(Modal con eventTypes)
+deactivate routes
+activate ReactView
+
+Navegador -> routes : GET /events/personal/employees?search=
+activate routes
+
+routes -> controller : getEmployeesForEvent(request, response)
+deactivate routes
+activate controller
+
+controller ->> event.service : getEmployeesForEvent(houseId, search)
+activate event.service
+event.service ->> event.model : getEmployeesByHouse(houseId, search)
+activate event.model
+event.model ->> PostgreSQL : SELECT employee_id, name, surname, picture\nFROM employee\nWHERE house_id = houseId\nAND is_active = true
+activate PostgreSQL
+PostgreSQL -->> event.model : employees[]
+deactivate PostgreSQL
+event.model -->> event.service : employees[]
+deactivate event.model
+event.service -->> controller : employees[]
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ employees })
+deactivate controller
+activate routes
+
+routes -> ReactView : render(Selector con employees)
+deactivate routes
+
+Navegador -> ReactView : Selecciona tipo de evento "Capacitaciones"
+
+ReactView -> ReactView : Mostrar campo obligatorio "Capacitador"
+
+Navegador -> ReactView : Ingresa datos obligatorios:\n(name, eventTypeId="Capacitaciones", date,\nstart, end, employees, trainer)
+
+alt all_day?
+    ReactView -> ReactView : Ocultar selectores de hora
+else No
+    ReactView -> ReactView : Mostrar selectores de hora
+    Navegador -> ReactView : Seleccionar start y end
+end
+
+alt Ingresar descripción
+    Navegador -> ReactView : Ingresa description
+else No
+    ReactView -> ReactView : Continúa
+end
+
+ReactView -> ReactView : Validar campos obligatorios\n(incluyendo trainer)
+
+alt Campos incompletos o trainer vacío
+    ReactView -> Navegador : Mostrar error de validación (422)
+    deactivate ReactView
+
+else Campos completos
+
+    Navegador -> routes : POST /events/personal/add
+    activate routes
+
+    routes -> controller : createPersonalEvent(request, response)
+    deactivate routes
+    activate controller
+
+    controller ->> event.service : createPersonalEvent(user, payload, clientIp)
+    activate event.service
+
+    event.service -> event.service : createPersonalEventSchema.safeParse(payload)
+
+    alt Schema inválido
+        event.service -->> controller : { code: VALIDATION_ERROR }
+        controller -->> routes : response.status(422)
+        activate routes
+        routes -->> ReactView : send(422)
+        deactivate routes
+        activate ReactView
+        ReactView -> Navegador : Mostrar errores de validación
+        deactivate ReactView
+
+    else Schema válido
+
+        event.service ->> event.model : getEventTypeById(eventTypeId)
+        activate event.model
+        event.model ->> PostgreSQL : prisma.event_type.findUnique()\nwhere event_type_id = eventTypeId
+        activate PostgreSQL
+        PostgreSQL -->> event.model : eventType
+        deactivate PostgreSQL
+        event.model -->> event.service : eventType
+        deactivate event.model
+
+        alt eventType no encontrado
+            event.service -->> controller : { code: NOT_FOUND }
+            controller -->> routes : response.status(404)
+            activate routes
+            routes -->> ReactView : send(404)
+            deactivate routes
+            activate ReactView
+            ReactView -> Navegador : Mostrar error "Tipo de evento no válido"
+            deactivate ReactView
+
+        else eventType.name == "Capacitaciones" AND user.role != "Coordinador"
+            event.service -->> controller : { code: NOT_ACCESS }
+            controller -->> routes : response.status(403)
+            activate routes
+            routes -->> ReactView : send(403)
+            deactivate routes
+            activate ReactView
+            ReactView -> Navegador : Mostrar error "No tienes permisos para registrar capacitaciones"
+            deactivate ReactView
+
+        else eventType.name == "Capacitaciones" AND trainer vacío
+            event.service -->> controller : { code: VALIDATION_ERROR,\nfieldErrors: { trainer: [...] } }
+            controller -->> routes : response.status(422)
+            activate routes
+            routes -->> ReactView : send(422)
+            deactivate routes
+            activate ReactView
+            ReactView -> Navegador : Mostrar error "El instructor es obligatorio"
+            deactivate ReactView
+
+        else eventType válido y trainer presente
+
+            event.service -> event.service : resolveEmployeeIds(user, employeeIdsInput, forceOverlap)
+
+            alt user.role != "Coordinador" AND forceOverlap == true
+                event.service -->> controller : { code: NOT_ACCESS }
+                controller -->> routes : response.status(403)
+                activate routes
+                routes -->> ReactView : send(403)
+                deactivate routes
+                activate ReactView
+                ReactView -> Navegador : Mostrar error "No tienes permisos suficientes"
+                deactivate ReactView
+
+            else user.role == "Coordinador" AND employeeIds vacío
+                event.service -->> controller : { code: EMPLOYEE.NOT_PROVIDED }
+                controller -->> routes : response.status(400)
+                activate routes
+                routes -->> ReactView : send(400)
+                deactivate routes
+                activate ReactView
+                ReactView -> Navegador : Mostrar error "Selecciona al menos un empleado"
+                deactivate ReactView
+
+            else employeeIds resueltos
+
+                event.service ->> event.model : getEmployeesInHouse(employeeIds, houseId)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.employee.findMany()\nwhere employee_id IN employeeIds\nAND house_id = houseId
+                activate PostgreSQL
+                PostgreSQL -->> event.model : foundEmployees[]
+                deactivate PostgreSQL
+                event.model -->> event.service : foundEmployees[]
+                deactivate event.model
+
+                alt foundEmployees.length != employeeIds.length
+                    event.service -->> controller : { code: EMPLOYEE.NOT_FOUND }
+                    controller -->> routes : response.status(404)
+                    activate routes
+                    routes -->> ReactView : send(404)
+                    deactivate routes
+                    activate ReactView
+                    ReactView -> Navegador : Mostrar error "Empleado no válido para esta casa"
+                    deactivate ReactView
+
+                else Empleados válidos
+
+                    event.service ->> event.model : findOverlappingEmployees({ employeeIds, date, start, end, endDate })
+                    activate event.model
+                    event.model ->> PostgreSQL : prisma.employee_personal_event.findMany()\nwhere employee_id IN employeeIds\nAND date = date AND start < end AND end > start
+                    activate PostgreSQL
+                    PostgreSQL -->> event.model : collisions[]
+                    deactivate PostgreSQL
+                    event.model -->> event.service : overlappedEmployees[]
+                    deactivate event.model
+
+                    alt Existe empalme AND (user.role != "Coordinador" OR !forceOverlap)
+
+                        alt user.role == "Coordinador"
+                            event.service -->> controller : { code: OVERLAP, data: { overlappedEmployees } }
+                            controller -->> routes : response.status(409).send("Conflicto")
+                            activate routes
+                            routes -->> ReactView : send("Conflicto")
+                            deactivate routes
+                            activate ReactView
+                            ReactView -> Navegador : Mostrar alerta de empalme con opción de continuar
+                            deactivate ReactView
+
+                            alt No desea continuar
+                                Navegador -> ReactView : Selecciona "No"
+                                activate ReactView
+                                ReactView -> Navegador : Regresar a edición
+                                deactivate ReactView
+
+                            else Desea continuar
+                                Navegador -> ReactView : Selecciona "Sí"
+                                activate ReactView
+                                ReactView -> routes : POST /events/personal/add { forceOverlap: true }
+                                deactivate ReactView
+                                activate routes
+                                routes -> controller : createPersonalEvent(request, response)
+                                deactivate routes
+                            end
+
+                        else No es Coordinador
+                            event.service -->> controller : { code: OVERLAP, data: { overlappedEmployees } }
+                            controller -->> routes : response.status(409).send("Conflicto")
+                            activate routes
+                            routes -->> ReactView : send("Conflicto")
+                            deactivate routes
+                            activate ReactView
+                            ReactView -> Navegador : Mostrar alerta "Existe empalme, seleccione otro horario"
+                            ReactView -> Navegador : Regresar a edición
+                            deactivate ReactView
+                        end
+
+                    else No hay empalme OR forceOverlap == true
+
+                        event.service ->> event.model : createPersonalEvent(data)
+                        activate event.model
+                        event.model ->> PostgreSQL : prisma.personal_event.create()\n{ ..., trainer: trainer }
+                        activate PostgreSQL
+                        PostgreSQL -->> event.model : personalEventCreated
+                        deactivate PostgreSQL
+                        event.model ->> PostgreSQL : prisma.employee_personal_event.createMany()
+                        activate PostgreSQL
+                        PostgreSQL -->> event.model : relationsCreated
+                        deactivate PostgreSQL
+                        event.model -->> event.service : personalEvent
+                        deactivate event.model
+
+                        event.service ->> event.model : createLog(userId, PERSONAL_EVENT_CREATED, clientIp, personalEventId)
+                        activate event.model
+                        event.model ->> PostgreSQL : prisma.log.create()
+                        activate PostgreSQL
+                        PostgreSQL -->> event.model : log
+                        deactivate PostgreSQL
+                        event.model -->> event.service : success
+                        deactivate event.model
+
+                        event.service ->> event.model : createLog(userId, PERSONAL_EVENT_ASSIGNED, clientIp, employeeId) x N
+                        activate event.model
+                        event.model ->> PostgreSQL : prisma.log.create() x N
+                        activate PostgreSQL
+                        PostgreSQL -->> event.model : logs
+                        deactivate PostgreSQL
+                        event.model -->> event.service : success
+                        deactivate event.model
+
+                        event.service -->> controller : { code: CREATED, data: { personalEvent } }
+                        deactivate event.service
+                        controller -->> routes : response.status(201).send("Creado")
+                        deactivate controller
+                        activate routes
+                        routes -->> ReactView : send("Creado")
+                        deactivate routes
+                        activate ReactView
+                        ReactView -> Navegador : Actualizar calendario y cerrar modal
+                        deactivate ReactView
+                    end
+                end
+            end
+        end
+    end
+end
+
+@enduml
