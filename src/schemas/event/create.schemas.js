@@ -270,8 +270,8 @@ exports.createPersonalEventSchema = z
         trainer: z
             .string()
             .trim()
-            .min(1, { message: "El nombre del capacitador no puede estar vacío." })
-            .max(150, { message: "El nombre del capacitador no debe exceder 150 caracteres." })
+            .min(1, { message: "El nombre del instructor no puede estar vacío." })
+            .max(150, { message: "El nombre del instructor no debe exceder 150 caracteres." })
             .regex(TEXT_REGEX, {
                 message: "Solo se permiten letras, números, espacios y signos básicos.",
             })

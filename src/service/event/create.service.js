@@ -135,7 +135,7 @@ exports.createPersonalEvent = async (user, payload, clientIp) => {
             data: {
                 errors: {
                     fieldErrors: {
-                        trainer: ["El nombre del capacitador es obligatorio para capacitaciones."],
+                        trainer: ["El nombre del instructor es obligatorio para capacitaciones."],
                     },
                 },
             },

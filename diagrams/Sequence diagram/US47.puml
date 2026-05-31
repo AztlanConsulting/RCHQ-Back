@@ -152,7 +152,7 @@ else Campos completos
             routes -->> ReactView : send(422)
             deactivate routes
             activate ReactView
-            ReactView -> Navegador : Mostrar error "El capacitador es obligatorio"
+            ReactView -> Navegador : Mostrar error "El instructor es obligatorio"
             deactivate ReactView
 
         else eventType válido y trainer presente
