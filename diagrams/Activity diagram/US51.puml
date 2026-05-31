@@ -30,7 +30,7 @@ if (¿Token es válido?) then (Sí)
         if (¿Empleado encontrado en Service?) then (Sí)
           :Busca en la tabla de personal_event los eventos \npersonales que sean de tipo "capacitacion";
           if (¿Tiene capacitaciones registradas?) then (Sí)
-            :Mapea la lista de capacitaciones en el modelo \n\t- personalEventId,\n\t- eventTypeId,\n\t- date,\n\t- start, \n\t- end,\n\t- name, \n\t- description,\n\t- allDay,\n\t- isDeleted: false,\n\t- employeeId: employeeID,\n\t- trainer;
+            :Mapea la lista de capacitaciones en el modelo \n\t- personalEventId,\n\t- eventTypeId,\n\t- date,\n\t- start, \n\t- end,\n\t- name, \n\t- description,\n\t- allDay,\n\t- isDeleted: false,\n\t- employeeNames,\n\t- trainer;
             :Retorna status 200 con la lista de capacitaciones (EVENTS.OK);
           else (No)
             :Retorna status 200 con array vacío (EVENTOS.NOT_FOUND);
