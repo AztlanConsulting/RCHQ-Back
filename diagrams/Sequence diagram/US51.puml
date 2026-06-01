@@ -103,7 +103,7 @@ alt Empleado no está registrado
 else Empleado registrado
     Service ->> EventModel :getTrainingsByEmployee(employeeId)
     activate EventModel
-    EventModel ->> BD : prisma.personal_event.findMany({\n\twhere: {\n\t\tis_deleted: false,\n\t\tevent_type: {\n\t\t\tname: "capacitaciones",\n\t\t},\n\t\temployee_personal_event: {\n\t\t\tsome: {\n\t\t\t\temployee_id: employeeId,\n\t\t\t},\n\t\t},\n\t},\n\tinclude: {\n\t\tevent_type: {\n\t\t\tselect: {\n\t\t\t\tname: true,\n\t\t\t},\n\t\t},\n\t\temployee_personal_event: {\n\t\t\tinclude: {\n\t\t\t\temployee: {\n\t\t\t\t\tselect: {\n\t\t\t\t\t\temployee_id: true,\n\t\t\t\t\t\tname: true,\n\t\t\t\t\t\tsurname: true,\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t},\n\torderBy: {\n\t\tstart: "desc",\n\t},\n})
+    EventModel ->> BD : prisma.personal_event.findMany({\n\twhere: {\n\t\tevent_type: {\n\t\t\tname: "capacitaciones",\n\t\t},\n\t\temployee_personal_event: {\n\t\t\tsome: {\n\t\t\t\temployee_id: employeeId,\n\t\t\t},\n\t\t},\n\t},\n\tinclude: {\n\t\tevent_type: {\n\t\t\tselect: {\n\t\t\t\tname: true,\n\t\t\t},\n\t\t},\n\t\temployee_personal_event: {\n\t\t\tinclude: {\n\t\t\t\temployee: {\n\t\t\t\t\tselect: {\n\t\t\t\t\t\temployee_id: true,\n\t\t\t\t\t\tname: true,\n\t\t\t\t\t\tsurname: true,\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t},\n\torderBy: {\n\t\tstart: "desc",\n\t},\n})
     activate BD
     BD -->> EventModel : trainingEvents[]
     deactivate BD
