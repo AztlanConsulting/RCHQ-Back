@@ -25,6 +25,7 @@ const {
     getAllEventTypes,
     getHouseEventsInRange,
     getPersonalEventsInRange,
+    getTrainingsByEmployee,
     getGlobalEventsInRange,
     getEmployeesByHouse,
     getHouseCalendarPersonalEventsInRange,
@@ -33,6 +34,7 @@ const {
     mapEmployeeAbsenceCalendarEvent,
     mapHouseVacationCalendarEvent,
     mapPersonalCalendarEvent,
+    mapPersonalEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
@@ -374,6 +376,37 @@ exports.getEventsInRange = async (
         code: RESPONSES.EVENTS.FOUND,
         data: {
             events: events,
+        },
+    };
+};
+
+exports.getTrainingsByEmployee = async (employeeId) => {
+    const employee = await findById(employeeId);
+    if (!employee) {
+        return {
+            code: RESPONSES.EMPLOYEE.NOT_FOUND,
+        };
+    }
+
+    const trainings = await getTrainingsByEmployee(employeeId);
+    if (!trainings || trainings.length === 0) {
+        return {
+            code: RESPONSES.EVENTS.NOT_FOUND,
+            data: {
+                trainings: [],
+            },
+        };
+    }
+
+    return {
+        code: RESPONSES.EVENTS.FOUND,
+        data: {
+            trainings: trainings.map((training) =>
+                mapPersonalEvent(training, {
+                    employeeIds: training.employee_personal_event.map(
+                        ({ employee_id }) => employee_id,
+                    ),
+                })),
         },
     };
 };

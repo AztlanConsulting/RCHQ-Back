@@ -1,6 +1,7 @@
 const {
     getAllEventTypes,
     getEventsInRange,
+    getTrainingsByEmployee,
     getHouseCalendarRecordsInRange,
     getEmployeesForSelector,
     getEmployeeDateRules: getEmployeeDateRulesService,
@@ -91,6 +92,56 @@ exports.getEventsInRange = async (req, res) => {
         });
     } catch (error) {
         console.error("getEventsInRange error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.getTrainingsByEmployee = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        if (!employeeId) {
+            return res.status(400).json({
+                success: false,
+                message: "No se puede acceder",
+            });
+        }
+
+        const result = await getTrainingsByEmployee(employeeId);
+
+        if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
+            return res.status(404).json({
+                success: false,
+                message: "Empleado no encontrado",
+            });
+        }
+
+        if (result.code === RESPONSES.EVENTS.NOT_FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    trainings: [],
+                },
+            });
+        }
+
+        if (result.code === RESPONSES.EVENTS.FOUND) {
+            return res.status(200).json({
+                success: true,
+                data: {
+                    trainings: result.data.trainings,
+                },
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Respuesta inesperada al obtener capacitaciones",
+        });
+    } catch (error) {
+        console.error("getTrainingsByEmployee error:", error);
         return res.status(500).json({
             success: false,
             message: "Error interno del servidor. Por favor intente más tarde.",

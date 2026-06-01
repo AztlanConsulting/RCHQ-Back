@@ -116,6 +116,31 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
     });
 };
 
+exports.getTrainingsByEmployee = async (employeeId) => {
+    return await prisma.personal_event.findMany({
+        where: {
+            event_type: {
+                name: "Capacitaciones",
+            },
+            employee_personal_event: {
+                some: {
+                    employee_id: employeeId,
+                },
+            },
+        },
+        include: {
+            employee_personal_event: {
+                select: {
+                    employee_id: true,
+                },
+            },
+        },
+        orderBy: {
+            start: "desc",
+        },
+    });
+};
+
 exports.getHouseCalendarPersonalEventsInRange = async (
     requesterId,
     houseId,
