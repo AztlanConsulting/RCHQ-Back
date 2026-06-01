@@ -5,6 +5,7 @@ const {
     mapPersonalEventOverlap,
 } = require("../../utils/mappers/event.map");
 const { eventDateTimeToUtc } = require("../../utils/event/dateTime");
+const { getMexicoTodayDate } = require("../../utils/dates");
 
 const TRAINING_EVENT_TYPE_NAME = "Capacitaciones";
 
@@ -119,6 +120,7 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
 };
 
 exports.getTrainingsByEmployee = async (employeeId) => {
+    const todayInMexico = getMexicoTodayDate();
     const trainingEventType = await prisma.event_type.findFirst({
         where: {
             name: {
@@ -138,6 +140,9 @@ exports.getTrainingsByEmployee = async (employeeId) => {
     return await prisma.personal_event.findMany({
         where: {
             event_type_id: trainingEventType.event_type_id,
+            date: {
+                lt: todayInMexico,
+            },
             employee_personal_event: {
                 some: {
                     employee_id: employeeId,
