@@ -380,6 +380,13 @@ exports.getEventsInRange = async (
 };
 
 exports.getTrainingsByEmployee = async (employeeId) => {
+
+    if (!employeeId) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+        };
+    }
+
     const employee = await findById(employeeId);
     if (!employee) {
         return {

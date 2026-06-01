@@ -105,6 +105,13 @@ exports.getTrainingsByEmployee = async (req, res) => {
 
         const result = await getTrainingsByEmployee(employeeId);
 
+        if(result.code === RESPONSES.EVENTS.VALIDATION_ERROR) {
+            return res.status(422).json({
+                success: false,
+                message: "ID de empleado inválido",
+            });
+        }
+
         if (result.code === RESPONSES.EMPLOYEE.NOT_FOUND) {
             return res.status(404).json({
                 success: false,
