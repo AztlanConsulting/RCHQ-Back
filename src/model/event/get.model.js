@@ -6,6 +6,8 @@ const {
 } = require("../../utils/mappers/event.map");
 const { eventDateTimeToUtc } = require("../../utils/event/dateTime");
 
+const TRAINING_EVENT_TYPE_NAME = "Capacitaciones";
+
 exports.getAllEventTypes = async () => {
     return await prisma.event_type.findMany({
         select: {
@@ -117,11 +119,25 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
 };
 
 exports.getTrainingsByEmployee = async (employeeId) => {
+    const trainingEventType = await prisma.event_type.findFirst({
+        where: {
+            name: {
+                equals: TRAINING_EVENT_TYPE_NAME,
+                mode: "insensitive",
+            },
+        },
+        select: {
+            event_type_id: true,
+        },
+    });
+
+    if (!trainingEventType) {
+        return [];
+    }
+
     return await prisma.personal_event.findMany({
         where: {
-            event_type: {
-                name: "Capacitaciones",
-            },
+            event_type_id: trainingEventType.event_type_id,
             employee_personal_event: {
                 some: {
                     employee_id: employeeId,

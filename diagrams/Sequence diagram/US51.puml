@@ -103,12 +103,22 @@ alt Empleado no está registrado
 else Empleado registrado
     Service ->> EventModel :getTrainingsByEmployee(employeeId)
     activate EventModel
-    EventModel ->> BD : prisma.personal_event.findMany({\n\twhere: {\n\t\tevent_type: {\n\t\t\tname: "capacitaciones",\n\t\t},\n\t\temployee_personal_event: {\n\t\t\tsome: {\n\t\t\t\temployee_id: employeeId,\n\t\t\t},\n\t\t},\n\t},\n\tinclude: {\n\t\tevent_type: {\n\t\t\tselect: {\n\t\t\t\tname: true,\n\t\t\t},\n\t\t},\n\t\temployee_personal_event: {\n\t\t\tinclude: {\n\t\t\t\temployee: {\n\t\t\t\t\tselect: {\n\t\t\t\t\t\temployee_id: true,\n\t\t\t\t\t\tname: true,\n\t\t\t\t\t\tsurname: true,\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t},\n\t\t},\n\t},\n\torderBy: {\n\t\tstart: "desc",\n\t},\n})
+    EventModel ->> BD : prisma.event_type.findFirst({\n\twhere: {\n\t\tname: {\n\t\t\tequals: TRAINING_EVENT_TYPE_NAME,\n\t\t\tmode: "insensitive",\n\t\t},\n\t},\n\tselect: {\n\t\tevent_type_id: true,\n\t},\n})
     activate BD
-    BD -->> EventModel : trainingEvents[]
+    BD -->> EventModel : trainingEventType
     deactivate BD
-    EventModel -->> Service : trainingEvents[]
-    deactivate EventModel
+
+    alt !trainingEventType
+        EventModel -->> Service : []
+        deactivate EventModel
+    else Tipo de capacitacion encontrado
+        EventModel ->> BD : prisma.personal_event.findMany({\n\twhere: {\n\t\tis_deleted: false,\n\t\tevent_type_id: trainingEventType.event_type_id,\n\t\temployee_personal_event: {\n\t\t\tsome: {\n\t\t\t\temployee_id: employeeId,\n\t\t\t},\n\t\t},\n\t},\n\tinclude: {\n\t\temployee_personal_event: {\n\t\t\tselect: {\n\t\t\t\temployee_id: true,\n\t\t\t},\n\t\t},\n\t},\n\torderBy: {\n\t\tstart: "desc",\n\t},\n})
+        activate BD
+        BD -->> EventModel : trainingEvents[]
+        deactivate BD
+        EventModel -->> Service : trainingEvents[]
+        deactivate EventModel
+    end
 
     alt No hay capacitaciones
         Service -->> Controller : return { \n\ttype: RESPONSES.EVENTS.NOT_FOUND, \n\tbody: [] \n}
