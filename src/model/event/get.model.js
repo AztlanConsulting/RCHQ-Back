@@ -145,9 +145,16 @@ exports.getTrainingsByEmployee = async (employeeId) => {
             },
         },
         include: {
+            event_type: true,
             employee_personal_event: {
-                select: {
-                    employee_id: true,
+                include: {
+                    employee: {
+                        select: {
+                            employee_id: true,
+                            name: true,
+                            surname: true,
+                        },
+                    },
                 },
             },
         },
