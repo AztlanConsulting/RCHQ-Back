@@ -102,12 +102,6 @@ exports.getEventsInRange = async (req, res) => {
 exports.getTrainingsByEmployee = async (req, res) => {
     try {
         const { employeeId } = req.params;
-        if (!employeeId) {
-            return res.status(400).json({
-                success: false,
-                message: "No se puede acceder",
-            });
-        }
 
         const result = await getTrainingsByEmployee(employeeId);
 
