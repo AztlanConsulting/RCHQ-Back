@@ -355,13 +355,16 @@ model blacklist {
 
 model beneficiary {
   beneficiary_id        String                  @id(map: "beneficiary_pk") @db.Uuid
-  house_id              String                  @db.Uuid
   name                  String                  @db.VarChar(50)
   surname               String                  @db.VarChar(50)
   birth_date            DateTime                @db.Date
+  curp                  String                  @unique @db.VarChar(18)
   background            String                  @db.VarChar(250)
+  house_id              String                  @db.Uuid
+  date_entry_house      DateTime                @db.Date
   legal_mother_id       String?                 @db.Uuid
   legal_father_id       String?                 @db.Uuid
+  last_record_update    DateTime                @db.Date
   house                 house                   @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_house_fk")
   legal_mother          beneficiary_parent?     @relation("BeneficiaryLegalMother", fields: [legal_mother_id], references: [parent_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_legal_mother_fk")
   legal_father          beneficiary_parent?     @relation("BeneficiaryLegalFather", fields: [legal_father_id], references: [parent_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_legal_father_fk")
@@ -383,6 +386,7 @@ model beneficiary_documents {
   document_id    String      @db.Uuid
   beneficiary_id String      @db.Uuid
   url            String
+  date_modified  DateTime    @db.Date
   documents      documents   @relation(fields: [document_id], references: [document_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_documents_documents_fk")
   beneficiary    beneficiary @relation(fields: [beneficiary_id], references: [beneficiary_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_documents_beneficiary_fk")
 
