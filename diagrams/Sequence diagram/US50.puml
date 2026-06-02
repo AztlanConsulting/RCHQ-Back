@@ -1,8 +1,8 @@
 @startuml US50 - Coordinador elimina empleado de capacitación
 
 actor Navegador
-boundary "React (employeeProfile.jsx)" as ReactView
 boundary "event.personal.routes" as routes
+boundary "React (employeeProfile.jsx)" as ReactView
 control "delete.controller" as controller
 control "delete.service" as service
 entity "get.model" as get.model
@@ -21,9 +21,11 @@ alt Confirma eliminación
     Navegador -> ReactView : Confirmar eliminar
 
     ReactView -> routes : DELETE /events/personal/:eventId/employee/:employeeId
+    deactivate ReactView
     activate routes
 
     routes -> controller : removeEmployeeFromPersonalEvent(request, response)
+    deactivate routes
     activate controller
 
     controller ->> service : removeEmployeeFromPersonalEvent(eventId, employeeId, user, clientIp)
@@ -41,8 +43,12 @@ alt Confirma eliminación
     alt Evento no existe
         service -->> controller : { code: NOT_FOUND }
         controller -->> routes : response.status(404).send("Evento no encontrado")
+        activate routes
         routes -->> ReactView : send("Evento no encontrado")
+        deactivate routes
+        activate ReactView
         ReactView -> Navegador : Mostrar error 404
+        deactivate ReactView
 
     else Evento existe
         service -> service : Verificar event_type.name === "Capacitaciones"
@@ -50,8 +56,12 @@ alt Confirma eliminación
         alt No es una capacitación
             service -->> controller : { code: NOT_TRAINING_EVENT }
             controller -->> routes : response.status(400).send("El evento no es una capacitación")
+            activate routes
             routes -->> ReactView : send("El evento no es una capacitación")
+            deactivate routes
+            activate ReactView
             ReactView -> Navegador : Mostrar error 400
+            deactivate ReactView
 
         else Es una capacitación
             service ->> get.model : findEmployeeInPersonalEvent(eventId, employeeId)
@@ -66,8 +76,12 @@ alt Confirma eliminación
             alt Empleado no está asignado
                 service -->> controller : { code: EMPLOYEE_NOT_IN_EVENT }
                 controller -->> routes : response.status(404).send("Empleado no asignado")
+                activate routes
                 routes -->> ReactView : send("Empleado no asignado")
+                deactivate routes
+                activate ReactView
                 ReactView -> Navegador : Mostrar error 404
+                deactivate ReactView
 
             else Empleado está asignado
                 service ->> delete.model : removeEmployeeFromPersonalEvent(eventId, employeeId)
@@ -93,9 +107,11 @@ alt Confirma eliminación
 
                 controller -->> routes : response.status(200).send("Empleado eliminado")
                 deactivate controller
+                activate routes
 
                 routes -->> ReactView : send("Empleado eliminado")
                 deactivate routes
+                activate ReactView
 
                 ReactView -> Navegador : Notificar éxito
                 ReactView -> Navegador : Actualizar información del expediente
@@ -106,8 +122,7 @@ alt Confirma eliminación
 else Cancela eliminación
     Navegador -> ReactView : Cancelar
     ReactView -> Navegador : Mantener detalle del expediente
+    deactivate ReactView
 end
-
-deactivate ReactView
 
 @enduml
