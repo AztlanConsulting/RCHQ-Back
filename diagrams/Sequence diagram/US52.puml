@@ -1,0 +1,189 @@
+@startuml HU - Administrador registra evento global
+
+actor Navegador
+boundary "event.global.routes" as routes
+boundary "React (calendarModal.jsx)" as ReactView
+control "create.controller" as controller
+control "create.service" as event.service
+entity "event.model" as event.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> routes : GET /events/getAllTypes
+activate routes
+
+routes -> controller : getAllEventTypes(request, response)
+deactivate routes
+activate controller
+
+controller ->> event.service : getAllEventTypes()
+activate event.service
+event.service ->> event.model : getAllEventTypes()
+activate event.model
+event.model ->> PostgreSQL : prisma.event_type.findMany()
+activate PostgreSQL
+PostgreSQL -->> event.model : eventTypes[]
+deactivate PostgreSQL
+event.model -->> event.service : eventTypes[]
+deactivate event.model
+event.service -->> controller : eventTypes[]
+deactivate event.service
+
+controller -->> routes : response.status(200).send({ eventTypes })
+deactivate controller
+activate routes
+
+routes -> ReactView : render(Modal con datos)
+deactivate routes
+activate ReactView
+
+Navegador -> ReactView : Seleccionar opción "Global"
+
+Navegador -> ReactView : Ingresa datos obligatorios:\n(name, eventType, start, end)
+
+alt all_day?
+    ReactView -> ReactView : Ocultar selectores de hora
+else No
+    ReactView -> ReactView : Mostrar selectores de hora
+end
+
+alt Repetir evento
+    Navegador -> ReactView : Selecciona frecuencia:\n(daily, weekly, monthly, yearly)
+else No repetir
+    ReactView -> ReactView : is_recurring = false\nrecurrence_type = null
+end
+
+alt Ingresar datos opcionales
+    Navegador -> ReactView : Ingresa datos opcionales:\n(description, is_free_day)
+else No
+    ReactView -> ReactView : Continúa sin opcionales
+end
+
+ReactView -> ReactView : Validar campos obligatorios
+
+alt Campos incompletos
+    ReactView -> Navegador : Mostrar error "Campos obligatorios faltantes" (422)
+else Campos completos
+
+    alt is_recurring = true AND recurrence_type vacío
+        ReactView -> Navegador : Mostrar error "Seleccione frecuencia de repetición" (422)
+        deactivate ReactView
+    else Datos válidos
+        Navegador -> routes : POST /events/global/add
+        activate routes
+
+        routes -> controller : createGlobalEvent(request, response)
+        deactivate routes
+        activate controller
+
+        controller ->> event.service : createGlobalEvent(user, payload, clientIp)
+        activate event.service
+
+        event.service ->> event.model : findOverlappingGlobalEvents({ start, end })
+        activate event.model
+
+        event.model ->> PostgreSQL : prisma.global_event.findMany(overlap_query)
+        activate PostgreSQL
+        PostgreSQL -->> event.model : collisionList
+        deactivate PostgreSQL
+
+        event.model -->> event.service : collisions[]
+        deactivate event.model
+
+        alt ¿Existe empalme? AND !forceOverlap
+            event.service -->> controller : { code: OVERLAP, data: { collisions } }
+            controller -->> routes : response.status(409).send("Conflicto")
+            activate routes
+
+            routes -->> ReactView : send("Conflicto")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Mostrar alerta de empalme
+            deactivate ReactView
+
+            alt No desea traslape
+                Navegador -> ReactView : Selecciona "No"
+                activate ReactView
+                ReactView -> Navegador : Regresa a editar datos
+                deactivate ReactView
+            else Sí desea traslape (forceOverlap = true)
+                Navegador -> ReactView : Selecciona "Sí"
+                activate ReactView
+
+                ReactView -> routes : POST /events/global/add { ..., forceOverlap: true }
+                deactivate ReactView
+                activate routes
+
+                routes -> controller : createGlobalEvent(request, response)
+                deactivate routes
+                controller ->> event.service : createGlobalEvent(user, payload, clientIp)
+                event.service ->> event.model : createGlobalEvent(data)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.global_event.create()
+                activate PostgreSQL
+                PostgreSQL -->> event.model : globalEventCreated
+                deactivate PostgreSQL
+                event.model -->> event.service : globalEvent
+                deactivate event.model
+
+                event.service ->> event.model : createLog(userId, GLOBAL_EVENT_CREATED, clientIp, globalEventId)
+                activate event.model
+                event.model ->> PostgreSQL : prisma.log.create()
+                activate PostgreSQL
+                PostgreSQL -->> event.model : log
+                deactivate PostgreSQL
+                event.model -->> event.service : success
+                deactivate event.model
+
+                event.service -->> controller : { code: CREATED, data: { globalEvent } }
+
+                controller -->> routes : response.status(201).send("Creado")
+                activate routes
+
+                routes -->> ReactView : send("Creado")
+                deactivate routes
+                activate ReactView
+
+                ReactView -> Navegador : Actualizar calendario y cerrar modal
+                deactivate ReactView
+            end
+
+        else No existe empalme
+            event.service ->> event.model : createGlobalEvent(data)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.global_event.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : globalEventCreated
+            deactivate PostgreSQL
+            event.model -->> event.service : globalEvent
+            deactivate event.model
+
+            event.service ->> event.model : createLog(userId, GLOBAL_EVENT_CREATED, clientIp, globalEventId)
+            activate event.model
+            event.model ->> PostgreSQL : prisma.log.create()
+            activate PostgreSQL
+            PostgreSQL -->> event.model : log
+            deactivate PostgreSQL
+            event.model -->> event.service : success
+            deactivate event.model
+
+            event.service -->> controller : { code: CREATED, data: { globalEvent } }
+            deactivate event.service
+
+            controller -->> routes : response.status(201).send("Creado")
+            deactivate controller
+            activate routes
+
+            routes -->> ReactView : send("Creado")
+            deactivate routes
+            activate ReactView
+
+            ReactView -> Navegador : Actualizar calendario y cerrar modal
+            deactivate ReactView
+        end
+    end
+end
+
+@enduml

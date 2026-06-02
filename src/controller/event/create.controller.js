@@ -1,5 +1,6 @@
 const {
     createHouseEvent,
+    createGlobalEvent,
     createPersonalEvent,
 } = require("../../service/event/create.service");
 const { getClientIp } = require("../../utils/ip");
@@ -40,6 +41,57 @@ exports.createHouseEvent = async (req, res) => {
                 message: "Evento creado correctamente.",
                 data: {
                     houseEvent: result.data.houseEvent,
+                },
+                warning: result.data.warning,
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    } catch {
+        return res.status(500).json({
+            success: false,
+            message: "Error interno del servidor. Por favor intente más tarde.",
+        });
+    }
+};
+
+exports.createGlobalEvent = async (req, res) => {
+    try {
+        const result = await createGlobalEvent(
+            req.user,
+            req.body,
+            getClientIp(req),
+        );
+
+        if (result.code === RESPONSES.EVENTS.VALIDATION_ERROR) {
+            return res.status(422).json({
+                success: false,
+                message: "Datos inválidos. Verifique los campos.",
+                data: {
+                    errors: result.data.errors,
+                },
+            });
+        }
+
+        if (result.code === RESPONSES.EVENTS.OVERLAP) {
+            return res.status(409).json({
+                success: false,
+                message: "Conflicto: existe un empalme con otro evento global.",
+                data: {
+                    collisions: result.data.collisions,
+                },
+            });
+        }
+
+        if (result.code === RESPONSES.EVENTS.CREATED) {
+            return res.status(201).json({
+                success: true,
+                message: "Evento global creado correctamente.",
+                data: {
+                    globalEvent: result.data.globalEvent,
                 },
                 warning: result.data.warning,
             });

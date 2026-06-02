@@ -48,6 +48,7 @@ const LOG_ACTIONS = {
     BLACKLIST_ADDED: "blck-001",
     BLACKLIST_REMOVED: "blck-002",
     PERSONAL_EVENT_DELETED: "even-009",
+    GLOBAL_EVENT_CREATED: "even-010",
 };
 
 module.exports = { LOG_ACTIONS };

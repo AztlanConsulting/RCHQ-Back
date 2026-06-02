@@ -162,6 +162,11 @@ const ACTIONS = [
         important: false,
     },
     {
+        action_id: "even-010",
+        description: "Evento global creado con éxito",
+        important: false,
+    },
+    {
         action_id: "even-002",
         description: "Evento personal creado con éxito",
         important: false,

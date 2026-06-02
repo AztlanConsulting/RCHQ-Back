@@ -1,0 +1,61 @@
+@startuml HU - Registro de evento global
+
+|Administrador|
+start
+:Interactuar con el calendario;
+
+|Sistema|
+:Renderizar modal de creación;
+
+|Administrador|
+:Seleccionar opción "Global";
+
+repeat
+:Llenar campos obligatorios:
+- Título
+- Tipo de evento
+- Fecha y hora de inicio
+- Fecha y hora de fin;
+
+|Sistema|
+if (¿Activar "Todo el día"?) then (SI)
+    :Eliminar selectores de hora;
+    :Registrar solo fechas;
+else (NO)
+    :Mantener selectores de hora;
+endif
+
+|Administrador|
+if (¿Activar "Repetir evento"?) then (SI)
+    :Seleccionar frecuencia:
+    - Diario
+    - Semanal
+    - Mensual
+    - Anual;
+else (NO)
+endif
+
+if (¿Ingresar descripción?) then (SI)
+    :Ingresar descripción del evento;
+else (NO)
+endif
+
+|Sistema|
+repeat while (¿Los campos obligatorios están completos?) is (NO)
+
+:Validar datos del evento;
+
+if (¿El evento es recurrente y no tiene frecuencia?) then (SI)
+    :Mostrar error solicitando frecuencia;
+    stop
+else (NO)
+endif
+
+:Registrar evento global;
+
+:Notificar éxito al usuario;
+:Actualizar calendario para todo el personal;
+
+stop
+
+@enduml

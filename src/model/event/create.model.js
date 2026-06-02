@@ -2,6 +2,7 @@ const prisma = require("../../prisma");
 const { randomUUID } = require("crypto");
 const {
     mapHouseEvent,
+    mapGlobalEvent,
     mapPersonalEvent,
 } = require("../../utils/mappers/event.map");
 const { eventDateTimeToUtc } = require("../../utils/event/dateTime");
@@ -22,6 +23,25 @@ exports.createHouseEvent = async (data) => {
     });
 
     return mapHouseEvent(houseEvent);
+};
+
+exports.createGlobalEvent = async (data) => {
+    const globalEvent = await prisma.global_event.create({
+        data: {
+            global_event_id: randomUUID(),
+            event_type_id: data.eventTypeId,
+            name: data.name,
+            start: data.start,
+            end: data.end,
+            all_day: data.allDay,
+            is_free_day: data.isFreeDay,
+            description: data.description,
+            is_recurring: data.isRecurring,
+            recurrence_type: data.recurrenceType,
+        },
+    });
+
+    return mapGlobalEvent(globalEvent);
 };
 
 exports.createPersonalEvent = async (data) => {
