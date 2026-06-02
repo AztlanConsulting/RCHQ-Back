@@ -209,10 +209,16 @@ const ACTIONS = [
 ];
 
 async function seedActions(db = prisma) {
-    await db.action.createMany({
-        data: ACTIONS,
-        skipDuplicates: true,
-    });
+    for (const action of ACTIONS) {
+        await db.action.upsert({
+            where: { action_id: action.action_id },
+            update: {
+                description: action.description,
+                important: action.important,
+            },
+            create: action,
+        });
+    }
 }
 
 module.exports = {

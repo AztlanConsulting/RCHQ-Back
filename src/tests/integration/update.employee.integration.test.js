@@ -3,6 +3,7 @@ const app     = require("../../app");
 const prisma  = require("../../prisma");
 const { hashPassword } = require("../../utils/password");
 const { buildSessionToken } = require("../../utils/auth/authTokens");
+const { deleteFileIfExists } = require("../../utils/deleteFile");
 
 
 const HOUSE_ID    = "f1000001-0000-4000-8000-000000000001";
@@ -27,6 +28,27 @@ const json = () => ({
   "Content-Type": "application/json",
   ...authHeader(),
 });
+
+const cleanupUploadedPictures = async () => {
+  const employees = await prisma.employee.findMany({
+    where: { employee_id: { in: [EMP_ID, OTHER_EMP] } },
+    select: {
+      employee_id: true,
+      picture: true,
+    },
+  });
+
+  employees.forEach((employee) => {
+    if (employee.picture && employee.picture.startsWith("uploads/")) {
+      deleteFileIfExists(employee.picture);
+    }
+  });
+
+  await prisma.employee.updateMany({
+    where: { employee_id: { in: [EMP_ID, OTHER_EMP] } },
+    data: { picture: null },
+  });
+};
 
 
 beforeAll(async () => {
@@ -140,6 +162,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+    await cleanupUploadedPictures();
     await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
@@ -155,6 +178,10 @@ afterAll(async () => {
     await prisma.workday.deleteMany({ where: { workday_id: WD_ID } });
 
     await prisma.$disconnect();
+});
+
+afterEach(async () => {
+  await cleanupUploadedPictures();
 });
 
 describe("GET /employee/update-form", () => {
