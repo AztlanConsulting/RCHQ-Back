@@ -1,0 +1,64 @@
+@startuml
+title US - Consultar las capacitaciones en mi perfil (Activity Diagram)
+
+|Usuario|
+start
+:Navega a la pestaña de Expediente de un empleado (o propios);
+
+|Frontend|
+:Obtiene el token de sesión almacenado;
+:Consulta las capacitaciones del empleado;
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware de rate limit (apiLimiter);
+:Ejecuta middleware de autenticación (verifyToken);
+
+if (¿Token es válido?) then (Sí)
+  :Ejecuta middleware requirePrivileges("viewEvents");
+  if (¿Tiene el privilegio general?) then (Sí)
+    :Ejecuta resolver "resolveEmployeeHouse";
+    :Busca la casa del empleado en la BD;
+    if (¿El empleado existe para resolver su casa?) then (Sí)
+      :Asigna houseId a req.resolvedEmployee;
+      :Ejecuta middleware ABAC authorize(viewTrainings);
+      
+      if (¿Es el mismo usuario, o pertenece a la misma casa con rol de coordinador o administrador?) then (Sí)
+        :Delega al Controller y Service;
+        :Busca al empleado en BD por ID;
+        
+        if (¿Empleado encontrado en Service?) then (Sí)
+          :Busca en la tabla de personal_event los eventos \npersonales que sean de tipo "capacitacion";
+          if (¿Tiene capacitaciones registradas?) then (Sí)
+            :Mapea la lista de capacitaciones en el modelo \n\t- personalEventId,\n\t- eventTypeId,\n\t- date,\n\t- start, \n\t- end,\n\t- name, \n\t- description,\n\t- allDay,\n\t- isDeleted,\n\t- employeeNames,\n\t- trainer;
+            :Retorna status 200 con la lista de capacitaciones (EVENTS.OK);
+          else (No)
+            :Retorna status 200 con array vacío (EVENTOS.NOT_FOUND);
+          endif
+        else (No)
+          :Retorna status 404 (USER.NOT_FOUND);
+        endif
+        
+      else (No)
+        :Retorna status 403 (No autorizado por política ABAC);
+      endif
+    else (No)
+      :Retorna status 404 (Empleado no encontrado en resolver);
+    endif
+  else (No)
+    :Retorna status 403 (Privilegio insuficiente);
+  endif
+else (No)
+  :Retorna status 401 / 403 (Token inválido);
+endif
+
+|Frontend|
+:Recibe respuesta HTTP;
+:Renderiza lista de documentos, Mensaje de capacitaciones vacía o mensaje de error según status;
+:Muestra la vista al usuario;
+
+|Usuario|
+:Consulta las capacitaciones;
+stop
+
+@enduml

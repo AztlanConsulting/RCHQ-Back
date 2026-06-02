@@ -196,6 +196,11 @@ const cleanDb = async () => {
 };
 
 const loginAndGetToken = async () => {
+    await prisma.employee.updateMany({
+        where: { employee_id: TEST_ACTOR_ID },
+        data: { refresh_token: null },
+    });
+
     const res = await request(app)
         .post("/auth/login")
         .send({ email: TEST_ACTOR_EMAIL, password: TEST_PASSWORD });

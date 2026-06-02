@@ -107,7 +107,11 @@ const SEED_ACTIONS = [
         description: "Fallo cambio pwd por pwd incorrecta",
         important: true,
     },
-    { action_id: "empl-001", description: "Empleado creado", important: true },
+    {
+        action_id: "empl-001",
+        description: "Empleado creado con éxito",
+        important: false,
+    },
     {
         action_id: "empl-002",
         description: "Documento de empleado subido",
@@ -213,7 +217,10 @@ async function seedDb({ passwordOverride } = {}) {
     for (const action of SEED_ACTIONS) {
         await prisma.action.upsert({
             where: { action_id: action.action_id },
-            update: {},
+            update: {
+                description: action.description,
+                important: action.important,
+            },
             create: action,
         });
     }

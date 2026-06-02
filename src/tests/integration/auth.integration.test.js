@@ -15,6 +15,7 @@ const TEST_EMAIL = "integration@test.com";
 const TEST_PASSWORD = "TestPass123";
 const TEST_CURP = "TEST123456INTXXX01";
 const TEST_ROLE_NAME = "test-role-auth-it";
+const LOGIN_BLOCK_ATTEMPTS = 12;
 
 const seedDependencies = async () => {
     await prisma.house.upsert({
@@ -177,10 +178,10 @@ describe("POST /auth/login - integration", () => {
         expect(emp.failed_login_attempts).toBe(1);
     });
 
-    it("bloquea la cuenta en BD después de 5 intentos fallidos", async () => {
+    it("bloquea la cuenta en BD después de 12 intentos fallidos", async () => {
         await createTestEmployee();
 
-        for (let attempt = 0; attempt < 5; attempt += 1) {
+        for (let attempt = 0; attempt < LOGIN_BLOCK_ATTEMPTS; attempt += 1) {
             await request(app)
                 .post("/auth/login")
                 .send({ email: TEST_EMAIL, password: "wrong" });

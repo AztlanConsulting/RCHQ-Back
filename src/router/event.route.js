@@ -7,13 +7,20 @@ const {
     requirePrivileges,
     allRoles,
 } = require("../middleware/rbac");
-const { resolveRequesterHouse } = require("../middleware/resolvers");
-const { employeePolicy } = require("../policies/employee.policies");
+const {
+    resolveEmployeeHouse,
+    resolveRequesterHouse,
+} = require("../middleware/resolvers");
+const {
+    employeePolicy,
+    viewTrainings,
+} = require("../policies/employee.policies");
 const { authorize, isAllowed } = require("../middleware/abac");
 
 const {
     getAllEventTypes,
     getEventsInRange,
+    getTrainingsByEmployee,
     getHouseCalendarRecordsInRange,
     getEmployeesForSelector,
     getEmployeeDateRules,
@@ -50,6 +57,20 @@ router.get(
     requirePrivileges("viewEvents"),
     isAllowed,
     getEventsInRange,
+);
+
+router.get(
+    "/trainings/:employeeId",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_EVENTS),
+    resolveEmployeeHouse,
+    authorize(viewTrainings, (req) => ({
+        employeeId: req.params.employeeId,
+        houseId: req.resolvedEmployee.houseId,
+    })),
+    getTrainingsByEmployee,
 );
 
 router.get(
