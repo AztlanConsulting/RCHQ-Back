@@ -4,10 +4,23 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 const request = require("supertest");
 const bcrypt = require("bcryptjs");
 const app = require("../../index");
-const { seedDb, cleanDb, disconnectDb, IDS } = require("../helpers/dbSetup");
+const {
+    seedDb,
+    cleanDb,
+    disconnectDb,
+    prisma,
+    IDS,
+} = require("../helpers/dbSetup");
 
 const VALID_EMAIL = "andre@gmail.com";
 const VALID_PASSWORD = "Andatti67";
+
+const clearActiveSession = async () => {
+    await prisma.employee.updateMany({
+        where: { employee_id: IDS.employee },
+        data: { refresh_token: null },
+    });
+};
 
 const loginAndGetToken = async () => {
     const res = await request(app)
@@ -35,6 +48,10 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     });
 
     describe("PASO 1 — POST /auth/login", () => {
+        beforeEach(async () => {
+            await clearActiveSession();
+        });
+
         it("retorna 200 con token SESSION cuando las credenciales son válidas", async () => {
             const res = await request(app)
                 .post("/auth/login")
@@ -91,6 +108,7 @@ describe("Flujo integración: Login → GET /user/profile", () => {
         let sessionToken;
 
         beforeAll(async () => {
+            await clearActiveSession();
             sessionToken = await loginAndGetToken();
         });
 
@@ -127,6 +145,10 @@ describe("Flujo integración: Login → GET /user/profile", () => {
     });
 
     describe("Flujo encadenado end-to-end", () => {
+        beforeEach(async () => {
+            await clearActiveSession();
+        });
+
         it("Login exitoso → perfil retorna los datos del mismo usuario", async () => {
             const loginRes = await request(app)
                 .post("/auth/login")

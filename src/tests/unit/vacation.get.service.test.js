@@ -20,8 +20,18 @@ const vacationGetModel = require("../../model/vacation/get.model");
 const RESPONSES = require("../../utils/responses");
 
 const EMPLOYEE_ID = 1;
+const FROZEN_TODAY = new Date("2026-05-31T12:00:00.000Z");
 
 describe("vacation.service — requestVacation", () => {
+    beforeAll(() => {
+        jest.useFakeTimers();
+        jest.setSystemTime(FROZEN_TODAY);
+    });
+
+    afterAll(() => {
+        jest.useRealTimers();
+    });
+
     beforeEach(() => jest.clearAllMocks());
 
     describe("Flujo - Verificar días de trabajo", () => {

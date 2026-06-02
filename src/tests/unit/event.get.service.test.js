@@ -367,3 +367,81 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
         );
     });
 });
+
+describe("event.service — getTrainingsByEmployee", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it("retorna EMPLOYEE.NOT_FOUND cuando el empleado no existe", async () => {
+        employeeModel.findById.mockResolvedValue(null);
+
+        const result = await eventGetService.getTrainingsByEmployee(
+            "employee-missing",
+        );
+
+        expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
+        expect(eventModel.getTrainingsByEmployee).not.toHaveBeenCalled();
+    });
+
+    it("retorna EVENTS.NOT_FOUND con trainings vacio cuando no hay capacitaciones", async () => {
+        employeeModel.findById.mockResolvedValue({
+            employee_id: "employee-1",
+        });
+        eventModel.getTrainingsByEmployee.mockResolvedValue([]);
+
+        const result = await eventGetService.getTrainingsByEmployee(
+            "employee-1",
+        );
+
+        expect(result.code).toBe(RESPONSES.EVENTS.NOT_FOUND);
+        expect(result.data).toEqual({ trainings: [] });
+    });
+
+    it("mapea las capacitaciones del empleado con mapPersonalCalendarEvent", async () => {
+        employeeModel.findById.mockResolvedValue({
+            employee_id: "employee-1",
+        });
+        eventModel.getTrainingsByEmployee.mockResolvedValue([
+            makePersonalEvent({
+                personalEventId: "training-event-3",
+                people: [
+                    {
+                        employee_id: "employee-1",
+                        name: "Ana",
+                        surname: "Lopez",
+                    },
+                    {
+                        employee_id: "employee-2",
+                        name: "Luis",
+                        surname: "Perez",
+                    },
+                ],
+            }),
+        ]);
+
+        const result = await eventGetService.getTrainingsByEmployee(
+            "employee-1",
+        );
+
+        expect(result.code).toBe(RESPONSES.EVENTS.FOUND);
+        expect(result.data.trainings).toEqual([
+            expect.objectContaining({
+                eventId: "training-event-3",
+                name: "Capacitacion operativa",
+                type: "Capacitaciones",
+                focus: "eventos",
+                scope: "personal",
+                trainer: "Facilitador Externo",
+                peopleInsideEvent: [
+                    {
+                        id: "employee-1",
+                        name: "Ana Lopez",
+                    },
+                    {
+                        id: "employee-2",
+                        name: "Luis Perez",
+                    },
+                ],
+            }),
+        ]);
+    });
+});
