@@ -360,7 +360,7 @@ model beneficiary {
   maternal_surname      String                  @db.VarChar(50)
   preferred_name        String                  @db.VarChar(50)
   birth_date            DateTime                @db.Date
-  age_entered_house     DateTime                @db.Date
+  age_entered_house     DateTime                Int
   blood_type            String                  @db.VarChar(10)
   curp                  String?                 @unique @db.VarChar(18)  
   house_id              String                  @db.Uuid
