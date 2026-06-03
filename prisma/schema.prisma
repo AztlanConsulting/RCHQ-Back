@@ -348,5 +348,5 @@ model blacklist {
   curp         String   @unique @db.VarChar(18)
   reason       String   @db.VarChar(250)
   created_at   DateTime @default(now()) @db.Timestamp(6)
-  employee     employee @relation(fields: [curp], references: [curp], onUpdate: NoAction, map: "blacklist_employee_fk")
+  employee     employee @relation(fields: [curp], references: [curp], onDelete: NoAction, onUpdate: NoAction, map: "blacklist_employee_fk")
 }
