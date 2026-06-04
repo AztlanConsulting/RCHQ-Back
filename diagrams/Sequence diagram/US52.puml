@@ -1,0 +1,147 @@
+@startuml
+title US52 - Coordinador registra a un nino (Sequence Diagram)
+
+actor Coordinador
+boundary "Cliente React\nRegisterBeneficiary [nuevo]" as Front
+boundary "beneficiary.route.js\nPOST /beneficiary/add [nuevo]" as Router
+control "middlewares seguridad\napiLimiter, verifyToken,\nrequireRole, requirePrivileges,\nauthorize(beneficiaryPolicy)" as SecMW
+control "create.controller.js\npostAdd() [async] [nuevo]" as Controller
+control "create.service.js\ncreateBeneficiary() [async] [nuevo]" as Service
+entity "schemas/beneficiary/create.schemas.js\nbeneficiaryCreateSchema [nuevo]" as Schema
+entity "policies/beneficiary.policies.js\nbeneficiaryPolicy() [nuevo]" as Policy
+entity "model/beneficiary/get.model.js [nuevo]" as GetModel
+entity "model/beneficiary/create.model.js [nuevo]" as CreateModel
+entity "model/log.model.js\ncreateLog() [async]" as LogModel
+database "PostgreSQL\nPrisma" as BD
+
+autonumber
+
+== Validacion en cliente (sin endpoint) ==
+
+Coordinador -> Front : Ingresa datos obligatorios,\nCURP opcional, envia formulario
+activate Front
+
+Front -> Front : beneficiaryCreateSchema.safeParse(form)\n[sync]
+
+alt Validacion Zod falla
+    Front --> Coordinador : UI: Cheque los campos bien
+    deactivate Front
+else Validacion Zod OK
+    Front -> Router : POST /beneficiary/add\nAuthorization Bearer + body JSON
+    deactivate Front
+    activate Router
+
+    == POST /beneficiary/add ==
+
+    Router -> SecMW : pipeline de seguridad
+    activate SecMW
+    SecMW --> Router : next()
+    deactivate SecMW
+
+    Router -> Controller : postAdd(req, res)
+    deactivate Router
+    activate Controller
+
+    Controller ->> Service : await createBeneficiary(body, req.user, req)
+    activate Service
+
+    Service -> Schema : beneficiaryCreateSchema.safeParse(body)\n[sync]
+
+    alt Payload invalido (validacion backend)
+        Service --> Controller : VALIDATION_ERROR + errors[]
+        Controller --> Front : 400 errors[]
+        activate Front
+        Front --> Coordinador : Cheque los campos bien
+        deactivate Front
+        deactivate Service
+        deactivate Controller
+    else Payload valido
+        Service -> Policy : beneficiaryPolicy(user, houseId)\n[sync]
+
+        alt Coordinador inactivo o registro fuera de su casa
+            Service --> Controller : FORBIDDEN
+            Controller --> Front : 403 Acceso denegado
+            activate Front
+            Front --> Coordinador : No puede registrar al nino
+            deactivate Front
+            deactivate Service
+            deactivate Controller
+        else Reglas de negocio OK
+            alt CURP proporcionado
+                Service ->> GetModel : await findBeneficiaryByCurp(curp)
+                activate GetModel
+                GetModel ->> BD : prisma.beneficiary.findUnique + house
+                activate BD
+                BD -->> GetModel : row o null
+                deactivate BD
+                GetModel -->> Service : existing o null
+                deactivate GetModel
+            else Sin CURP
+                Service ->> GetModel : await findBeneficiaryByIdentity(\nname, paternal, maternal, birthDate)
+                activate GetModel
+                GetModel ->> BD : prisma.beneficiary.findFirst + house
+                activate BD
+                BD -->> GetModel : row o null
+                deactivate BD
+                GetModel -->> Service : existing o null
+                deactivate GetModel
+            end
+
+            alt Coincidencia en la misma casa
+                Service --> Controller : CONFLICT_SAME_HOUSE + beneficiaryId
+                Controller --> Front : 409 El nino ya esta registrado en esta casa
+                activate Front
+                Front --> Coordinador : Muestra duplicado en la casa
+                deactivate Front
+                deactivate Service
+                deactivate Controller
+            else Coincidencia en otra casa
+                Service ->> GetModel : await findActiveCoordinatorByHouseId(houseId)
+                activate GetModel
+                GetModel ->> BD : prisma.employee.findFirst\nCoordinador activo de esa casa
+                activate BD
+                BD -->> GetModel : coordinator
+                deactivate BD
+                GetModel -->> Service : coordinatorContact
+                deactivate GetModel
+
+                Service --> Controller : CONFLICT_OTHER_HOUSE +\nhouseName, coordinatorName,\ncoordinatorEmail, coordinatorPhone
+                Controller --> Front : 409 BENEFICIARY_EXISTS_OTHER_HOUSE\nYa existe en otra casa + datos de contacto\ndel coordinador de esa casa
+                activate Front
+                Front --> Coordinador : Contacta al coordinador indicado
+                deactivate Front
+                deactivate Service
+                deactivate Controller
+            else No existe en la red
+                Service -> Service : beneficiaryId, last_modification=hoy,\nlast_record_update=null [sync]
+                Service ->> CreateModel : await create(...)
+                activate CreateModel
+                CreateModel ->> BD : prisma.beneficiary.create\nexpediente inicia en cero
+                activate BD
+                BD -->> CreateModel : beneficiary
+                deactivate BD
+                CreateModel -->> Service : newBeneficiary
+                deactivate CreateModel
+
+                Service ->> LogModel : await createLog(BENEFICIARY_CREATED)
+                activate LogModel
+                LogModel ->> BD : prisma.logs.create
+                activate BD
+                BD -->> LogModel : ok
+                deactivate BD
+                LogModel -->> Service : void
+                deactivate LogModel
+
+                Service --> Controller : success + beneficiaryId
+                Controller --> Front : 201 Nino registrado con exito\nredirect /app/beneficiarios/ver/id
+                activate Front
+                Front --> Coordinador : Ve detalle del nino registrado
+                deactivate Front
+                deactivate Service
+                deactivate Controller
+            end
+        end
+    end
+end
+
+@enduml
