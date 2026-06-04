@@ -1,0 +1,139 @@
+@startuml
+title US52 - Crear nino (servidor)
+
+actor Cliente as Front
+boundary "beneficiary.route.js [nuevo]" as Route
+control "middlewares" as MW
+control "create.controller.js\npostAdd async [nuevo]" as Controller
+control "create.service.js\ncreateBeneficiary async [nuevo]" as Service
+entity "create.schemas.js [nuevo]" as Schema
+entity "beneficiary.policies.js [nuevo]" as Policy
+entity "get.model.js [nuevo]" as GetModel
+entity "create.model.js [nuevo]" as CreateModel
+entity "log.model.js" as LogModel
+database "PostgreSQL Prisma" as BD
+
+autonumber
+
+note over Front, Route
+  Validacion Zod en el cliente.
+  Un solo endpoint POST para el alta.
+end note
+
+Front -> Route : POST /beneficiary/add
+activate Route
+
+Route -> MW : apiLimiter, verifyToken,\nrequireRole, requirePrivileges,\nauthorize(beneficiaryPolicy)
+activate MW
+
+alt Token ausente o invalido
+    MW --> Front : 401 Token no proporcionado\no 403 Token invalido o expirado
+    deactivate MW
+    deactivate Route
+
+else Rate limit excedido
+    MW --> Front : 429 Demasiadas solicitudes
+    deactivate MW
+    deactivate Route
+
+else Rol o privilegio insuficiente
+    MW --> Front : 403 Privilegio insuficiente\no Rol no autorizado
+    deactivate MW
+    deactivate Route
+
+else Autenticado y autorizado
+    MW --> Route : next()
+    deactivate MW
+
+    Route -> Controller : postAdd(req, res)
+    deactivate Route
+    activate Controller
+
+    Controller -> Controller : Arma payload con req.body y foto
+
+    Controller ->> Service : await createBeneficiary(payload, user, req)
+    activate Service
+
+    Service -> Schema : beneficiaryCreateSchema.safeParse(payload)
+
+    alt safeParse falla
+        Service --> Controller : VALIDATION_ERROR + errors
+        Controller --> Front : 400 errors[]\nUI: Cheque los campos bien
+        deactivate Service
+        deactivate Controller
+
+    else safeParse OK
+        Service -> Policy : beneficiaryPolicy(user, houseId)
+
+        alt policy deniega
+            Service --> Controller : FORBIDDEN
+            Controller --> Front : 403 Acceso denegado
+            deactivate Service
+            deactivate Controller
+
+        else policy permite
+            Service ->> GetModel : await findBeneficiaryByCurpWithHouse(curp)
+            activate GetModel
+            GetModel ->> BD : prisma.beneficiary.findUnique + include house
+            activate BD
+            BD -->> GetModel : beneficiary o null
+            deactivate BD
+            GetModel -->> Service : existing o null
+            deactivate GetModel
+
+            alt Ya existe en la misma casa
+                Service --> Controller : CONFLICT_SAME_HOUSE + beneficiaryId
+                Controller --> Front : 409 El nino ya esta registrado en esta casa\nredirect /app/beneficiarios/ver/id
+                deactivate Service
+                deactivate Controller
+
+            else Ya existe en otra casa
+                Service --> Controller : CONFLICT_OTHER_HOUSE + houseName
+                Controller --> Front : 409 Ya existe el nino en otra casa,\ncomunicate con el coordinador de la casa X\npara mover el nino\n(code BENEFICIARY_EXISTS_OTHER_HOUSE)
+                deactivate Service
+                deactivate Controller
+
+            else No existe en la red
+                Service -> Service : beneficiaryId = randomUUID()
+                Service ->> CreateModel : await create(...)
+                activate CreateModel
+                CreateModel ->> BD : prisma.beneficiary.create
+                activate BD
+                BD -->> CreateModel : beneficiary
+                deactivate BD
+                CreateModel -->> Service : newBeneficiary
+                deactivate CreateModel
+
+                Service ->> LogModel : await createLog(BENEFICIARY_CREATED)
+                activate LogModel
+                LogModel ->> BD : prisma.logs.create
+                activate BD
+
+                alt log OK
+                    BD -->> LogModel : ok
+                    LogModel -->> Service : void
+                    Service --> Controller : success + beneficiaryId
+                else log falla
+                    BD -->> LogModel : error
+                    LogModel -->> Service : catch
+                    Service --> Controller : success + warning log fallo
+                end
+                deactivate LogModel
+                deactivate BD
+
+                Controller --> Front : 201 Nino registrado con exito\nredirect /app/beneficiarios/ver/id
+                deactivate Service
+                deactivate Controller
+
+            end
+        end
+    end
+end
+
+note over Controller
+  Si hay excepcion no controlada:
+  500 No se pudo registrar correctamente el nino
+  (deleteFileIfExists si hay foto)
+end note
+
+@enduml

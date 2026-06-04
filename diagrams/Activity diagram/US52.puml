@@ -1,0 +1,64 @@
+@startuml
+title US52 - Crear niño (Activity Diagram)
+
+|Usuario|
+start
+:Ingresa todos los campos necesarios en el formulario;
+:Envía el formulario;
+
+|Cliente|
+:Recibe los datos del formulario;
+:Valida campos con esquema Zod;
+
+if (¿Validación Zod exitosa?) then (Sí)
+    |Cliente|
+    :Envía petición POST al servidor (crear niño);
+else (No)
+    |Cliente|
+    :Muestra mensaje: "Cheque los campos bien";
+    |Usuario|
+    :Corrige los campos e intenta de nuevo;
+    stop
+endif
+
+|Servidor|
+:Recibe la solicitud en el router;
+:Valida campos nuevamente (esquema del backend);
+
+if (¿Payload válido?) then (Sí)
+    |Servidor|
+    :Busca al niño en toda la red (incluyendo otras casas);
+
+    if (¿El niño ya existe?) then (Sí)
+        |Servidor|
+        :Retorna respuesta de error (el niño ya existe, no se crea);
+        |Cliente|
+        :Muestra mensaje de niño duplicado;
+        |Usuario|
+        :Consulta el mensaje de error;
+        stop
+    else (No)
+        |Servidor|
+        :Crea el niño en la base de datos;
+        |Servidor|
+        :Retorna respuesta de éxito con datos del niño;
+        |Cliente|
+        :Recibe respuesta exitosa;
+        |Cliente|
+        :Redirige a la vista de detalle del nuevo niño;
+        |Usuario|
+        :Visualiza el detalle del niño creado;
+        stop
+    endif
+
+else (No)
+    |Servidor|
+    :Retorna respuesta de validación fallida;
+    |Cliente|
+    :Muestra mensaje: "Cheque los campos bien";
+    |Usuario|
+    :Corrige los campos e intenta de nuevo;
+    stop
+endif
+
+@enduml
