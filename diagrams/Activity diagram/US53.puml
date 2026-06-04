@@ -1,0 +1,75 @@
+@startuml
+title US53 - Coordinador consulta a los niños de una casa
+
+|Coordinador|
+start
+:Navega a la vista de "Niños" de su casa;
+:Ingresa filtros opcionales\n(nombre, apellido, nombre preferido o CURP);
+
+|Frontend|
+:Obtiene el token de sesión almacenado;
+:Envía solicitud GET /beneficiaries\ncon query params opcionales (page, limit, search);
+
+|API|
+:Recibe solicitud en el router;
+:Ejecuta middleware apiLimiter;
+:Ejecuta middleware verifyToken;
+
+if (¿Token es válido?) then (Sí)
+:Ejecuta middleware requireRole("Coordinador");
+if (¿Tiene rol de Coordinador?) then (Sí)
+    :Ejecuta middleware requirePrivileges("viewBeneficiaries");
+    if (¿Tiene el privilegio?) then (Sí)
+    :Resuelve al coordinador y su casa (house_id);
+    if (¿Coordinador pertenece a una casa?) then (Sí)
+        :Valida que el coordinador sea empleado activo de la casa;
+        if (¿Coordinador activo en la casa?) then (Sí)
+        :Extrae parámetros de consulta (page, limit, search);
+        :Valida parámetros de consulta;
+        if (¿Parámetros válidos?) then (Sí)
+            :Delega al Controller (getBeneficiaries);
+            :Delega al Service;
+            :Normaliza búsqueda opcional;
+            :Calcula paginación (skip, take);
+            :Delega al Model;
+            :Construye filtros en BD por house_id,\nniños actualmente registrados,\nis_deleted = false y búsqueda opcional;
+            :Agrega coincidencias por nombre,\napellido paterno, apellido materno,\nnombre preferido o CURP cuando exista search;
+            :Ejecuta consultas a la BD concurrentes\npara obtener la página de resultados y el total\nsolo de niños no eliminados;
+            :Retorna niños crudos y total al Service;
+            if (¿Hay niños registrados?) then (Sí)
+            :Mapea información general de cada niño;
+            :Calcula edad actual desde fecha de nacimiento;
+            :Interpreta expedienteEditadoEn == null\ncomo expediente nunca editado;
+            :Retorna status 200 con { data, pagination };
+            else (No)
+            :Retorna status 200 con lista vacía\no mensaje "No hay niños registrados";
+            endif
+        else (No)
+            :Retorna status 400 (Parámetros inválidos);
+        endif
+        else (No)
+        :Retorna status 403 (Coordinador inactivo en la casa);
+        endif
+    else (No)
+        :Retorna status 403 (Acceso denegado: sin houseId);
+    endif
+    else (No)
+    :Retorna status 403 (Privilegios insuficientes);
+    endif
+else (No)
+    :Retorna status 403 (Rol insuficiente);
+endif
+else (No)
+:Retorna status 401 / 403 (No autenticado);
+endif
+
+|Frontend|
+:Recibe respuesta HTTP;
+:Renderiza lista de niños, estado vacío\no mensaje de error según status;
+:Mantiene la vista en modo solo lectura;
+
+|Coordinador|
+:Consulta los niños registrados en su casa;
+stop
+
+@enduml
