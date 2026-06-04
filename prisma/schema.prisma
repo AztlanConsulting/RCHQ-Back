@@ -357,15 +357,15 @@ model beneficiary {
   beneficiary_id        String                  @id(map: "beneficiary_pk") @db.Uuid
   name                  String                  @db.VarChar(50)
   maternal_surname      String                  @db.VarChar(50)
-  maternal_surname      String                  @db.VarChar(50)
+  paternal_surname      String                  @db.VarChar(50)
   preferred_name        String                  @db.VarChar(50)
   birth_date            DateTime                @db.Date
-  age_entered_house     DateTime                Int
+  age_entered_house     Int
   blood_type            String                  @db.VarChar(10)
-  curp                  String?                 @unique @db.VarChar(18)  
+  curp                  String?                 @unique @db.VarChar(18)
   house_id              String                  @db.Uuid
   last_modification     DateTime                @db.Date
-  last_record_update    DateTime                @db.Date
+  last_record_update    DateTime?               @db.Date
   house                 house                   @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_house_fk")
   beneficiary_documents beneficiary_documents[]
 }

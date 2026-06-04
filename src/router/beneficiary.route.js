@@ -3,12 +3,13 @@ const verifyToken = require("../middleware/auth");
 const { apiLimiter } = require("../utils/rateLimit");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
 const { resolveRequesterHouse } = require("../middleware/resolvers");
+const validate = require("../middleware/validate");
 const { ROLES } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
-const { beneficiaryCreateSchema } = require("../schemas/beneficiary/blacklist.schema");
+const { beneficiaryCreateSchema } = require("../schemas/beneficiary/create.schema");
 const {
-    registerBeneficiary
-} = require("../controller/beneficiary/update.controller");
+    registerBeneficiary,
+} = require("../controller/beneficiary/create.controller");
 
 const router = express.Router();
 
@@ -20,11 +21,7 @@ router.post(
     requirePrivileges(PRIVILEGES.CREATE_BENEFICIARY),
     resolveRequesterHouse,
     validate(beneficiaryCreateSchema, "body"),
-    // validate(rejectVacationRequestSchema, "all"),
-    // authorize not necessary because there is no house to compare
     registerBeneficiary,
 );
-
-
 
 module.exports = router;
