@@ -358,3 +358,34 @@ CREATE TABLE IF NOT EXISTS public.blacklist (
     CONSTRAINT blacklist_pk          PRIMARY KEY (blacklist_id),
     CONSTRAINT blacklist_employee_fk FOREIGN KEY (curp) REFERENCES public.employee(curp) ON DELETE NO ACTION
 );
+
+-- =============================================================
+-- BENEFICIARY (niños; depende de house)
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS public.beneficiary (
+    beneficiary_id     uuid         NOT NULL,
+    name               varchar(50)  NOT NULL,
+    maternal_surname   varchar(50)  NOT NULL,
+    paternal_surname   varchar(50)  NOT NULL,
+    preferred_name     varchar(50)  NOT NULL,
+    birth_date         date         NOT NULL,
+    age_entered_house  int          NOT NULL,
+    blood_type         varchar(10)  NOT NULL,
+    curp               varchar(18)  NULL UNIQUE,
+    house_id           uuid         NOT NULL,
+    last_modification  date         NOT NULL,
+    last_record_update date         NULL,
+    CONSTRAINT beneficiary_pk       PRIMARY KEY (beneficiary_id),
+    CONSTRAINT beneficiary_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id) ON DELETE NO ACTION
+);
+
+CREATE TABLE IF NOT EXISTS public.beneficiary_documents (
+    document_id    uuid NOT NULL,
+    beneficiary_id uuid NOT NULL,
+    url            text NOT NULL,
+    date_modified  date NOT NULL,
+    CONSTRAINT beneficiary_documents_pk            PRIMARY KEY (document_id, beneficiary_id),
+    CONSTRAINT beneficiary_documents_documents_fk   FOREIGN KEY (document_id) REFERENCES public.documents(document_id) ON DELETE NO ACTION,
+    CONSTRAINT beneficiary_documents_beneficiary_fk FOREIGN KEY (beneficiary_id) REFERENCES public.beneficiary(beneficiary_id) ON DELETE NO ACTION
+);
