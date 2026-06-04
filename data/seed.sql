@@ -225,7 +225,7 @@ INSERT INTO public.employee (
 VALUES (
   'b8f54b14-701e-4e87-a019-caef53dcda99',
   (SELECT house_id FROM public.house  WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
-  (SELECT role_id  FROM public.role   WHERE name = 'Administrador'      LIMIT 1),
+  (SELECT role_id  FROM public.role   WHERE name = 'Mantenimiento'      LIMIT 1),
   'Carlos',
   'Ramírez',
   true,
@@ -321,7 +321,9 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-008', 'Fallo al dar de baja al empleado', true),
 ('vaca-006', 'Eliminación de vacaciones exitosa', false),
 ('blck-001', 'Empleado agregado a la lista negra', true),
-('blck-002', 'Empleado eliminado de la lista negra', true)
+('blck-002', 'Empleado eliminado de la lista negra', true),
+('even-009', 'Evento personal eliminado con éxito', true),
+('even-010', 'Empleado eliminado de capacitación', false)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.workday (workday_id, name)
@@ -332,14 +334,18 @@ VALUES
 ('c0000001-0000-4000-8000-000000000004', 'Jueves'),
 ('c0000001-0000-4000-8000-000000000005', 'Viernes'),
 ('c0000001-0000-4000-8000-000000000006', 'Sábado'),
-('c0000001-0000-4000-8000-000000000007', 'Domingo');
+('c0000001-0000-4000-8000-000000000007', 'Domingo')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALUES
-('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1), '09:00:00', '18:00:00'),
+('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee WHERE email = 'andre@gmail.com' LIMIT 1), '09:00:00', '18:00:00')
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end";
 
 INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
 VALUES
@@ -347,7 +353,10 @@ VALUES
 ('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
 ('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
 ('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00');
+('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00')
+ON CONFLICT (workday_id, employee_id) DO UPDATE SET
+  start = EXCLUDED.start,
+  "end" = EXCLUDED."end";
 
 INSERT INTO public.event_type (event_type_id, name)
 VALUES
@@ -635,7 +644,7 @@ INSERT INTO public.employee (
 SELECT
   'e0000001-0000-4000-8000-000000000001',
   'a0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
   'María',
   'González',
   true,
@@ -1464,8 +1473,8 @@ INSERT INTO public.employee (
 VALUES (
   'e3000001-0000-4000-8000-000000000007',
   'a0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
-  'Administrador',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Mantenimiento',
   'Aislado US30',
   true,
   'admin.empleado.us30@rchq.test',
@@ -2043,8 +2052,8 @@ INSERT INTO public.employee (
 VALUES (
   'e3200001-0000-4000-8000-000000000005',
   'a0000001-0000-4000-8000-000000000001',
-  (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
-  'Administrador',
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Mantenimiento',
   'Objetivo US32',
   true,
   'admin.objetivo.us32@rchq.test',

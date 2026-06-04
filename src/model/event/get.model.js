@@ -358,6 +358,41 @@ exports.findPersonalEventById = async (eventId, houseId) => {
             employee_personal_event: {
                 select: { employee_id: true },
             },
+            event_type: {
+                select: { name: true },
+            },
+        },
+    });
+};
+
+exports.findPersonalEventByIdIncludeDeleted = async (eventId, houseId) => {
+    return prisma.personal_event.findFirst({
+        where: {
+            personal_event_id: eventId,
+            employee_personal_event: {
+                some: {
+                    employee: { house_id: houseId },
+                },
+            },
+        },
+        include: {
+            employee_personal_event: {
+                select: { employee_id: true },
+            },
+            event_type: {
+                select: { name: true },
+            },
+        },
+    });
+};
+
+exports.findEmployeeInPersonalEvent = async (personalEventId, employeeId) => {
+    return prisma.employee_personal_event.findUnique({
+        where: {
+            personal_event_id_employee_id: {
+                personal_event_id: personalEventId,
+                employee_id: employeeId,
+            },
         },
     });
 };
