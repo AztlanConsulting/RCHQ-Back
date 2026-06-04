@@ -1,0 +1,69 @@
+@startuml
+title US54 - Consultar a un niño en específico
+
+|Coordinador|
+start
+:Entra al módulo de niños;
+:Busca al niño por nombre o CURP;
+:Selecciona al niño que desea consultar;
+
+|Sistema|
+:Aplica rate limit;
+:Valida token de sesión;
+if (¿Token válido?) then (Sí)
+else (No)
+  :Muestra error "Token inválido o expirado";
+  stop
+endif
+
+:Resuelve la casa del coordinador;
+if (¿Casa identificada?) then (Sí)
+else (No)
+  :Muestra error "No se pudo identificar la casa del coordinador";
+  stop
+endif
+
+:Valida rol Coordinador;
+if (¿Rol permitido?) then (Sí)
+else (No)
+  :Muestra error "Privilegios insuficientes";
+  stop
+endif
+
+:Valida privilegio para consultar niños;
+if (¿Tiene privilegio?) then (Sí)
+else (No)
+  :Muestra error "Privilegios insuficientes";
+  stop
+endif
+
+:Valida parámetros de búsqueda\no identificador del niño;
+if (¿Parámetros válidos?) then (Sí)
+else (No)
+  :Muestra error "Parámetros inválidos";
+  stop
+endif
+
+:Busca al niño seleccionado;
+if (¿Niño encontrado?) then (Sí)
+else (No)
+  :Muestra error "Niño no encontrado";
+  stop
+endif
+
+:Valida que el niño pertenezca\na la misma casa hogar;
+if (¿Misma casa hogar?) then (Sí)
+else (No)
+  :Muestra error "No puede acceder a este recurso";
+  stop
+endif
+
+:Consulta la información detallada del niño;
+:Recupera datos generales,\nexpediente y registros asociados;
+:Muestra la ficha completa del niño;
+
+|Coordinador|
+:Visualiza la información específica del niño;
+stop
+
+@enduml
