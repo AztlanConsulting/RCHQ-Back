@@ -6,48 +6,27 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 const BLOOD_TYPES = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"];
 
-const emptyToNull = (val) => (val === "" ? null : val);
+const emptyToNull = (val) => (val === "" || val == null ? null : val);
+
+const nameField = (label, maxLen = 50) =>
+    z
+        .string()
+        .trim()
+        .min(2, `${label} es obligatorio`)
+        .max(maxLen, `${label} es demasiado largo`)
+        .regex(
+            NAMES_REGEX,
+            `No se permiten caracteres especiales, números o emojis en ${label.toLowerCase()}`,
+        );
 
 const beneficiaryCreateSchema = z.object({
-    name: z
-        .string()
-        .trim()
-        .min(2, "El nombre es obligatorio")
-        .max(50, "El nombre es demasiado largo")
-        .regex(
-            NAMES_REGEX,
-            "No se permiten caracteres especiales, números o emojis en el nombre",
-        ),
+    name: nameField("El nombre"),
 
-    maternal_surname: z
-        .string()
-        .trim()
-        .min(2, "El apellido materno es obligatorio")
-        .max(50, "El apellido materno es demasiado largo")
-        .regex(
-            NAMES_REGEX,
-            "No se permiten caracteres especiales, números o emojis en el apellido materno",
-        ),
+    maternal_surname: nameField("El apellido materno"),
 
-    paternal_surname: z
-        .string()
-        .trim()
-        .min(2, "El apellido paterno es obligatorio")
-        .max(50, "El apellido paterno es demasiado largo")
-        .regex(
-            NAMES_REGEX,
-            "No se permiten caracteres especiales, números o emojis en el apellido paterno",
-        ),
+    paternal_surname: nameField("El apellido paterno"),
 
-    preferred_name: z
-        .string()
-        .trim()
-        .min(1, "El nombre preferido es obligatorio")
-        .max(50, "El nombre preferido es demasiado largo")
-        .regex(
-            NAMES_REGEX,
-            "No se permiten caracteres especiales, números o emojis en el nombre preferido",
-        ),
+    preferred_name: nameField("El nombre preferido"),
 
     birth_date: z
         .string()
@@ -55,10 +34,21 @@ const beneficiaryCreateSchema = z.object({
         .regex(DATE_REGEX, "Formato de fecha inválido (YYYY-MM-DD)")
         .refine((val) => !Number.isNaN(new Date(val).getTime()), {
             message: "Fecha de nacimiento inválida",
+        })
+        .refine((val) => {
+            const birthDate = new Date(val);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return birthDate <= today;
+        }, {
+            message: "La fecha de nacimiento no puede ser futura",
         }),
 
     age_entered_house: z.coerce
-        .number({ error: "La edad al entrar en la casa es obligatoria" })
+        .number({
+            required_error: "La edad al entrar en la casa es obligatoria",
+            invalid_type_error: "La edad al entrar en la casa es obligatoria",
+        })
         .int("La edad al entrar en la casa debe ser un número entero")
         .min(0, "La edad al entrar en la casa no puede ser negativa")
         .max(25, "La edad al entrar en la casa no es válida"),
