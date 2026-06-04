@@ -1,103 +1,122 @@
 @startuml
-title US52 - Crear nino (servidor)
+title US52 - Coordinador registra a un nino (Sequence Diagram)
 
-actor Cliente as Front
-boundary "beneficiary.route.js [nuevo]" as Route
-control "middlewares" as MW
-control "create.controller.js\npostAdd async [nuevo]" as Controller
-control "create.service.js\ncreateBeneficiary async [nuevo]" as Service
-entity "create.schemas.js [nuevo]" as Schema
-entity "beneficiary.policies.js [nuevo]" as Policy
-entity "get.model.js [nuevo]" as GetModel
-entity "create.model.js [nuevo]" as CreateModel
-entity "log.model.js" as LogModel
-database "PostgreSQL Prisma" as BD
+actor Coordinador
+boundary "Cliente React\nRegisterBeneficiary [nuevo]" as Front
+boundary "beneficiary.route.js\nPOST /beneficiary/add [nuevo]" as Router
+control "middlewares seguridad\napiLimiter, verifyToken,\nrequireRole, requirePrivileges,\nauthorize(beneficiaryPolicy)" as SecMW
+control "create.controller.js\npostAdd() [async] [nuevo]" as Controller
+control "create.service.js\ncreateBeneficiary() [async] [nuevo]" as Service
+entity "schemas/beneficiary/create.schemas.js\nbeneficiaryCreateSchema [nuevo]" as Schema
+entity "policies/beneficiary.policies.js\nbeneficiaryPolicy() [nuevo]" as Policy
+entity "model/beneficiary/get.model.js [nuevo]" as GetModel
+entity "model/beneficiary/create.model.js [nuevo]" as CreateModel
+entity "model/log.model.js\ncreateLog() [async]" as LogModel
+database "PostgreSQL\nPrisma" as BD
 
 autonumber
 
-note over Front, Route
-  Validacion Zod en el cliente.
-  Un solo endpoint POST para el alta.
-end note
+== Validacion en cliente (sin endpoint) ==
 
-Front -> Route : POST /beneficiary/add
-activate Route
+Coordinador -> Front : Ingresa datos obligatorios,\nCURP opcional, envia formulario
+activate Front
 
-Route -> MW : apiLimiter, verifyToken,\nrequireRole, requirePrivileges,\nauthorize(beneficiaryPolicy)
-activate MW
+Front -> Front : beneficiaryCreateSchema.safeParse(form)\n[sync]
 
-alt Token ausente o invalido
-    MW --> Front : 401 Token no proporcionado\no 403 Token invalido o expirado
-    deactivate MW
-    deactivate Route
+alt Validacion Zod falla
+    Front --> Coordinador : UI: Cheque los campos bien
+    deactivate Front
+else Validacion Zod OK
+    Front -> Router : POST /beneficiary/add\nAuthorization Bearer + body JSON
+    deactivate Front
+    activate Router
 
-else Rate limit excedido
-    MW --> Front : 429 Demasiadas solicitudes
-    deactivate MW
-    deactivate Route
+    == POST /beneficiary/add ==
 
-else Rol o privilegio insuficiente
-    MW --> Front : 403 Privilegio insuficiente\no Rol no autorizado
-    deactivate MW
-    deactivate Route
+    Router -> SecMW : pipeline de seguridad
+    activate SecMW
+    SecMW --> Router : next()
+    deactivate SecMW
 
-else Autenticado y autorizado
-    MW --> Route : next()
-    deactivate MW
-
-    Route -> Controller : postAdd(req, res)
-    deactivate Route
+    Router -> Controller : postAdd(req, res)
+    deactivate Router
     activate Controller
 
-    Controller -> Controller : Arma payload con req.body y foto
-
-    Controller ->> Service : await createBeneficiary(payload, user, req)
+    Controller ->> Service : await createBeneficiary(body, req.user, req)
     activate Service
 
-    Service -> Schema : beneficiaryCreateSchema.safeParse(payload)
+    Service -> Schema : beneficiaryCreateSchema.safeParse(body)\n[sync]
 
-    alt safeParse falla
-        Service --> Controller : VALIDATION_ERROR + errors
-        Controller --> Front : 400 errors[]\nUI: Cheque los campos bien
+    alt Payload invalido (validacion backend)
+        Service --> Controller : VALIDATION_ERROR + errors[]
+        Controller --> Front : 400 errors[]
+        activate Front
+        Front --> Coordinador : Cheque los campos bien
+        deactivate Front
         deactivate Service
         deactivate Controller
+    else Payload valido
+        Service -> Policy : beneficiaryPolicy(user, houseId)\n[sync]
 
-    else safeParse OK
-        Service -> Policy : beneficiaryPolicy(user, houseId)
-
-        alt policy deniega
+        alt Coordinador inactivo o registro fuera de su casa
             Service --> Controller : FORBIDDEN
             Controller --> Front : 403 Acceso denegado
+            activate Front
+            Front --> Coordinador : No puede registrar al nino
+            deactivate Front
             deactivate Service
             deactivate Controller
+        else Reglas de negocio OK
+            alt CURP proporcionado
+                Service ->> GetModel : await findBeneficiaryByCurp(curp)
+                activate GetModel
+                GetModel ->> BD : prisma.beneficiary.findUnique + house
+                activate BD
+                BD -->> GetModel : row o null
+                deactivate BD
+                GetModel -->> Service : existing o null
+                deactivate GetModel
+            else Sin CURP
+                Service ->> GetModel : await findBeneficiaryByIdentity(\nname, paternal, maternal, birthDate)
+                activate GetModel
+                GetModel ->> BD : prisma.beneficiary.findFirst + house
+                activate BD
+                BD -->> GetModel : row o null
+                deactivate BD
+                GetModel -->> Service : existing o null
+                deactivate GetModel
+            end
 
-        else policy permite
-            Service ->> GetModel : await findBeneficiaryByCurpWithHouse(curp)
-            activate GetModel
-            GetModel ->> BD : prisma.beneficiary.findUnique + include house
-            activate BD
-            BD -->> GetModel : beneficiary o null
-            deactivate BD
-            GetModel -->> Service : existing o null
-            deactivate GetModel
-
-            alt Ya existe en la misma casa
+            alt Coincidencia en la misma casa
                 Service --> Controller : CONFLICT_SAME_HOUSE + beneficiaryId
-                Controller --> Front : 409 El nino ya esta registrado en esta casa\nredirect /app/beneficiarios/ver/id
+                Controller --> Front : 409 El nino ya esta registrado en esta casa
+                activate Front
+                Front --> Coordinador : Muestra duplicado en la casa
+                deactivate Front
                 deactivate Service
                 deactivate Controller
+            else Coincidencia en otra casa
+                Service ->> GetModel : await findActiveCoordinatorByHouseId(houseId)
+                activate GetModel
+                GetModel ->> BD : prisma.employee.findFirst\nCoordinador activo de esa casa
+                activate BD
+                BD -->> GetModel : coordinator
+                deactivate BD
+                GetModel -->> Service : coordinatorContact
+                deactivate GetModel
 
-            else Ya existe en otra casa
-                Service --> Controller : CONFLICT_OTHER_HOUSE + houseName
-                Controller --> Front : 409 Ya existe el nino en otra casa,\ncomunicate con el coordinador de la casa X\npara mover el nino\n(code BENEFICIARY_EXISTS_OTHER_HOUSE)
+                Service --> Controller : CONFLICT_OTHER_HOUSE +\nhouseName, coordinatorName,\ncoordinatorEmail, coordinatorPhone
+                Controller --> Front : 409 BENEFICIARY_EXISTS_OTHER_HOUSE\nYa existe en otra casa + datos de contacto\ndel coordinador de esa casa
+                activate Front
+                Front --> Coordinador : Contacta al coordinador indicado
+                deactivate Front
                 deactivate Service
                 deactivate Controller
-
             else No existe en la red
-                Service -> Service : beneficiaryId = randomUUID()
+                Service -> Service : beneficiaryId, last_modification=hoy,\nlast_record_update=null [sync]
                 Service ->> CreateModel : await create(...)
                 activate CreateModel
-                CreateModel ->> BD : prisma.beneficiary.create
+                CreateModel ->> BD : prisma.beneficiary.create\nexpediente inicia en cero
                 activate BD
                 BD -->> CreateModel : beneficiary
                 deactivate BD
@@ -108,32 +127,21 @@ else Autenticado y autorizado
                 activate LogModel
                 LogModel ->> BD : prisma.logs.create
                 activate BD
-
-                alt log OK
-                    BD -->> LogModel : ok
-                    LogModel -->> Service : void
-                    Service --> Controller : success + beneficiaryId
-                else log falla
-                    BD -->> LogModel : error
-                    LogModel -->> Service : catch
-                    Service --> Controller : success + warning log fallo
-                end
-                deactivate LogModel
+                BD -->> LogModel : ok
                 deactivate BD
+                LogModel -->> Service : void
+                deactivate LogModel
 
+                Service --> Controller : success + beneficiaryId
                 Controller --> Front : 201 Nino registrado con exito\nredirect /app/beneficiarios/ver/id
+                activate Front
+                Front --> Coordinador : Ve detalle del nino registrado
+                deactivate Front
                 deactivate Service
                 deactivate Controller
-
             end
         end
     end
 end
-
-note over Controller
-  Si hay excepcion no controlada:
-  500 No se pudo registrar correctamente el nino
-  (deleteFileIfExists si hay foto)
-end note
 
 @enduml
