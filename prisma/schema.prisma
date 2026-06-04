@@ -356,7 +356,7 @@ model blacklist {
 model beneficiary {
   beneficiary_id        String                  @id(map: "beneficiary_pk") @db.Uuid
   name                  String                  @db.VarChar(50)
-  paternal_surname      String                  @db.VarChar(50)
+  maternal_surname      String                  @db.VarChar(50)
   maternal_surname      String                  @db.VarChar(50)
   preferred_name        String                  @db.VarChar(50)
   birth_date            DateTime                @db.Date

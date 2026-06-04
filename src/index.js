@@ -12,6 +12,7 @@ const houseRouter = require("./router/house.route");
 const blacklistRouter = require("./router/blacklist.route");
 const absenceRouter = require("./router/absence.route");
 const logsRouter = require("./router/logs.route");
+const beneficiaryRouter = require("./router/beneficiary.route");
 const { startLogRetentionJob } = require("./utils/logRetentionJob");
 
 const userRouter = require("./router/user.route");
@@ -70,6 +71,7 @@ app.use("/house", houseRouter);
 app.use("/blacklist", blacklistRouter);
 app.use("/absence", absenceRouter);
 app.use("/logs", logsRouter);
+app.use("/beneficiary", beneficiaryRouter);
 
 app.use("/health", (req, res) => {
     res.status(200).json({
