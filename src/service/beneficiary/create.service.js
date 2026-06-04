@@ -10,8 +10,8 @@ const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
 const { hashPassword } = require("../../utils/password");
 const {
-    employeeCreateSchema,
-} = require("../../schemas/employee/create.schemas");
+    beneficiaryCreateSchema,
+} = require("../../schemas/beneficiary/create.schema");
 const { LOG_ACTIONS } = require("../../utils/logActions");
 const { employeePolicy } = require("../../policies/employee.policies");
 const { randomUUID } = require("crypto");
@@ -26,6 +26,62 @@ exports.getRoles = async () => {
     const roles = await getAllRoles();
     return roles.filter((role) => role.name !== ROLES.ADMIN);
 };
+
+exports.registerBeneficiaryService = async (user, beneficiary, req) => {
+    const validation = beneficiaryCreateSchema.safeParse(beneficiary);
+
+    if (!validation.success) {
+        return {
+            code: RESPONSES.BENEFICIARY.BAD_REQUEST
+        }
+    }
+
+    const {
+        names,
+        maternal_surname,
+        paternal_surname,
+        preferred_name,
+        birth_date,
+        blood_type,
+        curp,
+    } = beneficiary;
+
+    // buscar niño dentro de la red por curp si es que se proporciono el curp
+    // model/beneficiary/get.model.js searchBeneficiaryByCURP(curp)
+    // searches beneficiary table for any matching curp
+    // -> regresar id de casa del niño
+
+    // buscar niño dentro de la red por otra info
+    // model/beneficiary/get.model.js searchBeneficiaryByInfo()
+    // hacer query de cualquier otro niño con mismo birth_date, maternal_surname, paternal_surname, names, y blood type
+    // -> regresar id de casa del niño
+
+    // si hay id de casa del niño, el niño ya existe
+    
+    // comparar id de casa de niño y del user
+    
+    // si son iguales, regresar respuesta ALREADY_REGISTERED_IN_SAME_HOUSE
+
+    // si no, busca info del usuario tipo coordinador de la casa a la que pertenece el niño
+    // también busca nombre de la casa con la id getHouseById in house get.model.js
+    // regresar respuesta ALREADY_REGISTERED_IN_OTHER_HOUSE y objeto data:
+    // data: {
+    //     house: {
+    //         id: "",
+    //         name: ""
+    //     },
+    //     coordinator: {
+    //         name: "",
+    //         phoneNumber: "",
+    //         email: "",
+    //     }
+    // };
+
+    // al final, si el niño no existía, créalo.
+
+    // regresar respuesta ADDED
+
+}
 
 exports.createEmployee = async (employee, user, req) => {
     const validation = employeeCreateSchema.safeParse(employee);
