@@ -222,7 +222,7 @@ ON CONFLICT DO NOTHING;
 
 -- =========================
 -- EMPLOYEE
--- Contraseña: Andatti67
+-- Contraseña: Hola12345
 -- =========================
 INSERT INTO public.employee (
     employee_id, house_id, role_id, name, surname,
@@ -240,7 +240,7 @@ VALUES (
   'López',
   true,
   'mariana.coordinador@gmail.com',
-  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
   false,
   0,
   NULL,
@@ -263,7 +263,7 @@ VALUES (
   'Hernández',
   true,
   'jorge.mantenimiento@gmail.com',
-  '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
   false,
   0,
   NULL,
