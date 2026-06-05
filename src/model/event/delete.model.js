@@ -13,3 +13,14 @@ exports.softDeletePersonalEvent = async (personalEventId) => {
         data: { is_deleted: true },
     });
 };
+
+exports.removeEmployeeFromPersonalEvent = async (personalEventId, employeeId) => {
+    return await prisma.employee_personal_event.delete({
+        where: {
+            personal_event_id_employee_id: {
+                personal_event_id: personalEventId,
+                employee_id: employeeId,
+            },
+        },
+    });
+};

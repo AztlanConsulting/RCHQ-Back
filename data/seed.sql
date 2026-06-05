@@ -332,7 +332,9 @@ INSERT INTO public.action (action_id, description, important) VALUES
 ('empl-008', 'Fallo al dar de baja al empleado', true),
 ('vaca-006', 'Eliminación de vacaciones exitosa', false),
 ('blck-001', 'Empleado agregado a la lista negra', true),
-('blck-002', 'Empleado eliminado de la lista negra', true)
+('blck-002', 'Empleado eliminado de la lista negra', true),
+('even-009', 'Evento personal eliminado con éxito', true),
+('even-010', 'Empleado eliminado de capacitación', false)
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.event_type (event_type_id, name)
