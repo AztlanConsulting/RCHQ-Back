@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const { capitalizeName } = require("../../utils/capitalizeName");
 
 const CURP_REGEX = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
 const NAMES_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
@@ -17,7 +18,8 @@ const nameField = (label, maxLen = 50) =>
         .regex(
             NAMES_REGEX,
             `No se permiten caracteres especiales, números o emojis en ${label.toLowerCase()}`,
-        );
+        )
+        .transform(capitalizeName);
 
 const beneficiaryCreateSchema = z.object({
     name: nameField("El nombre"),

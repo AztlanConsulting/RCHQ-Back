@@ -162,6 +162,32 @@ describe("registerBeneficiaryService", () => {
         expect(createBeneficiary).not.toHaveBeenCalled();
     });
 
+    it("normaliza nombres en minúsculas antes de buscar duplicados", async () => {
+        searchBeneficiaryByInfo.mockResolvedValue({
+            beneficiary_id: EXISTING_BENEFICIARY_ID,
+            house_id: HOUSE_A,
+        });
+
+        const result = await registerBeneficiaryService(mockCoordinator, {
+            ...baseBeneficiary,
+            name: "juan manuel",
+            maternal_surname: "lopez",
+            paternal_surname: "garcia",
+            preferred_name: "juanito",
+        });
+
+        expect(result.code).toBe(
+            RESPONSES.BENEFICIARY.ALREADY_REGISTERED_IN_SAME_HOUSE,
+        );
+        expect(searchBeneficiaryByInfo).toHaveBeenCalledWith({
+            name: "Juan Manuel",
+            maternal_surname: "Lopez",
+            paternal_surname: "Garcia",
+            birth_date: "2015-03-10",
+            blood_type: "O+",
+        });
+    });
+
     it("retorna ALREADY_REGISTERED_IN_OTHER_HOUSE con datos de contacto", async () => {
         searchBeneficiaryByCurp.mockResolvedValue({
             beneficiary_id: EXISTING_BENEFICIARY_ID,
