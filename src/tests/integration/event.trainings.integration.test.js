@@ -7,6 +7,7 @@ const app = require("../../app");
 const prisma = new PrismaClient();
 
 const TRAINING_EVENT_TYPE_ID = "b1000000-0000-4000-8000-000000000004";
+let trainingEventTypeId = TRAINING_EVENT_TYPE_ID;
 const API_BASE = "/event/trainings";
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -104,14 +105,22 @@ const seed = async () => {
     );
     const workerRoleId = await upsertRole(IDS.workerRole, "Mantenimiento");
 
-    await prisma.event_type.upsert({
-        where: { event_type_id: TRAINING_EVENT_TYPE_ID },
-        update: {},
-        create: {
-            event_type_id: TRAINING_EVENT_TYPE_ID,
-            name: "Capacitaciones",
-        },
+    const existingTrainingType = await prisma.event_type.findFirst({
+        where: { name: "Capacitaciones" },
+        select: { event_type_id: true },
     });
+
+    if (existingTrainingType) {
+        trainingEventTypeId = existingTrainingType.event_type_id;
+    } else {
+        await prisma.event_type.create({
+            data: {
+                event_type_id: trainingEventTypeId,
+                name: "Capacitaciones",
+            },
+        });
+        trainingEventTypeId = TRAINING_EVENT_TYPE_ID;
+    }
 
     await prisma.employee.createMany({
         data: [
@@ -234,7 +243,7 @@ const seed = async () => {
         data: [
             {
                 personal_event_id: IDS.trainingA,
-                event_type_id: TRAINING_EVENT_TYPE_ID,
+                event_type_id: trainingEventTypeId,
                 date: new Date("2026-05-27T00:00:00.000Z"),
                 start: new Date("2026-05-27T12:30:00.000Z"),
                 end: new Date("2026-05-27T14:00:00.000Z"),
@@ -246,7 +255,7 @@ const seed = async () => {
             },
             {
                 personal_event_id: IDS.trainingB,
-                event_type_id: TRAINING_EVENT_TYPE_ID,
+                event_type_id: trainingEventTypeId,
                 date: new Date("2026-05-28T00:00:00.000Z"),
                 start: new Date("2026-05-28T10:00:00.000Z"),
                 end: new Date("2026-05-28T12:00:00.000Z"),

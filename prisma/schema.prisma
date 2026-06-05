@@ -94,6 +94,23 @@ model employee {
   outside_certification           outside_certification[]
   psychological_evaluation        psychological_evaluation[]
   vacations_request               vacations_request[]
+  employee_session                employee_session[]
+}
+
+model employee_session {
+  session_id         String    @id(map: "employee_session_pk") @db.Uuid
+  employee_id        String    @db.Uuid
+  refresh_token_hash String    @unique(map: "employee_session_refresh_token_hash_uq") @db.Char(64)
+  is_active          Boolean   @default(true)
+  last_activity_at   DateTime  @db.Timestamp(6)
+  blocks_login_until DateTime  @db.Timestamp(6)
+  expires_at         DateTime  @db.Timestamp(6)
+  revoked_at         DateTime? @db.Timestamp(6)
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  employee           employee  @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade, onUpdate: NoAction, map: "employee_session_employee_fk")
+
+  @@index([employee_id, is_active, revoked_at, expires_at], map: "employee_session_active_lookup_idx")
+  @@index([employee_id, blocks_login_until], map: "employee_session_login_lock_idx")
 }
 
 model employee_address {

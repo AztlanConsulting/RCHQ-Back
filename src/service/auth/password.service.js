@@ -7,7 +7,25 @@ const {
     buildSessionToken,
     buildPreTwoFactorAuthJwt,
 } = require("../../utils/auth/authTokens");
+const { buildSessionTimestamps } = require("../../utils/auth/sessionPolicy");
 const { generateRefreshToken } = require("../../utils/jwt");
+const { randomUUID } = require("crypto");
+
+async function createSessionTokens(employee) {
+    const sessionId = randomUUID();
+    const token = await buildSessionToken(employee, sessionId);
+    const refreshToken = generateRefreshToken(employee, sessionId);
+    const timestamps = buildSessionTimestamps();
+
+    await auth.createSession({
+        employeeId: employee.employeeId,
+        sessionId,
+        refreshToken,
+        ...timestamps,
+    });
+
+    return { token, refreshToken };
+}
 
 exports.changePassword = async ({
     employeeId,
@@ -236,14 +254,13 @@ exports.changePasswordFirstLogin = async ({
         };
     }
 
-  const token = await buildSessionToken({
+  const sessionEmployee = {
     ...employee,
     pwd: hashedPassword,
     hasFirstLogin: false,
-  });
+  };
 
-  const refreshToken = generateRefreshToken(employee);
-  await auth.saveRefreshToken(employee.employeeId, refreshToken);
+  const { token, refreshToken } = await createSessionTokens(sessionEmployee);
 
   return {
     status: 200,

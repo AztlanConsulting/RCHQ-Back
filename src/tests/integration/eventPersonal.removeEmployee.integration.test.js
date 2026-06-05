@@ -362,11 +362,6 @@ const cleanDb = async () => {
         where: { event_type_id: TEST_NON_TRAINING_EVENT_TYPE_ID },
     });
 
-    if (createdTrainingEventType) {
-        await prisma.event_type.deleteMany({
-            where: { event_type_id: TEST_TRAINING_EVENT_TYPE_ID },
-        });
-    }
 };
 
 beforeAll(async () => {

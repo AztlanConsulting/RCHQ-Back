@@ -15,6 +15,10 @@ const {
     clearExpiredLoginBlock,
     clearExpiredTwoFactorAuthBlock,
 } = require("../../utils/auth/authGuards");
+const {
+    buildSessionTimestamps,
+    isSessionRenewable,
+} = require("../../utils/auth/sessionPolicy");
 const prisma = require("../../prisma");
 const { generateRefreshToken, decodeToken } = require("../../utils/jwt");
 const { randomUUID } = require("crypto");
@@ -32,12 +36,36 @@ const buildSessionAlreadyActiveResult = () => ({
     },
 });
 
-const getActiveRefreshSession = (employee) => {
-    if (!employee.refreshToken) return null;
+async function ensureLoginSessionCanStart(employeeId) {
+    const now = new Date();
+    const blockingSession = await User.findBlockingSessionByEmployeeId(
+        employeeId,
+        now,
+    );
 
-    const decoded = decodeToken(employee.refreshToken);
-    return decoded?.tokenType === "REFRESH" ? decoded : null;
-};
+    if (blockingSession) return buildSessionAlreadyActiveResult();
+
+    // Sin actividad reciente, la sesion anterior ya no bloquea nuevos logins.
+    // Si este login continua, la sesion anterior queda revocada.
+    await User.revokeRevocableSessionsForLogin(employeeId, now);
+    return null;
+}
+
+async function createSessionTokens(employee) {
+    const sessionId = randomUUID();
+    const token = await buildSessionToken(employee, sessionId);
+    const refreshToken = generateRefreshToken(employee, sessionId);
+    const timestamps = buildSessionTimestamps();
+
+    await User.createSession({
+        employeeId: employee.employeeId,
+        sessionId,
+        refreshToken,
+        ...timestamps,
+    });
+
+    return { token, refreshToken, sessionId };
+}
 
 async function login(req) {
     const { email, password } = req.body;
@@ -151,11 +179,10 @@ async function login(req) {
 
     await User.clearLoginSecurityState(employee.employeeId);
 
-    if (employee.refreshToken) {
-        const activeRefreshSession = getActiveRefreshSession(employee);
-        if (activeRefreshSession) return buildSessionAlreadyActiveResult();
-        await User.clearRefreshToken(employee.employeeId);
-    }
+    const activeSessionResult = await ensureLoginSessionCanStart(
+        employee.employeeId,
+    );
+    if (activeSessionResult) return activeSessionResult;
 
     if (employee.hasFirstLogin) {
         const firstLoginToken = buildFirstLoginJwt(employee);
@@ -195,11 +222,7 @@ async function login(req) {
     };
   }
 
-  const sessionId = randomUUID();
-  const token = await buildSessionToken(employee, sessionId);
-  const refreshToken = generateRefreshToken(employee, sessionId);
-
-  await User.saveRefreshToken(employee.employeeId, refreshToken);
+  const { token, refreshToken } = await createSessionTokens(employee);
 
   await createLog(employee.employeeId, LOG_ACTIONS.LOGIN_SUCCESS, ipAddress);
 
@@ -525,17 +548,12 @@ async function validateTwoFactorAuth(req) {
 
   await User.clearTwoFactorAuthSecurityState(employee.employeeId);
 
-  if (employee.refreshToken) {
-    const activeRefreshSession = getActiveRefreshSession(employee);
-    if (activeRefreshSession) return buildSessionAlreadyActiveResult();
-    await User.clearRefreshToken(employee.employeeId);
-  }
+  const activeSessionResult = await ensureLoginSessionCanStart(
+    employee.employeeId,
+  );
+  if (activeSessionResult) return activeSessionResult;
 
-  const sessionId = randomUUID();
-  const tokenJwt = await buildSessionToken(employee, sessionId);
-  const refreshToken = generateRefreshToken(employee, sessionId);
-
-  await User.saveRefreshToken(employee.employeeId, refreshToken);
+  const { token: tokenJwt, refreshToken } = await createSessionTokens(employee);
 
   await createLog(
     employee.employeeId,
@@ -709,21 +727,41 @@ async function refreshSession(refreshToken, ipAddress) {
     }
 
     const employeeId = decoded.id || decoded.employeeId;
-    const employee = await User.getEmployeeById(employeeId);
+    const session = await User.findSessionByRefreshToken(refreshToken);
+
+    if (!session) {
+        if (decoded.sessionId) {
+            await User.revokeSession(decoded.sessionId);
+        }
+        return { status: 401, body: { success: false, message: "Sesion invalida", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    if (
+        session.sessionId !== decoded.sessionId ||
+        session.employeeId !== employeeId
+    ) {
+        await User.revokeSession(session.sessionId);
+        return { status: 401, body: { success: false, message: "Sesion invalida", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    if (!isSessionRenewable(session)) {
+        await User.revokeSession(session.sessionId);
+        return { status: 401, body: { success: false, message: "Sesion expirada", code: "INVALID_REFRESH_TOKEN" } };
+    }
+
+    const employee = session.employee;
 
     if (!employee || !employee.isActive) {
         return { status: 403, body: { success: false, message: "Acceso denegado", code: "INVALID_REFRESH_TOKEN" } };
     }
 
+    // Renovar extiende la ventana que bloquea nuevos logins, pero no dependemos
+    // de blocksLoginUntil para permitir este refresh.
+    const timestamps = buildSessionTimestamps();
+    await User.touchSession(session.sessionId, timestamps);
+
     const newToken = await buildSessionToken(employee, decoded.sessionId);
     const newRefreshToken = refreshToken;
-
-    const rotated = employee.refreshToken === refreshToken;
-
-    if (!rotated) {
-        await User.clearRefreshToken(employeeId);
-        return { status: 401, body: { success: false, message: "Sesión inválida", code: "INVALID_REFRESH_TOKEN" } };
-    }
 
     return {
         status: 200,
@@ -741,10 +779,7 @@ async function refreshSession(refreshToken, ipAddress) {
 
 async function logout(refreshToken) {
     if (refreshToken) {
-        const decoded = decodeToken(refreshToken);
-        if (decoded && (decoded.id || decoded.employeeId)) {
-            await User.clearRefreshToken(decoded.id || decoded.employeeId);
-        }
+        await User.revokeSessionByRefreshToken(refreshToken);
     }
     return { status: 200, body: { success: true, message: "Sesión cerrada", code: "LOGOUT_SUCCESS" } };
 }
@@ -759,3 +794,4 @@ module.exports = {
     refreshSession,
     logout,
 };
+
