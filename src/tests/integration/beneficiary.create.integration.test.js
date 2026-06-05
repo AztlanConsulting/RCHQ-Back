@@ -192,8 +192,9 @@ describe("POST /beneficiary/add - integración", () => {
 
         expect(res.statusCode).toBe(201);
         expect(res.body.success).toBe(true);
+        expect(res.body.message).toBe("Beneficiario registrado con éxito.");
         expect(res.body.data.beneficiaryId).toBeDefined();
-        expect(res.body.redirect).toContain(res.body.data.beneficiaryId);
+        expect(res.body.redirect).toBeUndefined();
 
         const row = await prisma.beneficiary.findUnique({
             where: { beneficiary_id: res.body.data.beneficiaryId },
