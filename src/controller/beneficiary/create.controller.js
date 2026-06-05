@@ -40,7 +40,8 @@ exports.registerBeneficiary = async (req, res) => {
                 success: true,
                 message: "Beneficiario registrado con éxito.",
                 data: result.data,
-                redirect: `/app/beneficiarios/ver/${result.data?.beneficiaryId}`,
+                // redirect: `/app/beneficiarios/ver/${result.data?.beneficiaryId}`,
+                redirect: "/app/beneficiarios",
             });
         }
 

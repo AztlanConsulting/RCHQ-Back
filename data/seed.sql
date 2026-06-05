@@ -76,7 +76,8 @@ VALUES
 ('00000001-0000-4000-8000-000000000015', 'viewBlacklist'),
 ('00000001-0000-4000-8000-000000000016', 'removeFromBlacklist'),
 ('00000001-0000-4000-8000-000000000017', 'viewSelfVacations'),
-('00000001-0000-4000-8000-000000000018', 'editVacations')
+('00000001-0000-4000-8000-000000000018', 'editVacations'),
+('00000001-0000-4000-8000-000000000019', 'createBeneficiary')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -93,7 +94,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
-WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs', 'addToBlacklist', 'viewBlacklist', 'removeFromBlacklist')
+WHERE p.name IN ('viewEmployees', 'createEmployees', 'manageEmployees', 'viewDocuments', 'manageDocuments', 'viewLogs', 'addToBlacklist', 'viewBlacklist', 'removeFromBlacklist', 'createBeneficiary')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.role_privilege (role_id, privilege_id)
