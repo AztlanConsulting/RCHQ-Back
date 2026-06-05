@@ -16,6 +16,10 @@ const TEST_ROLE_ID = randomUUID();
 const TEST_EMPLOYEE_ROLE_ID = randomUUID();
 const TEST_EVENT_TYPE_ID = randomUUID();
 const TEST_OTHER_EVENT_TYPE_ID = randomUUID();
+const TEST_TRAINING_EVENT_TYPE_ID = randomUUID();
+
+let trainingEventTypeId = TEST_TRAINING_EVENT_TYPE_ID;
+let trainingEventTypeCreatedByTest = false;
 const TEST_PRIVILEGE_EDIT_ID = randomUUID();
 const TEST_PERSONAL_EVENT_ID = randomUUID();
 const TEST_UPDATE_ACTION_ID = "even-007";
@@ -143,6 +147,20 @@ const seedDependencies = async () => {
             name: `Festivo UpdPersonal ${TEST_OTHER_EVENT_TYPE_ID.slice(0, 8)}`,
         },
     });
+
+    const existingTraining = await prisma.event_type.findFirst({
+        where: { name: "Capacitaciones" },
+    });
+    if (existingTraining) {
+        trainingEventTypeId = existingTraining.event_type_id;
+        trainingEventTypeCreatedByTest = false;
+    } else {
+        await prisma.event_type.create({
+            data: { event_type_id: TEST_TRAINING_EVENT_TYPE_ID, name: "Capacitaciones" },
+        });
+        trainingEventTypeId = TEST_TRAINING_EVENT_TYPE_ID;
+        trainingEventTypeCreatedByTest = true;
+    }
 
     const editPrivilegeId = await getOrCreatePrivilegeId(
         "editEvent",
@@ -378,13 +396,12 @@ const cleanDb = async () => {
         },
     });
 
+    const eventTypeIdsToDelete = [TEST_EVENT_TYPE_ID, TEST_OTHER_EVENT_TYPE_ID];
+    if (trainingEventTypeCreatedByTest) {
+        eventTypeIdsToDelete.push(TEST_TRAINING_EVENT_TYPE_ID);
+    }
     await prisma.event_type.deleteMany({
-        where: {
-            OR: [
-                { event_type_id: TEST_EVENT_TYPE_ID },
-                { event_type_id: TEST_OTHER_EVENT_TYPE_ID },
-            ],
-        },
+        where: { event_type_id: { in: eventTypeIdsToDelete } },
     });
 };
 
@@ -1363,6 +1380,256 @@ describe(`PUT ${API_BASE}/:eventId - Integration & Security`, () => {
                 where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
             });
             expect(junctionRows).toHaveLength(2);
+        });
+    });
+
+    describe("7. Campo trainer / Capacitaciones", () => {
+        const pastDate = "2024-01-15";
+
+        describe("Evento futuro", () => {
+            it("coordinador actualiza capacitación con trainer válido y lo persiste en BD (200)", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(
+                        buildCoordinatorBody({
+                            eventTypeId: trainingEventTypeId,
+                            trainer: "Instructor de Capacitación",
+                        }),
+                    );
+
+                expect(res.statusCode).toBe(200);
+
+                const inDb = await prisma.personal_event.findUnique({
+                    where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
+                });
+                expect(inDb.trainer).toBe("Instructor de Capacitación");
+            });
+
+            it("retorna 422 si el tipo es capacitaciones y no se envía trainer", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(buildCoordinatorBody({ eventTypeId: trainingEventTypeId }));
+
+                expect(res.statusCode).toBe(422);
+
+                const inDb = await prisma.personal_event.findUnique({
+                    where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
+                });
+                expect(inDb.name).toBe("Evento original");
+            });
+
+            it("retorna 422 si el tipo es capacitaciones y trainer es null", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(
+                        buildCoordinatorBody({
+                            eventTypeId: trainingEventTypeId,
+                            trainer: null,
+                        }),
+                    );
+
+                expect(res.statusCode).toBe(422);
+            });
+
+            it("retorna 422 si trainer excede 150 caracteres", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(
+                        buildCoordinatorBody({
+                            eventTypeId: trainingEventTypeId,
+                            trainer: "a".repeat(151),
+                        }),
+                    );
+
+                expect(res.statusCode).toBe(422);
+            });
+
+            it("rechaza trainer con caracteres maliciosos (XSS)", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(
+                        buildCoordinatorBody({
+                            eventTypeId: trainingEventTypeId,
+                            trainer: "<script>alert('xss')</script>",
+                        }),
+                    );
+
+                expect(res.statusCode).toBe(422);
+            });
+
+            it("retorna 422 si trainer es cadena vacía", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID]);
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(buildCoordinatorBody({ trainer: "" }));
+
+                expect(res.statusCode).toBe(422);
+            });
+
+            it("tipo no-capacitaciones: trainer se omite y se persiste como null en BD", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID]);
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(buildCoordinatorBody());
+
+                expect(res.statusCode).toBe(200);
+
+                const inDb = await prisma.personal_event.findUnique({
+                    where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
+                });
+                expect(inDb.trainer).toBeNull();
+            });
+
+            it("tipo no-capacitaciones: trainer se ignora aunque se envíe un valor", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID]);
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send(buildCoordinatorBody({ trainer: "Instructor Ignorado" }));
+
+                expect(res.statusCode).toBe(200);
+
+                const inDb = await prisma.personal_event.findUnique({
+                    where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
+                });
+                expect(inDb.trainer).toBeNull();
+            });
+        });
+
+        describe("Evento pasado", () => {
+            it("coordinador actualiza capacitación pasada con trainer válido y lo persiste en BD (200)", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                    date: new Date(pastDate),
+                    start: new Date(`${pastDate}T15:00:00.000Z`),
+                    end: new Date(`${pastDate}T17:00:00.000Z`),
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send({
+                        employeeIds: [TEST_EMPLOYEE_ID],
+                        trainer: "Instructor Pasado",
+                    });
+
+                expect(res.statusCode).toBe(200);
+
+                const inDb = await prisma.personal_event.findUnique({
+                    where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
+                });
+                expect(inDb.trainer).toBe("Instructor Pasado");
+            });
+
+            it("retorna 422 si el evento pasado es de tipo capacitaciones y no se envía trainer", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                    date: new Date(pastDate),
+                    start: new Date(`${pastDate}T15:00:00.000Z`),
+                    end: new Date(`${pastDate}T17:00:00.000Z`),
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send({ employeeIds: [TEST_EMPLOYEE_ID] });
+
+                expect(res.statusCode).toBe(422);
+            });
+
+            it("retorna 422 si el evento pasado es de tipo capacitaciones y trainer es null", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    event_type_id: trainingEventTypeId,
+                    date: new Date(pastDate),
+                    start: new Date(`${pastDate}T15:00:00.000Z`),
+                    end: new Date(`${pastDate}T17:00:00.000Z`),
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send({ employeeIds: [TEST_EMPLOYEE_ID], trainer: null });
+
+                expect(res.statusCode).toBe(422);
+            });
+
+            it("evento pasado no-capacitaciones acepta request sin trainer (200)", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    date: new Date(pastDate),
+                    start: new Date(`${pastDate}T15:00:00.000Z`),
+                    end: new Date(`${pastDate}T17:00:00.000Z`),
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send({ employeeIds: [TEST_EMPLOYEE_ID] });
+
+                expect(res.statusCode).toBe(200);
+            });
+
+            it("evento pasado no-capacitaciones: trainer se persiste como null aunque se envíe", async () => {
+                await seedPersonalEvent([TEST_EMPLOYEE_ID], {
+                    date: new Date(pastDate),
+                    start: new Date(`${pastDate}T15:00:00.000Z`),
+                    end: new Date(`${pastDate}T17:00:00.000Z`),
+                });
+                const token = generateToken();
+
+                const res = await request(app)
+                    .put(`${API_BASE}/${TEST_PERSONAL_EVENT_ID}`)
+                    .set("Authorization", `Bearer ${token}`)
+                    .send({ employeeIds: [TEST_EMPLOYEE_ID], trainer: "Ignorado" });
+
+                expect(res.statusCode).toBe(200);
+
+                const inDb = await prisma.personal_event.findUnique({
+                    where: { personal_event_id: TEST_PERSONAL_EVENT_ID },
+                });
+                expect(inDb.trainer).toBeNull();
+            });
         });
     });
 

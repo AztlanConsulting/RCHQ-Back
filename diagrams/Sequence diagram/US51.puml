@@ -1,0 +1,149 @@
+@startuml
+title US51 - Consultar las capacitaciones en mi perfil (Sequence Diagram)
+
+actor Usuario
+boundary "event.route.js\nrouter" as Router
+control "auth.js\nverifyToken()" as Auth
+control "rbac.js\nrequirePrivileges()" as RBAC
+control "resolvers.js\nresolveEmployeeHouse()" as Resolver
+control "abac.js & policies\nauthorize(viewEvents)" as ABAC
+control "get.controller.js\ngetTrainingsByEmployee()" as Controller
+control "get.service.js\ngetTrainingsByEmployee()" as Service
+entity "employee/get.model.js" as EmployeeModel
+entity "event/get.model.js\ngetTrainingsByEmployee()" as EventModel
+control "event.map.js\nmapTrainingProfileEvent()" as Mapper
+database "BD (Prisma)" as BD
+
+activate Usuario
+Usuario -> Router : GET /event/trainings/:employeeId
+deactivate Usuario
+
+activate Router
+Router -> Auth : verifyToken(req, res, next)
+deactivate Router
+
+activate Auth
+alt Token invalido
+    Auth -> Router : res.status(403)
+    activate Router
+    Router -> Usuario : res.status(403)
+    deactivate Router
+else Token valido
+    Auth -> Router : next()
+    deactivate Auth
+    activate Router
+    Router -> RBAC : requirePrivileges("viewEvents")
+    deactivate Router
+    activate RBAC
+end
+alt Privilegios insuficientes
+    RBAC -> Router : res.status(403)
+    activate Router
+    Router -> Usuario : res.status(403)
+    deactivate Router
+else Privilegios validos
+    RBAC -> Router : next()
+    deactivate RBAC
+    activate Router
+end
+
+Router -> Resolver : resolveEmployeeHouse(req, res, next)
+deactivate Router
+activate Resolver
+
+alt Empleado no está registrado en la casa
+    Resolver -> Router : res.status(404).json({message: "Empleado no encontrado"})
+    activate Router
+    Router -> Usuario : res.status(404).json({message: "Empleado no encontrado"})
+    deactivate Router
+else Empleado registrado en la casa
+    Resolver -> Resolver : req.resolvedEmployee = { houseId }
+    Resolver -> Router : next()
+    deactivate Resolver
+    activate Router
+end
+
+Router -> ABAC : authorize("viewEvents")
+deactivate Router
+activate ABAC
+
+alt Sin permisos
+    ABAC -> Router : res.status(403).json({message: "Accesso denegado"})
+    activate Router
+    Router -> Usuario : res.status(403).json({message: "Accesso denegado"})
+    deactivate Router
+else Permisos para consultar capacitaciones
+    ABAC -> Router : next()
+    deactivate ABAC
+    activate Router
+end
+
+Router -> Controller : getTrainingsByEmployee(req, res)
+deactivate Router
+activate Controller
+
+Controller ->> Service : getTrainingsByEmployee(\n\treq.params.employeeId\n)
+activate Service
+
+Service ->> EmployeeModel : findById(employeeId)
+activate EmployeeModel
+EmployeeModel ->> BD : prisma.employee.findUnique(...)
+activate BD
+BD -->> EmployeeModel : employee
+deactivate BD
+EmployeeModel -->> Service : employee
+deactivate EmployeeModel
+
+alt Empleado no está registrado
+    Service -->> Controller : return { \n\ttype: RESPONSES.USER.NOT_FOUND, \n\tbody: null \n}
+    Controller -> Router : res.status(404).json({ message: "Empleado no encontrado" })
+    activate Router
+    Router -> Usuario : res.status(404).json({ message: "Empleado no encontrado" })
+    deactivate Router
+else Empleado registrado
+    Service ->> EventModel :getTrainingsByEmployee(employeeId)
+    activate EventModel
+    EventModel ->> BD : prisma.event_type.findFirst({\n\twhere: {\n\t\tname: {\n\t\t\tequals: TRAINING_EVENT_TYPE_NAME,\n\t\t\tmode: "insensitive",\n\t\t},\n\t},\n\tselect: {\n\t\tevent_type_id: true,\n\t},\n})
+    activate BD
+    BD -->> EventModel : trainingEventType
+    deactivate BD
+
+    alt !trainingEventType
+        EventModel -->> Service : []
+        deactivate EventModel
+    else Tipo de capacitacion encontrado
+        EventModel ->> BD : prisma.personal_event.findMany({\n\twhere: {\n\t\tis_deleted: false,\n\t\tevent_type_id: trainingEventType.event_type_id,\n\t\temployee_personal_event: {\n\t\t\tsome: {\n\t\t\t\temployee_id: employeeId,\n\t\t\t},\n\t\t},\n\t},\n\tinclude: {\n\t\temployee_personal_event: {\n\t\t\tselect: {\n\t\t\t\temployee_id: true,\n\t\t\t},\n\t\t},\n\t},\n\torderBy: {\n\t\tstart: "desc",\n\t},\n})
+        activate BD
+        BD -->> EventModel : trainingEvents[]
+        deactivate BD
+        EventModel -->> Service : trainingEvents[]
+        deactivate EventModel
+    end
+
+    alt No hay capacitaciones
+        Service -->> Controller : return { \n\ttype: RESPONSES.EVENTS.NOT_FOUND, \n\tbody: [] \n}
+        Controller -> Router : res.status(200).json({ success: true, data: [] })
+        activate Router
+        Router -> Usuario : res.status(200).json({ success: true, data: [] })
+        deactivate Router
+    else Hay capacitaciones
+        loop por cada capacitacion
+            Service -> Mapper : mapTrainingProfileEvent(trainingEvents)
+            activate Mapper
+            Mapper -->> Service : trainingEvents mappeado
+            deactivate Mapper
+        end
+
+        Service -->> Controller : return { \n\ttype: RESPONSES.EVENTS.OK, \n\tbody: trainingEvents \n}
+        Controller -> Router : res.status(200).json({ success: true, data: result.body })
+        activate Router
+        Router -> Usuario : res.status(200).json({ success: true, data: result.body })
+        deactivate Router
+    end
+end
+
+deactivate Service
+
+deactivate Controller
+
+@enduml

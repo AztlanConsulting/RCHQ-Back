@@ -1,0 +1,128 @@
+@startuml US50 - Coordinador elimina empleado de capacitación
+
+actor Navegador
+boundary "event.personal.routes" as routes
+boundary "React (employeeProfile.jsx)" as ReactView
+control "delete.controller" as controller
+control "delete.service" as service
+entity "get.model" as get.model
+entity "delete.model" as delete.model
+entity "log.model" as log.model
+database PostgreSQL
+
+autonumber
+
+Navegador -> ReactView : Seleccionar opción "Eliminar capacitación"
+activate ReactView
+
+ReactView -> Navegador : Mostrar confirmación de eliminación
+
+alt Confirma eliminación
+    Navegador -> ReactView : Confirmar eliminar
+
+    ReactView -> routes : DELETE /events/personal/:eventId/employee/:employeeId
+    deactivate ReactView
+    activate routes
+
+    routes -> controller : removeEmployeeFromPersonalEvent(request, response)
+    deactivate routes
+    activate controller
+
+    controller ->> service : removeEmployeeFromPersonalEvent(eventId, employeeId, user, clientIp)
+    activate service
+
+    service ->> get.model : findPersonalEventById(eventId, houseId)
+    activate get.model
+    get.model ->> PostgreSQL : prisma.personal_event.findFirst()
+    activate PostgreSQL
+    PostgreSQL -->> get.model : personalEvent | null
+    deactivate PostgreSQL
+    get.model -->> service : personalEvent | null
+    deactivate get.model
+
+    alt Evento no existe
+        service -->> controller : { code: NOT_FOUND }
+        controller -->> routes : response.status(404).send("Evento no encontrado")
+        activate routes
+        routes -->> ReactView : send("Evento no encontrado")
+        deactivate routes
+        activate ReactView
+        ReactView -> Navegador : Mostrar error 404
+        deactivate ReactView
+
+    else Evento existe
+        service -> service : Verificar event_type.name === "Capacitaciones"
+
+        alt No es una capacitación
+            service -->> controller : { code: NOT_TRAINING_EVENT }
+            controller -->> routes : response.status(400).send("El evento no es una capacitación")
+            activate routes
+            routes -->> ReactView : send("El evento no es una capacitación")
+            deactivate routes
+            activate ReactView
+            ReactView -> Navegador : Mostrar error 400
+            deactivate ReactView
+
+        else Es una capacitación
+            service ->> get.model : findEmployeeInPersonalEvent(eventId, employeeId)
+            activate get.model
+            get.model ->> PostgreSQL : prisma.employee_personal_event.findUnique()
+            activate PostgreSQL
+            PostgreSQL -->> get.model : relation | null
+            deactivate PostgreSQL
+            get.model -->> service : relation | null
+            deactivate get.model
+
+            alt Empleado no está asignado
+                service -->> controller : { code: EMPLOYEE_NOT_IN_EVENT }
+                controller -->> routes : response.status(404).send("Empleado no asignado")
+                activate routes
+                routes -->> ReactView : send("Empleado no asignado")
+                deactivate routes
+                activate ReactView
+                ReactView -> Navegador : Mostrar error 404
+                deactivate ReactView
+
+            else Empleado está asignado
+                service ->> delete.model : removeEmployeeFromPersonalEvent(eventId, employeeId)
+                activate delete.model
+                delete.model ->> PostgreSQL : prisma.employee_personal_event.delete()
+                activate PostgreSQL
+                PostgreSQL -->> delete.model : deleted
+                deactivate PostgreSQL
+                delete.model -->> service : success
+                deactivate delete.model
+
+                service ->> log.model : createLog(userId, PERSONAL_EVENT_EMPLOYEE_REMOVED, clientIp, eventId)
+                activate log.model
+                log.model ->> PostgreSQL : prisma.log.create()
+                activate PostgreSQL
+                PostgreSQL -->> log.model : log
+                deactivate PostgreSQL
+                log.model -->> service : success
+                deactivate log.model
+
+                service -->> controller : { code: EMPLOYEE_REMOVED }
+                deactivate service
+
+                controller -->> routes : response.status(200).send("Empleado eliminado")
+                deactivate controller
+                activate routes
+
+                routes -->> ReactView : send("Empleado eliminado")
+                deactivate routes
+                activate ReactView
+
+                ReactView -> Navegador : Notificar éxito
+                ReactView -> Navegador : Actualizar información del expediente
+            end
+        end
+    end
+
+else Cancela eliminación
+    Navegador -> ReactView : Cancelar
+    ReactView -> Navegador : Mantener detalle del expediente
+    deactivate ReactView
+end
+
+@enduml

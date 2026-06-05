@@ -1,8 +1,8 @@
 const { z } = require("zod");
-const { 
-    normalizeTime, 
-    TIME_REGEX, 
-    DATETIME_WITH_TIMEZONE_REGEX, 
+const {
+    normalizeTime,
+    TIME_REGEX,
+    DATETIME_WITH_TIMEZONE_REGEX,
     DATE_ONLY_REGEX,
     TEXT_REGEX,
     ONE_DAY_MS,
@@ -12,7 +12,7 @@ const {
     getTodayStr,
     getMaxDateStr,
     getHouseMinDateStr,
-    getHouseMaxDateStr
+    getHouseMaxDateStr,
 } = require("../../utils/event/dateTime");
 
 const isDateOrDateTimeWithTimezone = (value) =>
@@ -190,20 +190,14 @@ exports.houseEventUpdateSchema = z
         message: "La fecha de inicio debe ser anterior a la fecha de fin.",
         path: ["start"],
     })
-    .refine(
-        (data) => data.localStartDate >= getHouseMinDateStr(),
-        {
-            message: `No se pueden mover eventos antes del 1 de enero de ${new Date().getFullYear()}.`,
-            path: ["start"],
-        },
-    )
-    .refine(
-        (data) => data.localStartDate <= getHouseMaxDateStr(),
-        {
-            message: `No se pueden mover eventos más allá del año ${new Date().getFullYear() + 2}.`,
-            path: ["start"],
-        },
-    );
+    .refine((data) => data.localStartDate >= getHouseMinDateStr(), {
+        message: `No se pueden mover eventos antes del 1 de enero de ${new Date().getFullYear()}.`,
+        path: ["start"],
+    })
+    .refine((data) => data.localStartDate <= getHouseMaxDateStr(), {
+        message: `No se pueden mover eventos más allá del año ${new Date().getFullYear() + 2}.`,
+        path: ["start"],
+    });
 
 exports.updatePersonalEventSchema = z
     .object({
@@ -263,6 +257,23 @@ exports.updatePersonalEventSchema = z
             .optional(),
 
         forceOverlap: z.boolean().optional().default(false),
+
+        trainer: z
+            .string()
+            .trim()
+            .min(1, {
+                message: "El nombre del instructor no puede estar vacío.",
+            })
+            .max(150, {
+                message:
+                    "El nombre del instructor no debe exceder 150 caracteres.",
+            })
+            .regex(TEXT_REGEX, {
+                message:
+                    "Solo se permiten letras, números, espacios y signos básicos.",
+            })
+            .nullable()
+            .optional(),
     })
     .superRefine((data, ctx) => {
         if (data.allDay === true) {
@@ -321,3 +332,23 @@ exports.updatePersonalEventSchema = z
             "No se pueden mover eventos con más de 2 años de anticipación.",
         path: ["date"],
     });
+
+exports.updatePastPersonalEventSchema = z.object({
+    employeeIds: z
+        .array(z.string().uuid("Los IDs de empleados deben ser UUIDs válidos"))
+        .min(1, { message: "Debes seleccionar al menos un empleado." }),
+
+    trainer: z
+        .string()
+        .trim()
+        .min(1, { message: "El nombre del instructor no puede estar vacío." })
+        .max(150, {
+            message: "El nombre del instructor no debe exceder 150 caracteres.",
+        })
+        .regex(TEXT_REGEX, {
+            message:
+                "Solo se permiten letras, números, espacios y signos básicos.",
+        })
+        .nullable()
+        .optional(),
+});

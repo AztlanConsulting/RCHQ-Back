@@ -5,6 +5,9 @@ const {
     mapPersonalEventOverlap,
 } = require("../../utils/mappers/event.map");
 const { eventDateTimeToUtc } = require("../../utils/event/dateTime");
+const { getMexicoTodayDate } = require("../../utils/dates");
+
+const TRAINING_EVENT_TYPE_NAME = "Capacitaciones";
 
 exports.getAllEventTypes = async () => {
     return await prisma.event_type.findMany({
@@ -12,6 +15,13 @@ exports.getAllEventTypes = async () => {
             event_type_id: true,
             name: true,
         },
+    });
+};
+
+exports.getEventTypeById = async (eventTypeId) => {
+    return await prisma.event_type.findUnique({
+        where: { event_type_id: eventTypeId },
+        select: { event_type_id: true, name: true },
     });
 };
 
@@ -105,6 +115,56 @@ exports.getPersonalEventsInRange = async (employeeId, startDate, endDate) => {
                     },
                 },
             },
+        },
+    });
+};
+
+exports.getTrainingsByEmployee = async (employeeId) => {
+    const todayInMexico = getMexicoTodayDate();
+    const trainingEventType = await prisma.event_type.findFirst({
+        where: {
+            name: {
+                equals: TRAINING_EVENT_TYPE_NAME,
+                mode: "insensitive",
+            },
+        },
+        select: {
+            event_type_id: true,
+        },
+    });
+
+    if (!trainingEventType) {
+        return [];
+    }
+
+    return await prisma.personal_event.findMany({
+        where: {
+            event_type_id: trainingEventType.event_type_id,
+            date: {
+                lt: todayInMexico,
+            },
+            employee_personal_event: {
+                some: {
+                    employee_id: employeeId,
+                },
+            },
+        },
+        include: {
+            event_type: true,
+            employee_personal_event: {
+                include: {
+                    employee: {
+                        select: {
+                            employee_id: true,
+                            name: true,
+                            surname: true,
+                        },
+                    },
+                },
+            },
+        },
+        orderBy: {
+            start: "desc",
         },
     });
 };
@@ -297,6 +357,41 @@ exports.findPersonalEventById = async (eventId, houseId) => {
         include: {
             employee_personal_event: {
                 select: { employee_id: true },
+            },
+            event_type: {
+                select: { name: true },
+            },
+        },
+    });
+};
+
+exports.findPersonalEventByIdIncludeDeleted = async (eventId, houseId) => {
+    return prisma.personal_event.findFirst({
+        where: {
+            personal_event_id: eventId,
+            employee_personal_event: {
+                some: {
+                    employee: { house_id: houseId },
+                },
+            },
+        },
+        include: {
+            employee_personal_event: {
+                select: { employee_id: true },
+            },
+            event_type: {
+                select: { name: true },
+            },
+        },
+    });
+};
+
+exports.findEmployeeInPersonalEvent = async (personalEventId, employeeId) => {
+    return prisma.employee_personal_event.findUnique({
+        where: {
+            personal_event_id_employee_id: {
+                personal_event_id: personalEventId,
+                employee_id: employeeId,
             },
         },
     });

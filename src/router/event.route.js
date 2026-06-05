@@ -7,13 +7,20 @@ const {
     requirePrivileges,
     allRoles,
 } = require("../middleware/rbac");
-const { resolveRequesterHouse } = require("../middleware/resolvers");
-const { employeePolicy } = require("../policies/employee.policies");
+const {
+    resolveEmployeeHouse,
+    resolveRequesterHouse,
+} = require("../middleware/resolvers");
+const {
+    employeePolicy,
+    viewTrainings,
+} = require("../policies/employee.policies");
 const { authorize, isAllowed } = require("../middleware/abac");
 
 const {
     getAllEventTypes,
     getEventsInRange,
+    getTrainingsByEmployee,
     getHouseCalendarRecordsInRange,
     getEmployeesForSelector,
     getEmployeeDateRules,
@@ -30,6 +37,7 @@ const {
 const {
     deleteHouseEvent,
     deletePersonalEvent,
+    removeEmployeeFromPersonalEvent,
 } = require("../controller/event/delete.controller");
 const {
     houseEventPolicy,
@@ -50,6 +58,20 @@ router.get(
     requirePrivileges("viewEvents"),
     isAllowed,
     getEventsInRange,
+);
+
+router.get(
+    "/trainings/:employeeId",
+    apiLimiter,
+    verifyToken,
+    requireRole(...allRoles),
+    requirePrivileges(PRIVILEGES.VIEW_EVENTS),
+    resolveEmployeeHouse,
+    authorize(viewTrainings, (req) => ({
+        employeeId: req.params.employeeId,
+        houseId: req.resolvedEmployee.houseId,
+    })),
+    getTrainingsByEmployee,
 );
 
 router.get(
@@ -158,6 +180,18 @@ router.delete(
         houseId: req.user.houseId,
     })),
     deletePersonalEvent,
+);
+
+router.delete(
+    "/personal/:eventId/employee/:employeeId",
+    apiLimiter,
+    verifyToken,
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.DELETE_EVENT),
+    authorize(deletePersonalEventPolicy, (req) => ({
+        houseId: req.user.houseId,
+    })),
+    removeEmployeeFromPersonalEvent,
 );
 
 module.exports = router;

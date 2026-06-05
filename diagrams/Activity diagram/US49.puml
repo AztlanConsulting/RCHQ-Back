@@ -1,0 +1,101 @@
+@startuml US49 - Modificar Capacitación
+
+|Coordinador|
+start
+:Interactuar con el calendario;
+
+|Sistema|
+:Mostrar capacitaciones en el calendario;
+
+|Coordinador|
+:Seleccionar capacitación existente;
+
+|Sistema|
+:Renderizar modal de detalle de la capacitación;
+
+|Coordinador|
+:Seleccionar opción "Editar";
+
+|Sistema|
+if (¿La capacitación es del pasado?) then (SI)
+    :Mostrar formulario restringido\n(solo empleados e instructor);
+
+    repeat
+    |Coordinador|
+    :Modificar empleados asignados e instructor;
+
+    |Sistema|
+    :Validar campos obligatorios e instructor;
+    repeat while (¿Campos completos e instructor ingresado?) is (NO)
+
+    :Validar empleados en la casa;
+
+    if (¿Empleados válidos?) then (SI)
+        :Actualizar empleados e instructor;
+        :Registrar log de modificación;
+        :Notificar éxito al usuario;
+        :Actualizar calendario;
+        stop
+    else (NO)
+        |Coordinador|
+        :Ver error "Empleado no válido para esta casa";
+        stop
+    endif
+
+else (NO)
+    |Sistema|
+    :Mostrar formulario completo con datos actuales;
+
+    repeat
+    |Coordinador|
+    :Modificar campos permitidos:
+    - Título
+    - Tipo de evento
+    - Fecha
+    - Hora de inicio
+    - Hora de fin
+    - Empleados asignados
+    - Instructor;
+
+    |Sistema|
+    if (¿Activar "Todo el día"?) then (SI)
+        :Eliminar selectores de hora;
+        :Registrar solo fecha;
+    else (NO)
+        :Mantener selectores de hora;
+    endif
+
+    |Coordinador|
+    if (¿Modificar descripción?) then (SI)
+        :Editar descripción del evento;
+    else (NO)
+    endif
+
+    |Sistema|
+    :Validar campos obligatorios e instructor;
+    repeat while (¿Campos completos e instructor ingresado?) is (NO)
+
+    :Validar disponibilidad de horario;
+
+    if (¿Existe empalme con otro evento?) then (SI)
+        |Coordinador|
+        if (¿Desea guardar los cambios de todos modos?) then (SI)
+            |Sistema|
+            :Modificar capacitación con traslape;
+        else (NO)
+            |Sistema|
+            :Cancelar modificación;
+            stop
+        endif
+    else (NO)
+        |Sistema|
+        :Modificar capacitación normalmente;
+    endif
+
+    :Registrar log de modificación;
+    :Notificar éxito al usuario;
+    :Actualizar calendario;
+    stop
+endif
+
+@enduml

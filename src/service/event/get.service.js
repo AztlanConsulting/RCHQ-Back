@@ -25,6 +25,7 @@ const {
     getAllEventTypes,
     getHouseEventsInRange,
     getPersonalEventsInRange,
+    getTrainingsByEmployee,
     getGlobalEventsInRange,
     getEmployeesByHouse,
     getHouseCalendarPersonalEventsInRange,
@@ -35,6 +36,7 @@ const {
     mapPersonalCalendarEvent,
 } = require("../../utils/mappers/event.map");
 const RESPONSES = require("../../utils/responses");
+const { ROLES } = require("../../utils/roles");
 const { searchEmployeesSchema } = require("../../schemas/event/create.schemas");
 const {
     mapHouseAbsenceCalendarEvent,
@@ -102,7 +104,7 @@ const getFreeDayDates = (events = [], minDate, maxDate) => {
     return [...dates].sort();
 };
 
-exports.getAllEventTypes = async () => {
+exports.getAllEventTypes = async (user, scope) => {
     const result = await getAllEventTypes();
 
     if (!result || result.length <= 0) {
@@ -111,10 +113,20 @@ exports.getAllEventTypes = async () => {
         };
     }
 
+    const isPersonalScope = scope === "personal";
+    const isCoordinator = user?.role === ROLES.COORDINATOR;
+
+    const filtered = result.filter((eventType) => {
+        if (eventType.name.toLowerCase() === "capacitaciones") {
+            return isPersonalScope && isCoordinator;
+        }
+        return true;
+    });
+
     return {
         code: RESPONSES.EVENTS.FOUND,
         data: {
-            eventTypes: result.map((eventType) => ({
+            eventTypes: filtered.map((eventType) => ({
                 ...(eventType.event_type_id && {
                     eventTypeId: eventType.event_type_id,
                 }),
@@ -363,6 +375,39 @@ exports.getEventsInRange = async (
         code: RESPONSES.EVENTS.FOUND,
         data: {
             events: events,
+        },
+    };
+};
+
+exports.getTrainingsByEmployee = async (employeeId) => {
+
+    if (!employeeId) {
+        return {
+            code: RESPONSES.EVENTS.VALIDATION_ERROR,
+        };
+    }
+
+    const employee = await findById(employeeId);
+    if (!employee) {
+        return {
+            code: RESPONSES.EMPLOYEE.NOT_FOUND,
+        };
+    }
+
+    const trainings = await getTrainingsByEmployee(employeeId);
+    if (!trainings || trainings.length === 0) {
+        return {
+            code: RESPONSES.EVENTS.NOT_FOUND,
+            data: {
+                trainings: [],
+            },
+        };
+    }
+
+    return {
+        code: RESPONSES.EVENTS.FOUND,
+        data: {
+            trainings: trainings.map(mapPersonalCalendarEvent),
         },
     };
 };

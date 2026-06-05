@@ -19,6 +19,14 @@ exports.viewDocuments = (user, resource) => {
   return false;
 };
 
+exports.viewTrainings = (user, resource) => {
+  if (!user) return false;
+  if (resource?.employeeId == user.id) return true;
+  if (user.role === ROLES.ADMIN) return true;
+  if (user.role === ROLES.COORDINATOR && resource?.houseId == user.houseId) return true;
+  return false;
+};
+
 exports.modifyDocuments = (user, resource) => {
   if (!user) return false;
   if (user.role === "Administrador") return true;

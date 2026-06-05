@@ -1,0 +1,35 @@
+@startuml US50 - Coordinador elimina empleado de capacitación
+
+|Coordinador|
+start
+:Ver detalle del empleado;
+:Seleccionar expediente;
+:Seleccionar opción "Eliminar capacitación";
+
+|Sistema|
+:Mostrar confirmación de eliminación;
+
+|Coordinador|
+if (¿Confirma la eliminación?) then (SI)
+
+    |Sistema|
+    :Validar permisos y datos;
+    
+    if (¿Información válida?) then (SI)
+        :Eliminar asignación del empleado a la capacitación;
+        :Notificar éxito al usuario;
+        :Actualizar información del expediente;
+    else (NO)
+        :Mostrar mensaje de error;
+    endif
+
+else (NO)
+
+    |Sistema|
+    :Cancelar operación;
+
+endif
+
+stop
+
+@enduml

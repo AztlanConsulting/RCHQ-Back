@@ -15,6 +15,7 @@ const TEST_ROLE_ID = randomUUID();
 const TEST_EMPLOYEE_ROLE_ID = randomUUID();
 const TEST_EVENT_TYPE_ID = randomUUID();
 const TEST_PRIVILEGE_CREATE_ID = randomUUID();
+const TRAINING_EVENT_TYPE_ID = "b1000000-0000-4000-8000-000000000004";
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_ROUTE = "/event/personal/add";
@@ -58,6 +59,18 @@ const buildValidEventBody = (overrides = {}) => ({
     ...overrides,
 });
 
+const buildTrainingEventBody = (overrides = {}) => ({
+    name: "Capacitacion de primeros auxilios",
+    eventTypeId: TRAINING_EVENT_TYPE_ID,
+    date: "2026-07-20",
+    allDay: false,
+    start: "09:00",
+    end: "11:00",
+    employeeIds: [TEST_EMPLOYEE_ID],
+    trainer: "Dr. Juan Perez Lopez",
+    ...overrides,
+});
+
 const getOrCreateRoleId = async (name, fallbackRoleId) => {
     const existing = await prisma.role.findUnique({ where: { name } });
     if (existing) return existing.role_id;
@@ -92,6 +105,15 @@ const seedDependencies = async () => {
         data: {
             event_type_id: TEST_EVENT_TYPE_ID,
             name: `Cita Test ${TEST_EVENT_TYPE_ID.slice(0, 8)}`,
+        },
+    });
+
+    await prisma.event_type.upsert({
+        where: { event_type_id: TRAINING_EVENT_TYPE_ID },
+        update: {},
+        create: {
+            event_type_id: TRAINING_EVENT_TYPE_ID,
+            name: "Capacitaciones",
         },
     });
 
@@ -1028,7 +1050,115 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
         });
     });
 
-    describe.skip("6. Resiliencia: Rate Limiting", () => {
+    describe("6. Capacitaciones", () => {
+        it("coordinador crea capacitación con trainer y persiste trainer en BD (201)", async () => {
+            const token = generateToken();
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(buildTrainingEventBody());
+
+            expect(res.statusCode).toBe(201);
+            expect(res.body.success).toBe(true);
+
+            const inDb = await prisma.personal_event.findUnique({
+                where: { personal_event_id: res.body.data.personalEventId },
+            });
+            expect(inDb).not.toBeNull();
+            expect(inDb.trainer).toBe("Dr. Juan Perez Lopez");
+            expect(inDb.event_type_id).toBe(TRAINING_EVENT_TYPE_ID);
+        });
+
+        it("la respuesta incluye el campo trainer con el valor enviado", async () => {
+            const token = generateToken();
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(buildTrainingEventBody({ trainer: "Lic. Ana García" }));
+
+            expect(res.statusCode).toBe(201);
+            expect(res.body.data.trainer).toBe("Lic. Ana García");
+        });
+
+        it("retorna 422 si el evento es capacitación y no se envía trainer", async () => {
+            const token = generateToken();
+            const body = buildTrainingEventBody();
+            delete body.trainer;
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(body);
+
+            expect(res.statusCode).toBe(422);
+
+            const count = await prisma.employee_personal_event.count({
+                where: { employee_id: TEST_EMPLOYEE_ID },
+            });
+            expect(count).toBe(0);
+        });
+
+        it("retorna 422 si trainer es una cadena de espacios", async () => {
+            const token = generateToken();
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(buildTrainingEventBody({ trainer: "   " }));
+
+            expect(res.statusCode).toBe(422);
+        });
+
+        it("retorna 422 si trainer excede 150 caracteres", async () => {
+            const token = generateToken();
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(buildTrainingEventBody({ trainer: "a".repeat(151) }));
+
+            expect(res.statusCode).toBe(422);
+        });
+
+        it("retorna 422 si trainer tiene caracteres maliciosos (XSS)", async () => {
+            const token = generateToken();
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(
+                    buildTrainingEventBody({
+                        trainer: "<script>alert('xss')</script>",
+                    }),
+                );
+
+            expect(res.statusCode).toBe(422);
+        });
+
+        it("evento no-capacitación persiste trainer=null aunque se envíe trainer", async () => {
+            const token = generateToken();
+
+            const res = await request(app)
+                .post(API_ROUTE)
+                .set("Authorization", `Bearer ${token}`)
+                .send(
+                    buildValidEventBody({
+                        trainer: "valor que debe ignorarse",
+                    }),
+                );
+
+            expect(res.statusCode).toBe(201);
+
+            const inDb = await prisma.personal_event.findUnique({
+                where: { personal_event_id: res.body.data.personalEventId },
+            });
+            expect(inDb.trainer).toBeNull();
+        });
+    });
+
+    describe.skip("7. Resiliencia: Rate Limiting", () => {
         it("bloquea con 429 si un usuario autenticado lanza muchas peticiones", async () => {
             const token = generateToken({
                 employeeId: TEST_RATE_EMPLOYEE_ID,
