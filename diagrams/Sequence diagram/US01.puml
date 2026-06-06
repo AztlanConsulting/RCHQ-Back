@@ -9,8 +9,9 @@ control "validate.js\nloginSchema" as Validator
 control "auth.controller.js\nloginFunction()" as Controller
 control "auth.service.js\nlogin()" as Service
 control "password.js\nverifyPassword()" as PasswordUtil
-control "jwt.js\ndecodeToken()\ngenerateRefreshToken()" as JWT
+control "jwt.js\ngenerateRefreshToken()" as JWT
 control "authTokens.js\nbuildSessionToken()" as AuthTokens
+control "sessionPolicy.js\nbuildSessionTimestamps()" as SessionPolicy
 entity "auth.model.js\nUser" as Model
 entity "log.model.js" as LogModel
 database "PostgreSQL\nPrisma" as BD
@@ -88,21 +89,18 @@ else validacion frontend correcta
                         Model ->> BD : prisma.employee.update(...)
                         BD -->> Model : success
 
-                        alt employee.refreshToken existe
-                            Service -> JWT : decodeToken(employee.refreshToken)
-                            JWT --> Service : decodedRefresh
+                        Service ->> Model : findBlockingSessionByEmployeeId(employeeId, now)
+                        Model ->> BD : prisma.employee_session.findFirst({ blocks_login_until > now })
+                        BD -->> Model : employee_session / null
+                        Model -->> Service : blockingSession
 
-                            break decodedRefresh.tokenType == "REFRESH"
-                                Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
-                            end
-
-                            alt decodedRefresh == null o tokenType != "REFRESH"
-                                Service ->> Model : clearRefreshToken(employeeId)
-                                Model ->> BD : prisma.employee.update({ refresh_token: null })
-                                BD -->> Model : success
-                                Service -> Service : Continua flujo de login
-                            end
-                        else sin refreshToken activo
+                        alt blockingSession existe
+                            Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
+                        else no hay sesion bloqueante
+                            Service ->> Model : revokeRevocableSessionsForLogin(employeeId, now)
+                            Model ->> BD : prisma.employee_session.updateMany({ expirada o sin bloqueo })
+                            BD -->> Model : count
+                            Model -->> Service : sesiones revocadas
                             Service -> Service : Continua flujo de login
                         end
 
@@ -121,8 +119,10 @@ else validacion frontend correcta
                             AuthTokens --> Service : accessToken
                             Service -> JWT : generateRefreshToken(employee, sessionId)
                             JWT --> Service : refreshToken
-                            Service ->> Model : saveRefreshToken(employeeId, refreshToken)
-                            Model ->> BD : prisma.employee.update({ refresh_token: refreshToken })
+                            Service -> SessionPolicy : buildSessionTimestamps()
+                            SessionPolicy --> Service : lastActivityAt, blocksLoginUntil, expiresAt
+                            Service ->> Model : createSession({ employeeId, sessionId, refreshToken, timestamps })
+                            Model ->> BD : prisma.employee_session.create({ refresh_token_hash, timestamps })
                             BD -->> Model : success
                             Service ->> LogModel : createLog(LOGIN_SUCCESS)
                             Service -->> Controller : { status: 200, code: "LOGIN_SUCCESS", data: { token, refreshToken, user } }

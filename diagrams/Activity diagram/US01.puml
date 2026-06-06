@@ -92,19 +92,15 @@ else (No)
     :Limpia intentos fallidos y bloqueo;
 endif
 
-if (Empleado tiene refreshToken en BD?) then (Si)
-    :Decodifica refreshToken guardado;
-    if (refreshToken guardado es valido\ny tokenType == "REFRESH"?) then (Si)
-        :Conserva refreshToken en BD;
-        :Retorna 409 SESSION_ALREADY_ACTIVE;
-        |Frontend|
-        :Muestra mensaje de sesion activa;
-        :No inicia otra sesion;
-        stop
-    else (No - sesion vieja o invalida)
-        :Limpia refreshToken viejo en BD;
-    endif
+if (Existe sesion activa que bloquea login?) then (Si)
+    :Busca employee_session activa,\nno revocada, no expirada\ny blocks_login_until > now;
+    :Retorna 409 SESSION_ALREADY_ACTIVE;
+    |Frontend|
+    :Muestra mensaje de sesion activa;
+    :No inicia otra sesion;
+    stop
 else (No)
+    :Revoca sesiones activas del empleado\nque ya expiraron o dejaron de bloquear login;
 endif
 
 if (Requiere cambio de contrasena en primer login?) then (Si)
@@ -118,7 +114,8 @@ else (Login normal)
     :Genera sessionId;
     :Genera accessToken SESSION con sessionId;
     :Genera refreshToken REFRESH con sessionId;
-    :Guarda refreshToken en BD;
+    :Calcula lastActivityAt,\nblocksLoginUntil y expiresAt;
+    :Guarda employee_session activa\ncon hash del refreshToken;
     :Registra log LOGIN_SUCCESS;
     :auth.controller.js configura cookie HttpOnly refreshToken;
     :Elimina refreshToken del body;
