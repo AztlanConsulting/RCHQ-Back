@@ -2,6 +2,7 @@ const express = require("express");
 const verifyToken = require("../middleware/auth");
 const { apiLimiter } = require("../utils/rateLimit");
 const { requireRole } = require("../middleware/rbac");
+const { ROLES } = require("../utils/roles");
 const { resolveRequesterHouse } = require("../middleware/resolvers");
 const { employeePolicy } = require("../policies/employee.policies");
 const { authorize } = require("../middleware/abac");
@@ -24,7 +25,7 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Coordinador"),
+    requireRole(ROLES.COORDINATOR),
     authorize(employeePolicy, (req) => ({ houseId: req.resolvedRequester.houseId })),
     getHouseEmployees,
 );
