@@ -2,6 +2,8 @@ const express = require("express");
 const verifyToken = require("../middleware/auth");
 const { apiLimiter } = require("../utils/rateLimit");
 const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { ROLES } = require("../utils/roles");
+const PRIVILEGES = require("../utils/privileges");
 const { resolveRequesterHouse } = require("../middleware/resolvers");
 const logsGetController = require("../controller/logs/get.controller");
 
@@ -11,8 +13,8 @@ router.get(
     "/actions",
     apiLimiter,
     verifyToken,
-    requireRole("Coordinador"),
-    requirePrivileges("viewLogs"),
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.VIEW_LOGS),
     logsGetController.getLogsActions,
 );
 
@@ -21,8 +23,8 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Coordinador"),
-    requirePrivileges("viewLogs"),
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.VIEW_LOGS),
     logsGetController.getLogsByHouse,
 );
 
@@ -31,8 +33,8 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Coordinador"),
-    requirePrivileges("viewLogs"),
+    requireRole(ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.VIEW_LOGS),
     logsGetController.getLogsPdfByHouse,
 );
 
