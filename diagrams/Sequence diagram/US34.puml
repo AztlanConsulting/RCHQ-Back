@@ -1,0 +1,184 @@
+@startuml empleado-registra-solicitud-vacaciones-secuencia_end
+
+actor navegador
+boundary vacation.routes
+control vacation.create.controller
+control vacation.create.service
+control vacation.get.service
+entity employee.get.model
+entity vacation.get.model
+entity vacation.create.model
+entity event.get.model
+entity log.model
+database PostgreSQL
+
+autonumber
+
+navegador -> vacation.routes : POST /vacation/request
+activate navegador
+activate vacation.routes
+vacation.routes -> vacation.create.controller : requestVacation(req, res)
+deactivate vacation.routes
+activate vacation.create.controller
+vacation.create.controller -> vacation.create.controller : requesterHouseId = req.resolvedRequester?.houseId
+vacation.create.controller -> vacation.create.controller : ipAddress = getClientIp(req)
+vacation.create.controller ->> vacation.create.service : requestVacation(employeeId,\nrawStartDate,\nrawEndDate,\nipAddress,\nrequesterHouseId)
+activate vacation.create.service
+
+vacation.create.service -> vacation.create.service : dateRangeSchema.safeParse({\n\tstartDate: rawStartDate,\n\tendDate: rawEndDate\n})
+alt formato de fechas invalido
+vacation.create.service -->> vacation.create.controller : DATES.WRONG_FORMAT
+vacation.create.controller -> navegador : 400 Bad Request {\n\tsuccess: false,\n\tmessage: "Las fechas son requeridas y tienen que estar en formato YYYY-MM-DD"\n}
+end
+
+vacation.create.service -> vacation.create.service : startDate = stringToDate(rawStartDate)
+vacation.create.service -> vacation.create.service : endDate = stringToDate(rawEndDate)
+vacation.create.service -> vacation.create.service : searchEndDate = endDate + 1 dia
+
+alt endDate < startDate
+vacation.create.service -->> vacation.create.controller : DATES.BAD_DATES
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se puede tener una fecha de inicio posterior a la de finalizacion"\n}
+end
+
+vacation.create.service ->> employee.get.model : getWorkDays(employeeId)
+activate employee.get.model
+employee.get.model ->> PostgreSQL : prisma.employee_workday.findMany({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tinclude: {\n\t\tworkday: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.get.model : result
+deactivate PostgreSQL
+employee.get.model -->> vacation.create.service : workDays
+deactivate employee.get.model
+
+alt workDays.length == 0
+vacation.create.service -->> vacation.create.controller : VACATION.WITHOUT_DATES
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Se necesitan tener registrados los dias de trabajo"\n}
+end
+
+vacation.create.service ->> vacation.get.service : getRemainingVacations(employeeId)
+activate vacation.get.service
+vacation.get.service ->> employee.get.model : getStartDate(employeeId)
+activate employee.get.model
+employee.get.model ->> PostgreSQL : prisma.employee.findUnique({\n\twhere: {\n\t\temployee_id: employeeId\n\t},\n\tselect: {\n\t\tstart_date: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> employee.get.model : result
+deactivate PostgreSQL
+employee.get.model -->> vacation.get.service : startDate
+deactivate employee.get.model
+
+rnote over vacation.get.service
+Calcula el periodo actual del empleado
+segun su aniversario laboral y obtiene
+los dias restantes disponibles.
+endrnote
+
+vacation.get.service ->> vacation.get.model : getVacationsInRange(employeeId,\nanniversaryStartDate,\nanniversaryEndDate)
+activate vacation.get.model
+vacation.get.model ->> PostgreSQL : prisma.vacations_request.findMany({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tstart: {\n\t\t\tlte: anniversaryEndDate\n\t\t},\n\t\tend: {\n\t\t\tgte: anniversaryStartDate\n\t\t},\n\t\tstatus: {\n\t\t\tnot: 2\n\t\t}\n\t},\n\tinclude: {\n\t\temployee: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.get.model : result
+deactivate PostgreSQL
+vacation.get.model -->> vacation.get.service : vacations
+deactivate vacation.get.model
+vacation.get.service -->> vacation.create.service : remainingDays,\nanniversaryStartDate,\nanniversaryEndDate
+deactivate vacation.get.service
+
+alt fechas fuera del periodo actual
+vacation.create.service -->> vacation.create.controller : VACATION.OUT_OF_RANGE
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden solicitar vacaciones fuera del periodo actual de trabajo"\n}
+end
+
+alt startDate <= todayUTC
+vacation.create.service -->> vacation.create.controller : VACATION.PAST_REQUEST_NOT_ALLOWED
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se pueden pedir vacaciones en el pasado ni para el mismo dia"\n}
+end
+
+vacation.create.service ->> event.get.model : getGlobalEventsInRange(startDate, searchEndDate)
+activate event.get.model
+event.get.model ->> PostgreSQL : prisma.global_event.findMany({\n\twhere: {\n\t\tstart: {\n\t\t\tlte: searchEndDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t},\n\tinclude: {\n\t\tevent_type: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.get.model : result
+deactivate PostgreSQL
+event.get.model -->> vacation.create.service : globalEvents
+deactivate event.get.model
+
+vacation.create.service ->> event.get.model : getHouseEventsInRange(requesterHouseId,\nstartDate,\nsearchEndDate)
+activate event.get.model
+event.get.model ->> PostgreSQL : prisma.house_event.findMany({\n\twhere: {\n\t\thouse_id: requesterHouseId,\n\t\tstart: {\n\t\t\tlte: searchEndDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t}\n\t},\n\tinclude: {\n\t\tevent_type: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> event.get.model : result
+deactivate PostgreSQL
+event.get.model -->> vacation.create.service : houseEvents
+deactivate event.get.model
+
+rnote over vacation.create.service
+Se juntan eventos globales y de casa
+marcados como dia libre, se convierten
+a hora de Mexico y se calculan los dias
+habiles reales que usara la solicitud.
+endrnote
+vacation.create.service -> vacation.create.service : freeDays = [...houseEvents, ...globalEvents]\n.filter(event.isFreeDay)
+vacation.create.service -> vacation.create.service : usedDays = calculateUsedDays(workDays,\nstartDate,\nendDate,\nfreeDays,\ntrue)
+
+alt usedDays == 0
+vacation.create.service -->> vacation.create.controller : VACATION.NULL_DATES
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Dentro del rango seleccionado no hay ningun dia habil de vacaciones"\n}
+end
+
+alt usedDays > remainingDays
+vacation.create.service -->> vacation.create.controller : VACATION.INSUFFICIENT_DATES
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "No se tienen suficientes dias disponibles para solicitar las vacaciones"\n}
+end
+
+vacation.create.service ->> vacation.get.model : getVacationsInRange(employeeId,\nstartDate,\nendDate)
+activate vacation.get.model
+vacation.get.model ->> PostgreSQL : prisma.vacations_request.findMany({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tstart: {\n\t\t\tlte: endDate\n\t\t},\n\t\tend: {\n\t\t\tgte: startDate\n\t\t},\n\t\tstatus: {\n\t\t\tnot: 2\n\t\t}\n\t},\n\tinclude: {\n\t\temployee: true\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.get.model : result
+deactivate PostgreSQL
+vacation.get.model -->> vacation.create.service : vacationsInsideRequest
+deactivate vacation.get.model
+
+alt vacationsInsideRequest.length > 0
+vacation.create.service -->> vacation.create.controller : VACATION.ALREADY_REQUEST
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Ya hay una solicitud de vacaciones cubriendo los dias solicitados"\n}
+end
+
+vacation.create.service ->> vacation.get.model : getOutsideVacations(employeeId,\nstartDate,\nendDate)
+activate vacation.get.model
+vacation.get.model ->> PostgreSQL : prisma.vacations_request.findMany({\n\twhere: {\n\t\temployee_id: employeeId,\n\t\tstart: {\n\t\t\tlte: startDate\n\t\t},\n\t\tend: {\n\t\t\tgte: endDate\n\t\t},\n\t\tstatus: {\n\t\t\tnot: 2\n\t\t}\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.get.model : result
+deactivate PostgreSQL
+vacation.get.model -->> vacation.create.service : vacationsOutsideRequest
+deactivate vacation.get.model
+
+alt vacationsOutsideRequest.length > 0
+vacation.create.service -->> vacation.create.controller : VACATION.ALREADY_REQUEST
+vacation.create.controller -> navegador : 406 Not Acceptable {\n\tsuccess: false,\n\tmessage: "Ya hay una solicitud de vacaciones cubriendo los dias solicitados"\n}
+end
+
+vacation.create.service ->> vacation.create.model : requestVacation(randomUUID(),\nemployeeId,\nstartDate,\nendDate,\nusedDays)
+activate vacation.create.model
+vacation.create.model ->> PostgreSQL : prisma.vacations_request.create({\n\tdata: {\n\t\tvacations_request_id: vacationId,\n\t\temployee_id: employeeId,\n\t\tstart: startDate,\n\t\tend: endDate,\n\t\tstatus: VACATION_STATUS.PENDING,\n\t\tused_days: usedDays,\n\t\tcreated_at: getUtcNow()\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> vacation.create.model : result
+deactivate PostgreSQL
+vacation.create.model -->> vacation.create.service : result
+deactivate vacation.create.model
+
+vacation.create.service ->> log.model : createLog(employeeId,\nVACATION_REQUESTED_SUCCESS,\nipAddress,\nemployeeId)
+activate log.model
+log.model ->> PostgreSQL : prisma.logs.create({\n\tdata: {\n\t\tlog_id: randomUUID(),\n\t\temployee_id: employeeId,\n\t\tmoment: new Date(),\n\t\taction_id: actionId,\n\t\taffected: employeeId,\n\t\tip_address: hashIp(ipAddress)\n\t}\n})
+activate PostgreSQL
+PostgreSQL -->> log.model : result
+deactivate PostgreSQL
+log.model -->> vacation.create.service : result
+deactivate log.model
+
+vacation.create.service -->> vacation.create.controller : VACATION.REQUESTED
+deactivate vacation.create.service
+vacation.create.controller -> navegador : 201 Created {\n\tsuccess: true,\n\tmessage: "Se solicitaron las vacaciones de forma correcta"\n}
+deactivate vacation.create.controller
+deactivate navegador
+
+@enduml
