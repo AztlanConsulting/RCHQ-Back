@@ -16,6 +16,7 @@ const PRIVILEGES = Object.freeze({
     EDIT_EVENT: "editEvent",
     VIEW_OWN_VACATIONS: "viewSelfVacations",
     EDIT_VACATIONS: "editVacations",
+    CREATE_BENEFICIARY: "createBeneficiary",
 });
 
 module.exports = PRIVILEGES;

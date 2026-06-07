@@ -1,0 +1,104 @@
+@startuml
+title US52 - Coordinador registra a un niño (Activity Diagram)
+
+|Coordinador|
+start
+:Accede al formulario de registro de niño;
+:Ingresa información obligatoria:\n- primer nombre(s)\n- apellido materno y paterno\n- nombre preferido\n- fecha de nacimiento\n- edad al entrar en la casa\n- tipo de sangre (O-, O+, A-, A+, B-, B+, AB-, AB+);
+:Ingresa CURP (opcional);
+:Envía el formulario;
+
+|Cliente|
+:Recibe los datos del formulario;
+:Valida campos con esquema Zod\n(obligatorios + formato + CURP opcional);
+
+if (¿Validación Zod exitosa?) then (Sí)
+    |Cliente|
+    :Envía POST /beneficiary/add\n(con token de sesión);
+else (No)
+    |Cliente|
+    :Muestra mensaje: "Cheque los campos bien";
+    |Coordinador|
+    :Corrige los campos e intenta de nuevo;
+    stop
+endif
+
+|Servidor|
+:Recibe solicitud en beneficiary.route.js;
+:Verifica sesión activa (verifyToken);
+:Verifica rol Coordinador y permiso registerChild;
+:Verifica que el coordinador sea empleado activo de su casa;
+:Verifica que el registro sea para la misma casa del coordinador;
+
+if (¿Autorizado y pertenece a la casa?) then (No)
+    |Servidor|
+    :Retorna 403 Acceso denegado;
+    |Cliente|
+    :Muestra error de permisos;
+    |Coordinador|
+    :No puede registrar al niño;
+    stop
+else (Sí)
+    |Servidor|
+    :Valida payload con esquema del backend;
+
+    if (¿Payload válido?) then (No)
+        |Servidor|
+        :Retorna 400 validación fallida;
+        |Cliente|
+        :Muestra mensaje: "Cheque los campos bien";
+        |Coordinador|
+        :Corrige los campos e intenta de nuevo;
+        stop
+    else (Sí)
+        |Servidor|
+        if (¿Se proporcionó CURP?) then (Sí)
+            |Servidor|
+            :Busca en beneficiarios de toda la red\npor CURP coincidente;
+        else (No)
+            |Servidor|
+            :Busca en beneficiarios de toda la red\npor primer nombre(s), apellido materno,\napellido paterno y fecha de nacimiento;
+        endif
+
+        if (¿Ya existe un niño coincidente?) then (Sí)
+            |Servidor|
+            if (¿Está registrado en otra casa?) then (Sí)
+                |Servidor|
+                :Retorna 409 sin crear registro;\nincluye: nombre de la casa,\nnombre del coordinador de esa casa,\ncorreo y teléfono del coordinador;\ninstrucciones para contactarlo y continuar;
+                |Cliente|
+                :Muestra mensaje: el niño ya está registrado\nen otra casa con datos de contacto;
+                |Coordinador|
+                :Lee instrucciones y contacta\nal coordinador de la otra casa;
+                stop
+            else (No, misma casa)
+                |Servidor|
+                :Retorna 409 sin crear registro;\nniño ya registrado en esta casa;
+                |Cliente|
+                :Muestra mensaje de niño duplicado en la casa;
+                |Coordinador|
+                :Consulta el mensaje y no registra de nuevo;
+                stop
+            endif
+        else (No)
+            |Servidor|
+            :Crea el niño en la casa del coordinador;
+            |Servidor|
+            :Inicia expediente del niño desde cero;
+            |Servidor|
+            :Asigna última edición de info = fecha de creación;
+            |Servidor|
+            :Asigna última edición de expediente = null;
+            |Servidor|
+            :Retorna 201 éxito con id del niño;
+            |Cliente|
+            :Recibe respuesta exitosa;
+            |Cliente|
+            :Redirige a vista de detalle del nuevo niño;
+            |Coordinador|
+            :Visualiza el detalle del niño registrado;
+            stop
+        endif
+    endif
+endif
+
+@enduml
