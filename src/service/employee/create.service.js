@@ -96,8 +96,8 @@ exports.createEmployee = async (employee, user, req) => {
         await createLog(
             user.id,
             LOG_ACTIONS.EMPLOYEE_CREATED,
-            newEmployee.employeeId,
             getClientIp(req),
+            newEmployee.employeeId,
         );
     } catch (error) {
         console.error("Error creando log:", error);
