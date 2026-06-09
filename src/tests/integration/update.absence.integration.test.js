@@ -580,8 +580,8 @@ describe("PUT /absence/:absenceId", () => {
             .send({
                 absenceTypeId: IDS.absenceTypeB,
                 description: "Descripción editada",
-                startDate: "2026-05-06",
-                endDate: "2026-05-10",
+                startDate: "2026-09-01",
+                endDate: "2026-09-05",
             });
 
         expect(res.statusCode).toBe(200);
@@ -602,8 +602,8 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
         expect(absenceInDb.description).toBe("Descripción editada");
-        expect(absenceInDb.start.toISOString()).toBe("2026-05-06T00:00:00.000Z");
-        expect(absenceInDb.end.toISOString()).toBe("2026-05-10T00:00:00.000Z");
+        expect(absenceInDb.start.toISOString()).toBe("2026-09-01T00:00:00.000Z");
+        expect(absenceInDb.end.toISOString()).toBe("2026-09-05T00:00:00.000Z");
     });
 
     it("200 y un admin puede editar una ausencia de otra casa", async () => {
@@ -662,8 +662,8 @@ describe("PUT /absence/:absenceId", () => {
             .set("Authorization", `Bearer ${sign()}`)
             .field("absenceTypeId", IDS.absenceTypeB)
             .field("description", "Ausencia con evidencia nueva")
-            .field("startDate", "2026-05-07")
-            .field("endDate", "2026-05-11")
+            .field("startDate", "2026-09-02")
+            .field("endDate", "2026-09-06")
             .attach("file", PDF, "absence-mixed-update.pdf");
 
         expect(res.statusCode).toBe(200);
@@ -682,8 +682,8 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
         expect(absenceInDb.description).toBe("Ausencia con evidencia nueva");
-        expect(absenceInDb.start.toISOString()).toBe("2026-05-07T00:00:00.000Z");
-        expect(absenceInDb.end.toISOString()).toBe("2026-05-11T00:00:00.000Z");
+        expect(absenceInDb.start.toISOString()).toBe("2026-09-02T00:00:00.000Z");
+        expect(absenceInDb.end.toISOString()).toBe("2026-09-06T00:00:00.000Z");
         expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
         expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
     });
