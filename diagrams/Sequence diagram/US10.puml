@@ -7,6 +7,7 @@ control employee.controller
 control employee.service
 control logs.service
 entity employee.model
+entity get.model
 entity logs.model
 database PostgreSQL
 
@@ -48,34 +49,30 @@ else Campos completos
     deactivate employee.routes
     activate employee.controller
 
-    employee.controller -> employee.service : findByCurp(curp)
+    employee.controller -> employee.service : createEmployee(data, user, req)
     activate employee.service
 
-    employee.service -> employee.model : findByCurp(curp)
-    activate employee.model
+    employee.service -> get.model : findByCurpAndHouseId(curp, houseId)
+    activate get.model
 
-    employee.model -> PostgreSQL : prisma.employee.findUnique()
+    get.model -> PostgreSQL : prisma.employee.findFirst()
     activate PostgreSQL
-    PostgreSQL -->> employee.model : result
+    PostgreSQL -->> get.model : result
     deactivate PostgreSQL
 
-    employee.model -->> employee.service : employee | null
-    deactivate employee.model
-
-    employee.service -->> employee.controller : exists / not exists
-    deactivate employee.service
+    get.model -->> employee.service : employee | null
+    deactivate get.model
 
     alt Usuario ya existe
-        employee.controller -> ReactView : alert("Usuario ya existente")
+        employee.service -->> employee.controller : {success: false, type: "CONFLICT"}
+        deactivate employee.service
+
+        employee.controller -> ReactView : 409 - redirect "/app/personal/ver/{employee_id}"
         activate ReactView
-
-        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
+        ReactView -> navegador : Mostrar empleado existente
         deactivate ReactView
-        
-    else Usuario no existe
-        employee.controller -> employee.service : createEmployee(data)
-        activate employee.service
 
+    else Usuario no existe
         employee.service -> employee.model : create(data)
         activate employee.model
 
@@ -87,10 +84,7 @@ else Campos completos
         employee.model -->> employee.service : employeeCreated
         deactivate employee.model
 
-        employee.service -->> employee.controller : employeeCreated
-        deactivate employee.service
-        
-        employee.controller -> logs.service : createLog(log)
+        employee.service -> logs.service : createLog(log)
         activate logs.service
 
         logs.service -> logs.model : create(log)
@@ -104,14 +98,16 @@ else Campos completos
         logs.model -->> logs.service : logSaved
         deactivate logs.model
 
-        logs.service -->> employee.controller : logSaved
+        logs.service -->> employee.service : logSaved
         deactivate logs.service
 
-        employee.controller -> ReactView : alert("Usuario creado con éxito")
+        employee.service -->> employee.controller : {success: true, employeeId}
+        deactivate employee.service
+
+        employee.controller -> ReactView : 201 - redirect "/app/personal/ver/{employee_id}"
         deactivate employee.controller
         activate ReactView
-        
-        ReactView -> employee.routes : response.redirect("/employee/{employee_id}")
+        ReactView -> navegador : Mostrar empleado creado
         deactivate ReactView
 
     end
