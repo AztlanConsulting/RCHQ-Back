@@ -5,7 +5,7 @@ const {
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 const {
     findById,
-    findByCurp,
+    findByCurpAndHouseId,
     getAllRoles,
     findDocumentById,
     findEmployeeDocument,
@@ -57,7 +57,7 @@ exports.createEmployee = async (employee, user, req) => {
         };
     }
 
-    const existingEmployee = await findByCurp(data.curp);
+    const existingEmployee = await findByCurpAndHouseId(data.curp, user.houseId);
 
     if (existingEmployee) {
         return {
