@@ -60,14 +60,14 @@ model employee {
   failed_two_factor_auth_attempts Int                             @default(0)
   totp_secret                     String?                         @db.VarChar(32)
   curp                            String                          @db.VarChar(18)
-  rfc                             String?                         @unique @db.VarChar(13)
+  rfc                             String?                         @db.VarChar(13)
   birth_date                      DateTime?                       @db.Date
   picture                         String?                         @db.VarChar(150)
   start_date                      DateTime                        @db.Date
   end_date                        DateTime?                       @db.Date
   deactivation_reason             String?                         @db.VarChar(250)
   out_of_blacklist_reason         String?                         @db.VarChar(250)
-  nss                             String?                         @unique @db.VarChar(11)
+  nss                             String?                         @db.VarChar(11)
   bank_account                    String?                         @db.VarChar(18)
   phone_number                    String?                         @db.VarChar(20)
   type                            String                          @default("nomina") @db.VarChar(20)
