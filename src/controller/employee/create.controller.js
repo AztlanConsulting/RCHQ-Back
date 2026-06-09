@@ -12,7 +12,7 @@ exports.postAdd = async (req, res) => {
     try {
         const employee = {
             ...req.body,
-            picture: req.file ? req.file.path : null,
+            picture: req.file ? `uploads/${req.file.filename}` : null,
         };
         const result = await createEmployee(employee, req.user, req);
 
