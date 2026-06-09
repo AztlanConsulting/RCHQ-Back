@@ -7,7 +7,7 @@ exports.deleteFromBlacklist = async (curp, reason) => {
                 where: { curp: curp },
             });
 
-            await tx.employee.update({
+            await tx.employee.updateMany({
                 where: { curp: curp },
                 data: { out_of_blacklist_reason: reason },
             });
