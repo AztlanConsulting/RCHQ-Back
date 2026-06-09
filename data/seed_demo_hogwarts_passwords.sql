@@ -5,7 +5,7 @@
 -- ============================================================
 
 UPDATE public.employee
-SET password = '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC'
+SET password = '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS'
 WHERE email IN (
   'a.dumbledore@rchq.com',
   'h.potter@rchq.com',
