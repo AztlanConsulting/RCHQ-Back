@@ -5,7 +5,6 @@ const { apiLimiter } = require("../utils/rateLimit");
 const {
     requireRole,
     requirePrivileges,
-    allRoles,
 } = require("../middleware/rbac");
 const {
     resolveEmployeeHouse,
@@ -47,7 +46,7 @@ const {
     deleteHouseEventPolicy,
     deletePersonalEventPolicy,
 } = require("../policies/event.policies");
-const { ROLES } = require("../utils/roles");
+const { ROLES, allRoles } = require("../utils/roles");
 const PRIVILEGES = require("../utils/privileges");
 
 router.get(
@@ -55,7 +54,7 @@ router.get(
     apiLimiter,
     verifyToken,
     requireRole(...allRoles),
-    requirePrivileges("viewEvents"),
+    requirePrivileges(PRIVILEGES.VIEW_EVENTS),
     isAllowed,
     getEventsInRange,
 );
@@ -88,8 +87,8 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Administrador", "Coordinador"),
-    requirePrivileges("viewEvents"),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.VIEW_EVENTS),
     authorize(employeePolicy, (req) => ({
         houseId: req.resolvedRequester.houseId,
     })),
