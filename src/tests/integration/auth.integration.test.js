@@ -102,6 +102,9 @@ const generateTestRefreshToken = () => {
 };
 
 const cleanDb = async () => {
+    await prisma.employee_session.deleteMany({
+        where: { employee_id: TEST_EMPLOYEE_ID },
+    });
     await prisma.logs.deleteMany({ where: { employee_id: TEST_EMPLOYEE_ID } });
     await prisma.employee.deleteMany({ where: { email: TEST_EMAIL } });
 };
@@ -233,7 +236,7 @@ describe("POST /auth/login - integration", () => {
             .post("/auth/login")
             .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
-        const emp = await prisma.employee.findUnique({
+        const sessions = await prisma.employee_session.findMany({
             where: { employee_id: TEST_EMPLOYEE_ID },
         });
         const oldSessionStatus = await request(app)
@@ -243,8 +246,42 @@ describe("POST /auth/login - integration", () => {
         expect(firstLogin.statusCode).toBe(200);
         expect(secondLogin.statusCode).toBe(409);
         expect(secondLogin.body.code).toBe("SESSION_ALREADY_ACTIVE");
-        expect(emp.refresh_token).toBeTruthy();
+        expect(sessions).toHaveLength(1);
+        expect(sessions[0].refresh_token_hash).toBeTruthy();
         expect(oldSessionStatus.statusCode).toBe(200);
+    });
+
+    it("permite un nuevo login si la sesion previa ya no bloquea y revoca la anterior", async () => {
+        await createTestEmployee();
+
+        const firstLogin = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+
+        await prisma.employee_session.updateMany({
+            where: { employee_id: TEST_EMPLOYEE_ID },
+            data: { blocks_login_until: new Date(Date.now() - 60 * 1000) },
+        });
+
+        const secondLogin = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+
+        const activeSessions = await prisma.employee_session.findMany({
+            where: {
+                employee_id: TEST_EMPLOYEE_ID,
+                is_active: true,
+                revoked_at: null,
+            },
+        });
+        const oldSessionStatus = await request(app)
+            .get("/auth/2fa/status")
+            .set("Authorization", `Bearer ${firstLogin.body.data.token}`);
+
+        expect(firstLogin.statusCode).toBe(200);
+        expect(secondLogin.statusCode).toBe(200);
+        expect(activeSessions).toHaveLength(1);
+        expect(oldSessionStatus.statusCode).toBe(401);
     });
 });
 
@@ -294,16 +331,13 @@ describe("POST /auth/2fa/setup - integration", () => {
 describe("POST /auth/refresh - integration", () => {
     it("retorna 200, nuevos tokens y actualiza la cookie", async () => {
         await createTestEmployee();
-        const refreshToken = generateTestRefreshToken();
-        
-        await prisma.employee.update({
-            where: { employee_id: TEST_EMPLOYEE_ID },
-            data: { refresh_token: refreshToken }
-        });
+        const loginRes = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
         const res = await request(app)
             .post("/auth/refresh")
-            .set("Cookie", [`refreshToken=${refreshToken}`]);
+            .set("Cookie", loginRes.headers["set-cookie"]);
 
         expect(res.statusCode).toBe(200);
         expect(res.body.data).toHaveProperty("token");
@@ -320,20 +354,18 @@ describe("POST /auth/refresh - integration", () => {
 
     it("permite refresh concurrentes con la misma cookie sin invalidar la sesion", async () => {
         await createTestEmployee();
-        const refreshToken = generateTestRefreshToken();
-
-        await prisma.employee.update({
-            where: { employee_id: TEST_EMPLOYEE_ID },
-            data: { refresh_token: refreshToken }
-        });
+        const loginRes = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
+        const cookie = loginRes.headers["set-cookie"];
 
         const [firstRes, secondRes] = await Promise.all([
             request(app)
                 .post("/auth/refresh")
-                .set("Cookie", [`refreshToken=${refreshToken}`]),
+                .set("Cookie", cookie),
             request(app)
                 .post("/auth/refresh")
-                .set("Cookie", [`refreshToken=${refreshToken}`]),
+                .set("Cookie", cookie),
         ]);
 
         expect(firstRes.statusCode).toBe(200);
@@ -341,34 +373,39 @@ describe("POST /auth/refresh - integration", () => {
         expect(firstRes.body.data).toHaveProperty("token");
         expect(secondRes.body.data).toHaveProperty("token");
 
-        const emp = await prisma.employee.findUnique({
-            where: { employee_id: TEST_EMPLOYEE_ID },
+        const activeSessions = await prisma.employee_session.findMany({
+            where: {
+                employee_id: TEST_EMPLOYEE_ID,
+                is_active: true,
+                revoked_at: null,
+            },
         });
-        expect(emp.refresh_token).toBe(refreshToken);
+        expect(activeSessions).toHaveLength(1);
     });
 });
 
 describe("POST /auth/logout - integration", () => {
     it("retorna 200, limpia la cookie y remueve el token de la BD", async () => {
         await createTestEmployee();
-        const refreshToken = generateTestRefreshToken();
-        
-        await prisma.employee.update({
-            where: { employee_id: TEST_EMPLOYEE_ID },
-            data: { refresh_token: refreshToken }
-        });
+        const loginRes = await request(app)
+            .post("/auth/login")
+            .send({ email: TEST_EMAIL, password: TEST_PASSWORD });
 
         const res = await request(app)
             .post("/auth/logout")
-            .set("Cookie", [`refreshToken=${refreshToken}`]);
+            .set("Cookie", loginRes.headers["set-cookie"]);
 
         expect(res.statusCode).toBe(200);
         expect(res.headers["set-cookie"][0]).toMatch(/refreshToken=;/);
 
-        const emp = await prisma.employee.findUnique({
-            where: { employee_id: TEST_EMPLOYEE_ID },
+        const activeSessions = await prisma.employee_session.findMany({
+            where: {
+                employee_id: TEST_EMPLOYEE_ID,
+                is_active: true,
+                revoked_at: null,
+            },
         });
-        expect(emp.refresh_token).toBeNull();
+        expect(activeSessions).toHaveLength(0);
     });
 });
 

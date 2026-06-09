@@ -15,28 +15,25 @@ if (Accion del usuario?) then (Iniciar sesion)
     else (No)
     endif
 
-    if (Empleado tiene refreshToken en BD?) then (Si)
-        :jwt.js decodifica refreshToken guardado;
-        if (refreshToken guardado es valido\ny tokenType == "REFRESH"?) then (Si)
-            :Conserva el refreshToken en BD;
-            :Retorna 409 SESSION_ALREADY_ACTIVE;
+    if (Existe employee_session que bloquea login?) then (Si)
+        :Sesion activa, no revocada,\nno expirada y blocks_login_until > now;
+        :Retorna 409 SESSION_ALREADY_ACTIVE;
 
-            |Frontend|
-            :Muestra mensaje de sesion activa;
-            :No inicia nueva sesion;
+        |Frontend|
+        :Muestra mensaje de sesion activa;
+        :No inicia nueva sesion;
 
-            |Usuario|
-            stop
-        else (No - sesion vieja o invalida)
-            :auth.model.js limpia refreshToken viejo en BD;
-        endif
+        |Usuario|
+        stop
     else (No)
+        :Revoca sesiones antiguas que ya no bloquean login\no que expiraron;
     endif
 
     :Genera nuevo sessionId;
     :Genera accessToken SESSION con sessionId;
     :Genera refreshToken REFRESH con sessionId;
-    :Guarda refreshToken en BD;
+    :Calcula lastActivityAt,\nblocksLoginUntil y expiresAt;
+    :Guarda employee_session activa\ncon hash del refreshToken;
     :Configura cookie HttpOnly refreshToken;
     :Retorna 200 con accessToken;
 
@@ -72,22 +69,30 @@ else (Usar sesion existente)
     if (Existe refreshToken en la cookie?) then (Si)
         :jwt.js decodifica y verifica firma;
         if (Token valido y tokenType == "REFRESH"?) then (Si)
-            :auth.model.js busca empleado por ID;
-            if (Empleado existe y esta activo?) then (Si)
-                if (refreshToken coincide con el guardado en BD?) then (Si)
-                    :Genera nuevo accessToken SESSION\ncon el mismo sessionId;
-                    :Conserva el mismo refreshToken;
-                    :auth.controller.js renueva cookie HttpOnly;
-                    :Elimina refreshToken del body;
-                    :Retorna 200 REFRESH_SUCCESS\ncon nuevo accessToken;
-                else (No - token robado o reuso)
-                    :auth.model.js borra refreshToken en BD;
+            :auth.model.js busca employee_session\npor hash del refreshToken;
+            if (Sesion existe y coincide\ncon sessionId y employeeId?) then (Si)
+                if (Sesion renovable?\nis_active, revoked_at null y expires_at > now) then (Si)
+                    :Valida que el empleado exista y este activo;
+                    if (Empleado activo?) then (Si)
+                        :Actualiza lastActivityAt\ny blocksLoginUntil;
+                        :Genera nuevo accessToken SESSION\ncon el mismo sessionId;
+                        :Conserva el mismo refreshToken;
+                        :auth.controller.js renueva cookie HttpOnly;
+                        :Elimina refreshToken del body;
+                        :Retorna 200 REFRESH_SUCCESS\ncon nuevo accessToken;
+                    else (No)
+                        :auth.controller.js limpia cookie refreshToken;
+                        :Retorna 403 INVALID_REFRESH_TOKEN;
+                    endif
+                else (No - sesion expirada o revocada)
+                    :auth.model.js revoca la sesion;
                     :auth.controller.js limpia cookie refreshToken;
                     :Retorna 401 INVALID_REFRESH_TOKEN;
                 endif
             else (No)
+                :auth.model.js revoca la sesion si puede identificarla;
                 :auth.controller.js limpia cookie refreshToken;
-                :Retorna 403 INVALID_REFRESH_TOKEN;
+                :Retorna 401 INVALID_REFRESH_TOKEN;
             endif
         else (No)
             :auth.controller.js limpia cookie refreshToken;

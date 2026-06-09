@@ -6,8 +6,9 @@ boundary "Frontend" as Front
 boundary "auth.route.js" as Route
 control "auth.controller.js" as Controller
 control "auth.service.js" as Service
-control "jwt.js" as JWT
+control "jwt.js\ndecodeToken()\ngenerateRefreshToken()" as JWT
 control "authTokens.js\nbuildSessionToken()" as AuthTokens
+control "sessionPolicy.js" as SessionPolicy
 entity "auth.model.js" as Model
 database "PostgreSQL\nPrisma" as BD
 
@@ -24,22 +25,20 @@ BD -->> Model : DB_ROW
 Model -->> Service : employee
 Service -> Service : Valida password / TOTP / estado activo
 
-alt employee.refreshToken existe en BD
-    Service -> JWT : decodeToken(employee.refreshToken)
-    JWT --> Service : decodedRefresh
+Service ->> Model : findBlockingSessionByEmployeeId(employee.employeeId, now)
+Model ->> BD : prisma.employee_session.findFirst({ active, not revoked, not expired, blocks_login_until > now })
+BD -->> Model : employee_session / null
+Model -->> Service : blockingSession
 
-    alt decodedRefresh.tokenType == "REFRESH"
-        Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
-        Controller --> Front : 409 Ya existe una sesion activa
-        Front --> Usuario : Muestra mensaje y no inicia sesion
-    else refresh viejo, expirado o invalido
-        Service ->> Model : clearRefreshToken(employee.employeeId)
-        Model ->> BD : prisma.employee.update({ refresh_token: null })
-        BD -->> Model : success
-        Model -->> Service : void
-        Service -> Service : Continua creacion de nueva sesion
-    end
-else no hay refreshToken en BD
+alt blockingSession existe
+    Service -->> Controller : { status: 409, code: "SESSION_ALREADY_ACTIVE" }
+    Controller --> Front : 409 Ya existe una sesion activa
+    Front --> Usuario : Muestra mensaje y no inicia sesion
+else no hay sesion que bloquee login
+    Service ->> Model : revokeRevocableSessionsForLogin(employee.employeeId, now)
+    Model ->> BD : prisma.employee_session.updateMany({ expired o blocks_login_until <= now })
+    BD -->> Model : count
+    Model -->> Service : sesiones revocadas
     Service -> Service : Continua creacion de nueva sesion
 end
 
@@ -49,10 +48,12 @@ alt nueva sesion permitida
     AuthTokens --> Service : accessToken (SESSION)
     Service -> JWT : generateRefreshToken(employee, sessionId)
     JWT --> Service : refreshToken (REFRESH)
-    Service ->> Model : saveRefreshToken(employee.employeeId, refreshToken)
-    Model ->> BD : prisma.employee.update({ refresh_token: refreshToken })
+    Service -> SessionPolicy : buildSessionTimestamps()
+    SessionPolicy --> Service : lastActivityAt, blocksLoginUntil, expiresAt
+    Service ->> Model : createSession({ employeeId, sessionId, refreshToken, timestamps })
+    Model ->> BD : prisma.employee_session.create({ refresh_token_hash, timestamps })
     BD -->> Model : success
-    Model -->> Service : void
+    Model -->> Service : employee_session
     Service -->> Controller : { status: 200, data: { token, refreshToken } }
     Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
     Controller -> Controller : delete result.body.data.refreshToken
@@ -87,27 +88,47 @@ else no existe refresh en curso
             Controller -> Controller : res.clearCookie("refreshToken")
             Controller --> Front : 401 Token invalido o expirado
         else token REFRESH valido
-            Service ->> Model : getEmployeeById(decoded.id)
-            Model ->> BD : prisma.employee.findUnique(employee_id)
-            BD -->> Model : DB_ROW
-            Model -->> Service : employee
+            Service ->> Model : findSessionByRefreshToken(token)
+            Model ->> BD : prisma.employee_session.findUnique({ refresh_token_hash })
+            BD -->> Model : employee_session + employee
+            Model -->> Service : session
 
-            alt employee == null o employee.isActive == false
-                Service -->> Controller : { status: 403, code: "INVALID_REFRESH_TOKEN" }
-                Controller -> Controller : res.clearCookie("refreshToken")
-                Controller --> Front : 403 Acceso denegado
-            else employee.refreshToken != token
-                Service ->> Model : clearRefreshToken(employeeId)
-                Model ->> BD : prisma.employee.update({ refresh_token: null })
-                BD -->> Model : success
-                Model -->> Service : void
+            alt session == null
+                Service ->> Model : revokeSession(decoded.sessionId)
+                Model ->> BD : prisma.employee_session.updateMany({ session_id })
+                BD -->> Model : count
                 Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
                 Controller -> Controller : res.clearCookie("refreshToken")
                 Controller --> Front : 401 Sesion invalida
+            else sessionId o employeeId no coincide
+                Service ->> Model : revokeSession(session.sessionId)
+                Model ->> BD : prisma.employee_session.updateMany({ session_id })
+                BD -->> Model : success
+                Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 401 Sesion invalida
+            else session no renovable
+                Service -> SessionPolicy : isSessionRenewable(session)
+                SessionPolicy --> Service : false
+                Service ->> Model : revokeSession(session.sessionId)
+                Model ->> BD : prisma.employee_session.updateMany({ session_id })
+                BD -->> Model : success
+                Service -->> Controller : { status: 401, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 401 Sesion expirada
+            else session.employee == null o session.employee.isActive == false
+                Service -->> Controller : { status: 403, code: "INVALID_REFRESH_TOKEN" }
+                Controller -> Controller : res.clearCookie("refreshToken")
+                Controller --> Front : 403 Acceso denegado
             else validacion exitosa
-                Service -> AuthTokens : buildSessionToken(employee, decoded.sessionId)
+                Service -> SessionPolicy : buildSessionTimestamps()
+                SessionPolicy --> Service : lastActivityAt, blocksLoginUntil, expiresAt
+                Service ->> Model : touchSession(session.sessionId, timestamps)
+                Model ->> BD : prisma.employee_session.update({ last_activity_at, blocks_login_until })
+                BD -->> Model : success
+                Service -> AuthTokens : buildSessionToken(session.employee, decoded.sessionId)
                 AuthTokens --> Service : newAccessToken (SESSION)
-                Service -> Service : newRefreshToken = token\n(No rota; conserva BD)
+                Service -> Service : newRefreshToken = token\n(No rota; conserva hash en BD)
                 Service -->> Controller : { status: 200, code: "REFRESH_SUCCESS", data: { token, refreshToken } }
                 Controller -> Controller : res.cookie("refreshToken", refreshToken, { httpOnly, secure, sameSite, maxAge })
                 Controller -> Controller : delete result.body.data.refreshToken

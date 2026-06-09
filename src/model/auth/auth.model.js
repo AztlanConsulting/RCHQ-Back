@@ -1,4 +1,5 @@
 const prisma = require("../../prisma");
+const { createHash } = require("crypto");
 
 function mapEmployee(employee) {
     if (!employee) return undefined;
@@ -28,6 +29,27 @@ function mapEmployee(employee) {
         tempTotpSecret: employee.temp_totp_secret,
         tempTotpSecretCreatedAt: employee.temp_totp_secret_created_at,
         refreshToken: employee.refresh_token,
+    };
+}
+
+function hashRefreshToken(token) {
+    return createHash("sha256").update(token).digest("hex");
+}
+
+function mapSession(session) {
+    if (!session) return undefined;
+
+    return {
+        sessionId: session.session_id,
+        employeeId: session.employee_id,
+        refreshTokenHash: session.refresh_token_hash,
+        isActive: session.is_active,
+        lastActivityAt: session.last_activity_at,
+        blocksLoginUntil: session.blocks_login_until,
+        expiresAt: session.expires_at,
+        revokedAt: session.revoked_at,
+        createdAt: session.created_at,
+        employee: mapEmployee(session.employee),
     };
 }
 
@@ -246,6 +268,143 @@ async function clearTwoFactorAuthSecurityState(employeeId) {
     });
 }
 
+async function createSession({
+    employeeId,
+    sessionId,
+    refreshToken,
+    lastActivityAt,
+    blocksLoginUntil,
+    expiresAt,
+}) {
+    const session = await prisma.employee_session.create({
+        data: {
+            session_id: sessionId,
+            employee_id: employeeId,
+            refresh_token_hash: hashRefreshToken(refreshToken),
+            is_active: true,
+            last_activity_at: lastActivityAt,
+            blocks_login_until: blocksLoginUntil,
+            expires_at: expiresAt,
+            revoked_at: null,
+        },
+    });
+
+    return mapSession(session);
+}
+
+async function findBlockingSessionByEmployeeId(employeeId, now = new Date()) {
+    const session = await prisma.employee_session.findFirst({
+        where: {
+            employee_id: employeeId,
+            is_active: true,
+            revoked_at: null,
+            expires_at: { gt: now },
+            blocks_login_until: { gt: now },
+        },
+        orderBy: { blocks_login_until: "desc" },
+    });
+
+    return mapSession(session);
+}
+
+async function revokeRevocableSessionsForLogin(employeeId, now = new Date()) {
+    return prisma.employee_session.updateMany({
+        where: {
+            employee_id: employeeId,
+            is_active: true,
+            revoked_at: null,
+            OR: [
+                { expires_at: { lte: now } },
+                { blocks_login_until: { lte: now } },
+            ],
+        },
+        data: {
+            is_active: false,
+            revoked_at: now,
+        },
+    });
+}
+
+async function findSessionByRefreshToken(refreshToken) {
+    const session = await prisma.employee_session.findUnique({
+        where: { refresh_token_hash: hashRefreshToken(refreshToken) },
+        include: {
+            employee: {
+                include: {
+                    role: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    return mapSession(session);
+}
+
+async function findSessionById(sessionId) {
+    const session = await prisma.employee_session.findUnique({
+        where: { session_id: sessionId },
+        include: {
+            employee: {
+                include: {
+                    role: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    return mapSession(session);
+}
+
+async function touchSession(sessionId, { lastActivityAt, blocksLoginUntil }) {
+    const session = await prisma.employee_session.update({
+        where: { session_id: sessionId },
+        data: {
+            last_activity_at: lastActivityAt,
+            blocks_login_until: blocksLoginUntil,
+        },
+    });
+
+    return mapSession(session);
+}
+
+async function revokeSession(sessionId, now = new Date()) {
+    const result = await prisma.employee_session.updateMany({
+        where: {
+            session_id: sessionId,
+            revoked_at: null,
+        },
+        data: {
+            is_active: false,
+            revoked_at: now,
+        },
+    });
+
+    return result.count > 0;
+}
+
+async function revokeSessionByRefreshToken(refreshToken, now = new Date()) {
+    const result = await prisma.employee_session.updateMany({
+        where: {
+            refresh_token_hash: hashRefreshToken(refreshToken),
+            revoked_at: null,
+        },
+        data: {
+            is_active: false,
+            revoked_at: now,
+        },
+    });
+
+    return result.count > 0;
+}
+
 async function saveRefreshToken(employeeId, token) {
     await prisma.employee.update({
         where: { employee_id: employeeId },
@@ -286,6 +445,14 @@ module.exports = {
     incrementFailedTwoFactorAuthAttempts,
     setTwoFactorAuthBlockedUntil,
     clearTwoFactorAuthSecurityState,
+    createSession,
+    findBlockingSessionByEmployeeId,
+    revokeRevocableSessionsForLogin,
+    findSessionByRefreshToken,
+    findSessionById,
+    touchSession,
+    revokeSession,
+    revokeSessionByRefreshToken,
     saveRefreshToken,
     clearRefreshToken,
     rotateRefreshToken,

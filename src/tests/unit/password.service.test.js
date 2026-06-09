@@ -6,6 +6,7 @@ jest.mock("../../model/auth/auth.model", () => ({
     getEmployeeById: jest.fn(),
     updatePassword: jest.fn(),
     updatePasswordAndClearFirstLogin: jest.fn(),
+    createSession: jest.fn(),
     saveRefreshToken: jest.fn(),
 }));
 
@@ -61,6 +62,7 @@ describe("password.service", () => {
         buildSessionToken.mockReturnValue("fake-session-token");
         buildPreTwoFactorAuthJwt.mockReturnValue("fake-pre2fa-token");
         generateRefreshToken.mockReturnValue("fake-refresh-token");
+        auth.createSession.mockResolvedValue();
         auth.saveRefreshToken.mockResolvedValue();
     });
 
@@ -295,7 +297,12 @@ describe("password.service", () => {
             expect(result.body.nextStep).toBe("LOGIN_COMPLETE");
             expect(result.body.data.token).toBe("fake-session-token");
             expect(result.body.data.refreshToken).toBe("fake-refresh-token");
-            expect(auth.saveRefreshToken).toHaveBeenCalledWith("emp-123", "fake-refresh-token");
+            expect(auth.createSession).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    employeeId: "emp-123",
+                    refreshToken: "fake-refresh-token",
+                }),
+            );
         });
 
         it("retorna preTwoFactorAuthToken si el usuario tiene factor de dos pasos activo", async () => {

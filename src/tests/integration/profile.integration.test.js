@@ -16,6 +16,9 @@ const VALID_EMAIL = "andre@gmail.com";
 const VALID_PASSWORD = "Andatti67";
 
 const clearActiveSession = async () => {
+    await prisma.employee_session.deleteMany({
+        where: { employee_id: IDS.employee },
+    });
     await prisma.employee.updateMany({
         where: { employee_id: IDS.employee },
         data: { refresh_token: null },

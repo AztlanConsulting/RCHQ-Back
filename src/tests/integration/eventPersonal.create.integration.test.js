@@ -16,6 +16,7 @@ const TEST_EMPLOYEE_ROLE_ID = randomUUID();
 const TEST_EVENT_TYPE_ID = randomUUID();
 const TEST_PRIVILEGE_CREATE_ID = randomUUID();
 const TRAINING_EVENT_TYPE_ID = "b1000000-0000-4000-8000-000000000004";
+let trainingEventTypeId = TRAINING_EVENT_TYPE_ID;
 
 const JWT_SECRET = process.env.JWT_SECRET || "test_secret";
 const API_ROUTE = "/event/personal/add";
@@ -61,7 +62,7 @@ const buildValidEventBody = (overrides = {}) => ({
 
 const buildTrainingEventBody = (overrides = {}) => ({
     name: "Capacitacion de primeros auxilios",
-    eventTypeId: TRAINING_EVENT_TYPE_ID,
+    eventTypeId: trainingEventTypeId,
     date: "2026-07-20",
     allDay: false,
     start: "09:00",
@@ -108,14 +109,22 @@ const seedDependencies = async () => {
         },
     });
 
-    await prisma.event_type.upsert({
-        where: { event_type_id: TRAINING_EVENT_TYPE_ID },
-        update: {},
-        create: {
-            event_type_id: TRAINING_EVENT_TYPE_ID,
-            name: "Capacitaciones",
-        },
+    const existingTrainingType = await prisma.event_type.findFirst({
+        where: { name: "Capacitaciones" },
+        select: { event_type_id: true },
     });
+
+    if (existingTrainingType) {
+        trainingEventTypeId = existingTrainingType.event_type_id;
+    } else {
+        await prisma.event_type.create({
+            data: {
+                event_type_id: TRAINING_EVENT_TYPE_ID,
+                name: "Capacitaciones",
+            },
+        });
+        trainingEventTypeId = TRAINING_EVENT_TYPE_ID;
+    }
 
     const createPrivilegeId = await getOrCreatePrivilegeId(
         "createEvent",
@@ -1067,7 +1076,7 @@ describe(`POST ${API_ROUTE} - Integration & Security`, () => {
             });
             expect(inDb).not.toBeNull();
             expect(inDb.trainer).toBe("Dr. Juan Perez Lopez");
-            expect(inDb.event_type_id).toBe(TRAINING_EVENT_TYPE_ID);
+            expect(inDb.event_type_id).toBe(trainingEventTypeId);
         });
 
         it("la respuesta incluye el campo trainer con el valor enviado", async () => {

@@ -127,6 +127,14 @@ const generateFirstLoginToken = () => {
 };
 
 const cleanDb = async () => {
+    await prisma.employee_session.deleteMany({
+        where: {
+            employee_id: {
+                in: [TEST_EMPLOYEE_ID, TEST_FIRST_LOGIN_EMPLOYEE_ID],
+            },
+        },
+    });
+
     await prisma.logs.deleteMany({
         where: {
             employee_id: {
@@ -266,6 +274,9 @@ describe("POST /auth/first-login/change-password - integration", () => {
         const emp = await prisma.employee.findUnique({
             where: { employee_id: TEST_FIRST_LOGIN_EMPLOYEE_ID },
         });
+        const session = await prisma.employee_session.findFirst({
+            where: { employee_id: TEST_FIRST_LOGIN_EMPLOYEE_ID },
+        });
 
         const matchesNewPassword = await bcrypt.compare(
             TEST_FIRST_LOGIN_NEW_PASSWORD,
@@ -279,7 +290,8 @@ describe("POST /auth/first-login/change-password - integration", () => {
         expect(matchesNewPassword).toBe(true);
         expect(res.headers["set-cookie"]).toBeDefined();
         expect(res.headers["set-cookie"][0]).toMatch(/refreshToken=/);
-        expect(emp.refresh_token).not.toBeNull();
+        expect(session).toBeTruthy();
+        expect(session.refresh_token_hash).toBeTruthy();
     });
 
     it("retorna 401 si no se envía token", async () => {

@@ -1,6 +1,9 @@
 const jwt = require("jsonwebtoken");
 const User = require("../model/auth/auth.model");
-const { decodeToken } = require("../utils/jwt");
+const {
+    buildSessionTimestamps,
+    isSessionRenewable,
+} = require("../utils/auth/sessionPolicy");
 
 const verifyToken = async (req, res, next) => {
     const authHeader = req.headers.authorization || req.headers.Authorization;
@@ -24,17 +27,23 @@ const verifyToken = async (req, res, next) => {
 
         if (decoded.sessionId) {
             const employeeId = decoded.id || decoded.employeeId;
-            const employee = await User.getEmployeeById(employeeId);
-            const activeRefreshToken = decodeToken(employee?.refreshToken);
+            const session = await User.findSessionById(decoded.sessionId);
 
             if (
-                !employee?.refreshToken ||
-                activeRefreshToken?.sessionId !== decoded.sessionId
+                !session ||
+                session.employeeId !== employeeId ||
+                !isSessionRenewable(session) ||
+                !session.employee?.isActive
             ) {
                 return res
                     .status(401)
                     .json({ success: false, message: "Sesión no activa" });
             }
+
+            await User.touchSession(
+                session.sessionId,
+                buildSessionTimestamps(),
+            );
         }
 
         req.user = decoded;

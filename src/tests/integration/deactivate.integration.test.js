@@ -183,6 +183,9 @@ const cleanDb = async () => {
         TEST_NEW_TARGET_ID,
         TEST_TARGET_INACT_ID,
     ];
+    await prisma.employee_session.deleteMany({
+        where: { employee_id: { in: allEmployeeIds } },
+    });
     await prisma.logs.deleteMany({
         where: { employee_id: { in: allEmployeeIds } },
     });
@@ -196,6 +199,9 @@ const cleanDb = async () => {
 };
 
 const loginAndGetToken = async () => {
+    await prisma.employee_session.deleteMany({
+        where: { employee_id: TEST_ACTOR_ID },
+    });
     await prisma.employee.updateMany({
         where: { employee_id: TEST_ACTOR_ID },
         data: { refresh_token: null },

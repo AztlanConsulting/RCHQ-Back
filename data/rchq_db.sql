@@ -140,6 +140,26 @@ CREATE TABLE IF NOT EXISTS public.employee (
     CONSTRAINT employee_frecuency_of_payment_fk FOREIGN KEY (frequency_of_payment_id) REFERENCES public.frecuency_of_payment(frecuency_of_payment_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.employee_session (
+    session_id          uuid        NOT NULL,
+    employee_id         uuid        NOT NULL,
+    refresh_token_hash  char(64)    NOT NULL UNIQUE,
+    is_active           bool        NOT NULL DEFAULT true,
+    last_activity_at    timestamp   NOT NULL,
+    blocks_login_until  timestamp   NOT NULL,
+    expires_at          timestamp   NOT NULL,
+    revoked_at          timestamp   NULL,
+    created_at          timestamp   NOT NULL DEFAULT now(),
+    CONSTRAINT employee_session_pk PRIMARY KEY (session_id),
+    CONSTRAINT employee_session_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS employee_session_active_lookup_idx
+    ON public.employee_session (employee_id, is_active, revoked_at, expires_at);
+
+CREATE INDEX IF NOT EXISTS employee_session_login_lock_idx
+    ON public.employee_session (employee_id, blocks_login_until);
+
 
 -- =============================================================
 -- 4. TABLAS QUE DEPENDEN DE EMPLOYEE
