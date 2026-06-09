@@ -20,7 +20,7 @@
 -- =========================
 INSERT INTO public.house (house_id, name, location, phone_number, description, image)
 VALUES (
-  'h0000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000099',
   'Hogwarts',
   'Escocia, Reino Unido',
   '4420000999',
@@ -47,8 +47,8 @@ INSERT INTO public.employee (
 )
 VALUES
 (
-  'hp000001-0000-4000-8000-000000000001',
-  'h0000001-0000-4000-8000-000000000001',
+  'e4000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000099',
   (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
   'Albus',
   'Dumbledore',
@@ -71,8 +71,8 @@ VALUES
   'nomina'
 ),
 (
-  'hp000001-0000-4000-8000-000000000002',
-  'h0000001-0000-4000-8000-000000000001',
+  'e4000001-0000-4000-8000-000000000002',
+  'a0000001-0000-4000-8000-000000000099',
   (SELECT role_id FROM public.role WHERE name = 'Responsable del cuidado de NNA' LIMIT 1),
   'Harry',
   'Potter',
@@ -95,8 +95,8 @@ VALUES
   'nomina'
 ),
 (
-  'hp000001-0000-4000-8000-000000000003',
-  'h0000001-0000-4000-8000-000000000001',
+  'e4000001-0000-4000-8000-000000000003',
+  'a0000001-0000-4000-8000-000000000099',
   (SELECT role_id FROM public.role WHERE name = 'Responsable del cuidado de NNA' LIMIT 1),
   'Ron',
   'Weasley',
@@ -119,8 +119,8 @@ VALUES
   'nomina'
 ),
 (
-  'hp000001-0000-4000-8000-000000000004',
-  'h0000001-0000-4000-8000-000000000001',
+  'e4000001-0000-4000-8000-000000000004',
+  'a0000001-0000-4000-8000-000000000099',
   (SELECT role_id FROM public.role WHERE name = 'Psicóloga' LIMIT 1),
   'Hermione',
   'Grainger',
@@ -143,8 +143,8 @@ VALUES
   'nomina'
 ),
 (
-  'hp000001-0000-4000-8000-000000000005',
-  'h0000001-0000-4000-8000-000000000001',
+  'e4000001-0000-4000-8000-000000000005',
+  'a0000001-0000-4000-8000-000000000099',
   (SELECT role_id FROM public.role WHERE name = 'Trabajador Social' LIMIT 1),
   'Neville',
   'Longbottom',
@@ -191,8 +191,8 @@ INSERT INTO public.employee_address (
   employee_address_id, employee_id, url, street, municipio, city, postal_code, date
 )
 VALUES (
-  'hp000002-0000-4000-8000-000000000001',
-  'hp000001-0000-4000-8000-000000000005',
+  'f4000001-0000-4000-8000-000000000001',
+  'e4000001-0000-4000-8000-000000000005',
   'https://maps.google.com/?q=56.8700,-5.4500',
   'Torre de Gryffindor, Ala Este',
   'Hogsmeade',
@@ -235,7 +235,7 @@ INSERT INTO public.personal_event (
   name, description, all_day, trainer
 )
 VALUES (
-  'hp100001-0000-4000-8000-000000000001',
+  'c4000000-0000-4000-8000-000000000001',
   (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
   '2026-05-28',
   '2026-05-28 10:00:00',
@@ -261,7 +261,7 @@ INSERT INTO public.personal_event (
   name, description, all_day, trainer
 )
 VALUES (
-  'hp100001-0000-4000-8000-000000000002',
+  'c4000000-0000-4000-8000-000000000002',
   (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
   '2026-06-09',
   '2026-06-09 10:00:00',
@@ -287,7 +287,7 @@ INSERT INTO public.personal_event (
   name, description, all_day
 )
 VALUES (
-  'hp100001-0000-4000-8000-000000000003',
+  'c4000000-0000-4000-8000-000000000003',
   (SELECT event_type_id FROM public.event_type WHERE name = 'Tarea' LIMIT 1),
   '2026-06-10',
   '2026-06-10 08:00:00',
@@ -311,7 +311,7 @@ INSERT INTO public.personal_event (
   name, description, all_day
 )
 VALUES (
-  'hp100001-0000-4000-8000-000000000004',
+  'c4000000-0000-4000-8000-000000000004',
   (SELECT event_type_id FROM public.event_type WHERE name = 'General' LIMIT 1),
   '2026-06-08',
   '2026-06-08 16:00:00',
@@ -333,14 +333,14 @@ ON CONFLICT (personal_event_id) DO UPDATE SET
 INSERT INTO public.employee_personal_event (personal_event_id, employee_id)
 SELECT pe.personal_event_id, e.employee_id
 FROM (VALUES
-  ('hp100001-0000-4000-8000-000000000001'::uuid, 'h.potter@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000001'::uuid, 'r.weasley@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000001'::uuid, 'h.grainger@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000002'::uuid, 'h.potter@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000002'::uuid, 'r.weasley@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000002'::uuid, 'h.grainger@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000003'::uuid, 'a.dumbledore@rchq.com'),
-  ('hp100001-0000-4000-8000-000000000004'::uuid, 'h.potter@rchq.com')
+  ('c4000000-0000-4000-8000-000000000001'::uuid, 'h.potter@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000001'::uuid, 'r.weasley@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000001'::uuid, 'h.grainger@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000002'::uuid, 'h.potter@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000002'::uuid, 'r.weasley@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000002'::uuid, 'h.grainger@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000003'::uuid, 'a.dumbledore@rchq.com'),
+  ('c4000000-0000-4000-8000-000000000004'::uuid, 'h.potter@rchq.com')
 ) AS pe(personal_event_id, email)
 JOIN public.employee e ON e.email = pe.email
 ON CONFLICT (personal_event_id, employee_id) DO NOTHING;
@@ -351,9 +351,9 @@ INSERT INTO public.house_event (
   name, description, all_day, is_free_day
 )
 VALUES (
-  'hp200001-0000-4000-8000-000000000001',
+  'c4000000-0000-4000-8000-000000000011',
   (SELECT event_type_id FROM public.event_type WHERE name = 'General' LIMIT 1),
-  'h0000001-0000-4000-8000-000000000001',
+  'a0000001-0000-4000-8000-000000000099',
   '2026-06-11 19:00:00',
   '2026-06-11 22:00:00',
   'Cena Formal Gryffindor',
@@ -377,7 +377,7 @@ INSERT INTO public.global_event (
   name, description, all_day, is_free_day
 )
 VALUES (
-  'hp300001-0000-4000-8000-000000000001',
+  'c4000000-0000-4000-8000-000000000012',
   (SELECT event_type_id FROM public.event_type WHERE name = 'General' LIMIT 1),
   '2026-06-12 15:00:00',
   '2026-06-12 18:00:00',
@@ -402,7 +402,7 @@ INSERT INTO public.absence (
   absence_id, employee_id, absence_type_id, start, "end", description, url, is_deleted
 )
 SELECT
-  'hp400001-0000-4000-8000-000000000001',
+  'a4000001-0000-4000-8000-000000000001',
   e.employee_id,
   (SELECT absence_type_id FROM public.absence_type WHERE name = 'Médica' LIMIT 1),
   '2026-06-11',
