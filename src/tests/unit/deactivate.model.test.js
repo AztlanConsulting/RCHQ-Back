@@ -9,6 +9,7 @@ jest.mock("../../prisma", () => ({
         update: jest.fn(),
     },
     blacklist: {
+        findUnique: jest.fn(),
         upsert: jest.fn(),
     },
     $transaction: jest.fn(),
@@ -38,23 +39,23 @@ describe("deactivate.model", () => {
         describe("Flujo exitoso", () => {
             it("llama a prisma.employee.findUnique con los parámetros correctos", async () => {
                 prisma.employee.findUnique.mockResolvedValue(DB_ROW);
+                prisma.blacklist.findUnique.mockResolvedValue(null);
                 await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(prisma.employee.findUnique).toHaveBeenCalledWith({
                     where: { employee_id: EMPLOYEE_ID },
-                    include: {
-                        blacklist: true,
-                    },
                 });
             });
 
             it("retorna el empleado mapeado correctamente", async () => {
                 prisma.employee.findUnique.mockResolvedValue(DB_ROW);
+                prisma.blacklist.findUnique.mockResolvedValue(null);
                 const result = await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(result).toEqual(MAPPED);
             });
 
             it("mapea is_active a isActive y house_id a houseId", async () => {
                 prisma.employee.findUnique.mockResolvedValue(DB_ROW);
+                prisma.blacklist.findUnique.mockResolvedValue(null);
                 const result = await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(result.isActive).toBe(true);
                 expect(result.houseId).toBe("uuid-house-001");
@@ -67,15 +68,14 @@ describe("deactivate.model", () => {
                     ...DB_ROW,
                     is_active: false,
                 });
+                prisma.blacklist.findUnique.mockResolvedValue(null);
                 const result = await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(result.isActive).toBe(false);
             });
 
             it("retorna isBlacklisted true si el empleado tiene blacklist", async () => {
-                prisma.employee.findUnique.mockResolvedValue({
-                    ...DB_ROW,
-                    blacklist: { curp: "RAMC900101HDFRZN01" },
-                });
+                prisma.employee.findUnique.mockResolvedValue(DB_ROW);
+                prisma.blacklist.findUnique.mockResolvedValue({ curp: DB_ROW.curp });
                 const result = await getEmployeeToDeactivate(EMPLOYEE_ID);
                 expect(result.isBlacklisted).toBe(true);
             });

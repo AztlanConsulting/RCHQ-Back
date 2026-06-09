@@ -3,7 +3,7 @@ const { createLog } = require("../../model/log.model");
 const consult = require("../../model/employee/get.model");
 
 jest.mock("../../model/employee/get.model", () => ({
-    findByCurp: jest.fn(),
+    findByCurpAndHouseId: jest.fn(),
     findById: jest.fn(),
     getAllRoles: jest.fn(),
 }));
@@ -68,7 +68,7 @@ describe("Employee Service - createEmployee", () => {
         jest.clearAllMocks();
         employee.create.mockResolvedValue({ employeeId: "emp-1" });
         createLog.mockResolvedValue();
-        consult.findByCurp.mockResolvedValue(null);
+        consult.findByCurpAndHouseId.mockResolvedValue(null);
     });
 
     afterEach(() => {
@@ -395,7 +395,7 @@ describe("Employee Service - createEmployee", () => {
 
     it("debería retornar error si el empleado ya está registrado (Duplicado)", async () => {
         const idExistente = "19c23934-e20a-42f4-b963-fab77caf1a1c";
-        consult.findByCurp.mockResolvedValue({
+        consult.findByCurpAndHouseId.mockResolvedValue({
             employee_id: idExistente,
             curp: baseEmployee.curp,
         });

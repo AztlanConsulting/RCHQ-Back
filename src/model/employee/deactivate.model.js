@@ -4,14 +4,15 @@ const { mapEmployee } = require("../../utils/mappers/employee.map");
 exports.getEmployeeToDeactivate = async (employeeId) => {
     const employee = await prisma.employee.findUnique({
         where: { employee_id: employeeId },
-        include: {
-            blacklist: true,
-        },
     });
 
     if (!employee) return null;
-    
-    return mapEmployee(employee);
+
+    const blacklistEntry = await prisma.blacklist.findUnique({
+        where: { curp: employee.curp },
+    });
+
+    return mapEmployee({ ...employee, blacklist: blacklistEntry });
 };
 
 exports.deactivateEmployee = async (employeeId, reason, curpToBlacklist = null, wasActive = true) => {

@@ -59,15 +59,15 @@ model employee {
   failed_login_attempts           Int                             @default(0)
   failed_two_factor_auth_attempts Int                             @default(0)
   totp_secret                     String?                         @db.VarChar(32)
-  curp                            String                          @unique @db.VarChar(18)
-  rfc                             String?                         @unique @db.VarChar(13)
+  curp                            String                          @db.VarChar(18)
+  rfc                             String?                         @db.VarChar(13)
   birth_date                      DateTime?                       @db.Date
   picture                         String?                         @db.VarChar(150)
   start_date                      DateTime                        @db.Date
   end_date                        DateTime?                       @db.Date
   deactivation_reason             String?                         @db.VarChar(250)
   out_of_blacklist_reason         String?                         @db.VarChar(250)
-  nss                             String?                         @unique @db.VarChar(11)
+  nss                             String?                         @db.VarChar(11)
   bank_account                    String?                         @db.VarChar(18)
   phone_number                    String?                         @db.VarChar(20)
   type                            String                          @default("nomina") @db.VarChar(20)
@@ -79,7 +79,6 @@ model employee {
   temp_totp_secret_created_at     DateTime?                       @db.Timestamp(6)
   refresh_token                   String?                         @db.VarChar
   absence                         absence[]
-  blacklist                       blacklist?
   frecuency_of_payment            frecuency_of_payment?           @relation(fields: [frequency_of_payment_id], references: [frecuency_of_payment_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_frecuency_of_payment_fk")
   house                           house                           @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_house_fk")
   role                            role                            @relation(fields: [role_id], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_role_fk")
@@ -94,6 +93,8 @@ model employee {
   outside_certification           outside_certification[]
   psychological_evaluation        psychological_evaluation[]
   vacations_request               vacations_request[]
+
+  @@unique([curp, house_id], map: "employee_curp_house_unique")
 }
 
 model employee_address {
@@ -348,5 +349,4 @@ model blacklist {
   curp         String   @unique @db.VarChar(18)
   reason       String   @db.VarChar(250)
   created_at   DateTime @default(now()) @db.Timestamp(6)
-  employee     employee @relation(fields: [curp], references: [curp], onUpdate: NoAction, map: "blacklist_employee_fk")
 }

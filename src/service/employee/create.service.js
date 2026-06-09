@@ -5,7 +5,7 @@ const {
 const { deleteFileIfExists } = require("../../utils/deleteFile");
 const {
     findById,
-    findByCurp,
+    findByCurpAndHouseId,
     getAllRoles,
     findDocumentById,
     findEmployeeDocument,
@@ -57,7 +57,7 @@ exports.createEmployee = async (employee, user, req) => {
         };
     }
 
-    const existingEmployee = await findByCurp(data.curp);
+    const existingEmployee = await findByCurpAndHouseId(data.curp, user.houseId);
 
     if (existingEmployee) {
         return {
@@ -96,8 +96,8 @@ exports.createEmployee = async (employee, user, req) => {
         await createLog(
             user.id,
             LOG_ACTIONS.EMPLOYEE_CREATED,
-            newEmployee.employeeId,
             getClientIp(req),
+            newEmployee.employeeId,
         );
     } catch (error) {
         console.error("Error creando log:", error);

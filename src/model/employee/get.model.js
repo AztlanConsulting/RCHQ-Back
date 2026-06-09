@@ -7,10 +7,11 @@ const {
     mapEmployeeVacationRequests,
 } = require("../../utils/mappers/employee.map");
 
-const normalizeSearchTerm = (value) => String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+const normalizeSearchTerm = (value) =>
+    String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
 
 const matchesEmployeeSearch = (employee, search) => {
     const searchTerms = String(search)
@@ -30,9 +31,9 @@ const matchesEmployeeSearch = (employee, search) => {
     return searchTerms.every((term) => fullName.includes(term));
 };
 
-exports.findByCurp = async (curp) => {
+exports.findByCurpAndHouseId = async (curp, houseId) => {
     return await prisma.employee.findUnique({
-        where: { curp },
+        where: { curp_house_id: { curp, house_id: houseId } },
     });
 };
 
@@ -121,7 +122,9 @@ exports.getEmployees = async (houseId, active, search, skip, take) => {
     });
 
     const filteredEmployees = search
-        ? employees.filter((employee) => matchesEmployeeSearch(employee, search))
+        ? employees.filter((employee) =>
+              matchesEmployeeSearch(employee, search),
+          )
         : employees;
 
     const total = filteredEmployees.length;
@@ -328,10 +331,8 @@ exports.findByIdWithRoleAndHouse = async (employeeId) => {
 };
 
 exports.findByCurpWithRoleAndHouse = async (curp) => {
-    return await prisma.employee.findUnique({
-        where: {
-            curp: curp,
-        },
+    return await prisma.employee.findFirst({
+        where: { curp },
         include: {
             role: true,
             house: true,
