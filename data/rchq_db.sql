@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS public.employee (
     failed_login_attempts            int           NOT NULL DEFAULT 0,
     failed_two_factor_auth_attempts  int           NOT NULL DEFAULT 0,
     totp_secret                      varchar(32)   NULL,
-    curp                             varchar(18)   NOT NULL UNIQUE,
+    curp                             varchar(18)   NOT NULL,
     rfc                              varchar(13)   NULL UNIQUE,
     birth_date                       date          NULL,
     picture                          varchar(150)  NULL,
@@ -134,8 +134,9 @@ CREATE TABLE IF NOT EXISTS public.employee (
     temp_totp_secret                 varchar       NULL,
     temp_totp_secret_created_at      timestamp     NULL,
     refresh_token                    varchar       NULL,
-    CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
-    CONSTRAINT employee_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id),
+    CONSTRAINT employee_pk                  PRIMARY KEY (employee_id),
+    CONSTRAINT employee_curp_house_unique   UNIQUE (curp, house_id),
+    CONSTRAINT employee_house_fk            FOREIGN KEY (house_id) REFERENCES public.house(house_id),
     CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id),
     CONSTRAINT employee_frecuency_of_payment_fk FOREIGN KEY (frequency_of_payment_id) REFERENCES public.frecuency_of_payment(frecuency_of_payment_id)
 );
@@ -355,6 +356,5 @@ CREATE TABLE IF NOT EXISTS public.blacklist (
     curp         varchar(18) NOT NULL UNIQUE,
     reason       varchar(250) NOT NULL,
     created_at   timestamp   NOT NULL DEFAULT now(),
-    CONSTRAINT blacklist_pk          PRIMARY KEY (blacklist_id),
-    CONSTRAINT blacklist_employee_fk FOREIGN KEY (curp) REFERENCES public.employee(curp) ON DELETE NO ACTION
+    CONSTRAINT blacklist_pk PRIMARY KEY (blacklist_id)
 );
