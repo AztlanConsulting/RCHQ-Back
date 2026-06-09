@@ -45,6 +45,7 @@ const buildValidEmployeeBody = (overrides = {}) => ({
     email: `emp_${randomUUID().slice(0, 8)}@test.com`,
     curp: "PEPJ800101HDFRRN09",
     birthDate: "1990-01-01",
+    startDate: "2020-01-01",
     ...overrides,
 });
 
