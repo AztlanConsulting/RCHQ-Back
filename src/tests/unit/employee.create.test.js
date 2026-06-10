@@ -62,6 +62,7 @@ describe("Employee Service - createEmployee", () => {
         houseId: "a0000001-0000-4000-8000-000000000001",
         roleId: "a0000002-0000-4000-8000-000000000002",
         birthDate: "1990-01-01",
+        startDate: "2020-01-01",
     };
 
     beforeEach(() => {

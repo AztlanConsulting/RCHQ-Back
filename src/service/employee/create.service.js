@@ -85,9 +85,11 @@ exports.createEmployee = async (employee, user, req) => {
         rfc: data.rfc,
         nss: data.nss,
         bankAccount: data.bankAccount,
-        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        birthDate: data.birthDate
+            ? new Date(`${data.birthDate}T00:00:00.000Z`)
+            : null,
         picture: data.picture,
-        startDate: new Date(),
+        startDate: new Date(`${data.startDate}T00:00:00.000Z`),
     });
 
     let warning = null;

@@ -8,6 +8,48 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._/-]+$/;
 
 const emptyToNull = (val) => (val === "" ? null : val);
+const parseDateOnly = (value) => {
+    if (!DATE_REGEX.test(value)) return null;
+
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() !== month - 1 ||
+        date.getUTCDate() !== day
+    ) {
+        return null;
+    }
+
+    return date;
+};
+
+const getTodayUtc = () => {
+    const now = new Date();
+
+    return new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+};
+
+const subtractUtcYears = (date, years) => {
+    const result = new Date(date);
+    result.setUTCFullYear(result.getUTCFullYear() - years);
+    return result;
+};
+
+const getAge = (birthDate, today) => {
+    let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
+    const monthDiff = today.getUTCMonth() - birthDate.getUTCMonth();
+    const dayDiff = today.getUTCDate() - birthDate.getUTCDate();
+
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+        age--;
+    }
+
+    return age;
+};
 
 const employeeCreateSchema = z.object({
     roleId: z.string().uuid("El roleId debe ser un UUID válido"),
@@ -97,25 +139,12 @@ const employeeCreateSchema = z.object({
             (val) => {
                 if (val === null) return true;
 
-                const birthDate = new Date(val);
+                const birthDate = parseDateOnly(val);
 
-                if (isNaN(birthDate.getTime())) return false;
+                if (!birthDate) return false;
+                if (birthDate.getUTCFullYear() < 1900) return false;
 
-                const year = birthDate.getFullYear();
-                const currentYear = new Date().getFullYear();
-
-                if (year < 1900 || year > currentYear) return false;
-
-                let age = currentYear - year;
-
-                const monthDiff = new Date().getMonth() - birthDate.getMonth();
-                const dayDiff = new Date().getDate() - birthDate.getDate();
-
-                if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-                    age--;
-                }
-
-                return age >= 18;
+                return getAge(birthDate, getTodayUtc()) >= 18;
             },
             {
                 message:
@@ -123,6 +152,44 @@ const employeeCreateSchema = z.object({
             },
         )
         .optional(),
+
+    startDate: z
+        .string({
+            required_error: "La antigüedad es obligatoria",
+            invalid_type_error: "La antigüedad es obligatoria",
+        })
+        .trim()
+        .min(1, "La antigüedad es obligatoria")
+        .refine((val) => DATE_REGEX.test(val), {
+            message: "Formato de fecha inválido (YYYY-MM-DD)",
+        })
+        .refine((val) => parseDateOnly(val) !== null, {
+            message: "La fecha de antigüedad no es válida",
+        })
+        .refine(
+            (val) => {
+                const startDate = parseDateOnly(val);
+
+                if (!startDate) return false;
+
+                return startDate <= getTodayUtc();
+            },
+            {
+                message: "La antigüedad no puede estar en el futuro",
+            },
+        )
+        .refine(
+            (val) => {
+                const startDate = parseDateOnly(val);
+
+                if (!startDate) return false;
+
+                return startDate >= subtractUtcYears(getTodayUtc(), 100);
+            },
+            {
+                message: "La antigüedad no puede ser mayor a 100 años",
+            },
+        ),
 
     picture: z
         .string()
