@@ -438,7 +438,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
       .send({ type: "Asalariado" });
     expect(res.statusCode).toBe(200);
     const updated = await prisma.employee.findUnique({ where: { employee_id: EMP_ID } });
-    expect(updated.type).toBe("Asalariado");
+    expect(updated.type).toBe("Asimilado a Salario");
   });
 
   it("encripta el salario en BD", async () => {
