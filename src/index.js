@@ -33,11 +33,26 @@ app.use("/uploads", (req, res) => {
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim()).filter(origin => origin);
 
+const isProduction = process.env.NODE_ENV === "production";
+
+function isLocalhostOrigin(origin) {
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    if (!isProduction && isLocalhostOrigin(origin)) {
       return callback(null, true);
     }
 
