@@ -3,7 +3,7 @@ const ROLES = Object.freeze({
     ADMIN: "Administrador",
     MAINTENANCE: "Mantenimiento",
     LAUNDRY: "Lavandería",
-    NNA_CARE_RESPONSIBLE: "Responsable del cuidado de NNA",
+    NNA_CARE_RESPONSIBLE: "Cuidador",
     PSYCHOLOGIST_FEMALE: "Psicóloga",
     PSYCHOLOGIST_MALE: "Psicólogo",
     SOCIAL_WORKER: "Trabajador Social",
@@ -22,6 +22,9 @@ const ROLES = Object.freeze({
     LAUNDRY_ASSISTANT: "Auxiliar de Lavandería",
     DRIVER: "Chofer",
     COOK: "Cocinera",
+    OPERATIONS_ASSISTANT: "Asistente Operativo",
+    ADMINISTRATIVE_ASSISTANT: "Asistente Administrativo",
+    INTENDANCE: "Intendencia",
 });
 
 const allRoles = Object.values(ROLES);

@@ -1015,7 +1015,7 @@ describe("POST /absence/:employeeId/add", () => {
                 `Bearer ${sign({
                     id: IDS.roleDifferentEmployee,
                     email: "role.different.absence.create@test.com",
-                    role: "Responsable del cuidado de NNA",
+                    role: "Cuidador",
                     privileges: ["addAbsences"],
                 })}`,
             )

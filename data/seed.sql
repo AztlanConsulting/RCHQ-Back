@@ -34,7 +34,7 @@ VALUES
 (gen_random_uuid(), 'Administrador'),
 (gen_random_uuid(), 'Mantenimiento'),
 (gen_random_uuid(), 'Lavandería'),
-(gen_random_uuid(), 'Responsable del cuidado de NNA'),
+(gen_random_uuid(), 'Cuidador'),
 (gen_random_uuid(), 'Psicóloga'),
 (gen_random_uuid(), 'Psicólogo'),
 (gen_random_uuid(), 'Trabajador Social'),
@@ -52,7 +52,10 @@ VALUES
 (gen_random_uuid(), 'Auxiliar de Limpieza'),
 (gen_random_uuid(), 'Auxiliar de Lavandería'),
 (gen_random_uuid(), 'Chofer'),
-(gen_random_uuid(), 'Cocinera')
+(gen_random_uuid(), 'Cocinera'),
+(gen_random_uuid(), 'Asistente Operativo'),
+(gen_random_uuid(), 'Asistente Administrativo'),
+(gen_random_uuid(), 'Intendencia')
 ON CONFLICT DO NOTHING;
 
 -- =========================
