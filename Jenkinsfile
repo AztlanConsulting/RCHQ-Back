@@ -13,6 +13,11 @@ pipeline {
         sh 'npm install'
       }
     }
+    stage('Run lint') {
+      steps {
+        sh 'npx prisma generate'
+      }
+    }
     stage('Run tests') {
       steps {
         sh 'npm run test:unit -- --ci'
