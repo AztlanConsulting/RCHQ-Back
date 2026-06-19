@@ -31,6 +31,7 @@ const IDS = {
     roleDifferentEmployee: randomUUID(),
     absenceTypeA: randomUUID(),
     absenceTypeB: randomUUID(),
+    absenceTypeOtro: randomUUID(),
     vacationOverlap: randomUUID(),
     workdayLunes: randomUUID(),
     workdayMartes: randomUUID(),
@@ -357,7 +358,7 @@ const cleanupTestData = async () => {
     await prisma.absence_type.deleteMany({
         where: {
             absence_type_id: {
-                in: [IDS.absenceTypeA, IDS.absenceTypeB],
+                in: [IDS.absenceTypeA, IDS.absenceTypeB, IDS.absenceTypeOtro],
             },
         },
     });
@@ -613,6 +614,10 @@ const seed = async () => {
             {
                 absence_type_id: IDS.absenceTypeB,
                 name: `Paternidad-${IDS.absenceTypeB.slice(0, 8)}`,
+            },
+            {
+                absence_type_id: IDS.absenceTypeOtro,
+                name: "Otro",
             },
         ],
     });
@@ -1124,5 +1129,37 @@ describe("POST /absence/:employeeId/add", () => {
             },
         });
         expect(log).toBeTruthy();
+    });
+
+    it("201 registra ausencia tipo Otro con descripcion obligatoria", async () => {
+        const res = await request(app)
+            .post(`/absence/${IDS.employeeA}/add`)
+            .set("Authorization", `Bearer ${sign()}`)
+            .send(
+                validBody({
+                    absenceTypeId: IDS.absenceTypeOtro,
+                    startDate: validStartDate(10),
+                    endDate: validEndDate(10),
+                    description: "Motivo personal no cubierto por otros tipos",
+                }),
+            );
+
+        expect(res.statusCode).toBe(201);
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.absence).toMatchObject({
+            employeeId: IDS.employeeA,
+            absenceTypeId: IDS.absenceTypeOtro,
+            description: "Motivo personal no cubierto por otros tipos",
+            isDeleted: false,
+        });
+
+        const absenceInDb = await prisma.absence.findUnique({
+            where: { absence_id: res.body.data.absence.absenceId },
+        });
+        expect(absenceInDb).toMatchObject({
+            employee_id: IDS.employeeA,
+            absence_type_id: IDS.absenceTypeOtro,
+            description: "Motivo personal no cubierto por otros tipos",
+        });
     });
 });
