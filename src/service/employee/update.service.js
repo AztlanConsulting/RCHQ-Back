@@ -18,6 +18,12 @@ const {
     findEmployeeDocument,
 } = require("../../model/employee/get.model");
 const { updateEmployeeDocument } = require("../../model/employee/update.model");
+const { normalizeEmployeeContractType } = require("../../utils/contractTypes");
+const {
+  isContractTypeAllowedForRole,
+  buildRoleContractMismatchMessage,
+  getRequiredContractTypeForRole,
+} = require("../../utils/roleContractRules");
 
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body, file }) => {
   if (!requesterId || !employeeId)
@@ -139,11 +145,46 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
     }
   }
 
+  const effectiveRole = parsed.data.roleId
+    ? await getRoleById(parsed.data.roleId)
+    : await getRoleById(employee.role_id);
+
+  if (!effectiveRole) {
+    return {
+      type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+      errors: [{
+        campo: "roleId",
+        mensaje: "El puesto seleccionado no existe",
+      }],
+    };
+  }
+
+  const effectiveContractType = parsed.data.type !== undefined && parsed.data.type !== null
+    ? normalizeEmployeeContractType(parsed.data.type)
+    : normalizeEmployeeContractType(employee.type);
+
+  if (
+    (parsed.data.roleId !== undefined || parsed.data.type !== undefined) &&
+    !isContractTypeAllowedForRole(effectiveRole.name, effectiveContractType)
+  ) {
+    const requiredType = getRequiredContractTypeForRole(effectiveRole.name);
+
+    return {
+      type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+      errors: [{
+        campo: "type",
+        mensaje: buildRoleContractMismatchMessage(effectiveRole.name, requiredType),
+      }],
+    };
+  }
+
   const { workdays, salary, ...rest } = parsed.data;
 
-  if (salary !== undefined && salary !== null) {
-    if (salary === 0 || salary === "0") {
-      rest.salary = "0"; 
+  if (salary !== undefined) {
+    if (salary === null || salary === "") {
+      rest.salary = null;
+    } else if (salary === 0 || salary === "0") {
+      rest.salary = "0";
     } else {
       rest.salary = encryptValue(String(salary));
     }

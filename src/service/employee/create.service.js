@@ -9,6 +9,7 @@ const {
     getAllRoles,
     findDocumentById,
     findEmployeeDocument,
+    getRoleById,
 } = require("../../model/employee/get.model");
 const { createLog } = require("../../model/log.model");
 const { getClientIp } = require("../../utils/ip");
@@ -21,6 +22,7 @@ const { employeePolicy } = require("../../policies/employee.policies");
 const { randomUUID } = require("crypto");
 const RESPONSES = require("../../utils/responses");
 const { ROLES } = require("../../utils/roles");
+const { getRequiredContractTypeForRole } = require("../../utils/roleContractRules");
 
 exports.getById = async (id) => {
     return await findById(id);
@@ -68,6 +70,32 @@ exports.createEmployee = async (employee, user, req) => {
         };
     }
 
+    const role = await getRoleById(data.roleId);
+
+    if (!role) {
+        return {
+            success: false,
+            type: "VALIDATION_ERROR",
+            errors: [{
+                campo: "roleId",
+                mensaje: "El puesto seleccionado no existe",
+            }],
+        };
+    }
+
+    if (role.name === ROLES.ADMIN) {
+        return {
+            success: false,
+            type: "VALIDATION_ERROR",
+            errors: [{
+                campo: "roleId",
+                mensaje: "No se puede crear un empleado con puesto Administrador",
+            }],
+        };
+    }
+
+    const initialContractType = getRequiredContractTypeForRole(role.name);
+
     const hashedPassword = await hashPassword("red_de_casas_hogar");
 
     const newEmployee = await create({
@@ -90,6 +118,7 @@ exports.createEmployee = async (employee, user, req) => {
             : null,
         picture: data.picture,
         startDate: new Date(`${data.startDate}T00:00:00.000Z`),
+        ...(initialContractType ? { type: initialContractType } : {}),
     });
 
     let warning = null;

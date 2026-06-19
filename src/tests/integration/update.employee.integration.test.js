@@ -16,6 +16,7 @@ const EMP_ID      = "eee00001-0000-4000-8000-000000000001";
 const OTHER_EMP   = "eee00002-0000-4000-8000-000000000002";
 const UNKNOWN_ID  = "ffffffff-ffff-4fff-bfff-ffffffffffff";
 const PRIVILEGE_ID = "b0000001-0000-4000-8000-000000000001";
+const PRESIDENT_ROLE_ID = "f2000001-0000-4000-8000-000000000010";
 
 let token;
 let adminRoleId = FALLBACK_ADMIN_ROLE_ID;
@@ -101,6 +102,12 @@ beforeAll(async () => {
       create: { role_id: ROLE_ID, name: "Coordinador Update IT" },
   });
 
+  await prisma.role.upsert({
+    where: { role_id: PRESIDENT_ROLE_ID },
+    update: { name: "Presidente" },
+    create: { role_id: PRESIDENT_ROLE_ID, name: "Presidente" },
+  });
+
   const existingAdminRole = await prisma.role.findFirst({
     where: { name: "Administrador" },
     select: { role_id: true },
@@ -170,6 +177,7 @@ afterAll(async () => {
     await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
     await prisma.privileges.deleteMany({ where: { privilege_id: PRIVILEGE_ID } });
     await prisma.role.deleteMany({ where: { role_id: ROLE_ID } });
+    await prisma.role.deleteMany({ where: { role_id: PRESIDENT_ROLE_ID } });
     if (shouldCleanupAdminRole) {
       await prisma.role.deleteMany({ where: { role_id: adminRoleId } });
     }
@@ -438,7 +446,7 @@ describe("PUT /employee/:employeeId/admin-info", () => {
       .send({ type: "Asalariado" });
     expect(res.statusCode).toBe(200);
     const updated = await prisma.employee.findUnique({ where: { employee_id: EMP_ID } });
-    expect(updated.type).toBe("Asalariado");
+    expect(updated.type).toBe("Asimilado a Salario");
   });
 
   it("encripta el salario en BD", async () => {
@@ -518,6 +526,33 @@ describe("PUT /employee/:employeeId/admin-info", () => {
       .set(json())
       .send({ roleId: adminRoleId });
     expect(res.statusCode).toBe(400);
+  });
+
+  it("retorna 400 si el puesto Presidente no coincide con contrato Nomina", async () => {
+    const res = await request(app)
+      .put(`/employee/${EMP_ID}/admin-info`)
+      .set(json())
+      .send({ roleId: PRESIDENT_ROLE_ID, type: "Nomina" });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.errors?.[0]?.campo).toBe("type");
+  });
+
+  it("permite actualizar puesto Presidente con contrato Patronato", async () => {
+    const res = await request(app)
+      .put(`/employee/${EMP_ID}/admin-info`)
+      .set(json())
+      .send({ roleId: PRESIDENT_ROLE_ID, type: "Patronato" });
+
+    expect(res.statusCode).toBe(200);
+
+    const employeeInDb = await prisma.employee.findUnique({
+      where: { employee_id: EMP_ID },
+      select: { role_id: true, type: true },
+    });
+
+    expect(employeeInDb.role_id).toBe(PRESIDENT_ROLE_ID);
+    expect(employeeInDb.type).toBe("Patronato");
   });
 
   it("permite workday con start mayor a end con la validacion actual", async () => {

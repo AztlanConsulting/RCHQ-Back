@@ -34,7 +34,7 @@ VALUES
 (gen_random_uuid(), 'Administrador'),
 (gen_random_uuid(), 'Mantenimiento'),
 (gen_random_uuid(), 'Lavandería'),
-(gen_random_uuid(), 'Responsable del cuidado de NNA'),
+(gen_random_uuid(), 'Cuidador'),
 (gen_random_uuid(), 'Psicóloga'),
 (gen_random_uuid(), 'Psicólogo'),
 (gen_random_uuid(), 'Trabajador Social'),
@@ -52,7 +52,15 @@ VALUES
 (gen_random_uuid(), 'Auxiliar de Limpieza'),
 (gen_random_uuid(), 'Auxiliar de Lavandería'),
 (gen_random_uuid(), 'Chofer'),
-(gen_random_uuid(), 'Cocinera')
+(gen_random_uuid(), 'Cocinera'),
+(gen_random_uuid(), 'Asistente Operativo'),
+(gen_random_uuid(), 'Asistente Administrativo'),
+(gen_random_uuid(), 'Intendencia'),
+(gen_random_uuid(), 'Presidente'),
+(gen_random_uuid(), 'Vicepresidente'),
+(gen_random_uuid(), 'Tesorero'),
+(gen_random_uuid(), 'Vocal'),
+(gen_random_uuid(), 'Proveedor')
 ON CONFLICT DO NOTHING;
 
 -- =========================
@@ -850,7 +858,28 @@ VALUES
 ('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
 ('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
 ('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
-('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación')
+('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación'),
+('c0000001-0000-4000-8000-000000000025', 'Acta Administrativa 1'),
+('c0000001-0000-4000-8000-000000000026', 'Acta Administrativa 2'),
+('c0000001-0000-4000-8000-000000000027', 'Acta Administrativa 3'),
+('c0000001-0000-4000-8000-000000000028', 'Contacto de Emergencia 1'),
+('c0000001-0000-4000-8000-000000000029', 'Contacto de Emergencia 2'),
+('c0000001-0000-4000-8000-000000000030', 'Hoja de Retención de INFONAVIT'),
+('c0000001-0000-4000-8000-000000000031', 'Carta Solicitud de la Escuela / Universidad (Servicio Social)'),
+('c0000001-0000-4000-8000-000000000032', 'Carta de Voluntariado'),
+('c0000001-0000-4000-8000-000000000033', 'Norma del Voluntario (Ley General de Voluntariado)'),
+('c0000001-0000-4000-8000-000000000034', 'Plan de Voluntariado'),
+('c0000001-0000-4000-8000-000000000035', 'Aviso de Privacidad'),
+('c0000001-0000-4000-8000-000000000036', 'Identificación de la Universidad'),
+('c0000001-0000-4000-8000-000000000037', 'Reportes Voluntarios / Servicio Social'),
+('c0000001-0000-4000-8000-000000000038', 'Carta de Acreditación de Horas'),
+('c0000001-0000-4000-8000-000000000039', 'Evaluación de Desempeño'),
+('c0000001-0000-4000-8000-000000000040', 'Pruebas Psicométricas o Psicológicas'),
+('c0000001-0000-4000-8000-000000000041', 'Carta de Renuncia'),
+('c0000001-0000-4000-8000-000000000042', 'Finiquito Firmado'),
+('c0000001-0000-4000-8000-000000000043', 'Carta de Despido'),
+('c0000001-0000-4000-8000-000000000044', 'Carta de Recepción de Equipo de Trabajo o Uniforme'),
+('c0000001-0000-4000-8000-000000000045', 'Permiso de Trabajo (para extranjeros)')
 ON CONFLICT DO NOTHING;
 
 
@@ -858,7 +887,8 @@ INSERT INTO public.absence_type (absence_type_id, name)
 VALUES
 ('a0000001-0000-4000-8000-000000000001', 'Médica'),
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
-('a0000001-0000-4000-8000-000000000003', 'Maternidad')
+('a0000001-0000-4000-8000-000000000003', 'Maternidad'),
+('a0000001-0000-4000-8000-000000000004', 'Otro')
 ON CONFLICT DO NOTHING;
 
 
