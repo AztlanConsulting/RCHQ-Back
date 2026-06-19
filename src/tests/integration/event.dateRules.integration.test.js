@@ -58,7 +58,7 @@ const clean = async () => {
     await prisma.global_event.deleteMany({
         where: { global_event_id: IDS.globalFreeDay },
     });
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: { employee_id: IDS.employee },
     });
     await prisma.employee.deleteMany({
@@ -114,10 +114,12 @@ const seed = async () => {
     });
 
     const mondayId = await getOrCreateWorkdayId("Lunes");
-    await prisma.employee_workday.create({
+    await prisma.employee_shift.create({
         data: {
+            shift_id: randomUUID(),
             employee_id: IDS.employee,
-            workday_id: mondayId,
+            start_workday_id: mondayId,
+            end_workday_id: mondayId,
             start: new Date(Date.UTC(1970, 0, 1, 9)),
             end: new Date(Date.UTC(1970, 0, 1, 18)),
         },
@@ -171,10 +173,9 @@ describe(`GET ${API_ROUTE}/:employeeId/date-rules`, () => {
             mode: "absence",
             nonWorkingWeekdays: [0, 2, 3, 4, 5, 6],
         });
-        expect(res.body.data.workDays).toEqual([
+        expect(res.body.data.shifts).toEqual([
             expect.objectContaining({
-                name: "Lunes",
-                weekday: 1,
+                startWorkdayName: "Lunes",
             }),
         ]);
         expect(res.body.data.freeDays).toContain(freeDay);

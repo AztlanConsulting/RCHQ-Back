@@ -2,7 +2,7 @@ const {
   updateBasicInfo,
   updateContactInfo,
   updateAdminInfo,
-  upsertWorkdays,
+  upsertEmployeeShifts,
 } = require("../../model/employee/update.model");
 const { findById, getRoleById } = require("../../model/employee/get.model");
 const { encryptValue } = require("../../utils/password");
@@ -178,7 +178,7 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
     };
   }
 
-  const { workdays, salary, ...rest } = parsed.data;
+  const { shifts, salary, ...rest } = parsed.data;
 
   if (salary !== undefined) {
     if (salary === null || salary === "") {
@@ -194,8 +194,8 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
     await updateAdminInfo(employeeId, rest);
   }
 
-  if (workdays && workdays.length > 0) {
-    await upsertWorkdays(employeeId, workdays);
+  if (shifts && shifts.length > 0) {
+    await upsertEmployeeShifts(employeeId, shifts);
   }
 
   return { type: RESPONSES.EMPLOYEE.UPDATED };

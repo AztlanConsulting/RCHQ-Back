@@ -88,7 +88,7 @@ model employee {
   employee_fault                  employee_fault[]
   employee_inside_certification   employee_inside_certification[]
   employee_personal_event         employee_personal_event[]
-  employee_workday                employee_workday[]
+  employee_shift                  employee_shift[]
   logs                            logs[]
   outside_certification           outside_certification[]
   psychological_evaluation        psychological_evaluation[]
@@ -154,15 +154,17 @@ model employee_personal_event {
   @@id([personal_event_id, employee_id], map: "employee_personal_event_pk")
 }
 
-model employee_workday {
-  workday_id  String   @db.Uuid
-  employee_id String   @db.Uuid
-  start       DateTime @db.Time(6)
-  end         DateTime @db.Time(6)
-  employee    employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_workday_employee_fk")
-  workday     workday  @relation(fields: [workday_id], references: [workday_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_workday_workday_fk")
-
-  @@id([workday_id, employee_id], map: "employee_workday_pk")
+model employee_shift {
+  shift_id           String   @id(map: "employee_shift_pk") @db.Uuid
+  employee_id        String   @db.Uuid
+  start_workday_id   String   @db.Uuid
+  end_workday_id     String   @db.Uuid
+  start              DateTime @db.Time(6)
+  end                DateTime @db.Time(6)
+  is_all_day         Boolean  @default(false)
+  employee           employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_shift_employee_fk")
+  start_workday      workday  @relation("EmployeeShiftStart", fields: [start_workday_id], references: [workday_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_shift_start_workday_fk")
+  end_workday        workday  @relation("EmployeeShiftEnd", fields: [end_workday_id], references: [workday_id], onDelete: NoAction, onUpdate: NoAction, map: "employee_shift_end_workday_fk")
 }
 
 model event_type {
@@ -314,9 +316,10 @@ model vacations_request {
 }
 
 model workday {
-  workday_id       String             @id(map: "workday_pk") @db.Uuid
-  name             String             @unique @db.VarChar(9)
-  employee_workday employee_workday[]
+  workday_id            String           @id(map: "workday_pk") @db.Uuid
+  name                  String           @unique @db.VarChar(9)
+  employee_shifts_start employee_shift[] @relation("EmployeeShiftStart")
+  employee_shifts_end   employee_shift[] @relation("EmployeeShiftEnd")
 }
 
 model absence {

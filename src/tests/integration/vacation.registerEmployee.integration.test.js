@@ -459,31 +459,43 @@ async function seedBaseData() {
         WORKDAY_IDS.friday,
     ];
 
-    await prisma.employee_workday.createMany({
+    await prisma.employee_shift.createMany({
         data: [
             ...mondayToFriday.map((workdayId) => ({
-                workday_id: workdayId,
+                shift_id: randomUUID(),
+                start_workday_id: workdayId,
+                end_workday_id: workdayId,
                 employee_id: TARGET_EMPLOYEE_ID,
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
+                is_all_day: false,
             })),
             ...mondayToFriday.map((workdayId) => ({
-                workday_id: workdayId,
+                shift_id: randomUUID(),
+                start_workday_id: workdayId,
+                end_workday_id: workdayId,
                 employee_id: OTHER_HOUSE_EMPLOYEE_ID,
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
+                is_all_day: false,
             })),
             ...mondayToFriday.map((workdayId) => ({
-                workday_id: workdayId,
+                shift_id: randomUUID(),
+                start_workday_id: workdayId,
+                end_workday_id: workdayId,
                 employee_id: ADMIN_ID,
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
+                is_all_day: false,
             })),
             ...mondayToFriday.map((workdayId) => ({
-                workday_id: workdayId,
+                shift_id: randomUUID(),
+                start_workday_id: workdayId,
+                end_workday_id: workdayId,
                 employee_id: COORDINATOR_ID,
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
+                is_all_day: false,
             })),
         ],
         skipDuplicates: true,
@@ -541,7 +553,7 @@ async function cleanTestData() {
         },
     });
 
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: {
             employee_id: {
                 in: employeeIds,

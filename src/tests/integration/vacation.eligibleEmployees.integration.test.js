@@ -291,7 +291,7 @@ async function cleanTestData() {
         },
     });
 
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: {
             employee_id: {
                 in: employeeIds,

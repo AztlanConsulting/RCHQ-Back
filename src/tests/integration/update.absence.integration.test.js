@@ -153,12 +153,14 @@ const seedEmployeeWorkdays = async (employeeIds) => {
         savedWorkdays.push(savedWorkday);
     }
 
-    await prisma.employee_workday.createMany({
+    await prisma.employee_shift.createMany({
         data: employeeIds.flatMap((employeeId) =>
             savedWorkdays.map((workday) => ({
-                employee_id: employeeId,
-                workday_id: workday.workday_id,
-                start: new Date("1970-01-01T09:00:00.000Z"),
+                shift_id: randomUUID(),
+            employee_id: employeeId,
+            start_workday_id: workday.workday_id,
+            end_workday_id: workday.workday_id,
+            start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
             })),
         ),
@@ -421,7 +423,7 @@ const cleanup = async () => {
         },
     });
 
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: {
             employee_id: {
                 in: [

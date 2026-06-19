@@ -5,11 +5,11 @@ const {
     getEmployees,
     getEmployeeById,
     getEmployeeAddress,
-    getEmployeeWorkdays,
+    getEmployeeShifts,
     getEmployeeVacationRequests,
     getDocumentTypes,
     getDocumentsByEmployee,
-    getWorkDays,
+    getEmployeeShiftsRaw,
     getAllWorkdays,
     getAllHouses,
     getFrecuencyPaymentOptions,
@@ -47,7 +47,7 @@ const getClampedRange = (rangeStart, rangeEnd, minDate, maxDate) => ({
 const calculateMonthlyJustifiedAbsenceUsedDays = async (employeeId, houseId) => {
     const { monthStart, monthEnd } = getCurrentMonthUtcRange();
     const [workDays, absences] = await Promise.all([
-        getWorkDays(employeeId),
+        getEmployeeShiftsRaw(employeeId),
         getEmployeeJustifiedAbsenceRecordsInRange(
             employeeId,
             monthStart,
@@ -190,7 +190,7 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
     const employeeAddress = await getEmployeeAddress(employeeId);
     const employeeHouse = await getHouseById(employeeBasicInfo.houseId);
 
-    const employeeWorkdays = await getEmployeeWorkdays(employeeId);
+    const employeeShifts = await getEmployeeShifts(employeeId);
     const employeeVacationRequests =
         await getEmployeeVacationRequests(employeeId);
     const employeeAbsenceUsedDays = await calculateMonthlyJustifiedAbsenceUsedDays(
@@ -208,7 +208,7 @@ exports.getEmployeeDetail = async (userID, employeeId) => {
                     house: employeeHouse,
                 },
                 adminInfo: {
-                    workdays: employeeWorkdays,
+                    shifts: employeeShifts,
                     vacationRequests: employeeVacationRequests,
                     absenceUsedDays: employeeAbsenceUsedDays,
                 },
@@ -247,13 +247,9 @@ exports.getDocumentsByEmployee = async (employeeId) => {
 };
 
 exports.getWorkDays = async (employeeId) => {
-    const rawWorkDays = await getWorkDays(employeeId);
+    const rawShifts = await getEmployeeShiftsRaw(employeeId);
 
-    const workDays = [];
-    rawWorkDays.forEach((day) => {
-        workDays.push(day.workday.name);
-    });
-    return workDays;
+    return rawShifts.map((shift) => shift.start_workday.name);
 };
 
 exports.getUpdateFormData = async (user) => {

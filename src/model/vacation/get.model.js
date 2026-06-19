@@ -45,9 +45,10 @@ exports.getVacationsInRange = async (employeeId, startDate, endDate) => {
                     name: true,
                     surname: true,
                     curp: true,
-                    employee_workday: {
+                    employee_shift: {
                         include: {
-                            workday: true,
+                            start_workday: true,
+                            end_workday: true,
                         },
                     },
                 },
@@ -84,9 +85,10 @@ exports.getHouseCalendarVacationsInRange = async (requesterId, houseId, startDat
                     name: true,
                     surname: true,
                     curp: true,
-                    employee_workday: {
+                    employee_shift: {
                         include: {
-                            workday: true,
+                            start_workday: true,
+                            end_workday: true,
                         },
                     },
                 },

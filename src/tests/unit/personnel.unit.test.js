@@ -11,9 +11,9 @@ jest.mock("../../utils/password", () => ({
 jest.mock("../../model/employee/get.model", () => ({
     getEmployeeById: jest.fn(),
     getEmployeeAddress: jest.fn(),
-    getEmployeeWorkdays: jest.fn(),
+    getEmployeeShifts: jest.fn(),
     getEmployeeVacationRequests: jest.fn(),
-    getWorkDays: jest.fn(),
+    getEmployeeShiftsRaw: jest.fn(),
 }));
 
 jest.mock("../../model/absence/get.model", () => ({
@@ -52,12 +52,16 @@ const mockHouse = {
     location: "Querétaro",
 };
 
-const mockWorkdays = [
+const mockShifts = [
     {
-        workdayId: "wd-1",
-        name: "L-V",
-        start: new Date("1970-01-01T09:00:00.000Z"),
-        end: new Date("1970-01-01T18:00:00.000Z"),
+        shiftId: "shift-1",
+        startWorkdayId: "wd-1",
+        endWorkdayId: "wd-1",
+        startWorkdayName: "L-V",
+        endWorkdayName: "L-V",
+        start: "09:00",
+        end: "18:00",
+        allDay: false,
     },
 ];
 
@@ -73,7 +77,7 @@ const mockVacationRequests = [
 
 beforeEach(() => {
     jest.clearAllMocks();
-    EmployeeModel.getWorkDays.mockResolvedValue([]);
+    EmployeeModel.getEmployeeShiftsRaw.mockResolvedValue([]);
     AbsenceModel.getEmployeeJustifiedAbsenceRecordsInRange.mockResolvedValue(
         [],
     );
@@ -87,7 +91,7 @@ describe("getEmployeeDetail", () => {
 
         expect(result.code).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
         expect(EmployeeModel.getEmployeeAddress).not.toHaveBeenCalled();
-        expect(EmployeeModel.getEmployeeWorkdays).not.toHaveBeenCalled();
+        expect(EmployeeModel.getEmployeeShifts).not.toHaveBeenCalled();
         expect(
             EmployeeModel.getEmployeeVacationRequests,
         ).not.toHaveBeenCalled();
@@ -98,7 +102,7 @@ describe("getEmployeeDetail", () => {
         EmployeeModel.getEmployeeById.mockResolvedValue({ ...mockEmployee });
         EmployeeModel.getEmployeeAddress.mockResolvedValue(mockAddress);
         HouseModel.getHouseById.mockResolvedValue(mockHouse);
-        EmployeeModel.getEmployeeWorkdays.mockResolvedValue(mockWorkdays);
+        EmployeeModel.getEmployeeShifts.mockResolvedValue(mockShifts);
         EmployeeModel.getEmployeeVacationRequests.mockResolvedValue(
             mockVacationRequests,
         );
@@ -111,7 +115,7 @@ describe("getEmployeeDetail", () => {
         expect(basicInfo.employee).toMatchObject({ email: "test@gmail.com" });
         expect(basicInfo.address).toEqual(mockAddress);
         expect(basicInfo.house).toEqual(mockHouse);
-        expect(adminInfo.workdays).toEqual(mockWorkdays);
+        expect(adminInfo.shifts).toEqual(mockShifts);
         expect(adminInfo.vacationRequests).toEqual(mockVacationRequests);
         expect(adminInfo.absenceUsedDays).toBe(0);
 
@@ -122,7 +126,7 @@ describe("getEmployeeDetail", () => {
         expect(HouseModel.getHouseById).toHaveBeenCalledWith(
             mockEmployee.houseId,
         );
-        expect(EmployeeModel.getEmployeeWorkdays).toHaveBeenCalledWith(
+        expect(EmployeeModel.getEmployeeShifts).toHaveBeenCalledWith(
             "abc-123",
         );
         expect(EmployeeModel.getEmployeeVacationRequests).toHaveBeenCalledWith(
