@@ -6,6 +6,7 @@ jest.mock("../../model/employee/get.model", () => ({
     findByCurpAndHouseId: jest.fn(),
     findById: jest.fn(),
     getAllRoles: jest.fn(),
+    getRoleById: jest.fn(),
 }));
 
 jest.mock("../../model/employee/create.model", () => ({
@@ -70,6 +71,10 @@ describe("Employee Service - createEmployee", () => {
         employee.create.mockResolvedValue({ employeeId: "emp-1" });
         createLog.mockResolvedValue();
         consult.findByCurpAndHouseId.mockResolvedValue(null);
+        consult.getRoleById.mockResolvedValue({
+            roleId: baseEmployee.roleId,
+            name: "Mantenimiento",
+        });
     });
 
     afterEach(() => {
@@ -81,6 +86,48 @@ describe("Employee Service - createEmployee", () => {
         expect(result.success).toBe(true);
         expect(result.employeeId).toBeDefined();
         expect(employee.create).toHaveBeenCalled();
+    });
+
+    it("asigna contrato Proveedor al crear empleado con puesto Proveedor", async () => {
+        consult.getRoleById.mockResolvedValue({
+            roleId: "a0000002-0000-4000-8000-000000000031",
+            name: "Proveedor",
+        });
+
+        const result = await createEmployee(
+            {
+                ...baseEmployee,
+                roleId: "a0000002-0000-4000-8000-000000000031",
+            },
+            mockUserAdmin,
+            mockReq,
+        );
+
+        expect(result.success).toBe(true);
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "Proveedor" }),
+        );
+    });
+
+    it("asigna contrato Patronato al crear empleado con puesto Presidente", async () => {
+        consult.getRoleById.mockResolvedValue({
+            roleId: "a0000002-0000-4000-8000-000000000027",
+            name: "Presidente",
+        });
+
+        const result = await createEmployee(
+            {
+                ...baseEmployee,
+                roleId: "a0000002-0000-4000-8000-000000000027",
+            },
+            mockUserAdmin,
+            mockReq,
+        );
+
+        expect(result.success).toBe(true);
+        expect(employee.create).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "Patronato" }),
+        );
     });
 
     it("coordinator puede crear en su misma casa", async () => {

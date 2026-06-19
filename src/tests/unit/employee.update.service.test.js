@@ -51,7 +51,12 @@ const RESPONSES = require("../../utils/responses");
 
 const REQUESTER_ID  = "r0000001-0000-4000-8000-000000000001";
 const EMPLOYEE_ID   = "e0000001-0000-4000-8000-000000000001";
-const MOCK_EMPLOYEE = { employee_id: EMPLOYEE_ID, name: "Juan" };
+const MOCK_EMPLOYEE = {
+  employee_id: EMPLOYEE_ID,
+  name: "Juan",
+  role_id: "a0000002-0000-4000-8000-000000000003",
+  type: "nomina",
+};
 
 const validBasicBody = {
   name:    "Juan",
@@ -618,6 +623,68 @@ describe("updateAdminInfoService", () => {
 
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
       expect(result.errors?.[0]?.campo).toBe("roleId");
+    });
+
+    it("retorna VALIDATION_ERROR si el puesto Presidente no coincide con contrato Nomina", async () => {
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000027",
+        name: "Presidente",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        {
+          roleId: "a0000002-0000-4000-8000-000000000027",
+          type: "Nomina",
+        },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors?.[0]?.campo).toBe("type");
+      expect(result.errors?.[0]?.mensaje).toContain("Patronato");
+      expect(updateAdminInfo).not.toHaveBeenCalled();
+    });
+
+    it("permite actualizar puesto Presidente con contrato Patronato", async () => {
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000027",
+        name: "Presidente",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        {
+          roleId: "a0000002-0000-4000-8000-000000000027",
+          type: "Patronato",
+        },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
+      expect(updateAdminInfo).toHaveBeenCalled();
+    });
+
+    it("retorna VALIDATION_ERROR si el empleado ya es Proveedor y se intenta cambiar solo el contrato", async () => {
+      findById.mockResolvedValue({
+        ...MOCK_EMPLOYEE,
+        role_id: "a0000002-0000-4000-8000-000000000031",
+        type: "Proveedor",
+      });
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000031",
+        name: "Proveedor",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { type: "Nomina" },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors?.[0]?.campo).toBe("type");
+      expect(updateAdminInfo).not.toHaveBeenCalled();
     });
 
     it("retorna VALIDATION_ERROR con salario negativo", async () => {

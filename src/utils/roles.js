@@ -25,6 +25,11 @@ const ROLES = Object.freeze({
     OPERATIONS_ASSISTANT: "Asistente Operativo",
     ADMINISTRATIVE_ASSISTANT: "Asistente Administrativo",
     INTENDANCE: "Intendencia",
+    PRESIDENT: "Presidente",
+    VICE_PRESIDENT: "Vicepresidente",
+    TREASURER: "Tesorero",
+    VOCAL: "Vocal",
+    SUPPLIER: "Proveedor",
 });
 
 const allRoles = Object.values(ROLES);

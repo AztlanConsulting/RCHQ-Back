@@ -55,7 +55,12 @@ VALUES
 (gen_random_uuid(), 'Cocinera'),
 (gen_random_uuid(), 'Asistente Operativo'),
 (gen_random_uuid(), 'Asistente Administrativo'),
-(gen_random_uuid(), 'Intendencia')
+(gen_random_uuid(), 'Intendencia'),
+(gen_random_uuid(), 'Presidente'),
+(gen_random_uuid(), 'Vicepresidente'),
+(gen_random_uuid(), 'Tesorero'),
+(gen_random_uuid(), 'Vocal'),
+(gen_random_uuid(), 'Proveedor')
 ON CONFLICT DO NOTHING;
 
 -- =========================
