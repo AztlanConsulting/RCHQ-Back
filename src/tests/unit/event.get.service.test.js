@@ -79,11 +79,19 @@ describe("event.service — getEmployeeDateRules", () => {
             house_id: "house-1",
             is_active: true,
         });
-        employeeModel.getWorkDays.mockResolvedValue([
+        employeeModel.getEmployeeShiftsRaw.mockResolvedValue([
             {
+                shift_id: "shift-monday",
                 start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T17:00:00.000Z"),
-                workday: {
+                is_all_day: false,
+                start_workday_id: "workday-monday",
+                end_workday_id: "workday-monday",
+                start_workday: {
+                    workday_id: "workday-monday",
+                    name: "Lunes",
+                },
+                end_workday: {
                     workday_id: "workday-monday",
                     name: "Lunes",
                 },
@@ -104,10 +112,12 @@ describe("event.service — getEmployeeDateRules", () => {
         });
 
         expect(result.code).toBe(RESPONSES.EVENTS.FOUND);
-        expect(result.data.workDays).toEqual([
+        expect(result.data.shifts).toEqual([
             expect.objectContaining({
-                name: "Lunes",
-                weekday: 1,
+                startWorkdayName: "Lunes",
+                endWorkdayName: "Lunes",
+                start: "09:00",
+                end: "17:00",
             }),
         ]);
         expect(result.data.nonWorkingWeekdays).toEqual([0, 2, 3, 4, 5, 6]);
@@ -125,7 +135,7 @@ describe("event.service — getEmployeeDateRules", () => {
             house_id: "house-1",
             is_active: true,
         });
-        employeeModel.getWorkDays.mockResolvedValue([]);
+        employeeModel.getEmployeeShiftsRaw.mockResolvedValue([]);
 
         const result = await eventGetService.getEmployeeDateRules({
             employeeId: "employee-1",
@@ -146,7 +156,7 @@ describe("event.service — getEventsInRange", () => {
         employeeModel.getHome.mockResolvedValue({
             house_id: "house-1",
         });
-        employeeModel.getWorkDays.mockResolvedValue([]);
+        employeeModel.getEmployeeShiftsRaw.mockResolvedValue([]);
         eventModel.getHouseEventsInRange.mockResolvedValue([]);
         eventModel.getPersonalEventsInRange.mockResolvedValue([]);
         eventModel.getGlobalEventsInRange.mockResolvedValue([]);

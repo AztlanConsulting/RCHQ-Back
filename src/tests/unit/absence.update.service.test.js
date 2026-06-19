@@ -362,8 +362,8 @@ describe("absence.update.service — updateAbsence", () => {
         getActiveVacationsInRange.mockResolvedValue([
             {
                 vacations_request_id: "vac-1",
-                start: new Date("2026-05-11T00:00:00.000Z"),
-                end: new Date("2026-05-11T00:00:00.000Z"),
+                start: dateFromTodayUTC({ days: 5 }),
+                end: dateFromTodayUTC({ days: 5 }),
             },
         ]);
 
@@ -372,8 +372,8 @@ describe("absence.update.service — updateAbsence", () => {
             requesterHouseId: "house-1",
             absenceId: "2c359e9f-3cdf-43c0-a151-f7e2dcde2fb4",
             body: {
-                startDate: "2026-05-11",
-                endDate: "2026-05-13",
+                startDate: dateOnly(dateFromTodayUTC({ days: 5 })),
+                endDate: dateOnly(dateFromTodayUTC({ days: 7 })),
             },
         });
 
@@ -408,11 +408,14 @@ describe("absence.update.service — updateAbsence", () => {
             absence_type_id: "6eb8e341-d92e-460c-a6f3-e2a25a1ec8f6",
             name: "Paternidad",
         });
+        const updateStart = dateFromTodayUTC({ days: 10 });
+        const updateEnd = dateFromTodayUTC({ days: 12 });
+
         updateAbsenceById.mockResolvedValue({
             absence_id: "absence-1",
             absence_type_id: "6eb8e341-d92e-460c-a6f3-e2a25a1ec8f6",
-            start: new Date("2026-05-11T00:00:00.000Z"),
-            end: new Date("2026-05-13T00:00:00.000Z"),
+            start: updateStart,
+            end: updateEnd,
             description: "Nueva descripción",
             url: "https://example.com/file.pdf",
             is_deleted: false,
@@ -432,8 +435,8 @@ describe("absence.update.service — updateAbsence", () => {
             body: {
                 absenceTypeId: "6eb8e341-d92e-460c-a6f3-e2a25a1ec8f6",
                 description: "Nueva descripción",
-                startDate: "2026-05-11",
-                endDate: "2026-05-13",
+                startDate: dateOnly(updateStart),
+                endDate: dateOnly(updateEnd),
             },
         });
 
@@ -442,8 +445,8 @@ describe("absence.update.service — updateAbsence", () => {
             {
                 absence_type_id: "6eb8e341-d92e-460c-a6f3-e2a25a1ec8f6",
                 description: "Nueva descripción",
-                start: new Date("2026-05-11T00:00:00.000Z"),
-                end: new Date("2026-05-13T00:00:00.000Z"),
+                start: updateStart,
+                end: updateEnd,
             },
         );
 
@@ -459,8 +462,8 @@ describe("absence.update.service — updateAbsence", () => {
                     type: "Paternidad",
                     description: "Nueva descripción",
                     link: "https://example.com/file.pdf",
-                    startDate: new Date("2026-05-11T00:00:00.000Z"),
-                    endDate: new Date("2026-05-13T00:00:00.000Z"),
+                    startDate: updateStart,
+                    endDate: updateEnd,
                     isDeleted: false,
                 },
             },

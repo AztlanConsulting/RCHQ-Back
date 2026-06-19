@@ -1,8 +1,19 @@
 const { randomUUID } = require("crypto");
-const { spanishToDay } = require("./dates");
 
 const MIN_SHIFT_MINUTES = 60;
 const MAX_SHIFT_MINUTES = 24 * 60;
+
+const SPANISH_TO_DAY = {
+    Domingo: 0,
+    Lunes: 1,
+    Martes: 2,
+    Miércoles: 3,
+    Jueves: 4,
+    Viernes: 5,
+    Sábado: 6,
+};
+
+const spanishToDay = (day) => SPANISH_TO_DAY[day] ?? -1;
 
 const NEXT_WORKDAY_NAME = {
     Domingo: "Lunes",

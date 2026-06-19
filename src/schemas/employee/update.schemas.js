@@ -206,7 +206,8 @@ const employeeAdminUpdateSchema = z
 
     salary: z.preprocess(
       (val) => {
-        if (val === "" || val === null || val === undefined) return null;
+        if (val === undefined) return undefined;
+        if (val === "" || val === null) return null;
         return numberToString(val);
       },
       z.union([
@@ -227,10 +228,16 @@ const employeeAdminUpdateSchema = z
   )
   .refine(
     (data) => {
-      if (data.salary === undefined || data.salary === null) {
-        return isNoSalaryContract(data.type);
+      if (data.salary === undefined) {
+        return true;
+      }
+      if (data.salary === null) {
+        return data.type === undefined || isNoSalaryContract(data.type);
       }
       const salary = Number(data.salary);
+      if (data.type === undefined) {
+        return salary > 0;
+      }
       if (isNoSalaryContract(data.type)) return salary >= 0;
       return salary > 0;
     },
