@@ -3,7 +3,12 @@ const {
     getScheduledWeekdayNumbers,
     resolveScheduledWeekdayNumbers,
     mapShiftToApi,
+    shiftsConflict,
+    findShiftConflictMessage,
 } = require("../../utils/employeeShifts");
+
+const LUNES_ID = "wd-lunes";
+const MARTES_ID = "wd-martes";
 
 describe("employeeShifts utils", () => {
     it("calcula duración de turno diurno", () => {
@@ -71,5 +76,58 @@ describe("employeeShifts utils", () => {
             end: "18:15",
             allDay: false,
         });
+    });
+
+    it("detecta turnos duplicados exactos", () => {
+        const shift = {
+            startWorkdayId: LUNES_ID,
+            endWorkdayId: LUNES_ID,
+            start: "08:00",
+            end: "17:00",
+            allDay: false,
+        };
+
+        expect(shiftsConflict(shift, { ...shift })).toBe(true);
+        expect(findShiftConflictMessage([shift, { ...shift }])).toMatch(/repetir el mismo turno/i);
+    });
+
+    it("detecta solapamiento parcial en el mismo día", () => {
+        const morning = {
+            startWorkdayId: LUNES_ID,
+            endWorkdayId: LUNES_ID,
+            start: "08:00",
+            end: "12:00",
+            allDay: false,
+        };
+        const overlapping = {
+            startWorkdayId: LUNES_ID,
+            endWorkdayId: LUNES_ID,
+            start: "10:00",
+            end: "14:00",
+            allDay: false,
+        };
+
+        expect(shiftsConflict(morning, overlapping)).toBe(true);
+        expect(findShiftConflictMessage([morning, overlapping])).toMatch(/solapan/i);
+    });
+
+    it("permite turnos distintos en días distintos", () => {
+        const monday = {
+            startWorkdayId: LUNES_ID,
+            endWorkdayId: LUNES_ID,
+            start: "08:00",
+            end: "17:00",
+            allDay: false,
+        };
+        const tuesday = {
+            startWorkdayId: MARTES_ID,
+            endWorkdayId: MARTES_ID,
+            start: "08:00",
+            end: "17:00",
+            allDay: false,
+        };
+
+        expect(shiftsConflict(monday, tuesday)).toBe(false);
+        expect(findShiftConflictMessage([monday, tuesday])).toBeNull();
     });
 });

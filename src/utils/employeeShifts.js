@@ -152,5 +152,125 @@ exports.normalizeShiftInput = (shift) => {
     };
 };
 
+exports.normalizeShiftForComparison = (shift) => {
+    const allDay = Boolean(shift?.allDay ?? shift?.is_all_day);
+    const formatTime = (time) => {
+        if (allDay) return "00:00";
+        if (time instanceof Date) return formatTimeFromDb(time);
+        const match = String(time ?? "").match(/(\d{2}):(\d{2})/);
+        return match ? `${match[1]}:${match[2]}` : "";
+    };
+
+    return {
+        startWorkdayId: String(shift?.startWorkdayId ?? shift?.start_workday_id ?? ""),
+        endWorkdayId: String(shift?.endWorkdayId ?? shift?.end_workday_id ?? ""),
+        start: formatTime(shift?.start),
+        end: formatTime(shift?.end),
+        allDay,
+    };
+};
+
+exports.getShiftSignature = (shift) => {
+    const normalized = exports.normalizeShiftForComparison(shift);
+    return [
+        normalized.startWorkdayId,
+        normalized.endWorkdayId,
+        normalized.start,
+        normalized.end,
+        normalized.allDay,
+    ].join("|");
+};
+
+const getTimeSegments = (shift) => {
+    const normalized = exports.normalizeShiftForComparison(shift);
+
+    if (normalized.allDay) {
+        return [[0, MAX_SHIFT_MINUTES]];
+    }
+
+    const start = parseTimeToMinutes(normalized.start);
+    const end = parseTimeToMinutes(normalized.end);
+
+    if (normalized.startWorkdayId === normalized.endWorkdayId && end <= start) {
+        return [[start, MAX_SHIFT_MINUTES], [0, end]];
+    }
+
+    return [[start, end]];
+};
+
+const segmentsOverlap = (segmentsA, segmentsB) => {
+    for (const [aStart, aEnd] of segmentsA) {
+        for (const [bStart, bEnd] of segmentsB) {
+            if (aStart < bEnd && bStart < aEnd) {
+                return true;
+            }
+        }
+    }
+    return false;
+};
+
+exports.shiftsConflict = (shiftA, shiftB) => {
+    if (exports.getShiftSignature(shiftA) === exports.getShiftSignature(shiftB)) {
+        return true;
+    }
+
+    const a = exports.normalizeShiftForComparison(shiftA);
+    const b = exports.normalizeShiftForComparison(shiftB);
+
+    if (a.startWorkdayId !== a.endWorkdayId || b.startWorkdayId !== b.endWorkdayId) {
+        return false;
+    }
+
+    if (a.startWorkdayId !== b.startWorkdayId) {
+        return false;
+    }
+
+    return segmentsOverlap(getTimeSegments(shiftA), getTimeSegments(shiftB));
+};
+
+const getWorkdayLabel = (workdayId, catalog = []) => {
+    const match = catalog.find(
+        (day) => String(day.workdayId ?? day.workday_id) === String(workdayId),
+    );
+    return match?.name ?? "turno";
+};
+
+const describeShift = (shift, catalog = []) => {
+    const normalized = exports.normalizeShiftForComparison(shift);
+    const dayName = getWorkdayLabel(normalized.startWorkdayId, catalog);
+
+    if (normalized.allDay) {
+        return `${dayName} (24 horas)`;
+    }
+
+    if (normalized.startWorkdayId !== normalized.endWorkdayId) {
+        const endDayName = getWorkdayLabel(normalized.endWorkdayId, catalog);
+        return `${dayName} ${normalized.start}–${normalized.end} (${endDayName})`;
+    }
+
+    return `${dayName} ${normalized.start}–${normalized.end}`;
+};
+
+exports.findShiftConflictMessage = (shifts = [], workdayCatalog = []) => {
+    for (let i = 0; i < shifts.length; i += 1) {
+        for (let j = i + 1; j < shifts.length; j += 1) {
+            if (!exports.shiftsConflict(shifts[i], shifts[j])) {
+                continue;
+            }
+
+            const signatureA = exports.getShiftSignature(shifts[i]);
+            const signatureB = exports.getShiftSignature(shifts[j]);
+
+            if (signatureA === signatureB) {
+                return `No puedes repetir el mismo turno (${describeShift(shifts[i], workdayCatalog)}).`;
+            }
+
+            return `Hay turnos que se solapan el ${describeShift(shifts[i], workdayCatalog)}.`;
+        }
+    }
+
+    return null;
+};
+
 exports.MIN_SHIFT_MINUTES = MIN_SHIFT_MINUTES;
 exports.MAX_SHIFT_MINUTES = MAX_SHIFT_MINUTES;
