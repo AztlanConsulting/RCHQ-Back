@@ -73,13 +73,16 @@ const seedSubjectEmployeeWithRelations = async () => {
     await prisma.workday.create({
         data: { workday_id: TEST_WORKDAY_ID, name: workdayName },
     });
-    await prisma.employee_workday.create({
+    await prisma.employee_shift.create({
         data: {
-            workday_id: TEST_WORKDAY_ID,
-            employee_id: TEST_SUBJECT_EMPLOYEE_ID,
-            start: new Date("1970-01-01T14:00:00.000Z"),
-            end: new Date("1970-01-01T22:00:00.000Z"),
-        },
+            shift_id: randomUUID(),
+                start_workday_id: TEST_WORKDAY_ID,
+                end_workday_id: TEST_WORKDAY_ID,
+                employee_id: TEST_SUBJECT_EMPLOYEE_ID,
+                start: new Date("1970-01-01T14:00:00.000Z"),
+                end: new Date("1970-01-01T22:00:00.000Z"),
+                is_all_day: false,
+            },
     });
 
     await prisma.fault.create({
@@ -117,7 +120,7 @@ const cleanSubjectGraph = async () => {
     await prisma.employee_address.deleteMany({
         where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
     });
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: { employee_id: TEST_SUBJECT_EMPLOYEE_ID },
     });
     await prisma.employee_fault.deleteMany({
@@ -178,7 +181,7 @@ describe("GET /employee/employee-detail/:employeeID - integration", () => {
         expect(basicInfo.address).toMatchObject({ street: "Calle 1" });
         expect(basicInfo.house).toMatchObject({ name: expect.any(String) });
         expect(adminInfo).toMatchObject({
-            workdays: [expect.objectContaining({ name: expect.any(String) })],
+            shifts: [expect.objectContaining({ startWorkdayName: expect.any(String) })],
             vacationRequests: [
                 expect.objectContaining({ status: 1, feedback: "ok" }),
             ],

@@ -238,14 +238,18 @@ CREATE TABLE IF NOT EXISTS public.employee_fault (
     CONSTRAINT employee_fault_fault_fk FOREIGN KEY (fault_id) REFERENCES public.fault(fault_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.employee_workday (
-    workday_id uuid NOT NULL,
+CREATE TABLE IF NOT EXISTS public.employee_shift (
+    shift_id uuid NOT NULL,
     employee_id uuid NOT NULL,
+    start_workday_id uuid NOT NULL,
+    end_workday_id uuid NOT NULL,
     start time NOT NULL,
     "end" time NOT NULL,
-    CONSTRAINT employee_workday_pk PRIMARY KEY (workday_id, employee_id),
-    CONSTRAINT employee_workday_workday_fk FOREIGN KEY (workday_id) REFERENCES public.workday(workday_id),
-    CONSTRAINT employee_workday_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
+    is_all_day boolean NOT NULL DEFAULT false,
+    CONSTRAINT employee_shift_pk PRIMARY KEY (shift_id),
+    CONSTRAINT employee_shift_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
+    CONSTRAINT employee_shift_start_workday_fk FOREIGN KEY (start_workday_id) REFERENCES public.workday(workday_id),
+    CONSTRAINT employee_shift_end_workday_fk FOREIGN KEY (end_workday_id) REFERENCES public.workday(workday_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.employee_inside_certification (

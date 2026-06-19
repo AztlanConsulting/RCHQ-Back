@@ -1,5 +1,5 @@
 -- ============================================================
--- SEED MINIMAL — RCHQ
+-- SEED MINIMAL â€” RCHQ
 -- Login: andre@gmail.com / Andatti67
 -- Login: laura.mantenimiento@gmail.com / Andatti67
 -- desarrollo
@@ -11,19 +11,808 @@
 -- =========================
 INSERT INTO public.house (house_id, name, location, phone_number, description, image)
 VALUES 
-('a0000001-0000-4000-8000-000000000001', 'Casa María Goretti I.A.P', 'Querétaro, Qro.', '4420000012', 'Atención especializada', 'default_house'),
-('a0000001-0000-4000-8000-000000000002', 'Sonríe villa infantil', 'Querétaro, Qro.', '4420000001', 'Institución de asistencia infantil', 'default_house'),
-('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'Querétaro, Qro.', '4420000002', 'Hogar para niños y niñas', 'default_house'),
-('a0000001-0000-4000-8000-000000000004', 'Casa Hogar Esperanza Para ti', 'Querétaro, Qro.', '4420000003', 'Apoyo integral a la infancia', 'default_house'),
-('a0000001-0000-4000-8000-000000000005', 'Hogar juvenil del santisimo rendentor I.A.P', 'Querétaro, Qro.', '4420000004', 'Hogar juvenil', 'default_house'),
-('a0000001-0000-4000-8000-000000000006', 'La Alegría de los niños', 'Querétaro, Qro.', '4420000005', 'I.A.P. dedicada al cuidado infantil', 'default_house'),
-('a0000001-0000-4000-8000-000000000007', 'Casa de Jesús', 'Querétaro, Qro.', '4420000006', 'Asistencia social infantil', 'default_house'),
-('a0000001-0000-4000-8000-000000000008', 'Ministerios Pan de Vida', 'Querétaro, Qro.', '4420000007', 'Apoyo y refugio infantil', 'default_house'),
-('a0000001-0000-4000-8000-000000000009', 'Hogares Providencia de Querétaro', 'Querétaro, Qro.', '4420000008', 'Protección a niños en situación de calle', 'default_house'),
-('a0000001-0000-4000-8000-000000000010', 'Proyecto de Vida I.A.P', 'Querétaro, Qro.', '4420000009', 'Desarrollo humano y social', 'default_house'),
-('a0000001-0000-4000-8000-000000000011', 'Puerta Abierta I.A.P', 'Querétaro, Qro.', '4420000010', 'Atención a niñas y adolescentes', 'default_house'),
-('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'Querétaro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house')
+('a0000001-0000-4000-8000-000000000001', 'Casa MarÃ­a Goretti I.A.P', 'QuerÃ©taro, Qro.', '4420000012', 'AtenciÃ³n especializada', 'default_house'),
+('a0000001-0000-4000-8000-000000000002', 'SonrÃ­e villa infantil', 'QuerÃ©taro, Qro.', '4420000001', 'InstituciÃ³n de asistencia infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000003', 'Ammi casa infantil', 'QuerÃ©taro, Qro.', '4420000002', 'Hogar para niÃ±os y niÃ±as', 'default_house'),
+('a0000001-0000-4000-8000-000000000004', 'Casa Hogar Esperanza Para ti', 'QuerÃ©taro, Qro.', '4420000003', 'Apoyo integral a la infancia', 'default_house'),
+('a0000001-0000-4000-8000-000000000005', 'Hogar juvenil del santisimo rendentor I.A.P', 'QuerÃ©taro, Qro.', '4420000004', 'Hogar juvenil', 'default_house'),
+('a0000001-0000-4000-8000-000000000006', 'La AlegrÃ­a de los niÃ±os', 'QuerÃ©taro, Qro.', '4420000005', 'I.A.P. dedicada al cuidado infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000007', 'Casa de JesÃºs', 'QuerÃ©taro, Qro.', '4420000006', 'Asistencia social infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000008', 'Ministerios Pan de Vida', 'QuerÃ©taro, Qro.', '4420000007', 'Apoyo y refugio infantil', 'default_house'),
+('a0000001-0000-4000-8000-000000000009', 'Hogares Providencia de QuerÃ©taro', 'QuerÃ©taro, Qro.', '4420000008', 'ProtecciÃ³n a niÃ±os en situaciÃ³n de calle', 'default_house'),
+('a0000001-0000-4000-8000-000000000010', 'Proyecto de Vida I.A.P', 'QuerÃ©taro, Qro.', '4420000009', 'Desarrollo humano y social', 'default_house'),
+('a0000001-0000-4000-8000-000000000011', 'Puerta Abierta I.A.P', 'QuerÃ©taro, Qro.', '4420000010', 'AtenciÃ³n a niÃ±as y adolescentes', 'default_house'),
+('a0000001-0000-4000-8000-000000000012', 'Senderos I.A.P', 'QuerÃ©taro, Qro.', '4420000011', 'Camino a una vida digna', 'default_house')
 ON CONFLICT DO NOTHING;
+
+
+-- =========================
+-- EMPLOYEE EXTRA ACCOUNTS
+-- Coordinadores reales, cuentas Paloma Cervantes por casa y empleados de prueba
+-- ContraseÃ±a: Hola12345
+-- =========================
+INSERT INTO public.employee (
+    employee_id, house_id, role_id, name, surname,
+    is_active, email, password, has_first_login,
+    failed_login_attempts, totp_secret, curp, rfc,
+    birth_date, picture, start_date, nss, bank_account,
+    blocked_until, temp_totp_secret, temp_totp_secret_created_at,
+    type
+)
+VALUES (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000002' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Lucrecia',
+  'Garduno',
+  true,
+  'lucrecia.garduno@gmail.com',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'GAVL710421MDFRLC04',
+  NULL,
+  NULL,
+  NULL,
+  '2014-10-14',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000012' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'MarÃ­a de Lourdes',
+  'Aguilar',
+  true,
+  'direccion@casamariagoretti.org',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'AUEL791205MDFGNR07',
+  NULL,
+  NULL,
+  NULL,
+  '2015-11-09',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000012' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'GÃ©nesis',
+  'FernÃ¡ndez',
+  true,
+  'casamariagorettifacturas@hotmail.com',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'FETG901122MCLRGN06',
+  NULL,
+  NULL,
+  NULL,
+  '2022-07-03',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000011' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Matilde',
+  'Merodio',
+  true,
+  'atencion@senderosiap.org',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'MERM710128MNERVT05',
+  NULL,
+  NULL,
+  NULL,
+  '2023-01-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000011' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'ELDA NURY',
+  'ARGÃEZ',
+  true,
+  'nurysanchez15@yahoo.com',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'AASE751128MYNRNL04',
+  NULL,
+  NULL,
+  NULL,
+  '2024-06-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000001' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Geraldine',
+  'Iturbero',
+  true,
+  'direccionadministrativa@villainfantiliap.org',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'IUCA860507MQTTMM00',
+  NULL,
+  NULL,
+  NULL,
+  '2017-02-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000003' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Elizabeth',
+  'ZÃºÃ±iga',
+  true,
+  'esperanzaparati1@hotmail.com',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'ZUAE920609MQTXLL04',
+  NULL,
+  NULL,
+  NULL,
+  '2025-09-09',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000003' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Maribel',
+  'Silva',
+  true,
+  'contabilidad@esperanzaparati.org',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'SIRM760128MGRLSR04',
+  NULL,
+  NULL,
+  NULL,
+  '2025-03-18',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000008' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'ROKZANA ALMARAZ',
+  'FLORES',
+  true,
+  'CONTACTO@HOGARJUVENIL.ORG',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'AAFR820620MHGLLK06',
+  NULL,
+  NULL,
+  NULL,
+  '2024-07-09',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000009' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Brenda Daniela',
+  'ChÃ¡vez',
+  true,
+  'bchavez@grupoarcum.com',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CAMB950226MQTHRR04',
+  NULL,
+  NULL,
+  NULL,
+  '2022-01-03',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000009' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Yeny',
+  'Santiago',
+  true,
+  'coordinacion@proyectodevida.org.mx',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'SASY831228MGRNLN08',
+  NULL,
+  NULL,
+  NULL,
+  '2024-01-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000007' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Blanca Graciela',
+  'BaÃ±uelos',
+  true,
+  'administracion@casahogarpandevida.org',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'BAMB740831MJCXZL00',
+  NULL,
+  NULL,
+  NULL,
+  '2019-08-27',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000012' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.goretti@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000001' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.sonrie@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000002' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.ammi@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000003' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.esperanza@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000004' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.hogarjuvenil@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000005' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.alegria@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000006' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.casadejesus@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000007' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.pandevida@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000008' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.providencia@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000009' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.proyectovida@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000010' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.puertaabierta@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000011' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
+  'Paloma',
+  'Cervantes',
+  true,
+  'admin.senderos@rchq.cloud',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CERP880323MQTRYL04',
+  NULL,
+  NULL,
+  NULL,
+  '2019-04-01',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000012' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Luis',
+  'Garcia',
+  true,
+  'empleado01@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'GALL900102HQTRRS01',
+  NULL,
+  '1990-01-02',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000001' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Pedro',
+  'Sanchez',
+  true,
+  'empleado02@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'SAPE900104HQTRND02',
+  NULL,
+  '1990-01-04',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000002' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Diego',
+  'Navarro',
+  true,
+  'empleado03@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'NADD900106HQTRVG03',
+  NULL,
+  '1990-01-06',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000003' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Fabian',
+  'Ortega',
+  true,
+  'empleado04@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'OEFF900108HQTRRB04',
+  NULL,
+  '1990-01-08',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000004' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Hector',
+  'Flores',
+  true,
+  'empleado05@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'FOHH900110HQTRLC05',
+  NULL,
+  '1990-01-10',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000005' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Julio',
+  'Ramirez',
+  true,
+  'empleado06@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'RAJJ900112HQTRML06',
+  NULL,
+  '1990-01-12',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000006' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Mario',
+  'Gutierrez',
+  true,
+  'empleado07@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'GUMM900114HQTRTR07',
+  NULL,
+  '1990-01-14',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000007' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Oscar',
+  'Jimenez',
+  true,
+  'empleado08@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'JIOO900116HQTRMS08',
+  NULL,
+  '1990-01-16',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000008' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Ricardo',
+  'Cruz',
+  true,
+  'empleado09@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'CURR900118HQTRZC09',
+  NULL,
+  '1990-01-18',
+  NULL,
+  '2025-03-02',
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  'nomina'
+), (
+  gen_random_uuid(),
+  (SELECT house_id FROM public.house WHERE phone_number = '4420000009' LIMIT 1),
+  (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
+  'Tomas',
+  'Rojas',
+  true,
+  'empleado10@rchq.test',
+  '$2b$10$OioDH3jk0w6HSdKiaX/uOuFBcRqo97mvskwpPeALL7ntUZjjAVUsC',
+  false,
+  0,
+  NULL,
+  'ROTT900120HQTRMJ10',
+  NULL,
+  '1990-01-20',
 
 -- =========================
 -- ROLES
@@ -33,24 +822,24 @@ VALUES
 ('a0000002-0000-4000-8000-000000000001', 'Coordinador'),
 ('a0000002-0000-4000-8000-000000000002', 'Administrador'),
 ('a0000002-0000-4000-8000-000000000003', 'Mantenimiento'),
-('a0000002-0000-4000-8000-000000000004', 'Lavandería'),
+('a0000002-0000-4000-8000-000000000004', 'LavanderÃ­a'),
 ('a0000002-0000-4000-8000-000000000005', 'Cuidador'),
-('a0000002-0000-4000-8000-000000000006', 'Psicóloga'),
-('a0000002-0000-4000-8000-000000000007', 'Psicólogo'),
+('a0000002-0000-4000-8000-000000000006', 'PsicÃ³loga'),
+('a0000002-0000-4000-8000-000000000007', 'PsicÃ³logo'),
 ('a0000002-0000-4000-8000-000000000008', 'Trabajador Social'),
 ('a0000002-0000-4000-8000-000000000009', 'Coordinador Operativo'),
 ('a0000002-0000-4000-8000-000000000010', 'Coordinador Administrativo'),
 ('a0000002-0000-4000-8000-000000000011', 'Coordinador de Programa'),
-('a0000002-0000-4000-8000-000000000012', 'Dirección Operativa'),
-('a0000002-0000-4000-8000-000000000013', 'Dirección Administrativa'),
-('a0000002-0000-4000-8000-000000000014', 'Dirección de Programa'),
-('a0000002-0000-4000-8000-000000000015', 'Procuración de Fondos'),
+('a0000002-0000-4000-8000-000000000012', 'DirecciÃ³n Operativa'),
+('a0000002-0000-4000-8000-000000000013', 'DirecciÃ³n Administrativa'),
+('a0000002-0000-4000-8000-000000000014', 'DirecciÃ³n de Programa'),
+('a0000002-0000-4000-8000-000000000015', 'ProcuraciÃ³n de Fondos'),
 ('a0000002-0000-4000-8000-000000000016', 'Enfermera'),
 ('a0000002-0000-4000-8000-000000000017', 'Terapeuta'),
-('a0000002-0000-4000-8000-000000000018', 'Asistente de Dirección'),
+('a0000002-0000-4000-8000-000000000018', 'Asistente de DirecciÃ³n'),
 ('a0000002-0000-4000-8000-000000000019', 'Asistente de Finanzas'),
 ('a0000002-0000-4000-8000-000000000020', 'Auxiliar de Limpieza'),
-('a0000002-0000-4000-8000-000000000021', 'Auxiliar de Lavandería'),
+('a0000002-0000-4000-8000-000000000021', 'Auxiliar de LavanderÃ­a'),
 ('a0000002-0000-4000-8000-000000000022', 'Chofer'),
 ('a0000002-0000-4000-8000-000000000023', 'Cocinera'),
 ('a0000002-0000-4000-8000-000000000024', 'Asistente Operativo'),
@@ -92,13 +881,13 @@ ON CONFLICT DO NOTHING;
 -- ROLE_PRIVILEGE
 -- =========================
 
--- Administrador — todos los privilegios
+-- Administrador â€” todos los privilegios
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000002', privilege_id
 FROM public.privileges
 ON CONFLICT DO NOTHING;
 
--- Coordinador — gestión completa incluyendo logs
+-- Coordinador â€” gestiÃ³n completa incluyendo logs
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT 'a0000002-0000-4000-8000-000000000001', p.privilege_id
 FROM public.privileges p
@@ -153,7 +942,7 @@ CROSS JOIN public.privileges p
 WHERE p.name = 'viewSelfVacations'
 ON CONFLICT (role_id, privilege_id) DO NOTHING;
 
--- Coordinadores de área — ver empleados y documentos
+-- Coordinadores de Ã¡rea â€” ver empleados y documentos
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
@@ -162,12 +951,12 @@ WHERE r.name IN ('Coordinador Operativo', 'Coordinador Administrativo', 'Coordin
 AND p.name IN ('viewEmployees', 'viewDocuments')
 ON CONFLICT DO NOTHING;
 
--- Direcciones — ver empleados, documentos y logs
+-- Direcciones â€” ver empleados, documentos y logs
 INSERT INTO public.role_privilege (role_id, privilege_id)
 SELECT r.role_id, p.privilege_id
 FROM public.role r
 CROSS JOIN public.privileges p
-WHERE r.name IN ('Dirección Operativa', 'Dirección Administrativa', 'Dirección de Programa')
+WHERE r.name IN ('DirecciÃ³n Operativa', 'DirecciÃ³n Administrativa', 'DirecciÃ³n de Programa')
 AND p.name IN ('viewEmployees', 'viewDocuments', 'viewLogs', 'createEmployees', 'manageEmployees')
 ON CONFLICT DO NOTHING;
 
@@ -221,7 +1010,7 @@ ON CONFLICT DO NOTHING;
 
 -- =========================
 -- EMPLOYEE
--- Contraseña: Andatti67
+-- ContraseÃ±a: Andatti67
 -- =========================
 INSERT INTO public.employee (
     employee_id, house_id, role_id, name, surname,
@@ -233,10 +1022,10 @@ INSERT INTO public.employee (
 )
 VALUES (
   'b8f54b14-701e-4e87-a019-caef53dcda99',
-  (SELECT house_id FROM public.house  WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
+  (SELECT house_id FROM public.house  WHERE name = 'Casa MarÃ­a Goretti I.A.P' LIMIT 1),
   (SELECT role_id  FROM public.role   WHERE name = 'Administrador'      LIMIT 1),
   'Carlos',
-  'Ramírez',
+  'RamÃ­rez',
   true,
   'andre@gmail.com',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -256,7 +1045,7 @@ VALUES (
   'nomina'
 ), (
   'b8f54b14-701e-4e87-a019-caef53dcda70',
-  (SELECT house_id FROM public.house  WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
+  (SELECT house_id FROM public.house  WHERE name = 'Casa MarÃ­a Goretti I.A.P' LIMIT 1),
   (SELECT role_id  FROM public.role   WHERE name = 'Mantenimiento' LIMIT 1),
   'Laura',
   'Mendoza',
@@ -283,52 +1072,52 @@ ON CONFLICT DO NOTHING;
 -- ACTIONS
 -- =========================
 INSERT INTO public.action (action_id, description, important) VALUES
-('auth-001', 'Intento fallido de autenticación', false),
-('auth-002', 'Cuenta bloqueada temporalmente por múltiples intentos fallidos', false),
-('auth-003', 'Inicio de sesión exitoso', false),
-('auth-004', 'Primer acceso validado, pendiente cambio de contraseña', false),
-('auth-005', 'Cambio de contraseña en primer acceso', false),
-('auth-006', 'Inicio de sesión completado después de cambio de contraseña en primer acceso', false),
-('auth-007', 'Activación exitosa de TwoFactorAuth', false),
-('auth-008', 'Activación fallida de TwoFactorAuth', false),
-('auth-009', 'Fallo de autenticación TwoFactorAuth', false),
-('auth-010', 'Inicio de sesión exitoso con TwoFactorAuth', false),
-('auth-011', 'Desactivación exitosa de TwoFactorAuth', false),
+('auth-001', 'Intento fallido de autenticaciÃ³n', false),
+('auth-002', 'Cuenta bloqueada temporalmente por mÃºltiples intentos fallidos', false),
+('auth-003', 'Inicio de sesiÃ³n exitoso', false),
+('auth-004', 'Primer acceso validado, pendiente cambio de contraseÃ±a', false),
+('auth-005', 'Cambio de contraseÃ±a en primer acceso', false),
+('auth-006', 'Inicio de sesiÃ³n completado despuÃ©s de cambio de contraseÃ±a en primer acceso', false),
+('auth-007', 'ActivaciÃ³n exitosa de TwoFactorAuth', false),
+('auth-008', 'ActivaciÃ³n fallida de TwoFactorAuth', false),
+('auth-009', 'Fallo de autenticaciÃ³n TwoFactorAuth', false),
+('auth-010', 'Inicio de sesiÃ³n exitoso con TwoFactorAuth', false),
+('auth-011', 'DesactivaciÃ³n exitosa de TwoFactorAuth', false),
 ('auth-012', 'Intento de acceso denegado: usuario inactivo', false),
-('auth-013', 'Intento de cambio de contraseña en primer acceso para usuario inactivo', false),
-('auth-014', 'Intento de configuración de TwoFactorAuth para usuario inactivo', false),
-('auth-015', 'Intento de verificación TwoFactorAuth para usuario inactivo', false),
-('auth-016', 'Intento de validación de TwoFactorAuth para usuario inactivo', false),
-('auth-017', 'Intento de desactivación de TwoFactorAuth para usuario inactivo', false),
-('auth-018', 'Fallo de desactivación de TwoFactorAuth por contraseña incorrecta', false),
-('auth-019', 'TwoFactorAuth bloqueado temporalmente por múltiples intentos fallidos', false),
-('auth-020', 'Cambio de contraseña exitoso', false),
-('auth-021', 'Intento de cambio de contraseña para usuario inactivo', false),
-('auth-022', 'Fallo de cambio de contraseña por contraseña actual incorrecta', false),
-('vaca-001', 'Creación de solicitud de vacaciones exitosa', false),
+('auth-013', 'Intento de cambio de contraseÃ±a en primer acceso para usuario inactivo', false),
+('auth-014', 'Intento de configuraciÃ³n de TwoFactorAuth para usuario inactivo', false),
+('auth-015', 'Intento de verificaciÃ³n TwoFactorAuth para usuario inactivo', false),
+('auth-016', 'Intento de validaciÃ³n de TwoFactorAuth para usuario inactivo', false),
+('auth-017', 'Intento de desactivaciÃ³n de TwoFactorAuth para usuario inactivo', false),
+('auth-018', 'Fallo de desactivaciÃ³n de TwoFactorAuth por contraseÃ±a incorrecta', false),
+('auth-019', 'TwoFactorAuth bloqueado temporalmente por mÃºltiples intentos fallidos', false),
+('auth-020', 'Cambio de contraseÃ±a exitoso', false),
+('auth-021', 'Intento de cambio de contraseÃ±a para usuario inactivo', false),
+('auth-022', 'Fallo de cambio de contraseÃ±a por contraseÃ±a actual incorrecta', false),
+('vaca-001', 'CreaciÃ³n de solicitud de vacaciones exitosa', false),
 ('vaca-002', 'Registro de vacaciones de empleado exitoso', false),
-('vaca-003', 'Aprobación de solicitud de vacaciones exitosa', false),
-('ausn-003', 'Creación de ausencia exitosa', false),
-('ausn-001', 'Actualización de ausencia exitosa', false),
-('ausn-002', 'Eliminación de ausencia exitosa', false),
+('vaca-003', 'AprobaciÃ³n de solicitud de vacaciones exitosa', false),
+('ausn-003', 'CreaciÃ³n de ausencia exitosa', false),
+('ausn-001', 'ActualizaciÃ³n de ausencia exitosa', false),
+('ausn-002', 'EliminaciÃ³n de ausencia exitosa', false),
 ('vaca-004', 'Rechazo de solicitud de vacaciones exitoso', false),
-('even-001', 'Evento de casa creado con éxito', false),
-('even-002', 'Evento personal creado con éxito', false),
+('even-001', 'Evento de casa creado con Ã©xito', false),
+('even-002', 'Evento personal creado con Ã©xito', false),
 ('even-003', 'Evento personal asignado a empleado', false),
 ('even-004', 'Evento de casa asignado a casa', false),
-('even-007', 'Actualización de evento personal exitosa', false),
-('even-008', 'Actualización de empleado asignado a evento personal', false),
-('even-005', 'Evento de casa eliminado con éxito', true),
-('even-006', 'Actualización de evento de casa exitosa', false),
-('empl-001', 'Empleado creado con éxito', false),
+('even-007', 'ActualizaciÃ³n de evento personal exitosa', false),
+('even-008', 'ActualizaciÃ³n de empleado asignado a evento personal', false),
+('even-005', 'Evento de casa eliminado con Ã©xito', true),
+('even-006', 'ActualizaciÃ³n de evento de casa exitosa', false),
+('empl-001', 'Empleado creado con Ã©xito', false),
 ('empl-002', 'Documento de empleado subido', false),
 ('empl-003', 'Documento de empleado actualizado', false),
 ('empl-004', 'Documento de empleado eliminado', false),
-('empl-005', 'Información de empleado actualizada', false),
-('vaca-005', 'Modificación de vacaciones exitosa', false),
+('empl-005', 'InformaciÃ³n de empleado actualizada', false),
+('vaca-005', 'ModificaciÃ³n de vacaciones exitosa', false),
 ('empl-006', 'Empleado dado de baja', true),
 ('empl-008', 'Fallo al dar de baja al empleado', true),
-('vaca-006', 'Eliminación de vacaciones exitosa', false),
+('vaca-006', 'EliminaciÃ³n de vacaciones exitosa', false),
 ('blck-001', 'Empleado agregado a la lista negra', true),
 ('blck-002', 'Empleado eliminado de la lista negra', true)
 ON CONFLICT DO NOTHING;
@@ -337,26 +1126,26 @@ INSERT INTO public.workday (workday_id, name)
 VALUES
 ('c0000001-0000-4000-8000-000000000001', 'Lunes'),
 ('c0000001-0000-4000-8000-000000000002', 'Martes'),
-('c0000001-0000-4000-8000-000000000003', 'Miércoles'),
+('c0000001-0000-4000-8000-000000000003', 'MiÃ©rcoles'),
 ('c0000001-0000-4000-8000-000000000004', 'Jueves'),
 ('c0000001-0000-4000-8000-000000000005', 'Viernes'),
-('c0000001-0000-4000-8000-000000000006', 'Sábado'),
+('c0000001-0000-4000-8000-000000000006', 'SÃ¡bado'),
 ('c0000001-0000-4000-8000-000000000007', 'Domingo');
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end") VALUES
-('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee LIMIT 1), '09:00:00', '18:00:00');
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day) VALUES
+(gen_random_uuid(), (SELECT employee_id FROM public.employee LIMIT 1), 'c0000001-0000-4000-8000-000000000001', 'c0000001-0000-4000-8000-000000000001', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee LIMIT 1), 'c0000001-0000-4000-8000-000000000002', 'c0000001-0000-4000-8000-000000000002', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee LIMIT 1), 'c0000001-0000-4000-8000-000000000003', 'c0000001-0000-4000-8000-000000000003', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee LIMIT 1), 'c0000001-0000-4000-8000-000000000004', 'c0000001-0000-4000-8000-000000000004', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee LIMIT 1), 'c0000001-0000-4000-8000-000000000005', 'c0000001-0000-4000-8000-000000000005', '09:00:00', '18:00:00', false);
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 VALUES
-('c0000001-0000-4000-8000-000000000001', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000002', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000003', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000004', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00'),
-('c0000001-0000-4000-8000-000000000005', (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), '09:00:00', '18:00:00');
+(gen_random_uuid(), (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), 'c0000001-0000-4000-8000-000000000001', 'c0000001-0000-4000-8000-000000000001', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), 'c0000001-0000-4000-8000-000000000002', 'c0000001-0000-4000-8000-000000000002', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), 'c0000001-0000-4000-8000-000000000003', 'c0000001-0000-4000-8000-000000000003', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), 'c0000001-0000-4000-8000-000000000004', 'c0000001-0000-4000-8000-000000000004', '09:00:00', '18:00:00', false),
+(gen_random_uuid(), (SELECT employee_id FROM public.employee WHERE email = 'laura.mantenimiento@gmail.com'), 'c0000001-0000-4000-8000-000000000005', 'c0000001-0000-4000-8000-000000000005', '09:00:00', '18:00:00', false);
 
 INSERT INTO public.event_type (event_type_id, name)
 VALUES
@@ -420,7 +1209,7 @@ INSERT INTO public.house_event (
 VALUES (
   'c2000000-0000-4000-8000-000000000002',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
+  (SELECT house_id FROM public.house WHERE name = 'Casa MarÃ­a Goretti I.A.P' LIMIT 1),
   '2026-05-03 10:00:00',
   '2026-05-03 12:00:00',
   'Visita DIF',
@@ -430,7 +1219,7 @@ VALUES (
 ), (
   'c2000000-0000-4000-8000-000000000010',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
+  (SELECT house_id FROM public.house WHERE name = 'Casa MarÃ­a Goretti I.A.P' LIMIT 1),
   '2026-05-07 09:00:00',
   '2026-05-07 17:00:00',
   'Descanso de casa de prueba',
@@ -440,7 +1229,7 @@ VALUES (
 ), (
   'c2000000-0000-4000-8000-000000000011',
   'b1000000-0000-4000-8000-000000000001',
-  (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
+  (SELECT house_id FROM public.house WHERE name = 'Casa MarÃ­a Goretti I.A.P' LIMIT 1),
   '2026-05-21 09:00:00',
   '2026-05-21 17:00:00',
   'Jornada libre de casa',
@@ -466,8 +1255,8 @@ VALUES (
   '2026-05-04',
   '2026-01-01 21:00:00',
   '2026-01-01 22:00:00',
-  'Visita médica',
-  'Se tiene que llevar a Juan Pérez al doctor',
+  'Visita mÃ©dica',
+  'Se tiene que llevar a Juan PÃ©rez al doctor',
   false
 )
 ON CONFLICT (personal_event_id) DO NOTHING;
@@ -509,8 +1298,8 @@ VALUES (
   '2026-05-25',
   '2026-05-25 10:00:00',
   '2026-05-25 12:00:00',
-  'Capacitación de prueba',
-  'Evento personal de prueba para validar edición solo de eventos',
+  'CapacitaciÃ³n de prueba',
+  'Evento personal de prueba para validar ediciÃ³n solo de eventos',
   false,
   'Capacitador de prueba'
 ), (
@@ -519,8 +1308,8 @@ VALUES (
   '2026-05-27',
   '2026-05-27 09:00:00',
   '2026-05-27 11:00:00',
-  'Capacitación de seguridad interna',
-  'Sesión para reforzar protocolos de seguridad y atención cotidiana',
+  'CapacitaciÃ³n de seguridad interna',
+  'SesiÃ³n para reforzar protocolos de seguridad y atenciÃ³n cotidiana',
   false,
   'Capacitador de seguridad'
 ), (
@@ -529,10 +1318,10 @@ VALUES (
   '2026-05-29',
   '2026-05-29 12:00:00',
   '2026-05-29 14:00:00',
-  'Capacitación de manejo de crisis',
+  'CapacitaciÃ³n de manejo de crisis',
   'Taller para practicar respuesta coordinada ante incidentes y escalaciones',
   false,
-  'Capacitadora clínica'
+  'Capacitadora clÃ­nica'
 ), (
   'c3000000-0000-4000-8000-000000000028',
   (SELECT event_type_id FROM public.event_type WHERE name = 'Capacitaciones' LIMIT 1),
@@ -540,7 +1329,7 @@ VALUES (
   '2026-06-02 08:30:00',
   '2026-06-02 10:30:00',
   'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-  'Práctica enfocada en seguimiento de instrucciones y reporte entre turnos',
+  'PrÃ¡ctica enfocada en seguimiento de instrucciones y reporte entre turnos',
   false,
   'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 )
@@ -556,46 +1345,46 @@ VALUES
 ('c0000001-0000-4000-8000-000000000002', 'Acta de Nacimiento'),
 ('c0000001-0000-4000-8000-000000000003', 'CURP'),
 ('c0000001-0000-4000-8000-000000000004', 'INE'),
-('c0000001-0000-4000-8000-000000000005', 'Constancia de Situación Fiscal'),
+('c0000001-0000-4000-8000-000000000005', 'Constancia de SituaciÃ³n Fiscal'),
 ('c0000001-0000-4000-8000-000000000006', 'Comprobante de Domicilio'),
-('c0000001-0000-4000-8000-000000000007', 'Número IMSS / NSS'),
-('c0000001-0000-4000-8000-000000000008', 'Cédula Profesional'),
-('c0000001-0000-4000-8000-000000000009', 'Título o Comprobante de Último Nivel de Estudios'),
-('c0000001-0000-4000-8000-000000000010', 'Certificado Médico'),
+('c0000001-0000-4000-8000-000000000007', 'NÃºmero IMSS / NSS'),
+('c0000001-0000-4000-8000-000000000008', 'CÃ©dula Profesional'),
+('c0000001-0000-4000-8000-000000000009', 'TÃ­tulo o Comprobante de Ãšltimo Nivel de Estudios'),
+('c0000001-0000-4000-8000-000000000010', 'Certificado MÃ©dico'),
 ('c0000001-0000-4000-8000-000000000011', 'Carta de No Antecedentes Penales Estatal'),
 ('c0000001-0000-4000-8000-000000000012', 'Carta de No Antecedentes Penales Federal'),
 ('c0000001-0000-4000-8000-000000000013', 'Cuenta Bancaria'),
-('c0000001-0000-4000-8000-000000000014', 'Carta de Recomendación 1'),
-('c0000001-0000-4000-8000-000000000015', 'Carta de Recomendación 2'),
+('c0000001-0000-4000-8000-000000000014', 'Carta de RecomendaciÃ³n 1'),
+('c0000001-0000-4000-8000-000000000015', 'Carta de RecomendaciÃ³n 2'),
 ('c0000001-0000-4000-8000-000000000016', 'Licencia de Manejo'),
 ('c0000001-0000-4000-8000-000000000017', 'Perfil del Puesto / Manual de Puesto'),
 ('c0000001-0000-4000-8000-000000000018', 'Contrato'),
 ('c0000001-0000-4000-8000-000000000019', 'Reglamento Interno de Trabajo Firmado'),
 ('c0000001-0000-4000-8000-000000000020', 'Carta de Confidencialidad Firmada'),
-('c0000001-0000-4000-8000-000000000021', 'Código de Ética Firmado'),
-('c0000001-0000-4000-8000-000000000022', 'Manual de Inducción'),
-('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio Actualización Semestral'),
-('c0000001-0000-4000-8000-000000000024', 'Constancia de Capacitación o Certificación'),
+('c0000001-0000-4000-8000-000000000021', 'CÃ³digo de Ã‰tica Firmado'),
+('c0000001-0000-4000-8000-000000000022', 'Manual de InducciÃ³n'),
+('c0000001-0000-4000-8000-000000000023', 'Comprobante de Domicilio ActualizaciÃ³n Semestral'),
+('c0000001-0000-4000-8000-000000000024', 'Constancia de CapacitaciÃ³n o CertificaciÃ³n'),
 ('c0000001-0000-4000-8000-000000000025', 'Acta Administrativa 1'),
 ('c0000001-0000-4000-8000-000000000026', 'Acta Administrativa 2'),
 ('c0000001-0000-4000-8000-000000000027', 'Acta Administrativa 3'),
 ('c0000001-0000-4000-8000-000000000028', 'Contacto de Emergencia 1'),
 ('c0000001-0000-4000-8000-000000000029', 'Contacto de Emergencia 2'),
-('c0000001-0000-4000-8000-000000000030', 'Hoja de Retención de INFONAVIT'),
+('c0000001-0000-4000-8000-000000000030', 'Hoja de RetenciÃ³n de INFONAVIT'),
 ('c0000001-0000-4000-8000-000000000031', 'Carta Solicitud de la Escuela / Universidad (Servicio Social)'),
 ('c0000001-0000-4000-8000-000000000032', 'Carta de Voluntariado'),
 ('c0000001-0000-4000-8000-000000000033', 'Norma del Voluntario (Ley General de Voluntariado)'),
 ('c0000001-0000-4000-8000-000000000034', 'Plan de Voluntariado'),
 ('c0000001-0000-4000-8000-000000000035', 'Aviso de Privacidad'),
-('c0000001-0000-4000-8000-000000000036', 'Identificación de la Universidad'),
+('c0000001-0000-4000-8000-000000000036', 'IdentificaciÃ³n de la Universidad'),
 ('c0000001-0000-4000-8000-000000000037', 'Reportes Voluntarios / Servicio Social'),
-('c0000001-0000-4000-8000-000000000038', 'Carta de Acreditación de Horas'),
-('c0000001-0000-4000-8000-000000000039', 'Evaluación de Desempeño'),
-('c0000001-0000-4000-8000-000000000040', 'Pruebas Psicométricas o Psicológicas'),
+('c0000001-0000-4000-8000-000000000038', 'Carta de AcreditaciÃ³n de Horas'),
+('c0000001-0000-4000-8000-000000000039', 'EvaluaciÃ³n de DesempeÃ±o'),
+('c0000001-0000-4000-8000-000000000040', 'Pruebas PsicomÃ©tricas o PsicolÃ³gicas'),
 ('c0000001-0000-4000-8000-000000000041', 'Carta de Renuncia'),
 ('c0000001-0000-4000-8000-000000000042', 'Finiquito Firmado'),
 ('c0000001-0000-4000-8000-000000000043', 'Carta de Despido'),
-('c0000001-0000-4000-8000-000000000044', 'Carta de Recepción de Equipo de Trabajo o Uniforme'),
+('c0000001-0000-4000-8000-000000000044', 'Carta de RecepciÃ³n de Equipo de Trabajo o Uniforme'),
 ('c0000001-0000-4000-8000-000000000045', 'Permiso de Trabajo (para extranjeros)')
 ON CONFLICT DO NOTHING;
 
@@ -609,10 +1398,10 @@ INSERT INTO public.house (
 )
 VALUES (
   'a0000001-0000-4000-8000-000000000001',
-  'Casa María Goretti I.A.P',
-  'Querétaro, Qro.',
+  'Casa MarÃ­a Goretti I.A.P',
+  'QuerÃ©taro, Qro.',
   '4420000012',
-  'Atención especializada',
+  'AtenciÃ³n especializada',
   'default_house'
 )
 ON CONFLICT (house_id) DO UPDATE SET
@@ -627,12 +1416,12 @@ VALUES
   (
     'd0000001-0000-4000-8000-000000000001',
     CURRENT_DATE - INTERVAL '12 days',
-    'Retraso a reunión de equipo (15 min)'
+    'Retraso a reuniÃ³n de equipo (15 min)'
   ),
   (
     'd0000002-0000-4000-8000-000000000002',
     CURRENT_DATE - INTERVAL '45 days',
-    'Falta justificada con certificado médico'
+    'Falta justificada con certificado mÃ©dico'
   )
 ON CONFLICT (fault_id) DO UPDATE SET
   date = EXCLUDED.date,
@@ -666,8 +1455,8 @@ SELECT
   'e0000001-0000-4000-8000-000000000001',
   'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Administrador' LIMIT 1),
-  'María',
-  'González',
+  'MarÃ­a',
+  'GonzÃ¡lez',
   true,
   'maria.operaciones@example.com',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -719,7 +1508,7 @@ SELECT
   'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Coordinador' LIMIT 1),
   'Luis',
-  'Martínez',
+  'MartÃ­nez',
   true,
   'luis.coordinacion@example.com',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -766,8 +1555,8 @@ VALUES (
   'e0000001-0000-4000-8000-000000000001',
   'https://maps.google.com/?q=19.4300,-99.2011',
   'Av. Insurgentes Sur 1000',
-  'Benito Juárez',
-  'Ciudad de México',
+  'Benito JuÃ¡rez',
+  'Ciudad de MÃ©xico',
   '03100',
   NOW()
 )
@@ -822,54 +1611,54 @@ FROM public.employee e
 WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (fault_id, employee_id) DO NOTHING;
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '09:00:00', '18:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '07:00:00', '16:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '10:00:00', '19:00:00'
 FROM public.employee e WHERE e.email = 'maria.operaciones@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000001', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000002', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000003', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000004', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT 'c0000001-0000-4000-8000-000000000005', e.employee_id, '08:00:00', '17:00:00'
 FROM public.employee e WHERE e.email = 'luis.coordinacion@example.com'
 ON CONFLICT (workday_id, employee_id) DO UPDATE SET start = EXCLUDED.start, "end" = EXCLUDED."end";
 
 INSERT INTO public.absence_type (absence_type_id, name)
 VALUES
-('a0000001-0000-4000-8000-000000000001', 'Médica'),
+('a0000001-0000-4000-8000-000000000001', 'MÃ©dica'),
 ('a0000001-0000-4000-8000-000000000002', 'Paternidad'),
 ('a0000001-0000-4000-8000-000000000003', 'Maternidad'),
 ('a0000001-0000-4000-8000-000000000004', 'Otro')
@@ -891,7 +1680,7 @@ SELECT
   'a0000001-0000-4000-8000-000000000001',
   '2026-05-12',
   '2026-05-14',
-  'Incapacidad médica de seguimiento para revisión postoperatoria.',
+  'Incapacidad mÃ©dica de seguimiento para revisiÃ³n postoperatoria.',
   '',
   false
 FROM public.employee e
@@ -921,7 +1710,7 @@ SELECT
   'a0000001-0000-4000-8000-000000000002',
   '2026-05-18',
   '2026-05-22',
-  'Permiso por paternidad del coordinador de la Casa María Goretti I.A.P.',
+  'Permiso por paternidad del coordinador de la Casa MarÃ­a Goretti I.A.P.',
   '',
   false
 FROM public.employee e
@@ -1015,26 +1804,26 @@ INSERT INTO PUBLIC.frecuency_of_payment (
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- SEED MANUAL US30 — Modificar fechas de vacaciones
+-- SEED MANUAL US30 â€” Modificar fechas de vacaciones
 -- Password todos: Andatti67
 -- ============================================================
 
--- Acción requerida por logs de US30
+-- AcciÃ³n requerida por logs de US30
 INSERT INTO public.action (action_id, description, important)
 VALUES (
   'vaca-005',
-  'Modificación de vacaciones exitosa',
+  'ModificaciÃ³n de vacaciones exitosa',
   false
 )
 ON CONFLICT (action_id) DO UPDATE SET
   description = EXCLUDED.description,
   important = EXCLUDED.important;
 
--- Acción requerida por logs de US32
+-- AcciÃ³n requerida por logs de US32
 INSERT INTO public.action (action_id, description, important)
 VALUES (
   'vaca-006',
-  'Eliminación de vacaciones exitosa',
+  'EliminaciÃ³n de vacaciones exitosa',
   false
 )
 ON CONFLICT (action_id) DO UPDATE SET
@@ -1104,7 +1893,7 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Empleado válido Maria Goretti
+-- Empleado vÃ¡lido Maria Goretti
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -1199,7 +1988,7 @@ VALUES (
   'a0000001-0000-4000-8000-000000000001',
   (SELECT role_id FROM public.role WHERE name = 'Mantenimiento' LIMIT 1),
   'Manuel',
-  'Jímenez',
+  'JÃ­menez',
   true,
   'empleado.otracasa.us30@rchq.test',
   '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -1230,7 +2019,7 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Empleado sin días laborales
+-- Empleado sin dÃ­as laborales
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -1425,7 +2214,7 @@ INSERT INTO public.employee_personal_event (
 )
 VALUES (
   'c3000000-0000-4000-8000-000000000025',
-  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'Ramírez' LIMIT 1)
+  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'RamÃ­rez' LIMIT 1)
 ), (
   'c3000000-0000-4000-8000-000000000025',
   (SELECT employee_id FROM public.employee WHERE name = 'Laura' AND surname = 'Mendoza' LIMIT 1)
@@ -1437,7 +2226,7 @@ VALUES (
   (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Exitos US30' LIMIT 1)
 ), (
   'c3000000-0000-4000-8000-000000000026',
-  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'Ramírez' LIMIT 1)
+  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'RamÃ­rez' LIMIT 1)
 ), (
   'c3000000-0000-4000-8000-000000000026',
   (SELECT employee_id FROM public.employee WHERE name = 'Laura' AND surname = 'Mendoza' LIMIT 1)
@@ -1455,7 +2244,7 @@ VALUES (
   (SELECT employee_id FROM public.employee WHERE name = 'Empleado' AND surname = 'Concurrencia US30' LIMIT 1)
 ), (
   'c3000000-0000-4000-8000-000000000028',
-  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'Ramírez' LIMIT 1)
+  (SELECT employee_id FROM public.employee WHERE name = 'Carlos' AND surname = 'RamÃ­rez' LIMIT 1)
 ), (
   'c3000000-0000-4000-8000-000000000028',
   (SELECT employee_id FROM public.employee WHERE name = 'Laura' AND surname = 'Mendoza' LIMIT 1)
@@ -1528,8 +2317,8 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Días laborales L-V para empleados US30 que sí deben tener horario
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+-- DÃ­as laborales L-V para empleados US30 que sÃ­ deben tener horario
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT
   wd.workday_id,
   emp.employee_id,
@@ -1638,7 +2427,7 @@ VALUES
   NOW(),
   3
 ),
--- Solicitud pendiente que se intentará mover encima de la aprobada anterior
+-- Solicitud pendiente que se intentarÃ¡ mover encima de la aprobada anterior
 (
   'c3000000-0000-4000-8000-000000000008',
   'e3000001-0000-4000-8000-000000000002',
@@ -1649,7 +2438,7 @@ VALUES
   NOW(),
   2
 ),
--- Solicitud para insuficiencia de días
+-- Solicitud para insuficiencia de dÃ­as
 (
   'c3000000-0000-4000-8000-000000000009',
   'e3000001-0000-4000-8000-000000000002',
@@ -1730,10 +2519,10 @@ INSERT INTO public.employee (
 )
 SELECT
     'e0000002-0000-4000-8000-000000000002',
-    (SELECT house_id FROM public.house WHERE name = 'Casa María Goretti I.A.P' LIMIT 1),
+    (SELECT house_id FROM public.house WHERE name = 'Casa MarÃ­a Goretti I.A.P' LIMIT 1),
     (SELECT role_id  FROM public.role  WHERE name = 'Mantenimiento' LIMIT 1),
     'Luis',
-    'Pérez',
+    'PÃ©rez',
     true,
     'luis.prueba.blacklist@example.com',
     '$2b$10$4DgikxH9viz72LV8OzhjhuOIpBtxBCqeIMdi14PULkiZn42Ta6dnS',
@@ -1753,7 +2542,7 @@ WHERE NOT EXISTS (
 );
 
 -- ============================================================
--- SEED MANUAL US32 — Remover vacaciones
+-- SEED MANUAL US32 â€” Remover vacaciones
 -- Password todos: Andatti67
 -- ============================================================
 
@@ -1769,7 +2558,7 @@ INSERT INTO public.house (
 VALUES (
   'a3200001-0000-4000-8000-000000000001',
   'Casa Externa US32',
-  'Querétaro, Qro.',
+  'QuerÃ©taro, Qro.',
   '4423200001',
   'Casa externa para pruebas US32',
   'default_house'
@@ -1781,11 +2570,11 @@ ON CONFLICT (house_id) DO UPDATE SET
   description = EXCLUDED.description,
   image = EXCLUDED.image;
 
--- Acción requerida por logs de US32
+-- AcciÃ³n requerida por logs de US32
 INSERT INTO public.action (action_id, description, important)
 VALUES (
   'vaca-006',
-  'Eliminación de vacaciones exitosa',
+  'EliminaciÃ³n de vacaciones exitosa',
   false
 )
 ON CONFLICT (action_id) DO UPDATE SET
@@ -1918,7 +2707,7 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Empleado válido misma casa US32
+-- Empleado vÃ¡lido misma casa US32
 INSERT INTO public.employee (
   employee_id,
   house_id,
@@ -2107,8 +2896,8 @@ ON CONFLICT (employee_id) DO UPDATE SET
   start_date = EXCLUDED.start_date,
   type = EXCLUDED.type;
 
--- Días laborales L-V para empleados US32
-INSERT INTO public.employee_workday (workday_id, employee_id, start, "end")
+-- DÃ­as laborales L-V para empleados US32
+INSERT INTO public.employee_shift (shift_id, employee_id, start_workday_id, end_workday_id, start, "end", is_all_day)
 SELECT
   wd.workday_id,
   emp.employee_id,

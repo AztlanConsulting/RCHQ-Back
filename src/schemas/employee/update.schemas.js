@@ -162,16 +162,31 @@ const employeeContactUpdateSchema = z
     { message: "Debe enviarse al menos un campo para actualizar" }
   );
 
-const workdayUpdateSchema = z
+const {
+    getShiftDurationMinutes,
+    MIN_SHIFT_MINUTES,
+    MAX_SHIFT_MINUTES,
+} = require("../../utils/employeeShifts");
+
+const shiftUpdateSchema = z
   .object({
-    workdayId: z.string().uuid("El workdayId debe ser un UUID válido"),
-    start:     z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el inicio"),
-    end:       z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el fin"),
-    allDay:    z.boolean().optional(),
+    startWorkdayId: z.string().uuid("El startWorkdayId debe ser un UUID válido"),
+    endWorkdayId:   z.string().uuid("El endWorkdayId debe ser un UUID válido"),
+    start:          z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el inicio"),
+    end:            z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el fin"),
+    allDay:         z.boolean().optional(),
   })
   .refine(({ start, end, allDay }) => allDay || start !== end, {
     message: "La hora de inicio y fin no pueden ser iguales",
-  });
+  })
+  .refine(
+    (shift) => getShiftDurationMinutes(shift) >= MIN_SHIFT_MINUTES,
+    { message: "Cada turno debe durar al menos 1 hora" },
+  )
+  .refine(
+    (shift) => getShiftDurationMinutes(shift) <= MAX_SHIFT_MINUTES,
+    { message: "Cada turno no puede durar más de 24 horas" },
+  );
 
 const employeeAdminUpdateSchema = z
   .object({
@@ -203,7 +218,7 @@ const employeeAdminUpdateSchema = z
       ]).optional()
     ),
 
-    workdays: z.array(workdayUpdateSchema).min(1, "Debe incluir al menos un día").optional(),
+    shifts: z.array(shiftUpdateSchema).min(1, "Debe incluir al menos un turno").optional(),
   })
   .strict()
   .refine(

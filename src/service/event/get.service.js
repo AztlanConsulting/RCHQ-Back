@@ -16,9 +16,13 @@ const {
     spanishToDay,
 } = require("../../utils/dates");
 const {
+    getScheduledWeekdayNumbers,
+    mapShiftToApi,
+} = require("../../utils/employeeShifts");
+const {
     getHome,
     findById,
-    getWorkDays,
+    getEmployeeShiftsRaw,
     findByIdWithRoleAndHouse,
 } = require("../../model/employee/get.model");
 const {
@@ -70,10 +74,7 @@ const addUtcYears = (date, amount) =>
         date.getUTCDate(),
     ));
 
-const getWorkdayNumbers = (workDays = []) =>
-    workDays
-        .map((workDay) => spanishToDay(workDay.workday?.name))
-        .filter((day) => day >= 0);
+const getWorkdayNumbers = (shifts = []) => getScheduledWeekdayNumbers(shifts);
 
 const getFreeDayDates = (events = [], minDate, maxDate) => {
     const dates = new Set();
@@ -149,9 +150,9 @@ exports.getEmployeeDateRules = async ({ employeeId, mode = DATE_RULE_MODES.ABSEN
         };
     }
 
-    const workDays = await getWorkDays(employeeId);
+    const shifts = await getEmployeeShiftsRaw(employeeId);
 
-    if (workDays.length === 0) {
+    if (shifts.length === 0) {
         return {
             code:
                 normalizedMode === DATE_RULE_MODES.VACATION
@@ -206,7 +207,7 @@ exports.getEmployeeDateRules = async ({ employeeId, mode = DATE_RULE_MODES.ABSEN
             searchEndDate,
         ),
     ]);
-    const workdayNumbers = getWorkdayNumbers(workDays);
+    const workdayNumbers = getWorkdayNumbers(shifts);
     const nonWorkingWeekdays = [0, 1, 2, 3, 4, 5, 6].filter(
         (day) => !workdayNumbers.includes(day),
     );
@@ -219,13 +220,7 @@ exports.getEmployeeDateRules = async ({ employeeId, mode = DATE_RULE_MODES.ABSEN
             minDate: toDateOnly(minDate),
             maxDate: toDateOnly(maxDate),
             today: toDateOnly(today),
-            workDays: workDays.map((workDay) => ({
-                workdayId: workDay.workday?.workday_id,
-                name: workDay.workday?.name,
-                weekday: spanishToDay(workDay.workday?.name),
-                start: workDay.start,
-                end: workDay.end,
-            })),
+            shifts: shifts.map((shift) => mapShiftToApi(shift)),
             nonWorkingWeekdays,
             freeDays: getFreeDayDates(
                 [...houseEvents, ...globalEvents],
@@ -330,7 +325,7 @@ exports.getEventsInRange = async (
         });
     });
 
-    const workDays = await getWorkDays(employeeId);
+    const shifts = await getEmployeeShiftsRaw(employeeId);
     const freeDays = events
         .filter((event) => {
             return (
@@ -349,7 +344,7 @@ exports.getEventsInRange = async (
     const vacations = await getVacationsInRange(employeeId, startDate, endDate);
     vacations.forEach((vacation) => {
         const usedDays = calculateUsedDays(
-            workDays,
+            shifts,
             vacation.start,
             vacation.end,
             freeDays,
@@ -362,7 +357,7 @@ exports.getEventsInRange = async (
 
     absences.forEach((absence) => {
         const usedDays = calculateUsedDays(
-            workDays,
+            shifts,
             absence.start,
             absence.end,
             freeDays,
@@ -474,7 +469,7 @@ exports.getHouseCalendarRecordsInRange = async (
 
     vacations.forEach((vacation) => {
         const usedDays = calculateUsedDays(
-            vacation.employee.employee_workday,
+            vacation.employee.employee_shift,
             vacation.start,
             vacation.end,
             freeDays,
@@ -485,7 +480,7 @@ exports.getHouseCalendarRecordsInRange = async (
 
     absences.forEach((absence) => {
         const usedDays = calculateUsedDays(
-            absence.employee.employee_workday,
+            absence.employee.employee_shift,
             absence.start,
             absence.end,
             freeDays,

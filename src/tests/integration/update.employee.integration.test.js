@@ -54,7 +54,7 @@ const cleanupUploadedPictures = async () => {
 
 beforeAll(async () => {
   await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-  await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
+  await prisma.employee_shift.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
   await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
@@ -171,7 +171,7 @@ beforeAll(async () => {
 afterAll(async () => {
     await cleanupUploadedPictures();
     await prisma.logs.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
-    await prisma.employee_workday.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
+    await prisma.employee_shift.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee_address.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.employee.deleteMany({ where: { employee_id: { in: [EMP_ID, OTHER_EMP] } } });
     await prisma.role_privilege.deleteMany({ where: { role_id: ROLE_ID } });
@@ -460,32 +460,51 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     expect(typeof updated.salary).toBe("string");
   });
 
-  it("actualiza horarios (upsert workdays) y se persisten en BD", async () => {
+  it("actualiza turnos (upsert shifts) y se persisten en BD", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
       .send({
-        workdays: [{ workdayId: WD_ID, start: "09:00", end: "18:00" }],
+        shifts: [{
+          startWorkdayId: WD_ID,
+          endWorkdayId: WD_ID,
+          start: "09:00",
+          end: "18:00",
+        }],
       });
     expect(res.statusCode).toBe(200);
-    const wds = await prisma.employee_workday.findMany({ where: { employee_id: EMP_ID } });
-    expect(wds.length).toBe(1);
-    expect(wds[0].workday_id).toBe(WD_ID);
+    const shifts = await prisma.employee_shift.findMany({ where: { employee_id: EMP_ID } });
+    expect(shifts.length).toBe(1);
+    expect(shifts[0].start_workday_id).toBe(WD_ID);
   });
 
-  it("sobreescribe workdays existentes al actualizar", async () => {
+  it("sobreescribe turnos existentes al actualizar", async () => {
     await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ workdays: [{ workdayId: WD_ID, start: "08:00", end: "16:00" }] });
+      .send({
+        shifts: [{
+          startWorkdayId: WD_ID,
+          endWorkdayId: WD_ID,
+          start: "08:00",
+          end: "16:00",
+        }],
+      });
 
     await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ workdays: [{ workdayId: WD_ID, start: "10:00", end: "19:00" }] });
+      .send({
+        shifts: [{
+          startWorkdayId: WD_ID,
+          endWorkdayId: WD_ID,
+          start: "10:00",
+          end: "19:00",
+        }],
+      });
 
-    const wds = await prisma.employee_workday.findMany({ where: { employee_id: EMP_ID } });
-    expect(wds.length).toBe(1);
+    const shifts = await prisma.employee_shift.findMany({ where: { employee_id: EMP_ID } });
+    expect(shifts.length).toBe(1);
   });
 
   it("retorna 400 con salario negativo", async () => {
@@ -555,14 +574,34 @@ describe("PUT /employee/:employeeId/admin-info", () => {
     expect(employeeInDb.type).toBe("Patronato");
   });
 
-  it("permite workday con start mayor a end con la validacion actual", async () => {
+  it("permite turno nocturno con día fin distinto", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
       .send({
-        workdays: [{ workdayId: WD_ID, start: "18:00", end: "08:00" }],
+        shifts: [{
+          startWorkdayId: WD_ID,
+          endWorkdayId: WD_ID,
+          start: "22:00",
+          end: "04:00",
+        }],
       });
     expect(res.statusCode).toBe(200);
+  });
+
+  it("permite múltiples turnos el mismo día", async () => {
+    const res = await request(app)
+      .put(`/employee/${EMP_ID}/admin-info`)
+      .set(json())
+      .send({
+        shifts: [
+          { startWorkdayId: WD_ID, endWorkdayId: WD_ID, start: "09:00", end: "13:00" },
+          { startWorkdayId: WD_ID, endWorkdayId: WD_ID, start: "15:00", end: "19:00" },
+        ],
+      });
+    expect(res.statusCode).toBe(200);
+    const shifts = await prisma.employee_shift.findMany({ where: { employee_id: EMP_ID } });
+    expect(shifts.length).toBe(2);
   });
 
   it("retorna 400 con formato de hora inválido", async () => {
@@ -570,16 +609,16 @@ describe("PUT /employee/:employeeId/admin-info", () => {
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
       .send({
-        workdays: [{ workdayId: WD_ID, start: "8am", end: "5pm" }],
+        shifts: [{ startWorkdayId: WD_ID, endWorkdayId: WD_ID, start: "8am", end: "5pm" }],
       });
     expect(res.statusCode).toBe(400);
   });
 
-  it("retorna 400 con workdays array vacío", async () => {
+  it("retorna 400 con shifts array vacío", async () => {
     const res = await request(app)
       .put(`/employee/${EMP_ID}/admin-info`)
       .set(json())
-      .send({ workdays: [] });
+      .send({ shifts: [] });
     expect(res.statusCode).toBe(400);
   });
 

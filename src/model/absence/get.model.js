@@ -71,9 +71,10 @@ exports.getAbsencesInRange = async (employeeId, startDate, endDate) => {
                     name: true,
                     surname: true,
                     curp: true,
-                    employee_workday: {
+                    employee_shift: {
                         include: {
-                            workday: true,
+                            start_workday: true,
+                            end_workday: true,
                         },
                     },
                 },
@@ -115,9 +116,10 @@ exports.getHouseCalendarAbsenceInRange = async (requesterId, houseId, startDate,
                     name: true,
                     surname: true,
                     curp: true,
-                    employee_workday: {
+                    employee_shift: {
                         include: {
-                            workday: true,
+                            start_workday: true,
+                            end_workday: true,
                         },
                     },
                 },

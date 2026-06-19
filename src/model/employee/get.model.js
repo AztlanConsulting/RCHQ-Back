@@ -1,9 +1,9 @@
 const prisma = require("../../prisma");
+const { mapEmployeeShifts } = require("../../utils/employeeShifts");
 const {
     mapEmployee,
     mapEmployeeAddress,
     mapEmployeeFaults,
-    mapEmployeeWorkdays,
     mapEmployeeVacationRequests,
 } = require("../../utils/mappers/employee.map");
 
@@ -202,27 +202,44 @@ exports.getEmployeeFaults = async (employeeId) => {
     return mapEmployeeFaults(employeeFaults);
 };
 
-exports.getEmployeeWorkdays = async (employeeId) => {
-    const employeeWorkdays = await prisma.employee.findUnique({
+exports.getEmployeeShifts = async (employeeId) => {
+    const employeeShifts = await prisma.employee.findUnique({
         where: { employee_id: employeeId },
         select: {
-            employee_workday: {
+            employee_shift: {
                 select: {
+                    shift_id: true,
                     start: true,
                     end: true,
-                    workday: {
+                    is_all_day: true,
+                    start_workday_id: true,
+                    end_workday_id: true,
+                    start_workday: {
+                        select: {
+                            workday_id: true,
+                            name: true,
+                        },
+                    },
+                    end_workday: {
                         select: {
                             workday_id: true,
                             name: true,
                         },
                     },
                 },
+                orderBy: [
+                    { start_workday_id: "asc" },
+                    { start: "asc" },
+                ],
             },
         },
     });
 
-    return mapEmployeeWorkdays(employeeWorkdays);
+    return mapEmployeeShifts(employeeShifts);
 };
+
+/** @deprecated use getEmployeeShifts */
+exports.getEmployeeWorkdays = exports.getEmployeeShifts;
 
 exports.getEmployeeVacationRequests = async (employeeId) => {
     const employeeVacationRequests = await prisma.employee.findUnique({
@@ -251,16 +268,24 @@ exports.getEmployeeVacationRequests = async (employeeId) => {
     return mapEmployeeVacationRequests(employeeVacationRequests);
 };
 
-exports.getWorkDays = async (employeeId) => {
-    return await prisma.employee_workday.findMany({
+exports.getEmployeeShiftsRaw = async (employeeId) => {
+    return await prisma.employee_shift.findMany({
         where: {
             employee_id: employeeId,
         },
         include: {
-            workday: true,
+            start_workday: true,
+            end_workday: true,
         },
+        orderBy: [
+            { start_workday_id: "asc" },
+            { start: "asc" },
+        ],
     });
 };
+
+/** @deprecated use getEmployeeShiftsRaw */
+exports.getWorkDays = exports.getEmployeeShiftsRaw;
 
 exports.getHome = async (employeeId) => {
     return await prisma.employee.findUnique({

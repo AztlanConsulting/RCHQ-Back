@@ -256,9 +256,9 @@ describe("event.service — getHouseCalendarRecordsInRange", () => {
                     name: "Ana",
                     surname: "Lopez",
                     curp: "LOPA000000MDFXXX00",
-                    employee_workday: [
-                        { workday: { name: "Jueves" } },
-                        { workday: { name: "Viernes" } },
+                    employee_shift: [
+                        { start_workday: { name: "Jueves" }, end_workday: { name: "Jueves" } },
+                        { start_workday: { name: "Viernes" }, end_workday: { name: "Viernes" } },
                     ],
                 },
             },
