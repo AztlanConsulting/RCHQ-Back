@@ -73,25 +73,18 @@ exports.updateAdminInfo = async (employeeId, body) => {
   }
 };
 
-exports.upsertWorkdays = async (employeeId, workdays) => {
+exports.upsertEmployeeShifts = async (employeeId, shifts) => {
+  const { normalizeShiftInput } = require("../../utils/employeeShifts");
+
   await prisma.$transaction([
-    prisma.employee_workday.deleteMany({
+    prisma.employee_shift.deleteMany({
       where: { employee_id: employeeId },
     }),
-    prisma.employee_workday.createMany({
-      data: workdays.map((w) => {
-        const startDate = new Date(`1970-01-01T${w.start}:00Z`);
-        let endDate = new Date(`1970-01-01T${w.end}:00Z`);
-        if (endDate <= startDate) {
-          endDate = new Date(`1970-01-02T${w.end}:00Z`);
-        }
-        return {
-          workday_id:  w.workdayId,
-          employee_id: employeeId,
-          start: startDate,
-          end:   endDate,
-        };
-      }),
+    prisma.employee_shift.createMany({
+      data: shifts.map((shift) => ({
+        ...normalizeShiftInput(shift),
+        employee_id: employeeId,
+      })),
     }),
   ]);
 };

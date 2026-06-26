@@ -165,7 +165,7 @@ const clean = async () => {
     await prisma.vacations_request.deleteMany({
         where: { employee_id: { in: employeeIds } },
     });
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: { employee_id: { in: employeeIds } },
     });
     await prisma.employee_personal_event.deleteMany({
@@ -285,13 +285,16 @@ const seed = async () => {
     const tuesday = await getWorkdayId("Martes");
     const friday = await getWorkdayId("Viernes");
 
-    await prisma.employee_workday.createMany({
+    await prisma.employee_shift.createMany({
         data: [monday, tuesday, friday].map((workdayId) => ({
-            workday_id: workdayId,
-            employee_id: IDS.employee,
-            start: makeUTCTime(9),
-            end: makeUTCTime(18),
-        })),
+            shift_id: randomUUID(),
+                start_workday_id: workdayId,
+                end_workday_id: workdayId,
+                employee_id: IDS.employee,
+                start: makeUTCTime(9),
+                end: makeUTCTime(18),
+                is_all_day: false,
+            })),
     });
 
     await prisma.event_type.create({

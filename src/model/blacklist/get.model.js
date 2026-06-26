@@ -29,27 +29,26 @@ const matchesSearch = (employee, search) => {
 
 exports.findEmployeeByCurp = async (curp) => {
     try {
-        const employee = await prisma.employee.findUnique({
-            where: { curp: curp },
+        const employee = await prisma.employee.findFirst({
+            where: { curp },
             select: {
                 name: true,
                 surname: true,
                 curp: true,
                 is_active: true,
-                blacklist: {
-                    select: { blacklist_id: true }
-                }
             },
         });
 
         if (!employee) return null;
+
+        const blacklistEntry = await prisma.blacklist.findUnique({ where: { curp } });
 
         return {
             name: employee.name,
             surname: employee.surname,
             curp: employee.curp,
             isActive: employee.is_active,
-            isBlacklisted: !!employee.blacklist,
+            isBlacklisted: !!blacklistEntry,
         };
     } catch (error) {
         console.error("Error en findEmployeeByCurp:", error);
@@ -75,8 +74,18 @@ exports.getBlacklistedEmployees = async ({
             whereClause.house_id = houseId;
         }
 
+        const blacklistEntries = await prisma.blacklist.findMany({
+            select: { curp: true },
+        });
+        const blacklistedCurps = new Set(blacklistEntries.map((e) => e.curp));
+
         if (typeof isBlacklisted === "boolean") {
-            whereClause.blacklist = isBlacklisted ? { isNot: null } : null;
+            const blacklistedCurpArray = [...blacklistedCurps];
+            if (isBlacklisted) {
+                whereClause.curp = { in: blacklistedCurpArray };
+            } else {
+                whereClause.curp = { notIn: blacklistedCurpArray };
+            }
         }
 
         const resolvedSearch = (search ?? curp ?? "").trim();
@@ -101,9 +110,6 @@ exports.getBlacklistedEmployees = async ({
                         name: true,
                     },
                 },
-                blacklist: {
-                    select: { blacklist_id: true }
-                }
             },
             orderBy: {
                 name: "asc",
@@ -127,7 +133,7 @@ exports.getBlacklistedEmployees = async ({
             roleName: emp.role.name,
             nss: emp.nss,
             status: emp.is_active ? "Activo" : "Inactivo",
-            isBlacklisted: !!emp.blacklist,
+            isBlacklisted: blacklistedCurps.has(emp.curp),
         }));
 
         return {

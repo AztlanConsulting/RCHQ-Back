@@ -115,15 +115,15 @@ CREATE TABLE IF NOT EXISTS public.employee (
     failed_login_attempts            int           NOT NULL DEFAULT 0,
     failed_two_factor_auth_attempts  int           NOT NULL DEFAULT 0,
     totp_secret                      varchar(32)   NULL,
-    curp                             varchar(18)   NOT NULL UNIQUE,
-    rfc                              varchar(13)   NULL UNIQUE,
+    curp                             varchar(18)   NOT NULL,
+    rfc                              varchar(13)   NULL,
     birth_date                       date          NULL,
     picture                          varchar(150)  NULL,
     start_date                       date          NOT NULL,
     end_date                         date          NULL,
     deactivation_reason              varchar(250)  NULL,
     out_of_blacklist_reason          varchar(250)  NULL,
-    nss                              varchar(11)   NULL UNIQUE,
+    nss                              varchar(11)   NULL,
     bank_account                     varchar(18)   NULL,
     phone_number                     varchar(20)   NULL,
     type                             varchar(20)   NOT NULL DEFAULT 'nomina',
@@ -134,8 +134,9 @@ CREATE TABLE IF NOT EXISTS public.employee (
     temp_totp_secret                 varchar       NULL,
     temp_totp_secret_created_at      timestamp     NULL,
     refresh_token                    varchar       NULL,
-    CONSTRAINT employee_pk       PRIMARY KEY (employee_id),
-    CONSTRAINT employee_house_fk FOREIGN KEY (house_id) REFERENCES public.house(house_id),
+    CONSTRAINT employee_pk                  PRIMARY KEY (employee_id),
+    CONSTRAINT employee_curp_house_unique   UNIQUE (curp, house_id),
+    CONSTRAINT employee_house_fk            FOREIGN KEY (house_id) REFERENCES public.house(house_id),
     CONSTRAINT employee_role_fk  FOREIGN KEY (role_id)  REFERENCES public.role(role_id),
     CONSTRAINT employee_frecuency_of_payment_fk FOREIGN KEY (frequency_of_payment_id) REFERENCES public.frecuency_of_payment(frecuency_of_payment_id)
 );
@@ -237,14 +238,18 @@ CREATE TABLE IF NOT EXISTS public.employee_fault (
     CONSTRAINT employee_fault_fault_fk FOREIGN KEY (fault_id) REFERENCES public.fault(fault_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.employee_workday (
-    workday_id uuid NOT NULL,
+CREATE TABLE IF NOT EXISTS public.employee_shift (
+    shift_id uuid NOT NULL,
     employee_id uuid NOT NULL,
+    start_workday_id uuid NOT NULL,
+    end_workday_id uuid NOT NULL,
     start time NOT NULL,
     "end" time NOT NULL,
-    CONSTRAINT employee_workday_pk PRIMARY KEY (workday_id, employee_id),
-    CONSTRAINT employee_workday_workday_fk FOREIGN KEY (workday_id) REFERENCES public.workday(workday_id),
-    CONSTRAINT employee_workday_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id)
+    is_all_day boolean NOT NULL DEFAULT false,
+    CONSTRAINT employee_shift_pk PRIMARY KEY (shift_id),
+    CONSTRAINT employee_shift_employee_fk FOREIGN KEY (employee_id) REFERENCES public.employee(employee_id),
+    CONSTRAINT employee_shift_start_workday_fk FOREIGN KEY (start_workday_id) REFERENCES public.workday(workday_id),
+    CONSTRAINT employee_shift_end_workday_fk FOREIGN KEY (end_workday_id) REFERENCES public.workday(workday_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.employee_inside_certification (
@@ -355,6 +360,5 @@ CREATE TABLE IF NOT EXISTS public.blacklist (
     curp         varchar(18) NOT NULL UNIQUE,
     reason       varchar(250) NOT NULL,
     created_at   timestamp   NOT NULL DEFAULT now(),
-    CONSTRAINT blacklist_pk          PRIMARY KEY (blacklist_id),
-    CONSTRAINT blacklist_employee_fk FOREIGN KEY (curp) REFERENCES public.employee(curp) ON DELETE NO ACTION
+    CONSTRAINT blacklist_pk PRIMARY KEY (blacklist_id)
 );

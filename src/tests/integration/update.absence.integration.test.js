@@ -13,17 +13,31 @@ const RESPONSES = require("../../utils/responses");
 const UPLOADS_DIR = path.resolve(process.cwd(), "uploads/documents");
 const PDF = Buffer.from("%PDF-1.4 absence evidence");
 const TXT = Buffer.from("malicious content");
+
+const offsetDate = (days) => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d;
+};
+const offsetDateStr = (days) => offsetDate(days).toISOString().slice(0, 10);
+
+const UPDATE_START_1 = offsetDateStr(90);
+const UPDATE_END_1 = offsetDateStr(94);
+const UPDATE_START_2 = offsetDateStr(91);
+const UPDATE_END_2 = offsetDateStr(95);
+
 const ORIGINAL_ABSENCE_A = {
     absence_type_id: null,
-    start: new Date("2026-05-05T00:00:00.000Z"),
-    end: new Date("2026-05-09T00:00:00.000Z"),
+    start: offsetDate(-35),
+    end: offsetDate(-31),
     description: "Ausencia casa A",
     url: "https://example.com/a.pdf",
 };
 const ORIGINAL_ABSENCE_B = {
     absence_type_id: null,
-    start: new Date("2026-05-12T00:00:00.000Z"),
-    end: new Date("2026-05-14T00:00:00.000Z"),
+    start: offsetDate(-28),
+    end: offsetDate(-26),
     description: "Ausencia casa B",
     url: "https://example.com/b.pdf",
 };
@@ -139,12 +153,14 @@ const seedEmployeeWorkdays = async (employeeIds) => {
         savedWorkdays.push(savedWorkday);
     }
 
-    await prisma.employee_workday.createMany({
+    await prisma.employee_shift.createMany({
         data: employeeIds.flatMap((employeeId) =>
             savedWorkdays.map((workday) => ({
-                employee_id: employeeId,
-                workday_id: workday.workday_id,
-                start: new Date("1970-01-01T09:00:00.000Z"),
+                shift_id: randomUUID(),
+            employee_id: employeeId,
+            start_workday_id: workday.workday_id,
+            end_workday_id: workday.workday_id,
+            start: new Date("1970-01-01T09:00:00.000Z"),
                 end: new Date("1970-01-01T18:00:00.000Z"),
             })),
         ),
@@ -350,8 +366,8 @@ const seed = async () => {
                 absence_id: IDS.absenceA,
                 employee_id: IDS.employeeA,
                 absence_type_id: IDS.absenceTypeA,
-                start: new Date("2026-05-05T00:00:00.000Z"),
-                end: new Date("2026-05-09T00:00:00.000Z"),
+                start: ORIGINAL_ABSENCE_A.start,
+                end: ORIGINAL_ABSENCE_A.end,
                 description: "Ausencia casa A",
                 url: "https://example.com/a.pdf",
                 is_deleted: false,
@@ -360,8 +376,8 @@ const seed = async () => {
                 absence_id: IDS.absenceB,
                 employee_id: IDS.employeeB,
                 absence_type_id: IDS.absenceTypeA,
-                start: new Date("2026-05-12T00:00:00.000Z"),
-                end: new Date("2026-05-14T00:00:00.000Z"),
+                start: ORIGINAL_ABSENCE_B.start,
+                end: ORIGINAL_ABSENCE_B.end,
                 description: "Ausencia casa B",
                 url: "https://example.com/b.pdf",
                 is_deleted: false,
@@ -370,8 +386,8 @@ const seed = async () => {
                 absence_id: IDS.absenceNoWorkdays,
                 employee_id: IDS.noWorkdaysEmployeeA,
                 absence_type_id: IDS.absenceTypeA,
-                start: new Date("2026-05-18T00:00:00.000Z"),
-                end: new Date("2026-05-20T00:00:00.000Z"),
+                start: offsetDate(-21),
+                end: offsetDate(-19),
                 description: "Ausencia sin días de trabajo",
                 url: "https://example.com/no-workdays.pdf",
                 is_deleted: false,
@@ -407,7 +423,7 @@ const cleanup = async () => {
         },
     });
 
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: {
             employee_id: {
                 in: [
@@ -533,7 +549,7 @@ describe("PUT /absence/:absenceId", () => {
             .put(`/absence/${IDS.absenceA}`)
             .set("Authorization", `Bearer ${sign()}`)
             .send({
-                startDate: "2026-05-20",
+                startDate: offsetDateStr(-10),
             });
 
         expect(res.statusCode).toBe(406);
@@ -580,8 +596,8 @@ describe("PUT /absence/:absenceId", () => {
             .send({
                 absenceTypeId: IDS.absenceTypeB,
                 description: "Descripción editada",
-                startDate: "2026-05-06",
-                endDate: "2026-05-10",
+                startDate: UPDATE_START_1,
+                endDate: UPDATE_END_1,
             });
 
         expect(res.statusCode).toBe(200);
@@ -602,8 +618,8 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
         expect(absenceInDb.description).toBe("Descripción editada");
-        expect(absenceInDb.start.toISOString()).toBe("2026-05-06T00:00:00.000Z");
-        expect(absenceInDb.end.toISOString()).toBe("2026-05-10T00:00:00.000Z");
+        expect(absenceInDb.start.toISOString()).toBe(`${UPDATE_START_1}T00:00:00.000Z`);
+        expect(absenceInDb.end.toISOString()).toBe(`${UPDATE_END_1}T00:00:00.000Z`);
     });
 
     it("200 y un admin puede editar una ausencia de otra casa", async () => {
@@ -662,8 +678,8 @@ describe("PUT /absence/:absenceId", () => {
             .set("Authorization", `Bearer ${sign()}`)
             .field("absenceTypeId", IDS.absenceTypeB)
             .field("description", "Ausencia con evidencia nueva")
-            .field("startDate", "2026-05-07")
-            .field("endDate", "2026-05-11")
+            .field("startDate", UPDATE_START_2)
+            .field("endDate", UPDATE_END_2)
             .attach("file", PDF, "absence-mixed-update.pdf");
 
         expect(res.statusCode).toBe(200);
@@ -682,8 +698,8 @@ describe("PUT /absence/:absenceId", () => {
 
         expect(absenceInDb.absence_type_id).toBe(IDS.absenceTypeB);
         expect(absenceInDb.description).toBe("Ausencia con evidencia nueva");
-        expect(absenceInDb.start.toISOString()).toBe("2026-05-07T00:00:00.000Z");
-        expect(absenceInDb.end.toISOString()).toBe("2026-05-11T00:00:00.000Z");
+        expect(absenceInDb.start.toISOString()).toBe(`${UPDATE_START_2}T00:00:00.000Z`);
+        expect(absenceInDb.end.toISOString()).toBe(`${UPDATE_END_2}T00:00:00.000Z`);
         expect(absenceInDb.url).toMatch(/^uploads\/documents\/.+\.pdf$/);
         expect(fs.existsSync(path.resolve(process.cwd(), absenceInDb.url))).toBe(true);
     });

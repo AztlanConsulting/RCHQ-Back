@@ -2,7 +2,7 @@ const {
   updateBasicInfo,
   updateContactInfo,
   updateAdminInfo,
-  upsertWorkdays,
+  upsertEmployeeShifts,
 } = require("../../model/employee/update.model");
 const { findById, getRoleById } = require("../../model/employee/get.model");
 const { encryptValue } = require("../../utils/password");
@@ -18,6 +18,12 @@ const {
     findEmployeeDocument,
 } = require("../../model/employee/get.model");
 const { updateEmployeeDocument } = require("../../model/employee/update.model");
+const { normalizeEmployeeContractType } = require("../../utils/contractTypes");
+const {
+  isContractTypeAllowedForRole,
+  buildRoleContractMismatchMessage,
+  getRequiredContractTypeForRole,
+} = require("../../utils/roleContractRules");
 
 exports.updateBasicInfoService = async ({ requesterId, employeeId, body, file }) => {
   if (!requesterId || !employeeId)
@@ -139,11 +145,46 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
     }
   }
 
-  const { workdays, salary, ...rest } = parsed.data;
+  const effectiveRole = parsed.data.roleId
+    ? await getRoleById(parsed.data.roleId)
+    : await getRoleById(employee.role_id);
 
-  if (salary !== undefined && salary !== null) {
-    if (salary === 0 || salary === "0") {
-      rest.salary = "0"; 
+  if (!effectiveRole) {
+    return {
+      type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+      errors: [{
+        campo: "roleId",
+        mensaje: "El puesto seleccionado no existe",
+      }],
+    };
+  }
+
+  const effectiveContractType = parsed.data.type !== undefined && parsed.data.type !== null
+    ? normalizeEmployeeContractType(parsed.data.type)
+    : normalizeEmployeeContractType(employee.type);
+
+  if (
+    (parsed.data.roleId !== undefined || parsed.data.type !== undefined) &&
+    !isContractTypeAllowedForRole(effectiveRole.name, effectiveContractType)
+  ) {
+    const requiredType = getRequiredContractTypeForRole(effectiveRole.name);
+
+    return {
+      type: RESPONSES.EMPLOYEE.VALIDATION_ERROR,
+      errors: [{
+        campo: "type",
+        mensaje: buildRoleContractMismatchMessage(effectiveRole.name, requiredType),
+      }],
+    };
+  }
+
+  const { shifts, salary, ...rest } = parsed.data;
+
+  if (salary !== undefined) {
+    if (salary === null || salary === "") {
+      rest.salary = null;
+    } else if (salary === 0 || salary === "0") {
+      rest.salary = "0";
     } else {
       rest.salary = encryptValue(String(salary));
     }
@@ -153,8 +194,8 @@ exports.updateAdminInfoService = async ({ requesterId, employeeId, body }) => {
     await updateAdminInfo(employeeId, rest);
   }
 
-  if (workdays && workdays.length > 0) {
-    await upsertWorkdays(employeeId, workdays);
+  if (shifts && shifts.length > 0) {
+    await upsertEmployeeShifts(employeeId, shifts);
   }
 
   return { type: RESPONSES.EMPLOYEE.UPDATED };

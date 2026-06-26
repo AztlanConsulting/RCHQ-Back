@@ -1,0 +1,78 @@
+@startuml
+
+|Empleado|
+start
+:Ingresa a la pagina de vacaciones;
+:Presiona solicitar vacaciones;
+:Selecciona fecha de inicio y fecha de fin;
+:Envia la solicitud;
+
+|Sistema|
+:Valida que las fechas existan\ny tengan formato YYYY-MM-DD;
+
+if (¿Formato de fechas valido?) then (Si)
+else (No)
+:Muestra mensaje de formato invalido;
+stop
+endif
+
+:Convierte las fechas recibidas;
+
+if (¿Fecha inicio es posterior a fecha fin?) then (Si)
+:Muestra mensaje de fechas invalidas;
+stop
+else (No)
+endif
+
+:Obtiene dias de trabajo del empleado;
+
+if (¿Empleado tiene dias de trabajo?) then (Si)
+else (No)
+:Muestra mensaje de que se necesitan\ndias de trabajo registrados;
+stop
+endif
+
+:Obtiene dias restantes y periodo actual\nde vacaciones del empleado;
+
+if (¿Fechas estan dentro del periodo actual?) then (Si)
+else (No)
+:Muestra mensaje de que no se pueden solicitar\nvacaciones fuera del periodo actual;
+stop
+endif
+
+if (¿Fecha inicio es hoy o una fecha pasada?) then (Si)
+:Muestra mensaje de que no se pueden pedir\nvacaciones en el pasado ni para el mismo dia;
+stop
+else (No)
+endif
+
+:Obtiene eventos globales y eventos de casa;
+:Filtra eventos marcados como dia libre;
+:Calcula dias habiles reales a usar;
+
+if (¿Rango tiene dias habiles?) then (Si)
+else (No)
+:Muestra mensaje de que no hay ningun\ndia habil de vacaciones;
+stop
+endif
+
+if (¿Tiene dias suficientes?) then (Si)
+else (No)
+:Muestra mensaje de dias de vacaciones insuficientes;
+stop
+endif
+
+:Busca solicitudes activas que se empalmen\ncon el rango seleccionado;
+
+if (¿Existe una solicitud empalmada?) then (Si)
+:Muestra mensaje de solicitud duplicada\no rango ya cubierto;
+stop
+else (No)
+endif
+
+:Registra la solicitud como pendiente;
+:Registra log de solicitud exitosa;
+:Muestra mensaje de solicitud creada correctamente;
+stop
+
+@enduml

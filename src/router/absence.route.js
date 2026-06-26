@@ -2,7 +2,9 @@ const express = require("express");
 const verifyToken = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const { apiLimiter } = require("../utils/rateLimit");
-const { requireRole, requirePrivileges, allRoles } = require("../middleware/rbac");
+const { requireRole, requirePrivileges } = require("../middleware/rbac");
+const { ROLES, allRoles } = require("../utils/roles");
+const PRIVILEGES = require("../utils/privileges");
 const { authorize } = require("../middleware/abac");
 const {
     resolveEmployeeHouse,
@@ -35,8 +37,8 @@ router.get(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Administrador", "Coordinador"),
-    requirePrivileges("addAbsences"),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.ADD_ABSENCES),
     getEmployeesAndAbsenceTypes,
 );
 
@@ -54,8 +56,8 @@ router.post(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Administrador", "Coordinador"),
-    requirePrivileges("addAbsences"),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.ADD_ABSENCES),
     resolveEmployeeHouse,
     authorize(absencePolicy, (req) => ({
         houseId: req.resolvedEmployee.houseId,
@@ -70,8 +72,8 @@ router.put(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Administrador", "Coordinador"),
-    requirePrivileges("editAbsences"),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.EDIT_ABSENCES),
     uploadDocs.single("file"),
     markEvidenceUpload,
     validate(absenceUpdateSchema, "all"),
@@ -83,8 +85,8 @@ router.delete(
     apiLimiter,
     verifyToken,
     resolveRequesterHouse,
-    requireRole("Administrador", "Coordinador"),
-    requirePrivileges("deleteAbsences"),
+    requireRole(ROLES.ADMIN, ROLES.COORDINATOR),
+    requirePrivileges(PRIVILEGES.DELETE_ABSENCES),
     validate(absenceDeleteSchema, "all"),
     deleteAbsence,
 );

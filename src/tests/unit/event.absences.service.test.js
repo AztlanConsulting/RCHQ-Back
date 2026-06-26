@@ -5,7 +5,7 @@ jest.mock("../../model/vacation/get.model", () => ({
 jest.mock("../../model/employee/get.model", () => ({
     getHome: jest.fn(),
     findById: jest.fn(),
-    getWorkDays: jest.fn(),
+    getEmployeeShiftsRaw: jest.fn(),
 }));
 
 jest.mock("../../model/event/get.model", () => ({
@@ -25,7 +25,7 @@ const { getAbsencesInRange } = require("../../model/absence/get.model");
 const {
     getHome,
     findById,
-    getWorkDays,
+    getEmployeeShiftsRaw,
 } = require("../../model/employee/get.model");
 const {
     getHouseEventsInRange,
@@ -172,10 +172,10 @@ describe("event.get.service", () => {
         getHouseCalendarPersonalEventsInRange.mockResolvedValue([]);
         getVacationsInRange.mockResolvedValue([]);
         getAbsencesInRange.mockResolvedValue([]);
-        getWorkDays.mockResolvedValue([
-            { workday: { name: "Lunes" } },
-            { workday: { name: "Martes" } },
-            { workday: { name: "Viernes" } },
+        getEmployeeShiftsRaw.mockResolvedValue([
+            { start_workday: { name: "Lunes" }, end_workday: { name: "Lunes" } },
+            { start_workday: { name: "Martes" }, end_workday: { name: "Martes" } },
+            { start_workday: { name: "Viernes" }, end_workday: { name: "Viernes" } },
         ]);
     });
 
@@ -210,7 +210,7 @@ describe("event.get.service", () => {
             startDate,
             endDate,
         );
-        expect(getWorkDays).toHaveBeenCalledWith(EMPLOYEE_ID);
+        expect(getEmployeeShiftsRaw).toHaveBeenCalledWith(EMPLOYEE_ID);
         expect(absenceEvent).toMatchObject({
             absenceId: "absence-id",
             employeeId: EMPLOYEE_ID,

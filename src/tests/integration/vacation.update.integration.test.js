@@ -1,3 +1,4 @@
+const { randomUUID } = require("crypto");
 const request = require("supertest");
 const app = require("../../app");
 const prisma = require("../../prisma");
@@ -167,7 +168,7 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
             },
         });
 
-        await prisma.employee_workday.deleteMany({
+        await prisma.employee_shift.deleteMany({
             where: {
                 employee_id: {
                     in: testEmployeeIds,
@@ -390,15 +391,17 @@ describe("PATCH /vacation/request/:vacationRequestId/dates", () => {
         for (const employeeId of testEmployeeIds) {
             for (const workday of workdays) {
                 employeeWorkdays.push({
-                    employee_id: employeeId,
-                    workday_id: workday.workday_id,
-                    start: new Date("1970-01-01T09:00:00.000Z"),
+                    shift_id: randomUUID(),
+            employee_id: employeeId,
+            start_workday_id: workday.workday_id,
+            end_workday_id: workday.workday_id,
+            start: new Date("1970-01-01T09:00:00.000Z"),
                     end: new Date("1970-01-01T18:00:00.000Z"),
                 });
             }
         }
 
-        await prisma.employee_workday.createMany({
+        await prisma.employee_shift.createMany({
             data: employeeWorkdays,
             skipDuplicates: true,
         });

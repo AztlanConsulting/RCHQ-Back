@@ -2,7 +2,7 @@ jest.mock("../../model/employee/update.model", () => ({
   updateBasicInfo:   jest.fn(),
   updateContactInfo: jest.fn(),
   updateAdminInfo:   jest.fn(),
-  upsertWorkdays:    jest.fn(),
+  upsertEmployeeShifts:    jest.fn(),
 }));
 
 jest.mock("../../model/employee/get.model", () => ({
@@ -26,7 +26,7 @@ const {
   updateBasicInfo,
   updateContactInfo,
   updateAdminInfo,
-  upsertWorkdays,
+  upsertEmployeeShifts,
 } = require("../../model/employee/update.model");
 const { 
   findById, 
@@ -51,7 +51,12 @@ const RESPONSES = require("../../utils/responses");
 
 const REQUESTER_ID  = "r0000001-0000-4000-8000-000000000001";
 const EMPLOYEE_ID   = "e0000001-0000-4000-8000-000000000001";
-const MOCK_EMPLOYEE = { employee_id: EMPLOYEE_ID, name: "Juan" };
+const MOCK_EMPLOYEE = {
+  employee_id: EMPLOYEE_ID,
+  name: "Juan",
+  role_id: "a0000002-0000-4000-8000-000000000003",
+  type: "nomina",
+};
 
 const validBasicBody = {
   name:    "Juan",
@@ -69,8 +74,13 @@ const validAdminBody = {
   type:    "Asalariado",
   frequencyOfPaymentId: "f0000001-0000-4000-8000-000000000001",
   salary:  "15000",
-  workdays: [
-    { workdayId: "d0000001-0000-4000-8000-000000000001", start: "08:00", end: "17:00" },
+  shifts: [
+    {
+      startWorkdayId: "d0000001-0000-4000-8000-000000000001",
+      endWorkdayId: "d0000001-0000-4000-8000-000000000001",
+      start: "08:00",
+      end: "17:00",
+    },
   ],
 };
 
@@ -85,7 +95,7 @@ beforeEach(() => {
   updateBasicInfo.mockResolvedValue();
   updateContactInfo.mockResolvedValue();
   updateAdminInfo.mockResolvedValue();
-  upsertWorkdays.mockResolvedValue();
+  upsertEmployeeShifts.mockResolvedValue();
   getAllRoles.mockResolvedValue([
     { roleId: "r1", name: "Administrador" },
     { roleId: "r2", name: "Coordinador" },
@@ -501,7 +511,7 @@ describe("updateAdminInfoService", () => {
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
       expect(updateAdminInfo).toHaveBeenCalled();
-      expect(upsertWorkdays).toHaveBeenCalled();
+      expect(upsertEmployeeShifts).toHaveBeenCalled();
     });
 
     it("encripta el salario antes de guardarlo", async () => {
@@ -517,27 +527,32 @@ describe("updateAdminInfoService", () => {
       );
     });
 
-    it("no llama a upsertWorkdays si no vienen workdays", async () => {
+    it("no llama a upsertEmployeeShifts si no vienen shifts", async () => {
       await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body:        { type: "Asalariado" },
       });
-      expect(upsertWorkdays).not.toHaveBeenCalled();
+      expect(upsertEmployeeShifts).not.toHaveBeenCalled();
     });
 
-    it("no llama a updateAdminInfo si solo vienen workdays", async () => {
+    it("no llama a updateAdminInfo si solo vienen shifts", async () => {
       await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body: {
-          workdays: [
-            { workdayId: "d0000001-0000-4000-8000-000000000001", start: "08:00", end: "17:00" },
+          shifts: [
+            {
+              startWorkdayId: "d0000001-0000-4000-8000-000000000001",
+              endWorkdayId: "d0000001-0000-4000-8000-000000000001",
+              start: "08:00",
+              end: "17:00",
+            },
           ],
         },
       });
       expect(updateAdminInfo).not.toHaveBeenCalled();
-      expect(upsertWorkdays).toHaveBeenCalled();
+      expect(upsertEmployeeShifts).toHaveBeenCalled();
     });
 
     it("retorna VALIDATION_ERROR si se intenta actualizar solo casa", async () => {
@@ -572,7 +587,7 @@ describe("updateAdminInfoService", () => {
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.NOT_FOUND);
       expect(updateAdminInfo).not.toHaveBeenCalled();
-      expect(upsertWorkdays).not.toHaveBeenCalled();
+      expect(upsertEmployeeShifts).not.toHaveBeenCalled();
     });
   });
 
@@ -620,6 +635,68 @@ describe("updateAdminInfoService", () => {
       expect(result.errors?.[0]?.campo).toBe("roleId");
     });
 
+    it("retorna VALIDATION_ERROR si el puesto Presidente no coincide con contrato Nomina", async () => {
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000027",
+        name: "Presidente",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        {
+          roleId: "a0000002-0000-4000-8000-000000000027",
+          type: "Nomina",
+        },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors?.[0]?.campo).toBe("type");
+      expect(result.errors?.[0]?.mensaje).toContain("Patronato");
+      expect(updateAdminInfo).not.toHaveBeenCalled();
+    });
+
+    it("permite actualizar puesto Presidente con contrato Patronato", async () => {
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000027",
+        name: "Presidente",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        {
+          roleId: "a0000002-0000-4000-8000-000000000027",
+          type: "Patronato",
+        },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.UPDATED);
+      expect(updateAdminInfo).toHaveBeenCalled();
+    });
+
+    it("retorna VALIDATION_ERROR si el empleado ya es Proveedor y se intenta cambiar solo el contrato", async () => {
+      findById.mockResolvedValue({
+        ...MOCK_EMPLOYEE,
+        role_id: "a0000002-0000-4000-8000-000000000031",
+        type: "Proveedor",
+      });
+      getRoleById.mockResolvedValue({
+        roleId: "a0000002-0000-4000-8000-000000000031",
+        name: "Proveedor",
+      });
+
+      const result = await updateAdminInfoService({
+        requesterId: REQUESTER_ID,
+        employeeId:  EMPLOYEE_ID,
+        body:        { type: "Nomina" },
+      });
+
+      expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
+      expect(result.errors?.[0]?.campo).toBe("type");
+      expect(updateAdminInfo).not.toHaveBeenCalled();
+    });
+
     it("retorna VALIDATION_ERROR con salario negativo", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
@@ -647,24 +724,29 @@ describe("updateAdminInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("retorna VALIDATION_ERROR con workday sin workdayId", async () => {
+    it("retorna VALIDATION_ERROR con turno sin startWorkdayId", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body: {
-          workdays: [{ start: "08:00", end: "17:00" }],
+          shifts: [{ start: "08:00", end: "17:00" }],
         },
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("permite workday con start mayor a end con la validacion actual", async () => {
+    it("permite turno nocturno con start mayor a end en el mismo día", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body: {
-          workdays: [
-            { workdayId: "d0000001-0000-4000-8000-000000000001", start: "17:00", end: "08:00" },
+          shifts: [
+            {
+              startWorkdayId: "d0000001-0000-4000-8000-000000000001",
+              endWorkdayId: "d0000001-0000-4000-8000-000000000001",
+              start: "22:00",
+              end: "04:00",
+            },
           ],
         },
       });
@@ -676,8 +758,13 @@ describe("updateAdminInfoService", () => {
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
         body: {
-          workdays: [
-            { workdayId: "d0000001-0000-4000-8000-000000000001", start: "8am", end: "5pm" },
+          shifts: [
+            {
+              startWorkdayId: "d0000001-0000-4000-8000-000000000001",
+              endWorkdayId: "d0000001-0000-4000-8000-000000000001",
+              start: "8am",
+              end: "5pm",
+            },
           ],
         },
       });
@@ -702,11 +789,11 @@ describe("updateAdminInfoService", () => {
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
 
-    it("retorna VALIDATION_ERROR con array vacío de workdays", async () => {
+    it("retorna VALIDATION_ERROR con array vacío de shifts", async () => {
       const result = await updateAdminInfoService({
         requesterId: REQUESTER_ID,
         employeeId:  EMPLOYEE_ID,
-        body:        { workdays: [] },
+        body:        { shifts: [] },
       });
       expect(result.type).toBe(RESPONSES.EMPLOYEE.VALIDATION_ERROR);
     });
@@ -724,15 +811,20 @@ describe("updateAdminInfoService", () => {
       ).rejects.toThrow("DB exploded");
     });
 
-    it("propaga el error si upsertWorkdays falla", async () => {
-      upsertWorkdays.mockRejectedValue(new Error("Workday DB error"));
+    it("propaga el error si upsertEmployeeShifts falla", async () => {
+      upsertEmployeeShifts.mockRejectedValue(new Error("Workday DB error"));
       await expect(
         updateAdminInfoService({
           requesterId: REQUESTER_ID,
           employeeId:  EMPLOYEE_ID,
           body: {
-            workdays: [
-              { workdayId: "d0000001-0000-4000-8000-000000000001", start: "08:00", end: "17:00" },
+            shifts: [
+              {
+                startWorkdayId: "d0000001-0000-4000-8000-000000000001",
+                endWorkdayId: "d0000001-0000-4000-8000-000000000001",
+                start: "08:00",
+                end: "17:00",
+              },
             ],
           },
         })

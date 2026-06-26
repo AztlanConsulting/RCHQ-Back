@@ -83,11 +83,10 @@ exports.getLastIncludedDateForRange = (startDate, endDate) => {
     );
 };
 
-exports.calculateUsedDays = (workDays, startDate, endDate, events = []) => {
-    const days = [];
-    workDays.forEach((workDay) => {
-        days.push(this.spanishToDay(workDay.workday.name));
-    });
+const { resolveScheduledWeekdayNumbers } = require("./employeeShifts");
+
+exports.calculateUsedDays = (schedule, startDate, endDate, events = []) => {
+    const days = resolveScheduledWeekdayNumbers(schedule);
 
     const freeDays = [];
 

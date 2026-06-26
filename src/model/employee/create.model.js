@@ -20,6 +20,7 @@ exports.create = async (employeeData) => {
         birth_date: employeeData.birthDate || null,
         picture: employeeData.picture || null,
         start_date: employeeData.startDate,
+        ...(employeeData.type !== undefined ? { type: employeeData.type } : {}),
     };
 
     const employee = await prisma.employee.create({ data });

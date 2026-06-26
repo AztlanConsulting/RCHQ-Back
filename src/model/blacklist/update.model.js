@@ -3,7 +3,7 @@ const prisma = require("../../prisma");
 exports.transactionalBlacklistInsert = async (curp, reason) => {
     try {
         const result = await prisma.$transaction(async (tx) => {
-            await tx.employee.update({
+            await tx.employee.updateMany({
                 where: { curp: curp },
                 data: { is_active: false },
             });

@@ -1,6 +1,9 @@
 const { z } = require("zod");
-
-const CURP_REGEX         = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
+const {
+  EMPLOYEE_CONTRACT_TYPE_VALUES,
+  normalizeEmployeeContractType,
+  isNoSalaryContract,
+} = require("../../utils/contractTypes");
 const RFC_REGEX          = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
 const ONLY_NUMBERS_REGEX = /^\d+$/;
 const NAMES_REGEX        = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
@@ -17,20 +20,7 @@ const emptyToNull = (val) => (val === "" ? null : val);
 const numberToString = (val) =>
   typeof val === "number" && Number.isFinite(val) ? String(val) : val;
 
-const CONTRACT_TYPE_BY_NORMALIZED = {
-  nomina: "Nomina",
-  asalariado: "Asalariado",
-  honorarios: "Honorarios",
-  voluntariado: "Voluntariado",
-};
-
-const normalizeEmployeeContractType = (val) => {
-  if (val === null || val === undefined) return val;
-  const s = String(val).trim();
-  if (s === "") return val;
-  const key = s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-  return CONTRACT_TYPE_BY_NORMALIZED[key] ?? s;
-};
+const CURP_REGEX         = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/;
 
 const employeeBasicUpdateSchema = z
   .object({
@@ -172,16 +162,32 @@ const employeeContactUpdateSchema = z
     { message: "Debe enviarse al menos un campo para actualizar" }
   );
 
-const workdayUpdateSchema = z
+const {
+    getShiftDurationMinutes,
+    MIN_SHIFT_MINUTES,
+    MAX_SHIFT_MINUTES,
+    findShiftConflictMessage,
+} = require("../../utils/employeeShifts");
+
+const shiftUpdateSchema = z
   .object({
-    workdayId: z.string().uuid("El workdayId debe ser un UUID válido"),
-    start:     z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el inicio"),
-    end:       z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el fin"),
-    allDay:    z.boolean().optional(),
+    startWorkdayId: z.string().uuid("El startWorkdayId debe ser un UUID válido"),
+    endWorkdayId:   z.string().uuid("El endWorkdayId debe ser un UUID válido"),
+    start:          z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el inicio"),
+    end:            z.string().regex(TIME_REGEX, "Formato HH:MM requerido para el fin"),
+    allDay:         z.boolean().optional(),
   })
   .refine(({ start, end, allDay }) => allDay || start !== end, {
     message: "La hora de inicio y fin no pueden ser iguales",
-  });
+  })
+  .refine(
+    (shift) => getShiftDurationMinutes(shift) >= MIN_SHIFT_MINUTES,
+    { message: "Cada turno debe durar al menos 1 hora" },
+  )
+  .refine(
+    (shift) => getShiftDurationMinutes(shift) <= MAX_SHIFT_MINUTES,
+    { message: "Cada turno no puede durar más de 24 horas" },
+  );
 
 const employeeAdminUpdateSchema = z
   .object({
@@ -193,21 +199,28 @@ const employeeAdminUpdateSchema = z
         val === null || val === undefined || val === ""
           ? val
           : normalizeEmployeeContractType(val),
-      z.enum(["Nomina", "Asalariado", "Honorarios", "Voluntariado"], {
+      z.enum(EMPLOYEE_CONTRACT_TYPE_VALUES, {
         errorMap: () => ({ message: "Tipo de contrato inválido" }),
       }).nullable().optional()
     ),
     frequencyOfPaymentId: z.string().uuid().nullable().optional(),
 
     salary: z.preprocess(
-      numberToString,
-      z.string()
-        .regex(SALARY_REGEX, "El salario debe ser un número válido con hasta 2 decimales")
-        .refine((val) => Number(val) >= 0, { message: "El salario no puede ser negativo" })
-        .refine((val) => Number(val) <= 1_000_000, { message: "El salario excede el límite permitido" })
-    ).optional(),
+      (val) => {
+        if (val === undefined) return undefined;
+        if (val === "" || val === null) return null;
+        return numberToString(val);
+      },
+      z.union([
+        z.null(),
+        z.string()
+          .regex(SALARY_REGEX, "El salario debe ser un número válido con hasta 2 decimales")
+          .refine((val) => Number(val) >= 0, { message: "El salario no puede ser negativo" })
+          .refine((val) => Number(val) <= 1_000_000, { message: "El salario excede el límite permitido" }),
+      ]).optional()
+    ),
 
-    workdays: z.array(workdayUpdateSchema).min(1, "Debe incluir al menos un día").optional(),
+    shifts: z.array(shiftUpdateSchema).min(1, "Debe incluir al menos un turno").optional(),
   })
   .strict()
   .refine(
@@ -216,12 +229,27 @@ const employeeAdminUpdateSchema = z
   )
   .refine(
     (data) => {
-      if (data.salary === undefined || data.salary === null) return true;
+      if (data.salary === undefined) {
+        return true;
+      }
+      if (data.salary === null) {
+        return data.type === undefined || isNoSalaryContract(data.type);
+      }
       const salary = Number(data.salary);
-      if (data.type === "Voluntariado") return salary >= 0;
+      if (data.type === undefined) {
+        return salary > 0;
+      }
+      if (isNoSalaryContract(data.type)) return salary >= 0;
       return salary > 0;
     },
     { message: "El salario debe ser mayor a 0 para este tipo de contrato", path: ["salary"] }
+  )
+  .refine(
+    (data) => !data.shifts || !findShiftConflictMessage(data.shifts),
+    {
+      message: "No se permiten turnos duplicados o solapados en el mismo día",
+      path: ["shifts"],
+    },
   );
 
 module.exports = {

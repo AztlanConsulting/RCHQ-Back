@@ -320,7 +320,7 @@ const clean = async () => {
             },
         },
     });
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: {
             employee_id: {
                 in: [
@@ -502,16 +502,19 @@ describe("Flujo integración /vacation/request", () => {
                 "Viernes",
             ];
             for (const workDay of workDays) {
-                await prisma.employee_workday.create({
+                const workdayRecord = await prisma.workday.findFirst({
+                    where: { name: workDay },
+                });
+
+                await prisma.employee_shift.create({
                     data: {
-                        employee: {
-                            connect: { employee_id: IDS.employeeCook },
-                        },
-                        workday: {
-                            connect: { name: workDay },
-                        },
+                        shift_id: randomUUID(),
+                        employee_id: IDS.employeeCook,
+                        start_workday_id: workdayRecord.workday_id,
+                        end_workday_id: workdayRecord.workday_id,
                         start: new Date("1970-01-01T09:00:00Z"),
                         end: new Date("1970-01-01T18:00:00Z"),
+                        is_all_day: false,
                     },
                 });
             }

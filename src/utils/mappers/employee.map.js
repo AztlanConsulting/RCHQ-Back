@@ -51,17 +51,6 @@ exports.mapEmployeeFaults = (employeeFaults) => {
     }));
 };
 
-exports.mapEmployeeWorkdays = (employeeWorkdays) => {
-    if (!employeeWorkdays) return undefined;
-
-    return employeeWorkdays.employee_workday.map((w) => ({
-        workdayId: w.workday.workday_id,
-        name: w.workday.name,
-        start: w.start,
-        end: w.end,
-    }));
-};
-
 exports.mapEmployeeVacationRequests = (employeeVacationRequests) => {
     if (!employeeVacationRequests) return undefined;
 

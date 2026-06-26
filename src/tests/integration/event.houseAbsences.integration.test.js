@@ -225,24 +225,30 @@ const seed = async () => {
         });
     }
 
-    await prisma.employee_workday.createMany({
+    await prisma.employee_shift.createMany({
         data: [
             {
-                employee_id: IDS.absentEmployeeA,
-                workday_id: IDS.workdayMonday,
-                start: new Date("1970-01-01T08:00:00.000Z"),
+                shift_id: randomUUID(),
+            employee_id: IDS.absentEmployeeA,
+            start_workday_id: IDS.workdayMonday,
+            end_workday_id: IDS.workdayMonday,
+            start: new Date("1970-01-01T08:00:00.000Z"),
                 end: new Date("1970-01-01T16:00:00.000Z"),
             },
             {
-                employee_id: IDS.absentEmployeeA,
-                workday_id: IDS.workdayTuesday,
-                start: new Date("1970-01-01T08:00:00.000Z"),
+                shift_id: randomUUID(),
+            employee_id: IDS.absentEmployeeA,
+            start_workday_id: IDS.workdayTuesday,
+            end_workday_id: IDS.workdayTuesday,
+            start: new Date("1970-01-01T08:00:00.000Z"),
                 end: new Date("1970-01-01T16:00:00.000Z"),
             },
             {
-                employee_id: IDS.absentEmployeeA,
-                workday_id: IDS.workdayFriday,
-                start: new Date("1970-01-01T08:00:00.000Z"),
+                shift_id: randomUUID(),
+            employee_id: IDS.absentEmployeeA,
+            start_workday_id: IDS.workdayFriday,
+            end_workday_id: IDS.workdayFriday,
+            start: new Date("1970-01-01T08:00:00.000Z"),
                 end: new Date("1970-01-01T16:00:00.000Z"),
             },
         ],
@@ -313,7 +319,7 @@ const clean = async () => {
     await prisma.event_type.deleteMany({
         where: { event_type_id: IDS.eventType },
     });
-    await prisma.employee_workday.deleteMany({
+    await prisma.employee_shift.deleteMany({
         where: {
             employee_id: { in: [IDS.absentEmployeeA, IDS.absentEmployeeB] },
         },

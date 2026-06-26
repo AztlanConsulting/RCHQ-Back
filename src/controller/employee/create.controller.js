@@ -1,6 +1,4 @@
 const {
-    getRoles,
-    getById: getEmployeeById,
     createEmployee,
     uploadDocument,
 } = require("../../service/employee/create.service");
@@ -10,35 +8,11 @@ const { LOG_ACTIONS } = require("../../utils/logActions");
 const { getClientIp } = require("../../utils/ip");
 const {deleteFileIfExists} = require("../../utils/deleteFile");
 
-exports.getAdd = async (req, res) => {
-    try {
-        const roles = await getRoles();
-        return res.status(200).json({ roles, houseId: req.user.houseId });
-    } catch (error) {
-        console.error(error);
-        return res
-            .status(500)
-            .json({ error: "Error cargando datos del formulario" });
-    }
-};
-
-exports.getById = async (req, res) => {
-    try {
-        const employee = await getEmployeeById(req.params.id);
-        if (!employee)
-            return res.status(404).json({ error: "Empleado no encontrado" });
-        return res.status(200).json(employee);
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Error interno del servidor" });
-    }
-};
-
 exports.postAdd = async (req, res) => {
     try {
         const employee = {
             ...req.body,
-            picture: req.file ? req.file.path : null,
+            picture: req.file ? `uploads/${req.file.filename}` : null,
         };
         const result = await createEmployee(employee, req.user, req);
 
