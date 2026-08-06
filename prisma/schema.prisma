@@ -15,9 +15,10 @@ model action {
 }
 
 model documents {
-  document_id        String               @id(map: "documents_pk") @db.Uuid
-  name               String               @unique @db.VarChar(100)
-  employee_documents employee_documents[]
+  document_id            String                   @id(map: "documents_pk") @db.Uuid
+  name                   String                   @unique @db.VarChar(100)
+  employee_documents     employee_documents[]
+  beneficiary_documents beneficiary_documents[]
 }
 
 model donation {
@@ -203,6 +204,7 @@ model house {
   description    String
   image          String           @db.VarChar(100)
   employee       employee[]
+  beneficiary    beneficiary[]
   house_donation house_donation[]
   house_event    house_event[]
 }
@@ -352,4 +354,32 @@ model blacklist {
   curp         String   @unique @db.VarChar(18)
   reason       String   @db.VarChar(250)
   created_at   DateTime @default(now()) @db.Timestamp(6)
+}
+
+model beneficiary {
+  beneficiary_id        String                  @id(map: "beneficiary_pk") @db.Uuid
+  name                  String                  @db.VarChar(50)
+  paternal_surname      String                  @db.VarChar(50)
+  maternal_surname      String                  @db.VarChar(50)
+  preferred_name        String                  @db.VarChar(50)
+  birth_date            DateTime                @db.Date
+  age_entered_house     DateTime                Int
+  blood_type            String                  @db.VarChar(10)
+  curp                  String?                 @unique @db.VarChar(18)  
+  house_id              String                  @db.Uuid
+  last_modification     DateTime                @db.Date
+  last_record_update    DateTime                @db.Date
+  house                 house                   @relation(fields: [house_id], references: [house_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_house_fk")
+  beneficiary_documents beneficiary_documents[]
+}
+
+model beneficiary_documents {
+  document_id    String      @db.Uuid
+  beneficiary_id String      @db.Uuid
+  url            String
+  date_modified  DateTime    @db.Date
+  documents      documents   @relation(fields: [document_id], references: [document_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_documents_documents_fk")
+  beneficiary    beneficiary @relation(fields: [beneficiary_id], references: [beneficiary_id], onDelete: NoAction, onUpdate: NoAction, map: "beneficiary_documents_beneficiary_fk")
+
+  @@id([document_id, beneficiary_id], map: "beneficiary_documents_pk")
 }
